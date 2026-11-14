@@ -1,9 +1,11 @@
+
 [package]
 name = "matter-base"
 version = "0.1.0"
 edition = "2021"
 description = "Reusable modular core for the Matterssmith ecosystem"
 license = "MIT"
+autobins = false
 
 [lib]
 name = "matter_base"
