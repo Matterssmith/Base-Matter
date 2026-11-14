@@ -1,7 +1,7 @@
+
 use std::collections::HashMap;
 use std::sync::RwLock;
 
-#[derive(Default)]
 pub struct Translator {
     locale: RwLock<String>,
     catalogs: RwLock<HashMap<String, HashMap<String, String>>>,
