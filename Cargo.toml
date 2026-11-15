@@ -3,7 +3,7 @@
 name = "matter-base"
 version = "0.1.0"
 edition = "2021"
-description = "Reusable modular core for the Matterssmith ecosystem"
+description = "Universal multilingual and multi-platform bot infrastructure"
 license = "MIT"
 autobins = false
 
@@ -20,3 +20,6 @@ tracing-subscriber = {
     version = "0.3",
     features = ["env-filter", "fmt"]
 }
+rusqlite = { version = "0.32", features = ["bundled"] }
+sha2 = "0.10"
+hex = "0.4"
