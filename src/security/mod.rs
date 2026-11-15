@@ -1,6 +1,6 @@
 
 /*
- * Matter-Base — Security
+ * Matter-Base — Security Module
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
@@ -8,6 +8,7 @@
 
 pub mod encryption;
 pub mod key_manager;
+pub mod key_provider;
 
 pub use encryption::{
     decrypt,
@@ -19,3 +20,4 @@ pub use encryption::{
 };
 
 pub use key_manager::KeyManager;
+pub use key_provider::KeyProvider;
