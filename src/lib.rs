@@ -1,4 +1,3 @@
-
 /*!
  * Matter-Base
  *
@@ -18,6 +17,7 @@ pub mod events;
 pub mod i18n;
 pub mod legal;
 pub mod modules;
+pub mod security;
 pub mod services;
 
 pub use core::config::CoreConfig;
@@ -27,6 +27,7 @@ pub use core::runtime::MatterRuntime;
 
 pub use events::EventBus;
 pub use i18n::Translator;
+
 pub use legal::{
     ConsentDecision,
     ConsentRecord,
@@ -34,5 +35,7 @@ pub use legal::{
     LegalDocumentType,
     LegalStore,
 };
+
 pub use modules::CoreModule;
+pub use security::encryption;
 pub use services::ServiceRegistry;
