@@ -29,6 +29,7 @@ pub use events::EventBus;
 pub use i18n::Translator;
 pub use legal::{
     ConsentDecision,
+    ConsentRecord,
     LegalDocument,
     LegalDocumentType,
     LegalStore,
