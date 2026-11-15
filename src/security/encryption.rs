@@ -78,7 +78,6 @@ pub fn encrypt(
     }
 
     let cipher = XChaCha20Poly1305::new(key.into());
-
     let nonce = XChaCha20Poly1305::generate_nonce(&mut OsRng);
 
     let aad = associated_data(
@@ -96,7 +95,7 @@ pub fn encrypt(
                 aad: &aad,
             },
         )
-        .context("Encryption failed")?;
+        .map_err(|_| anyhow::anyhow!("Encryption failed"))?;
 
     Ok(EncryptedEnvelope {
         format_version: FORMAT_VERSION,
@@ -161,5 +160,7 @@ pub fn decrypt(
                 aad: &aad,
             },
         )
-        .context("Authentication or decryption failed")
+        .map_err(|_| {
+            anyhow::anyhow!("Authentication or decryption failed")
+        })
 }
