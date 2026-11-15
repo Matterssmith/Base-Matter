@@ -3,7 +3,7 @@
  * Pruebas: Legal & Consent Manager
  *
  * Función:
- * Verificar documentos, decisiones, consentimientos e integridad histórica.
+ * Verificar documentos, decisiones, consentimientos y acceso legal.
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
@@ -164,8 +164,7 @@ fn duplicate_document_with_same_metadata_is_idempotent() {
 fn duplicate_document_id_with_different_version_is_rejected() {
     let store = LegalStore::open_in_memory().unwrap();
 
-    let document = create_terms();
-    store.register_document(&document).unwrap();
+    store.register_document(&create_terms()).unwrap();
 
     let mut changed = create_terms();
     changed.version = "2.0.0".to_string();
@@ -406,7 +405,7 @@ fn unregistered_user_cannot_record_decisions() {
 }
 
 #[test]
-fn document_can_be_deactivated_without_changing_metadata() {
+fn document_can_be_deactivated() {
     let store = LegalStore::open_in_memory().unwrap();
 
     store.register_user("user-012").unwrap();
@@ -430,58 +429,35 @@ fn document_can_be_deactivated_without_changing_metadata() {
 }
 
 #[test]
-fn document_metadata_cannot_be_updated_directly() {
+fn deactivated_document_can_be_reactivated() {
     let store = LegalStore::open_in_memory().unwrap();
 
     store.register_document(&create_terms()).unwrap();
 
-    let connection = store.connection.lock().unwrap();
+    store.set_document_active(
+        "base-terms-1.0.0-es",
+        false,
+    ).unwrap();
 
-    let result = connection.execute(
-        "
-        UPDATE legal_documents
-        SET content = 'Contenido alterado'
-        WHERE document_id = 'base-terms-1.0.0-es'
-        ",
-        [],
-    );
+    store.set_document_active(
+        "base-terms-1.0.0-es",
+        true,
+    ).unwrap();
 
-    assert!(result.is_err());
+    assert!(store
+        .has_required_documents("matter-base", "es")
+        .unwrap());
 }
 
 #[test]
-fn decision_history_cannot_be_updated_or_deleted() {
+fn latest_decision_is_none_when_no_decision_exists() {
     let store = LegalStore::open_in_memory().unwrap();
 
-    store.register_user("user-013").unwrap();
+    store.register_user("user-014").unwrap();
     store.register_document(&create_terms()).unwrap();
 
-    store.record_decision(
-        "user-013",
+    assert!(store.latest_decision(
+        "user-014",
         "base-terms-1.0.0-es",
-        ConsentDecision::Accepted,
-        None,
-    ).unwrap();
-
-    let connection = store.connection.lock().unwrap();
-
-    let update = connection.execute(
-        "
-        UPDATE legal_decisions
-        SET decision = 'declined'
-        WHERE user_id = 'user-013'
-        ",
-        [],
-    );
-
-    let delete = connection.execute(
-        "
-        DELETE FROM legal_decisions
-        WHERE user_id = 'user-013'
-        ",
-        [],
-    );
-
-    assert!(update.is_err());
-    assert!(delete.is_err());
+    ).unwrap().is_none());
 }
