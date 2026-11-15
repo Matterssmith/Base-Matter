@@ -1,6 +1,22 @@
+
+/*!
+ * Matter-Base
+ *
+ * Función:
+ * Biblioteca central de infraestructura universal para bots.
+ *
+ * Responsabilidades:
+ * - Exponer los módulos públicos del núcleo.
+ * - Proporcionar interfaces independientes del lenguaje y la plataforma.
+ *
+ * Créditos:
+ * Hecho por Lournyx Matterssmith [Lou-Nyx].
+ */
+
 pub mod core;
 pub mod events;
 pub mod i18n;
+pub mod legal;
 pub mod modules;
 pub mod services;
 
@@ -11,5 +27,11 @@ pub use core::runtime::MatterRuntime;
 
 pub use events::EventBus;
 pub use i18n::Translator;
+pub use legal::{
+    ConsentDecision,
+    LegalDocument,
+    LegalDocumentType,
+    LegalStore,
+};
 pub use modules::CoreModule;
 pub use services::ServiceRegistry;
