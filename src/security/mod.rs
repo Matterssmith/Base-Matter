@@ -8,5 +8,11 @@
 pub mod encryption;
 pub mod key_manager;
 
-pub use encryption::{decrypt, encrypt, EncryptedEnvelope};
+pub use encryption::{
+    decrypt,
+    encrypt,
+    validate_envelope,
+    EncryptedEnvelope,
+};
+
 pub use key_manager::KeyManager;
