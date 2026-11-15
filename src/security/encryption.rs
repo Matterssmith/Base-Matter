@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Authenticated Encryption
  *
@@ -16,9 +15,24 @@ use chacha20poly1305::{
     XChaCha20Poly1305, XNonce,
 };
 use serde::{Deserialize, Serialize};
+use time::{
+    format_description::well_known::Rfc3339,
+    OffsetDateTime,
+};
 
 const FORMAT_VERSION: u32 = 1;
 const ALGORITHM: &str = "XChaCha20-Poly1305";
+const NONCE_LENGTH: usize = 24;
+const TAG_LENGTH: usize = 16;
+const MAX_TEXT_LENGTH: usize = 128;
+
+const ALLOWED_RECORD_TYPES: &[&str] = &[
+    "roles",
+    "permissions",
+    "configuration",
+    "audit",
+    "encrypted_key",
+];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -42,23 +56,105 @@ fn associated_data(
 ) -> Vec<u8> {
     format!(
         "matter-vault:v1\0{}\0{}\0{}\0{}",
-        envelope_id, scope, record_type, key_id
+        envelope_id,
+        scope,
+        record_type,
+        key_id
     )
     .into_bytes()
 }
 
 fn validate_text(value: &str, name: &str) -> Result<()> {
-    if value.is_empty() || value.len() > 128 {
-        bail!("Invalid {name}");
-    }
-
-    if value.contains('\0') {
+    if value.trim().is_empty()
+        || value.len() > MAX_TEXT_LENGTH
+        || value.chars().any(char::is_control)
+    {
         bail!("Invalid {name}");
     }
 
     Ok(())
 }
 
+fn validate_record_type(record_type: &str) -> Result<()> {
+    if !ALLOWED_RECORD_TYPES.contains(&record_type) {
+        bail!("Unsupported record type");
+    }
+
+    Ok(())
+}
+
+fn validate_timestamp(value: &str) -> Result<()> {
+    if value.is_empty() || value.len() > 64 {
+        bail!("Invalid created_at");
+    }
+
+    OffsetDateTime::parse(value, &Rfc3339)
+        .context("created_at must be a valid RFC3339 timestamp")?;
+
+    Ok(())
+}
+
+fn decode_canonical_base64(
+    value: &str,
+    name: &str,
+) -> Result<Vec<u8>> {
+    let decoded = URL_SAFE_NO_PAD
+        .decode(value)
+        .with_context(|| format!("Invalid {name} encoding"))?;
+
+    if URL_SAFE_NO_PAD.encode(&decoded) != value {
+        bail!("Non-canonical {name} encoding");
+    }
+
+    Ok(decoded)
+}
+
+fn validate_metadata(envelope: &EncryptedEnvelope) -> Result<()> {
+    if envelope.format_version != FORMAT_VERSION {
+        bail!("Unsupported envelope version");
+    }
+
+    if envelope.algorithm != ALGORITHM {
+        bail!("Unsupported encryption algorithm");
+    }
+
+    validate_text(&envelope.envelope_id, "envelope_id")?;
+    validate_text(&envelope.scope, "scope")?;
+    validate_text(&envelope.record_type, "record_type")?;
+    validate_text(&envelope.key_id, "key_id")?;
+
+    validate_record_type(&envelope.record_type)?;
+    validate_timestamp(&envelope.created_at)?;
+
+    Ok(())
+}
+
+/// Validates the envelope structure and encoded fields.
+pub fn validate_envelope(envelope: &EncryptedEnvelope) -> Result<()> {
+    validate_metadata(envelope)?;
+
+    let nonce = decode_canonical_base64(
+        &envelope.nonce,
+        "nonce",
+    )?;
+
+    if nonce.len() != NONCE_LENGTH {
+        bail!("Invalid nonce length");
+    }
+
+    let ciphertext = decode_canonical_base64(
+        &envelope.ciphertext,
+        "ciphertext",
+    )?;
+
+    if ciphertext.len() < TAG_LENGTH {
+        bail!("Ciphertext is too short");
+    }
+
+    Ok(())
+}
+
+/// Encrypts plaintext using XChaCha20-Poly1305.
 pub fn encrypt(
     plaintext: &[u8],
     key: &[u8; 32],
@@ -73,9 +169,8 @@ pub fn encrypt(
     validate_text(record_type, "record_type")?;
     validate_text(key_id, "key_id")?;
 
-    if created_at.is_empty() || created_at.len() > 64 {
-        bail!("Invalid created_at");
-    }
+    validate_record_type(record_type)?;
+    validate_timestamp(created_at)?;
 
     let cipher = XChaCha20Poly1305::new(key.into());
     let nonce = XChaCha20Poly1305::generate_nonce(&mut OsRng);
@@ -95,9 +190,9 @@ pub fn encrypt(
                 aad: &aad,
             },
         )
-        .map_err(|_| anyhow::anyhow!("Encryption failed"))?;
+        .context("Encryption failed")?;
 
-    Ok(EncryptedEnvelope {
+    let envelope = EncryptedEnvelope {
         format_version: FORMAT_VERSION,
         envelope_id: envelope_id.to_owned(),
         scope: scope.to_owned(),
@@ -107,41 +202,33 @@ pub fn encrypt(
         nonce: URL_SAFE_NO_PAD.encode(nonce),
         ciphertext: URL_SAFE_NO_PAD.encode(ciphertext),
         created_at: created_at.to_owned(),
-    })
+    };
+
+    validate_envelope(&envelope)?;
+
+    Ok(envelope)
 }
 
+/// Validates and decrypts an authenticated envelope.
 pub fn decrypt(
     envelope: &EncryptedEnvelope,
     key: &[u8; 32],
 ) -> Result<Vec<u8>> {
-    if envelope.format_version != FORMAT_VERSION {
-        bail!("Unsupported envelope version");
-    }
+    validate_envelope(envelope)?;
 
-    if envelope.algorithm != ALGORITHM {
-        bail!("Unsupported encryption algorithm");
-    }
+    let nonce_bytes = decode_canonical_base64(
+        &envelope.nonce,
+        "nonce",
+    )?;
 
-    validate_text(&envelope.envelope_id, "envelope_id")?;
-    validate_text(&envelope.scope, "scope")?;
-    validate_text(&envelope.record_type, "record_type")?;
-    validate_text(&envelope.key_id, "key_id")?;
+    let ciphertext = decode_canonical_base64(
+        &envelope.ciphertext,
+        "ciphertext",
+    )?;
 
-    let nonce_bytes = URL_SAFE_NO_PAD
-        .decode(&envelope.nonce)
-        .context("Invalid nonce encoding")?;
-
-    let ciphertext = URL_SAFE_NO_PAD
-        .decode(&envelope.ciphertext)
-        .context("Invalid ciphertext encoding")?;
-
-    let nonce: [u8; 24] = nonce_bytes
+    let nonce: [u8; NONCE_LENGTH] = nonce_bytes
         .try_into()
         .map_err(|_| anyhow::anyhow!("Invalid nonce length"))?;
-
-    if ciphertext.len() < 16 {
-        bail!("Ciphertext is too short");
-    }
 
     let cipher = XChaCha20Poly1305::new(key.into());
 
@@ -160,7 +247,5 @@ pub fn decrypt(
                 aad: &aad,
             },
         )
-        .map_err(|_| {
-            anyhow::anyhow!("Authentication or decryption failed")
-        })
+        .context("Authentication or decryption failed")
 }
