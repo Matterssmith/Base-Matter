@@ -1,15 +1,12 @@
-/*!
- * Módulo: Security
- *
- * Función:
- * Centralizar las herramientas de seguridad.
- *
- * Responsabilidades:
- * - Exponer mecanismos de cifrado.
- * - Proporcionar operaciones criptográficas reutilizables.
+/*
+ * Matter-Base — Security
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
 pub mod encryption;
+pub mod key_manager;
+
+pub use encryption::{decrypt, encrypt, EncryptedEnvelope};
+pub use key_manager::KeyManager;
