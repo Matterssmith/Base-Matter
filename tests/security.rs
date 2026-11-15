@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Security Tests
  *
@@ -10,7 +9,12 @@ use base64::{
     engine::general_purpose::URL_SAFE_NO_PAD,
     Engine,
 };
-use matter_base::security::{decrypt, encrypt};
+use matter_base::security::{
+    decrypt,
+    encrypt,
+    validate_envelope,
+    EncryptedEnvelope,
+};
 
 const ENVELOPE_ID: &str = "test-envelope-001";
 const SCOPE: &str = "test-application";
@@ -26,7 +30,7 @@ fn test_plaintext() -> Vec<u8> {
     b"Matter-Base security test".to_vec()
 }
 
-fn encrypted_envelope() -> matter_base::security::EncryptedEnvelope {
+fn encrypted_envelope() -> EncryptedEnvelope {
     encrypt(
         &test_plaintext(),
         &test_key(),
@@ -73,9 +77,7 @@ fn wrong_key_is_rejected() {
     let envelope = encrypted_envelope();
     let wrong_key = [99u8; 32];
 
-    let result = decrypt(&envelope, &wrong_key);
-
-    assert!(result.is_err());
+    assert!(decrypt(&envelope, &wrong_key).is_err());
 }
 
 #[test]
@@ -87,7 +89,6 @@ fn modified_ciphertext_is_rejected() {
         .expect("Ciphertext should be valid");
 
     ciphertext[0] ^= 0x01;
-
     envelope.ciphertext = URL_SAFE_NO_PAD.encode(ciphertext);
 
     assert!(decrypt(&envelope, &test_key()).is_err());
@@ -102,7 +103,6 @@ fn modified_nonce_is_rejected() {
         .expect("Nonce should be valid");
 
     nonce[0] ^= 0x01;
-
     envelope.nonce = URL_SAFE_NO_PAD.encode(nonce);
 
     assert!(decrypt(&envelope, &test_key()).is_err());
@@ -121,7 +121,7 @@ fn modified_scope_is_rejected() {
 fn modified_record_type_is_rejected() {
     let mut envelope = encrypted_envelope();
 
-    envelope.record_type = "permissions".to_owned();
+    envelope.record_type = "roles".to_owned();
 
     assert!(decrypt(&envelope, &test_key()).is_err());
 }
@@ -256,4 +256,104 @@ fn empty_created_at_is_rejected_during_encryption() {
     );
 
     assert!(result.is_err());
+}
+
+#[test]
+fn unsupported_record_type_is_rejected_during_encryption() {
+    let result = encrypt(
+        &test_plaintext(),
+        &test_key(),
+        ENVELOPE_ID,
+        SCOPE,
+        "unknown_type",
+        KEY_ID,
+        CREATED_AT,
+    );
+
+    assert!(result.is_err());
+}
+
+#[test]
+fn invalid_timestamp_is_rejected_during_encryption() {
+    let result = encrypt(
+        &test_plaintext(),
+        &test_key(),
+        ENVELOPE_ID,
+        SCOPE,
+        RECORD_TYPE,
+        KEY_ID,
+        "not-a-date",
+    );
+
+    assert!(result.is_err());
+}
+
+#[test]
+fn invalid_calendar_date_is_rejected() {
+    let result = encrypt(
+        &test_plaintext(),
+        &test_key(),
+        ENVELOPE_ID,
+        SCOPE,
+        RECORD_TYPE,
+        KEY_ID,
+        "2026-02-30T12:00:00Z",
+    );
+
+    assert!(result.is_err());
+}
+
+#[test]
+fn invalid_timestamp_without_timezone_is_rejected() {
+    let result = encrypt(
+        &test_plaintext(),
+        &test_key(),
+        ENVELOPE_ID,
+        SCOPE,
+        RECORD_TYPE,
+        KEY_ID,
+        "2026-11-15T12:00:00",
+    );
+
+    assert!(result.is_err());
+}
+
+#[test]
+fn noncanonical_nonce_encoding_is_rejected() {
+    let mut envelope = encrypted_envelope();
+
+    envelope.nonce.push('=');
+
+    assert!(validate_envelope(&envelope).is_err());
+}
+
+#[test]
+fn noncanonical_ciphertext_encoding_is_rejected() {
+    let mut envelope = encrypted_envelope();
+
+    envelope.ciphertext.push('=');
+
+    assert!(validate_envelope(&envelope).is_err());
+}
+
+#[test]
+fn valid_envelope_passes_validation() {
+    let envelope = encrypted_envelope();
+
+    assert!(validate_envelope(&envelope).is_ok());
+}
+
+#[test]
+fn valid_rfc3339_timestamp_with_offset_is_accepted() {
+    let result = encrypt(
+        &test_plaintext(),
+        &test_key(),
+        ENVELOPE_ID,
+        SCOPE,
+        RECORD_TYPE,
+        KEY_ID,
+        "2026-11-15T12:00:00+02:00",
+    );
+
+    assert!(result.is_ok());
 }
