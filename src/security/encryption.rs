@@ -1,3 +1,4 @@
+
 /*
  * Matter-Base — Authenticated Encryption
  *
@@ -94,10 +95,7 @@ fn validate_timestamp(value: &str) -> Result<()> {
     Ok(())
 }
 
-fn decode_canonical_base64(
-    value: &str,
-    name: &str,
-) -> Result<Vec<u8>> {
+fn decode_canonical_base64(value: &str, name: &str) -> Result<Vec<u8>> {
     let decoded = URL_SAFE_NO_PAD
         .decode(value)
         .with_context(|| format!("Invalid {name} encoding"))?;
@@ -133,19 +131,14 @@ fn validate_metadata(envelope: &EncryptedEnvelope) -> Result<()> {
 pub fn validate_envelope(envelope: &EncryptedEnvelope) -> Result<()> {
     validate_metadata(envelope)?;
 
-    let nonce = decode_canonical_base64(
-        &envelope.nonce,
-        "nonce",
-    )?;
+    let nonce = decode_canonical_base64(&envelope.nonce, "nonce")?;
 
     if nonce.len() != NONCE_LENGTH {
         bail!("Invalid nonce length");
     }
 
-    let ciphertext = decode_canonical_base64(
-        &envelope.ciphertext,
-        "ciphertext",
-    )?;
+    let ciphertext =
+        decode_canonical_base64(&envelope.ciphertext, "ciphertext")?;
 
     if ciphertext.len() < TAG_LENGTH {
         bail!("Ciphertext is too short");
@@ -190,7 +183,7 @@ pub fn encrypt(
                 aad: &aad,
             },
         )
-        .context("Encryption failed")?;
+        .map_err(|_| anyhow::anyhow!("Encryption failed"))?;
 
     let envelope = EncryptedEnvelope {
         format_version: FORMAT_VERSION,
@@ -216,15 +209,10 @@ pub fn decrypt(
 ) -> Result<Vec<u8>> {
     validate_envelope(envelope)?;
 
-    let nonce_bytes = decode_canonical_base64(
-        &envelope.nonce,
-        "nonce",
-    )?;
+    let nonce_bytes = decode_canonical_base64(&envelope.nonce, "nonce")?;
 
-    let ciphertext = decode_canonical_base64(
-        &envelope.ciphertext,
-        "ciphertext",
-    )?;
+    let ciphertext =
+        decode_canonical_base64(&envelope.ciphertext, "ciphertext")?;
 
     let nonce: [u8; NONCE_LENGTH] = nonce_bytes
         .try_into()
@@ -247,5 +235,5 @@ pub fn decrypt(
                 aad: &aad,
             },
         )
-        .context("Authentication or decryption failed")
+        .map_err(|_| anyhow::anyhow!("Authentication or decryption failed"))
 }
