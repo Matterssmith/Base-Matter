@@ -6,11 +6,14 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
+pub mod authenticated_provider;
 pub mod encryption;
 pub mod key_manager;
 pub mod key_provider;
 pub mod provider_authenticator;
 pub mod provider_identity;
+
+pub use authenticated_provider::AuthenticatedProvider;
 
 pub use encryption::{
     decrypt,
