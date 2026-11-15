@@ -23,5 +23,6 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 sha2 = "0.10"
 hex = "0.4"
 base64 = "0.22"
-chacha20poly1305 = "0.10.1"
+chacha20poly1305 = "0.10"
 zeroize = "1.8"
+time = { version = "0.3", features = ["parsing"] }
