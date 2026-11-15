@@ -21,6 +21,8 @@ use time::{
     OffsetDateTime,
 };
 
+use crate::security::key_manager::KeyManager;
+
 const FORMAT_VERSION: u32 = 1;
 const ALGORITHM: &str = "XChaCha20-Poly1305";
 const NONCE_LENGTH: usize = 24;
@@ -236,4 +238,38 @@ pub fn decrypt(
             },
         )
         .map_err(|_| anyhow::anyhow!("Authentication or decryption failed"))
+}
+
+/// Encrypts plaintext using the active key managed by KeyManager.
+pub fn encrypt_with_manager(
+    plaintext: &[u8],
+    manager: &KeyManager,
+    envelope_id: &str,
+    scope: &str,
+    record_type: &str,
+    created_at: &str,
+) -> Result<EncryptedEnvelope> {
+    let (key_id, key) = manager.get_active()?;
+
+    encrypt(
+        plaintext,
+        key,
+        envelope_id,
+        scope,
+        record_type,
+        key_id,
+        created_at,
+    )
+}
+
+/// Decrypts an envelope using the key identified by its key_id.
+pub fn decrypt_with_manager(
+    envelope: &EncryptedEnvelope,
+    manager: &KeyManager,
+) -> Result<Vec<u8>> {
+    validate_envelope(envelope)?;
+
+    let key = manager.get(&envelope.key_id)?;
+
+    decrypt(envelope, key)
 }
