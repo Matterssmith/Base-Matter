@@ -23,34 +23,30 @@ impl KeyManager {
         }
     }
 
-    pub fn insert(
-        &mut self,
-        key_id: String,
-        key: [u8; 32],
-    ) -> Result<()> {
+    pub fn insert(&mut self, key_id: String, key: [u8; 32]) -> Result<()> {
+        let key = Zeroizing::new(key);
+
         Self::validate_key_id(&key_id)?;
 
         if self.keys.contains_key(&key_id) {
             bail!("Key already registered");
         }
 
-        self.keys.insert(key_id, Zeroizing::new(key));
+        self.keys.insert(key_id, key);
 
         Ok(())
     }
 
-    pub fn rotate(
-        &mut self,
-        key_id: String,
-        key: [u8; 32],
-    ) -> Result<()> {
+    pub fn rotate(&mut self, key_id: String, key: [u8; 32]) -> Result<()> {
+        let key = Zeroizing::new(key);
+
         Self::validate_key_id(&key_id)?;
 
         if self.keys.contains_key(&key_id) {
             bail!("Key already registered");
         }
 
-        self.keys.insert(key_id.clone(), Zeroizing::new(key));
+        self.keys.insert(key_id.clone(), key);
         self.active_key_id = Some(key_id);
 
         Ok(())
