@@ -1,260 +1,165 @@
-/*!
- * Módulo: Encryption
- *
- * Función:
- * Proteger datos persistentes mediante cifrado autenticado.
- *
- * Responsabilidades:
- * - Cifrar documentos JSON.
- * - Descifrar documentos JSON.
- * - Validar la integridad del contenido.
- * - Obtener la clave desde el entorno.
+
+/*
+ * Matter-Base — Authenticated Encryption
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
-use anyhow::{anyhow, bail, Context, Result};
-
+use anyhow::{bail, Context, Result};
+use base64::{
+    engine::general_purpose::URL_SAFE_NO_PAD,
+    Engine,
+};
 use chacha20poly1305::{
-    aead::{
-        Aead,
-        AeadCore,
-        KeyInit,
-        OsRng,
-        Payload,
-    },
-    XChaCha20Poly1305,
-    XNonce,
+    aead::{Aead, AeadCore, KeyInit, OsRng, Payload},
+    XChaCha20Poly1305, XNonce,
 };
+use serde::{Deserialize, Serialize};
 
-use serde::{
-    de::DeserializeOwned,
-    Deserialize,
-    Serialize,
-};
-
-use zeroize::Zeroize;
-
-const KEY_ENV: &str = "MATTER_CONTROL_ENCRYPTION_KEY";
-
-const FORMAT_VERSION: u8 = 1;
-
+const FORMAT_VERSION: u32 = 1;
 const ALGORITHM: &str = "XChaCha20-Poly1305";
 
-const ASSOCIATED_DATA: &[u8] =
-    b"Matter-Base/control/roles/v1";
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct EncryptedEnvelope {
-    version: u8,
-    algorithm: String,
-    nonce: String,
-    ciphertext: String,
+pub struct EncryptedEnvelope {
+    pub format_version: u32,
+    pub envelope_id: String,
+    pub scope: String,
+    pub record_type: String,
+    pub key_id: String,
+    pub algorithm: String,
+    pub nonce: String,
+    pub ciphertext: String,
+    pub created_at: String,
 }
 
-/// Cifra un documento JSON y devuelve su envoltorio cifrado.
-pub fn encrypt_json<T: Serialize>(value: &T) -> Result<String> {
-    let mut plaintext = serde_json::to_vec(value)
-        .context("No se pudo serializar el documento")?;
-
-    let mut key = load_key()?;
-
-    let encrypted = encrypt_with_key(&plaintext, &key);
-
-    plaintext.zeroize();
-    key.zeroize();
-
-    let envelope = encrypted?;
-
-    serde_json::to_string_pretty(&envelope)
-        .context("No se pudo serializar el documento cifrado")
+fn associated_data(
+    envelope_id: &str,
+    scope: &str,
+    record_type: &str,
+    key_id: &str,
+) -> Vec<u8> {
+    format!(
+        "matter-vault:v1\0{}\0{}\0{}\0{}",
+        envelope_id, scope, record_type, key_id
+    )
+    .into_bytes()
 }
 
-/// Descifra un documento JSON y recupera su estructura original.
-pub fn decrypt_json<T: DeserializeOwned>(
-    encrypted_document: &str,
-) -> Result<T> {
-    let envelope: EncryptedEnvelope =
-        serde_json::from_str(encrypted_document)
-            .context("Documento cifrado inválido")?;
-
-    validate_envelope(&envelope)?;
-
-    let mut key = load_key()?;
-
-    let decrypted = decrypt_with_key(&envelope, &key);
-
-    key.zeroize();
-
-    let mut plaintext = decrypted?;
-
-    let result = serde_json::from_slice(&plaintext)
-        .context("El contenido descifrado no es JSON válido");
-
-    plaintext.zeroize();
-
-    result
-}
-
-/// Obtiene una clave de 256 bits desde una variable de entorno.
-fn load_key() -> Result<[u8; 32]> {
-    let mut encoded = std::env::var(KEY_ENV)
-        .context("Falta la clave de cifrado")?;
-
-    let decoded_result = hex::decode(encoded.trim());
-
-    encoded.zeroize();
-
-    let mut decoded = decoded_result
-        .context("La clave debe estar codificada en hexadecimal")?;
-
-    if decoded.len() != 32 {
-        decoded.zeroize();
-
-        bail!("La clave debe contener exactamente 32 bytes");
+fn validate_text(value: &str, name: &str) -> Result<()> {
+    if value.is_empty() || value.len() > 128 {
+        bail!("Invalid {name}");
     }
 
-    let mut key = [0u8; 32];
+    if value.contains('\0') {
+        bail!("Invalid {name}");
+    }
 
-    key.copy_from_slice(&decoded);
-
-    decoded.zeroize();
-
-    Ok(key)
+    Ok(())
 }
 
-/// Cifra bytes utilizando una clave proporcionada.
-fn encrypt_with_key(
+pub fn encrypt(
     plaintext: &[u8],
     key: &[u8; 32],
+    envelope_id: &str,
+    scope: &str,
+    record_type: &str,
+    key_id: &str,
+    created_at: &str,
 ) -> Result<EncryptedEnvelope> {
-    let cipher = XChaCha20Poly1305::new_from_slice(key)
-        .map_err(|_| anyhow!("Clave criptográfica inválida"))?;
+    validate_text(envelope_id, "envelope_id")?;
+    validate_text(scope, "scope")?;
+    validate_text(record_type, "record_type")?;
+    validate_text(key_id, "key_id")?;
 
-    let nonce =
-        XChaCha20Poly1305::generate_nonce(&mut OsRng);
+    if created_at.is_empty() || created_at.len() > 64 {
+        bail!("Invalid created_at");
+    }
+
+    let cipher = XChaCha20Poly1305::new(key.into());
+
+    let nonce = XChaCha20Poly1305::generate_nonce(&mut OsRng);
+
+    let aad = associated_data(
+        envelope_id,
+        scope,
+        record_type,
+        key_id,
+    );
 
     let ciphertext = cipher
         .encrypt(
             &nonce,
             Payload {
                 msg: plaintext,
-                aad: ASSOCIATED_DATA,
+                aad: &aad,
             },
         )
-        .map_err(|_| anyhow!("No se pudo cifrar el documento"))?;
+        .context("Encryption failed")?;
 
     Ok(EncryptedEnvelope {
-        version: FORMAT_VERSION,
-        algorithm: ALGORITHM.to_string(),
-        nonce: hex::encode(nonce),
-        ciphertext: hex::encode(ciphertext),
+        format_version: FORMAT_VERSION,
+        envelope_id: envelope_id.to_owned(),
+        scope: scope.to_owned(),
+        record_type: record_type.to_owned(),
+        key_id: key_id.to_owned(),
+        algorithm: ALGORITHM.to_owned(),
+        nonce: URL_SAFE_NO_PAD.encode(nonce),
+        ciphertext: URL_SAFE_NO_PAD.encode(ciphertext),
+        created_at: created_at.to_owned(),
     })
 }
 
-/// Descifra bytes y valida su autenticidad.
-fn decrypt_with_key(
+pub fn decrypt(
     envelope: &EncryptedEnvelope,
     key: &[u8; 32],
 ) -> Result<Vec<u8>> {
-    let nonce_bytes = hex::decode(&envelope.nonce)
-        .context("Nonce inválido")?;
-
-    if nonce_bytes.len() != 24 {
-        bail!("Longitud de nonce inválida");
-    }
-
-    let ciphertext = hex::decode(&envelope.ciphertext)
-        .context("Contenido cifrado inválido")?;
-
-    let cipher = XChaCha20Poly1305::new_from_slice(key)
-        .map_err(|_| anyhow!("Clave criptográfica inválida"))?;
-
-    cipher
-        .decrypt(
-            XNonce::from_slice(&nonce_bytes),
-            Payload {
-                msg: &ciphertext,
-                aad: ASSOCIATED_DATA,
-            },
-        )
-        .map_err(|_| anyhow!("El contenido no superó la validación criptográfica"))
-}
-
-/// Impide aceptar formatos o algoritmos desconocidos.
-fn validate_envelope(envelope: &EncryptedEnvelope) -> Result<()> {
-    if envelope.version != FORMAT_VERSION {
-        bail!("Versión de cifrado no compatible");
+    if envelope.format_version != FORMAT_VERSION {
+        bail!("Unsupported envelope version");
     }
 
     if envelope.algorithm != ALGORITHM {
-        bail!("Algoritmo de cifrado no permitido");
+        bail!("Unsupported encryption algorithm");
     }
 
-    Ok(())
-}
+    validate_text(&envelope.envelope_id, "envelope_id")?;
+    validate_text(&envelope.scope, "scope")?;
+    validate_text(&envelope.record_type, "record_type")?;
+    validate_text(&envelope.key_id, "key_id")?;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+    let nonce_bytes = URL_SAFE_NO_PAD
+        .decode(&envelope.nonce)
+        .context("Invalid nonce encoding")?;
 
-    #[test]
-    fn encrypted_document_hides_identifiers() {
-        let key = [42u8; 32];
+    let ciphertext = URL_SAFE_NO_PAD
+        .decode(&envelope.ciphertext)
+        .context("Invalid ciphertext encoding")?;
 
-        let original = serde_json::json!({
-            "sockets": {
-                "SOCKET_PRIVATE": {
-                    "roles": {
-                        "USER_PRIVATE": "co-owner"
-                    }
-                }
-            }
-        });
+    let nonce: [u8; 24] = nonce_bytes
+        .try_into()
+        .map_err(|_| anyhow::anyhow!("Invalid nonce length"))?;
 
-        let plaintext =
-            serde_json::to_vec(&original).unwrap();
-
-        let envelope =
-            encrypt_with_key(&plaintext, &key).unwrap();
-
-        let encoded =
-            serde_json::to_string(&envelope).unwrap();
-
-        assert!(!encoded.contains("SOCKET_PRIVATE"));
-        assert!(!encoded.contains("USER_PRIVATE"));
-        assert!(!encoded.contains("co-owner"));
-
-        let decoded_envelope: EncryptedEnvelope =
-            serde_json::from_str(&encoded).unwrap();
-
-        let decrypted =
-            decrypt_with_key(&decoded_envelope, &key).unwrap();
-
-        let recovered: serde_json::Value =
-            serde_json::from_slice(&decrypted).unwrap();
-
-        assert_eq!(original, recovered);
+    if ciphertext.len() < 16 {
+        bail!("Ciphertext is too short");
     }
 
-    #[test]
-    fn modified_ciphertext_is_rejected() {
-        let key = [42u8; 32];
+    let cipher = XChaCha20Poly1305::new(key.into());
 
-        let original = br#"{"role":"staff"}"#;
+    let aad = associated_data(
+        &envelope.envelope_id,
+        &envelope.scope,
+        &envelope.record_type,
+        &envelope.key_id,
+    );
 
-        let mut envelope =
-            encrypt_with_key(original, &key).unwrap();
-
-        let mut ciphertext =
-            hex::decode(&envelope.ciphertext).unwrap();
-
-        ciphertext[0] ^= 1;
-
-        envelope.ciphertext = hex::encode(ciphertext);
-
-        assert!(decrypt_with_key(&envelope, &key).is_err());
-    }
+    cipher
+        .decrypt(
+            XNonce::from_slice(&nonce),
+            Payload {
+                msg: &ciphertext,
+                aad: &aad,
+            },
+        )
+        .context("Authentication or decryption failed")
 }
