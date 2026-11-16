@@ -52,8 +52,8 @@ cannot both withdraw the same grant or observe a document-registration race
 between its duplicate check and insert. An access check uses one SQL statement
 to read the user and applicable document/decision state from one snapshot.
 The event bus, service registry, translation catalogs, and runtime config are
-in memory or caller supplied. There is no persistent bot, user, ownership,
-permission, socket, or plugin registry in this version.
+in memory or caller supplied. Shared application users, ownership, permission,
+socket, and plugin registries remain unimplemented.
 
 The security provider abstractions allow a caller to supply trusted key
 material and providers. Envelope plaintext and ciphertext are limited to
