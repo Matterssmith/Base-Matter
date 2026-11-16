@@ -9,12 +9,12 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`
-- Latest confirmed published checkpoint: `d1e9af11bad9785b137cb9018b4024e7ebd864ed`
+- Latest confirmed published checkpoint: `ff2301abbb01bd4d7b0beca05f7bd26cce708cf0`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `d1e9af11bad9785b137cb9018b4024e7ebd864ed` after publishing bot/shared-user
-  authorization recovery coverage; fetch confirmed local and remote IDs match.
+  `ff2301abbb01bd4d7b0beca05f7bd26cce708cf0` after publishing owner-scoped
+  bot identity reads; fetch confirmed local and remote IDs match.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -635,8 +635,10 @@ external services.
   `007d4e0e52cc42a9c629111cc0c0b33984078cf4`, format, all-target check, focused
   bot/platform integration tests, full suite (205 passed, 0 failed; 0 doc
   tests), and `git diff --check` passed.
-- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged. Ready to publish
-  on `matter-beta`; H remains in progress.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged.
+- Commit `ff2301abbb01bd4d7b0beca05f7bd26cce708cf0` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. H remains
+  in progress; no stable branch promotion was made.
 
 ## Additional requested ecosystem scope
 
