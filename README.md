@@ -24,9 +24,10 @@ width="100%"
 
 Matter-Base is an **incomplete development library**. The current repository
 contains a runtime/context foundation, in-memory event and service
-registries, translation lookup, a persistent bot identity registry, a persistent
-legal-consent store, and cryptographic key/envelope and provider-authentication
-components. The bot
+registries, translation lookup, a persistent bot identity registry, an
+optionally persistent shared-user registry with explicitly authorized external
+identity links and bot-scoped user data, a persistent legal-consent store, and
+cryptographic key/envelope and provider-authentication components. The bot
 platform capabilities listed in the long-term architecture are not yet
 implemented. See [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
@@ -36,8 +37,8 @@ verified stage assessment.
 Matter-Base is intended to host reusable Rust capabilities consumed through
 public APIs. It must remain independent of Matter-Bot and platform adapters.
 This repository currently does **not** implement WhatsApp, Telegram, Discord,
-shared application users, general authorization roles,
-command routing, socket control, plugin execution, or a sandbox.
+general authorization roles, command routing, socket control, plugin execution,
+or a sandbox.
 
 Bot registration requires an owner ID. Consumers must derive actor IDs from
 authenticated requests before calling owner-management APIs. Owners can manage
@@ -59,9 +60,10 @@ service.
 | Component | Current behavior | State |
 | --- | --- | --- |
 | `core::config` | Default application name, environment, debug flag, and locale | Partial; no validation/loading |
-| `core::runtime` | Opens legal storage, builds a context, owns module initialize/start/shutdown lifecycle; can inject a bot registry | Partial; default bot registry is in memory, no built-in modules are registered |
-| `core::context` | Shares event bus, typed service registry, legal store, and bot registry | Implemented at this scope |
-| `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; general roles and shared user validation remain pending |
+| `core::runtime` | Opens legal storage, builds a context, owns module initialize/start/shutdown lifecycle; can inject bot and user registries | Partial; default registries are in memory, no built-in modules are registered |
+| `core::context` | Shares event bus, typed service registry, legal store, bot registry, and user registry | Implemented at this scope |
+| `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; general roles remain pending |
+| `users` | Global application user IDs, explicit unique external identity links, and per-bot/user key-value data in memory or SQLite | Implemented with an injected `UserAuthorizer`; the application authenticates principals and enforces ownership and bot scope |
 | `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish`; `publish_checked` catches unwinding panics per listener, continues dispatch, and returns an error |
 | `services` | In-memory type-indexed service registration and retrieval | Basic; no lifecycle management |
 | `i18n` | In-memory translation catalogs and key fallback | Basic; no bundled catalogs or locale validation |
@@ -77,6 +79,7 @@ Matter-Base platform.
 ```text
 src/
   bots/       Bot identity contracts and in-memory/SQLite registry
+  users/      Shared users, explicit external identity links, scoped user data
   core/       Configuration, shared context, logging, runtime
   events/     In-memory event bus
   i18n/       Translation catalog lookup
@@ -128,7 +131,12 @@ fn main() -> anyhow::Result<()> {
 The default `MatterRuntime::new` path is `data/legal/registry.db`. Tests and
 applications that manage storage separately can provide a `LegalStore` with
 `MatterRuntime::with_legal_store`. Use `open_with_bot_registry` with
-`BotRegistry::open_sqlite` when bot identities must survive restarts.
+`BotRegistry::open_sqlite` when bot identities must survive restarts. Use
+`open_with_registries` with `UserRegistry::open_sqlite` to persist shared users,
+explicit external identity links, and bot-scoped user data. User operations need
+a `UserPrincipal` backed by the consuming application's `UserAuthorizer`; never
+link platform identities by matching names or IDs automatically. Keep secrets,
+platform credentials, and sessions out of the user data store.
 
 ## Security and persistence notes
 
@@ -147,9 +155,14 @@ applications that manage storage separately can provide a `LegalStore` with
   authenticate platform identities or provide the shared user directory.
   Authorization failures are returned as a generic denial without forwarding
   policy-provider diagnostics.
-- The runtime persists only the legal store. Bot registrations, users, socket
-  state, configuration, events, and service metadata do not have persistence
-  implementations here.
+- The standard runtime persists only the legal store. Bot registrations and
+  shared users have independent SQLite stores that must be explicitly injected
+  to survive restarts. Socket state, configuration, events, and service
+  metadata do not have persistence implementations here.
+- Shared user data is a generic, bounded text value store. The consuming
+  application must reject unauthorized owners and unknown bot instance IDs in
+  its `UserAuthorizer`; the user store does not itself query the bot registry.
+  Do not put credentials, sessions, secrets, or sensitive personal data in it.
 - Envelope encryption validates metadata, uses the existing
   XChaCha20-Poly1305 format, and caps plaintext/ciphertext at 16 MiB before
   encryption or Base64 decoding. Keep compatibility when changing that contract.
@@ -193,8 +206,7 @@ accept it directly from an untrusted request field.
 
 ## Roadmap boundary
 
-Shared users and their explicit identity links, general role inheritance,
-universal command routing, Control Plane/socket policy,
+General role inheritance, universal command routing, Control Plane/socket policy,
 connection and messaging contracts, plugin validation, and effective sandbox
 isolation remain pending. Matter-Bot must not be built on this crate until
 those core contracts are implemented, integrated, documented, and tested.

@@ -19,6 +19,7 @@ use crate::core::config::CoreConfig;
 use crate::core::context::MatterContext;
 use crate::legal::{LegalPrincipal, LegalStore};
 use crate::modules::{CoreModule, ModuleManager};
+use crate::users::UserRegistry;
 use anyhow::Result;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -64,6 +65,21 @@ impl MatterRuntime {
         })
     }
 
+    /// Opens the runtime with explicit bot and shared-user registries.
+    pub fn open_with_registries(
+        config: CoreConfig,
+        legal_database: impl AsRef<Path>,
+        bots: BotRegistry,
+        users: UserRegistry,
+    ) -> Result<Self> {
+        let legal = LegalStore::open(legal_database)?;
+        Ok(Self {
+            config,
+            context: MatterContext::with_registries(legal, bots, users),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
+        })
+    }
+
     /// Construye el Runtime con un almacén legal existente.
     ///
     /// Útil para pruebas y para integraciones que administran
@@ -81,6 +97,20 @@ impl MatterRuntime {
         Self {
             config,
             context: MatterContext::with_bot_registry(legal, bots),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
+        }
+    }
+
+    /// Builds a runtime with explicit legal, bot, and shared-user stores.
+    pub fn with_stores_and_users(
+        config: CoreConfig,
+        legal: LegalStore,
+        bots: BotRegistry,
+        users: UserRegistry,
+    ) -> Self {
+        Self {
+            config,
+            context: MatterContext::with_registries(legal, bots, users),
             modules: Arc::new(Mutex::new(ModuleManager::new())),
         }
     }

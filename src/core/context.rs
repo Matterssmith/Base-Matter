@@ -17,6 +17,7 @@ use crate::bots::BotRegistry;
 use crate::events::EventBus;
 use crate::legal::{LegalPrincipal, LegalStore};
 use crate::services::ServiceRegistry;
+use crate::users::UserRegistry;
 use std::sync::Arc;
 
 /// Contexto compartido por los componentes del Runtime.
@@ -26,6 +27,7 @@ pub struct MatterContext {
     pub services: Arc<ServiceRegistry>,
     pub legal: Arc<LegalStore>,
     pub bots: Arc<BotRegistry>,
+    pub users: Arc<UserRegistry>,
 }
 
 impl MatterContext {
@@ -36,11 +38,17 @@ impl MatterContext {
 
     /// Creates a context with an explicitly configured bot identity registry.
     pub fn with_bot_registry(legal: LegalStore, bots: BotRegistry) -> Self {
+        Self::with_registries(legal, bots, UserRegistry::in_memory())
+    }
+
+    /// Creates a context with explicitly configured bot and shared-user stores.
+    pub fn with_registries(legal: LegalStore, bots: BotRegistry, users: UserRegistry) -> Self {
         Self {
             events: Arc::new(EventBus::new()),
             services: Arc::new(ServiceRegistry::new()),
             legal: Arc::new(legal),
             bots: Arc::new(bots),
+            users: Arc::new(users),
         }
     }
 

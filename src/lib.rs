@@ -20,6 +20,7 @@ pub mod legal;
 pub mod modules;
 pub mod security;
 pub mod services;
+pub mod users;
 
 pub use bots::{
     BotAction, BotAuditRecord, BotIdentity, BotIdentityStore, BotRegistry,
@@ -41,3 +42,8 @@ pub use legal::{
 pub use modules::{CoreModule, ModuleManager};
 pub use security::encryption;
 pub use services::ServiceRegistry;
+
+pub use users::{
+    ExternalIdentity, UserAction, UserAuthorizationRequest, UserAuthorizer, UserPrincipal,
+    UserRegistry, UserStore,
+};

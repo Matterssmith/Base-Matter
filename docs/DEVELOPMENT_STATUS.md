@@ -8,12 +8,12 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Previous synchronized base commit: `b9ca1d0e46c3f63428d9545da7e9923f6b86b129`
-- Latest confirmed published checkpoint: `348431451771822581505484b4d042c098e92cba`
+- Previous synchronized base commit: `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`
+- Latest confirmed published checkpoint: `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `348431451771822581505484b4d042c098e92cba` after publishing the lifecycle
+  `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6` after publishing the lifecycle
   resilience tests; fetch confirmed the local and remote commit IDs match.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
@@ -38,13 +38,13 @@ not ready for Matter-Bot.
 | Capability | Status | Evidence / limitation |
 | --- | --- | --- |
 | Runtime and lifecycle | PARTIAL | `MatterRuntime` owns a shared `ModuleManager` and propagates initialize/start/shutdown errors; no built-in modules are registered and services have no lifecycle. |
-| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates IDs, persists validated identities, and allocates unique names; owner-only transfer/removal, limited co-owner scope, legacy recovery authorization, and audit history work. Shared-user validation and general role/resource authorization remain absent. |
-| Shared application users and bot data isolation | ABSENT | `legal_users` are legal-consent subjects, not a shared application user system. |
+| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates IDs, persists validated identities, and allocates unique names; owner-only transfer/removal, limited co-owner scope, legacy recovery authorization, and audit history work. General role/resource authorization remains absent. |
+| Shared application users and bot data isolation | PARTIAL | `src/users` provides in-memory/SQLite global IDs, explicit unique external links, and bot/user/key-scoped text data with authorization hooks. A consuming application's `UserAuthorizer` must authenticate principals and verify bot existence/ownership; user storage does not consult the bot registry or implement general roles. |
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
-| Persistence and recovery | PARTIAL | SQLite persists bot identities and legal documents/decisions. No config/socket/service persistence or ecosystem-wide migration coordinator; the bot registry has its own transactional schema versions. |
+| Persistence and recovery | PARTIAL | SQLite persists bot identities, shared users/identity links/bot-scoped data, and legal documents/decisions. No config/socket/service persistence or ecosystem-wide migration coordinator; each persistent component has its own versioned schema. |
 | Events and messaging | PARTIAL | Named synchronous in-memory event callbacks exist; no durable events or messaging contract. |
 | Router and command registry | ABSENT | No implementation. |
-| Middleware, roles, permissions, authorization | PARTIAL | Bot owner/co-owner checks and an injectable legal action/resource authorization contract exist; no shared user identity, general role inheritance, or socket/resource policy engine. |
+| Middleware, roles, permissions, authorization | PARTIAL | Bot owner/co-owner checks and injectable user/legal action/resource authorization contracts exist; no general role inheritance or socket/resource policy engine. |
 | Control Plane, sockets, activation | ABSENT | No implementation; socket ownership/policies cannot be verified. |
 | Services and connections | PARTIAL | Typed in-memory service registry only; no connection manager or lifecycle. |
 | Plugins, extensions, sandbox | ABSENT | No manifest validation, isolation, or resource limits. |
@@ -438,7 +438,7 @@ verification is the only specifically identified external dependency; most
 remaining blockers are missing code and contracts in this repository, not
 external services.
 
-## Latest checkpoint (published)
+## Previous published checkpoint
 
 - Branch: `matter-beta`; after safe stash, fetch, reset, and stash reapply,
   both `HEAD` and `origin/matter-beta` were
@@ -452,23 +452,60 @@ external services.
   0 updated, 1 unchanged. No README issue applies to these test-only changes.
 - Verification passed: `cargo fmt --all`, `cargo check --all-targets`,
   `cargo test` (191 tests, 0 failed; 0 doc tests), and `git diff --check`.
-- This checkpoint is not yet committed or pushed. Update this record with its
-  published SHA after the push and fetch confirmation.
+- Commit `348431451771822581505484b4d042c098e92cba` was pushed to
+  `origin/matter-beta`; fetch confirmed the published SHA. No stable branch
+  promotion was made.
+
+## Current local work — shared user registry
+
+- Implemented `UserRegistry`, `UserPrincipal`, `UserAuthorizer`, and a
+  replaceable `UserStore`; provided in-memory and SQLite stores.
+- Identity links are explicit and unique by provider plus external subject.
+  Repeated links to the same user are idempotent; linking the same external
+  identity to another user fails. Matching identifiers across providers remain
+  distinct.
+- Bot data is keyed by bot instance, shared user ID, and data key. Every
+  create/link/unlink/resolve/read/write/delete operation requires the supplied
+  authorization policy. The application must authenticate principal IDs and
+  verify bot existence/ownership; that integration is not yet provided here.
+- Added optional user-registry injection to `MatterContext` and
+  `MatterRuntime::open_with_registries` / `with_stores_and_users`.
+- Added tests for SQLite reopen recovery, bot isolation, denial sanitization,
+  provider namespace separation, link ownership, and concurrent link claims.
+- Files changed: `src/users/mod.rs` (new), `src/lib.rs`,
+  `src/core/context.rs`, `src/core/runtime.rs`, `tests/users.rs` (new),
+  `README.md`, `docs/architecture.md`, and this ledger. No files deleted.
+- Verification before the recovery interruption: `cargo fmt --all`,
+  `cargo check --all-targets`, full `cargo test` (195 passed, 0 failed; 0 doc
+  tests), `git diff --check`, and focused user tests (5 passed after the runtime
+  injection/recovery case). After restoring the working tree, the full sequence
+  passed again: `cargo fmt --all`, `cargo check --all-targets`, `cargo test`
+  (196 passed, 0 failed; 0 doc tests), and `git diff --check`. Platform flow
+  passed (3); no live services were used.
+- README audit for this work: 1 found, 1 reviewed, 1 updated, 0 unchanged.
+- This work is local and not yet committed/pushed. The published branch tip at
+  the start was `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`.
+- Recovery note: an earlier stash attempt failed while intent-to-add entries
+  were present; a separate preserved bot-registry stash was partially applied
+  and conflicted. It remains in `git stash list` and was not discarded or
+  merged. Its files and conflict snapshots were copied to
+  `/tmp/Matter-Base-recovery-20261116`. The user-registry work was restored from
+  Git objects `d1f504f…` (tracked files) and `e213e3b…` (new source/tests).
+  Review the preserved bot stash later; its alternative in-memory bot registry
+  conflicts with the existing persistent bot registry and should not be merged
+  without a deliberate architecture review.
 
 ## Exact next task to resume
 
-1. Continue H by auditing legal authorization denial/error paths and remaining
+1. Complete the user-registry checkpoint: inspect the staged full diff, audit
+   all README files (1 exists), commit to `matter-beta`, push, fetch, and verify
+   the published SHA. Do not promote to `matter`.
+2. Continue H by auditing legal authorization denial/error paths and remaining
    provider, key, and bot-registry corruption cases. Add tests for confirmed
    defects.
-2. Implement persistent shared application users with explicit, authorized
-   external-identity links and bot-scoped user data. Authentication must enter
-   through an explicit trusted-principal contract; never infer identity links
-   from matching platform identifiers. Enforce bot scope at data access
-   boundaries and verify persistence, validation, concurrency, and recovery.
-3. Continue I with cross-module resilience around runtime, bot ownership,
-   provider failures, legal-store errors, and the user registry. The current
-   suite has 191 tests; router, sockets, plugins, general resource
-   authorization, and live services remain uncovered.
+3. Continue I with cross-module resilience around bot ownership, provider
+   failures, legal-store errors, and shared users. Router, sockets, plugins,
+   general resource authorization, and live services remain uncovered.
 4. Complete J, K, and L in order. Reassess capabilities from actual code and
    keep Matter-Bot blocked until all readiness criteria are satisfied.
 5. At each checkpoint, review every README, update this ledger, commit and push
