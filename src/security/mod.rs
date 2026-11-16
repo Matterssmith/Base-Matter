@@ -1,6 +1,8 @@
-
 /*
  * Matter-Base — Security Module
+ *
+ * Expone los componentes de seguridad, autenticación,
+ * autorización y administración de claves.
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
@@ -25,7 +27,13 @@ pub use encryption::{
 };
 
 pub use key_manager::KeyManager;
-pub use key_provider::KeyProvider;
+
+pub use key_provider::{
+    create_provider_binding_proof,
+    derive_provider_binding_key,
+    BoundKeyProvider,
+    KeyProvider,
+};
 
 pub use provider_authenticator::{
     ProviderAssertion,
