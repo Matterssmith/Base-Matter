@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `41afb8325c89aaa5c68f7365dcc21b03e574628e`
+- Latest confirmed checkpoint commit: `ef3055e16d67cb79e13b75c30bb5e82e52e723d4`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `41afb8325c89aaa5c68f7365dcc21b03e574628e` before schema migration work.
+  `ef3055e16d67cb79e13b75c30bb5e82e52e723d4` before registration rollback coverage.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -316,4 +316,4 @@ recovery, atomic component-scoped schema migration, future-version rejection,
 and cross-connection concurrency. Ownership, authorization,
 controlled deletion remains pending; component-scoped schema versioning is
 transactional and rejects unsupported future versions. The full suite passed
-with 173 tests; `cargo check --all-targets` and `git diff --check` passed.
+with 174 tests; `cargo check --all-targets` and `git diff --check` passed.

@@ -175,3 +175,34 @@ fn sqlite_registry_rejects_newer_schema_without_rewriting_it() {
         .unwrap();
     assert_eq!(version, 99);
 }
+
+#[test]
+fn failed_identity_write_rolls_back_and_name_can_be_reused() {
+    let directory = TemporaryDirectory::new();
+    let database = directory.0.join("interrupted-bot.db");
+    let registry = BotRegistry::open_sqlite(&database).unwrap();
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    connection
+        .execute_batch(
+            "CREATE TRIGGER fail_bot_identity_insert
+             BEFORE INSERT ON bot_identities
+             BEGIN
+                 SELECT RAISE(ABORT, 'simulated storage interruption');
+             END;",
+        )
+        .unwrap();
+
+    assert!(registry
+        .register("family-a", "release-1", "matter")
+        .is_err());
+    assert!(registry.list().unwrap().is_empty());
+
+    connection
+        .execute_batch("DROP TRIGGER fail_bot_identity_insert;")
+        .unwrap();
+    let registered = registry
+        .register("family-a", "release-1", "matter")
+        .unwrap();
+    assert_eq!(registered.display_name(), "matter");
+    assert_eq!(registry.list().unwrap(), vec![registered]);
+}
