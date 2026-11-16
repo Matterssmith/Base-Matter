@@ -157,7 +157,9 @@ impl AuthenticatedProvider {
             .as_ref()
             .ok_or_else(|| anyhow!("Authenticated session has no provider binding key"))?;
 
-        let provider_vault_id = provider.vault_id()?;
+        let provider_vault_id = provider
+            .vault_id()
+            .map_err(|_| anyhow!("Bound provider Vault lookup failed"))?;
 
         if provider_vault_id != self.identity.vault_id() {
             bail!("Provider Vault does not match authenticated Vault");
@@ -174,7 +176,9 @@ impl AuthenticatedProvider {
             self.identity.vault_id(),
         )?;
 
-        let received_proof = provider.binding_proof(&message)?;
+        let received_proof = provider
+            .binding_proof(&message)
+            .map_err(|_| anyhow!("Provider binding proof failed"))?;
 
         let expected_proof = create_provider_binding_proof(binding_key, &message)?;
 

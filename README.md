@@ -139,6 +139,9 @@ applications that manage storage separately can provide a `LegalStore` with
   both per-scope and global capacity are bounded. It is not a distributed store.
 - Authenticated provider assertions are limited to 16 KiB, and a key provider
   may return at most 4,096 key IDs per load. Oversized inputs fail closed.
+- Errors returned by injected key and binding providers are replaced with
+  operation-level messages before they cross the integration boundary; this
+  prevents provider-supplied diagnostics from exposing secrets through logs.
 - Never add platform credentials, WhatsApp sessions, master keys, or private
   provider material to source, documentation, or logs.
 

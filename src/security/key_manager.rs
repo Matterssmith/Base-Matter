@@ -9,7 +9,7 @@
  */
 
 use crate::security::key_provider::KeyProvider;
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
 use zeroize::Zeroizing;
 
@@ -102,20 +102,26 @@ impl KeyManager {
         provider: &dyn KeyProvider,
         expected_vault_id: Option<&str>,
     ) -> Result<()> {
-        let vault_id = provider.vault_id()?;
+        let vault_id = provider
+            .vault_id()
+            .map_err(|_| anyhow!("Key provider Vault lookup failed"))?;
         Self::validate_vault_id(&vault_id)?;
 
         if expected_vault_id.is_some_and(|expected| expected != vault_id) {
             bail!("Provider Vault does not match authenticated Vault");
         }
 
-        let key_ids = provider.key_ids()?;
+        let key_ids = provider
+            .key_ids()
+            .map_err(|_| anyhow!("Key provider key list retrieval failed"))?;
 
         if key_ids.len() > MAX_PROVIDER_KEYS {
             bail!("Provider returned too many keys");
         }
 
-        let active_key_id = provider.active_key_id()?;
+        let active_key_id = provider
+            .active_key_id()
+            .map_err(|_| anyhow!("Key provider active key lookup failed"))?;
 
         if let Some(active_id) = active_key_id.as_deref() {
             Self::validate_key_id(active_id)?;
@@ -130,7 +136,9 @@ impl KeyManager {
                 bail!("Duplicate key identifier from provider");
             }
 
-            let key = provider.load_key(&key_id)?;
+            let key = provider
+                .load_key(&key_id)
+                .map_err(|_| anyhow!("Key provider key retrieval failed"))?;
             loaded_keys.insert(key_id, key);
         }
 

@@ -50,7 +50,7 @@ impl KeyProvider for MockKeyProvider {
 
     fn load_key(&self, key_id: &str) -> Result<Zeroizing<[u8; 32]>> {
         if self.failing_key_id.as_deref() == Some(key_id) {
-            bail!("Simulated provider failure");
+            bail!("upstream diagnostic leaked-secret-token");
         }
 
         let key = self
@@ -121,7 +121,9 @@ fn failed_load_preserves_existing_keys() {
     let mut provider = MockKeyProvider::new();
     provider.failing_key_id = Some("key-1".to_owned());
 
-    assert!(manager.load_from_provider(&provider).is_err());
+    let error = manager.load_from_provider(&provider).unwrap_err();
+    assert!(!error.to_string().contains("leaked-secret-token"));
+    assert_eq!(error.to_string(), "Key provider key retrieval failed");
 
     assert_eq!(manager.len(), 1);
     assert!(manager.contains("existing-key"));

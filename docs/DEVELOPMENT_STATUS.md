@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `5c2b1db6e1c082212892852e20924b44aedac763`
+- Latest confirmed checkpoint commit: `b788929235653a829f007f1ef38407b1d39ff4a9`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `5c2b1db6e1c082212892852e20924b44aedac763` before replay-store expiry cleanup.
+  `b788929235653a829f007f1ef38407b1d39ff4a9` before provider error sanitization.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -165,6 +165,8 @@ After formatting, the following commands completed successfully:
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
 - Full `cargo test` after global replay-store expiry cleanup — **167 passed, 0 failed**;
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
+- Full `cargo test` after provider error sanitization — **167 passed, 0 failed**;
+  doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
 - Local Markdown-link scan — all relative links resolved.
 - Secret-pattern scan of the tracked diff — no matches. This is a pattern
   scan, not a comprehensive secret detector.
@@ -197,6 +199,9 @@ platform capabilities or a live external integration.
 - README files reviewed for global replay-store expiry cleanup: **1**.
 - README files updated for global replay-store expiry cleanup: **1**.
 - README files with no changes for global replay-store expiry cleanup: **0**.
+- README files reviewed for provider error sanitization: **1**.
+- README files updated for provider error sanitization: **1**.
+- README files with no changes for provider error sanitization: **0**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
 - Problems found: documented JavaScript/Node project structure and `npm`
@@ -243,7 +248,9 @@ platform capabilities or a live external integration.
   assertions across independent connections and verifier restarts; four focused
   tests pass. Legal store tests cover concurrent idempotent document
   registration and rollback after a simulated SQLite write failure. Envelope
-  payloads are capped at 16 MiB before encryption or Base64 decoding.
+  payloads are capped at 16 MiB before encryption or Base64 decoding. Errors
+  from key, binding, and proof providers are sanitized at module boundaries; a
+  regression test confirms an upstream secret-like diagnostic is not returned.
 - I: **Not complete.** Added runtime legal-store close/reopen recovery and
   changing-provider-identity tests. Broad bot/authorization/socket/service
   integration and resilience tests cannot pass until those subsystems exist.
@@ -257,7 +264,7 @@ platform capabilities or a live external integration.
   remain outstanding.
 - Matter-Bot: **Blocked by unmet Matter-Base criteria. Do not start.**
 
-Checkpoint `5c2b1db6e1c082212892852e20924b44aedac763` refined module cleanup.
+Checkpoint `b788929235653a829f007f1ef38407b1d39ff4a9` bounded replay storage across scopes. Checkpoint `5c2b1db6e1c082212892852e20924b44aedac763` refined module cleanup.
 Checkpoint `cd351b5c2267fb5ace70fa51b163a2dcb64b07ab` added the module lifecycle
 coordinator. Earlier checkpoint `ba100c45433f145d9863e8aeffbb5bce29775b18`
 added 16 MiB envelope payload bounds; `e48ce509add1e08eaed63dfda3917b3f5d14accd`
@@ -276,7 +283,7 @@ external services.
    do not discard `Cargo.lock` or `target/` without inspecting ownership.
 3. Continue H by auditing and testing the existing implementations, beginning
    with legal-store transaction/recovery behavior and security-provider
-   boundaries, including global replay cleanup and bounded storage; caller-owned module lifecycle coordination is now implemented;
+   boundaries, including replay cleanup/capacity and sanitized provider errors; caller-owned module lifecycle coordination is now implemented;
    the event/service/i18n lock and callback pass has been audited,
    legal-store concurrency/rollback tests pass, and envelope input sizes are
    bounded before decoding. Make

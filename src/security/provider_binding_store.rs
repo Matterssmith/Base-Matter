@@ -51,7 +51,10 @@ impl ProviderBindingResolver {
         Self::validate_identifier(provider_id)?;
         Self::validate_identifier(vault_id)?;
 
-        let binding_key = self.store.load_binding_key(provider_id, vault_id)?;
+        let binding_key = self
+            .store
+            .load_binding_key(provider_id, vault_id)
+            .map_err(|_| anyhow::anyhow!("Provider binding key retrieval failed"))?;
 
         if binding_key.iter().all(|byte| *byte == 0) {
             bail!("Provider binding key is invalid");
