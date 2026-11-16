@@ -16,14 +16,6 @@ use zeroize::Zeroizing;
 type HmacSha256 = Hmac<Sha256>;
 
 /// Proveedor externo de claves criptográficas.
-///
-/// Las implementaciones deben:
-/// - Autenticar la identidad solicitante.
-/// - Autorizar el acceso a cada clave.
-/// - Verificar la integridad y autenticidad de los registros.
-/// - Comprobar el Vault y el formato de los registros.
-/// - Entregar las claves en memoria protegida.
-/// - No registrar ni persistir claves en texto plano.
 pub trait KeyProvider: Send + Sync {
     /// Devuelve el identificador del Vault consultado.
     fn vault_id(&self) -> Result<String>;
@@ -32,56 +24,29 @@ pub trait KeyProvider: Send + Sync {
     fn key_ids(&self) -> Result<Vec<String>>;
 
     /// Devuelve el identificador de la clave activa.
-    ///
-    /// `None` indica que no existe una clave activa.
     fn active_key_id(&self) -> Result<Option<String>>;
 
     /// Recupera una clave mediante su identificador.
     fn load_key(&self, key_id: &str) -> Result<Zeroizing<[u8; 32]>>;
 }
 
-/// Proveedor que demuestra posesión del secreto autenticado.
+/// Proveedor que demuestra posesión de un secreto exclusivo.
 ///
-/// La prueba debe calcularse con el secreto privado del proveedor.
-/// No debe aceptar como válida una identidad o prueba suministrada
-/// libremente por el solicitante.
+/// El secreto debe ser independiente de la clave usada para
+/// cifrar las afirmaciones de autenticación.
 pub trait BoundKeyProvider: KeyProvider {
-    /// Calcula una prueba HMAC-SHA-256 sobre el mensaje recibido.
+    /// Calcula una prueba HMAC sobre el desafío recibido.
     fn binding_proof(&self, message: &[u8]) -> Result<[u8; 32]>;
 }
 
-/// Deriva una clave específica para vinculación de proveedores.
+/// Calcula una prueba HMAC-SHA-256 de vinculación.
 ///
-/// La separación de dominio evita reutilizar directamente
-/// la clave de cifrado de afirmaciones para otros protocolos.
-pub fn derive_provider_binding_key(
-    authentication_key: &[u8; 32],
-) -> Result<Zeroizing<[u8; 32]>> {
-    let mut mac = HmacSha256::new_from_slice(authentication_key)
-        .map_err(|_| anyhow!("Invalid provider authentication key"))?;
-
-    mac.update(b"matter-base:provider-binding-key:v1");
-
-    let output = mac.finalize().into_bytes();
-    let mut derived = Zeroizing::new([0u8; 32]);
-
-    derived.copy_from_slice(&output);
-
-    Ok(derived)
-}
-
-/// Genera la prueba que debe devolver el proveedor.
-///
-/// El adaptador del proveedor debe conservar su secreto
-/// fuera del repositorio y de los registros de ejecución.
+/// El secreto debe proceder de una configuración de confianza.
 pub fn create_provider_binding_proof(
-    authentication_key: &[u8; 32],
+    binding_key: &[u8; 32],
     message: &[u8],
 ) -> Result<[u8; 32]> {
-    let binding_key =
-        derive_provider_binding_key(authentication_key)?;
-
-    let mut mac = HmacSha256::new_from_slice(&binding_key)
+    let mut mac = HmacSha256::new_from_slice(binding_key)
         .map_err(|_| anyhow!("Invalid provider binding key"))?;
 
     mac.update(message);
