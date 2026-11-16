@@ -391,3 +391,50 @@ fn co_owner_scope_cannot_transfer_or_delete_and_is_audited() {
         ["register", "add_co_owner", "remove_co_owner"]
     );
 }
+
+#[test]
+fn concurrent_owner_transfers_from_separate_connections_have_one_winner() {
+    use std::sync::Barrier;
+
+    let directory = TemporaryDirectory::new();
+    let database = directory.0.join("concurrent-owner-transfer.db");
+    let initial = BotRegistry::open_sqlite(&database).unwrap();
+    let bot = initial
+        .register("family-a", "release-1", "matter", "owner-1")
+        .unwrap();
+    let first = BotRegistry::new(std::sync::Arc::new(
+        SqliteBotIdentityStore::open(&database).unwrap(),
+    ));
+    let second = BotRegistry::new(std::sync::Arc::new(
+        SqliteBotIdentityStore::open(&database).unwrap(),
+    ));
+    let barrier = Arc::new(Barrier::new(3));
+    let first_barrier = Arc::clone(&barrier);
+    let bot_id = bot.instance_id().to_owned();
+    let first_thread = thread::spawn(move || {
+        first_barrier.wait();
+        first.transfer_owner(&bot_id, "owner-1", "owner-2")
+    });
+    let second_barrier = Arc::clone(&barrier);
+    let bot_id = bot.instance_id().to_owned();
+    let second_thread = thread::spawn(move || {
+        second_barrier.wait();
+        second.transfer_owner(&bot_id, "owner-1", "owner-3")
+    });
+
+    barrier.wait();
+    let results = [first_thread.join().unwrap(), second_thread.join().unwrap()];
+    assert_eq!(results.iter().filter(|result| result.is_ok()).count(), 1);
+
+    let recovered = BotRegistry::open_sqlite(&database).unwrap();
+    let persisted = recovered.get(bot.instance_id()).unwrap().unwrap();
+    assert!(matches!(persisted.owner_id(), Some("owner-2" | "owner-3")));
+    let audit = recovered.audit_history(bot.instance_id()).unwrap();
+    assert_eq!(
+        audit
+            .iter()
+            .filter(|record| record.action == "transfer_owner")
+            .count(),
+        1
+    );
+}

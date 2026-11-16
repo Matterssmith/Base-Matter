@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `1a4750ca90572701192451d9cd635d6c3e9eb495`
+- Latest confirmed checkpoint commit: `182bee7b9709dd99df73d9b8e45302dee949f4fb`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `1a4750ca90572701192451d9cd635d6c3e9eb495` after the owner/co-owner checkpoint push.
+  `182bee7b9709dd99df73d9b8e45302dee949f4fb` before owner-transfer concurrency coverage.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -169,6 +169,8 @@ After formatting, the following commands completed successfully:
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
 - Full `cargo test` after owner/co-owner enforcement — **179 passed, 0 failed**;
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
+- Targeted independent-connection owner-transfer race — one winner; persisted
+  owner and one transfer audit event verified.
 - Local Markdown-link scan — all relative links resolved.
 - Secret-pattern scan of the tracked diff — no matches. This is a pattern
   scan, not a comprehensive secret detector.
@@ -233,6 +235,9 @@ platform capabilities or a live external integration.
 - README files reviewed for co-owner code example and auth boundary: **1**.
 - README files updated for co-owner code example and auth boundary: **1**.
 - README files with no changes for co-owner code example and auth boundary: **0**.
+- README files reviewed for owner-transfer concurrency test: **1**.
+- README files updated for owner-transfer concurrency test: **0**.
+- README files with no changes for owner-transfer concurrency test: **1**.
 - README files with no changes for runtime registry injection: **0**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
@@ -345,14 +350,15 @@ Bot identity/ownership implementation in checkpoint `1a4750ca90572701192451d9cd6
 validation, generated instance IDs, atomic unique names, persistence recovery,
 transactional component-scoped schema migrations, future-version rejection,
 cross-connection concurrency, owner-only changes/deletion, bounded co-owner
-authority, legacy owner recovery hooks, and persistent ownership audit records.
+authority, legacy owner recovery hooks, persistent ownership audit records, and a
+  separate-connection owner-transfer race with one winner.
 Owner/co-owner operations use point-of-write authorization and transactional
 audit records; legacy unowned records require an injected recovery authorizer.
 Owner IDs must come from an authenticated application principal; this crate does
 not authenticate platform users or verify owner IDs against a shared user store.
 Component-scoped schema versioning is transactional and rejects unsupported
 future versions. The full suite passed
-with 179 tests; `cargo check --all-targets` and `git diff --check` passed. The
+with 180 tests; `cargo check --all-targets` and `git diff --check` passed. The
 README audit found 1 README, reviewed 1, updated 1, unchanged 0; all relative
 links resolve.
 Owner/co-owner checkpoint `1a4750ca90572701192451d9cd635d6c3e9eb495` was pushed to
