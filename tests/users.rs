@@ -239,3 +239,126 @@ fn runtime_uses_injected_persistent_shared_user_registry() {
     }
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn sqlite_user_schema_migration_rolls_back_on_conflict_and_retries() {
+    use rusqlite::{params, Connection};
+    let path = std::env::temp_dir().join(format!(
+        "matter-user-migration-{}-{}.db",
+        std::process::id(),
+        time::OffsetDateTime::now_utc().unix_timestamp_nanos()
+    ));
+    {
+        let connection = Connection::open(&path).unwrap();
+        connection.execute_batch(
+            "CREATE TABLE matter_schema_versions (component TEXT PRIMARY KEY NOT NULL, version INTEGER NOT NULL);
+             INSERT INTO matter_schema_versions(component,version) VALUES('users',0);
+             CREATE TABLE matter_users (legacy TEXT);"
+        ).unwrap();
+    }
+    assert!(UserRegistry::open_sqlite(&path).is_err());
+    {
+        let connection = Connection::open(&path).unwrap();
+        let version: i64 = connection
+            .query_row(
+                "SELECT version FROM matter_schema_versions WHERE component=?1",
+                params!["users"],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(version, 0);
+        let related_tables: i64 = connection.query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('user_external_identities','bot_user_data')",
+            [], |row| row.get(0)
+        ).unwrap();
+        assert_eq!(related_tables, 0);
+        connection.execute("DROP TABLE matter_users", []).unwrap();
+    }
+    let users = UserRegistry::open_sqlite(&path).unwrap();
+    let policy = Policy {
+        deny: AtomicBool::new(false),
+    };
+    assert!(users.create_user(&principal("app", &policy)).is_ok());
+    std::fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn sqlite_user_store_rejects_future_schema_without_rewriting_it() {
+    use rusqlite::{params, Connection};
+    let path = std::env::temp_dir().join(format!(
+        "matter-user-future-{}-{}.db",
+        std::process::id(),
+        time::OffsetDateTime::now_utc().unix_timestamp_nanos()
+    ));
+    {
+        let connection = Connection::open(&path).unwrap();
+        connection.execute_batch(
+            "CREATE TABLE matter_schema_versions (component TEXT PRIMARY KEY NOT NULL, version INTEGER NOT NULL);
+             CREATE TABLE protected_sentinel (value TEXT NOT NULL);"
+        ).unwrap();
+        connection
+            .execute(
+                "INSERT INTO matter_schema_versions(component,version) VALUES(?1,?2)",
+                params!["users", 2],
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO protected_sentinel(value) VALUES('preserved')",
+                [],
+            )
+            .unwrap();
+    }
+    assert!(UserRegistry::open_sqlite(&path).is_err());
+    {
+        let connection = Connection::open(&path).unwrap();
+        let version: i64 = connection
+            .query_row(
+                "SELECT version FROM matter_schema_versions WHERE component=?1",
+                params!["users"],
+                |row| row.get(0),
+            )
+            .unwrap();
+        let sentinel: String = connection
+            .query_row("SELECT value FROM protected_sentinel", [], |row| row.get(0))
+            .unwrap();
+        let user_tables: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='matter_users'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(version, 2);
+        assert_eq!(sentinel, "preserved");
+        assert_eq!(user_tables, 0);
+    }
+    std::fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn missing_user_data_write_is_rejected_without_a_partial_value() {
+    let users = UserRegistry::in_memory();
+    let policy = Policy {
+        deny: AtomicBool::new(false),
+    };
+    let principal = principal("app", &policy);
+    assert!(users
+        .set_bot_data("bot-a", "missing-user", "preference", "x", &principal)
+        .is_err());
+    assert_eq!(
+        users
+            .bot_data("bot-a", "missing-user", "preference", &principal)
+            .unwrap(),
+        None
+    );
+    assert!(users
+        .set_bot_data(
+            "bot-a",
+            "missing-user",
+            "large",
+            &"x".repeat(65_537),
+            &principal
+        )
+        .is_err());
+}

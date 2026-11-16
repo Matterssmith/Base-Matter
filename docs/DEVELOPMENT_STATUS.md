@@ -497,17 +497,34 @@ external services.
   conflicts with the existing persistent bot registry and should not be merged
   without a deliberate architecture review.
 
+## Current checkpoint — user-store resilience tests
+
+- Added SQLite migration rollback/retry coverage, future-schema rejection
+  without rewriting stored data, and rejection of writes to unregistered users
+  or over-limit values.
+- Changed files: `tests/users.rs` and this status ledger. No files created or
+  deleted. No production behavior changed in this checkpoint.
+- Verified after synchronizing with `origin/matter-beta` at
+  `81b48f5a1a42c927650ea4e9b5e3b9230c615bea`: `cargo fmt --all`,
+  `cargo check --all-targets`, focused user tests (8 passed), full `cargo test`
+  (199 passed, 0 failed; 0 doc tests), and `git diff --check` all passed.
+- README audit: 1 found, 1 reviewed, 0 updated, 1 unchanged; test-only changes
+  do not affect README claims.
+- This checkpoint is local and awaits its commit/push. The original separate
+  bot-registry stash remains preserved.
+
 ## Exact next task to resume
 
-1. Continue H by auditing legal authorization denial/error paths and remaining
-   provider, key, and bot-registry corruption cases. Add tests for confirmed
-   defects.
-2. Continue I with cross-module resilience around bot ownership, provider
+1. Complete this test-only checkpoint: commit/push to `matter-beta`, fetch,
+   and verify the published SHA.
+2. Continue H by auditing remaining provider, key, and bot-registry corruption
+   cases. Add tests for confirmed defects.
+3. Continue I with cross-module resilience around bot ownership, provider
    failures, legal-store errors, and shared users. Router, sockets, plugins,
    general resource authorization, and live services remain uncovered.
-3. Complete J, K, and L in order. Reassess capabilities from actual code and
+4. Complete J, K, and L in order. Reassess capabilities from actual code and
    keep Matter-Bot blocked until all readiness criteria are satisfied.
-4. At each checkpoint, review every README, update this ledger, commit and push
+5. At each checkpoint, review every README, update this ledger, commit and push
    to `matter-beta`, then fetch and verify the exact published SHA. Never claim
    Vault or platform integrations work without real verification.
 
