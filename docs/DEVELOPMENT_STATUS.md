@@ -9,12 +9,12 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`
-- Latest confirmed published checkpoint: `b1afcc84490de64436a909072bf4f15ae699d912`
+- Latest confirmed published checkpoint: `7ffe9c570033b0e50cd0ce4a00c902e3772d786a`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `b1afcc84490de64436a909072bf4f15ae699d912` after publishing the safe empty
-  key-provider handling; fetch confirmed local and remote IDs match.
+  `7ffe9c570033b0e50cd0ce4a00c902e3772d786a` after publishing the bounded
+  key-manager capacity; fetch confirmed local and remote IDs match.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -554,16 +554,14 @@ external services.
 
 ## Exact next task to resume
 
-1. Publish the key-capacity checkpoint to `matter-beta`, fetch, and confirm
-   the published SHA.
-2. Continue H by auditing remaining provider/key corruption cases; add tests
+1. Continue H by auditing remaining provider/key corruption cases; add tests
    for confirmed defects.
-3. Continue I with cross-module resilience around bot ownership, provider
+2. Continue I with cross-module resilience around bot ownership, provider
    failures, legal-store errors, and shared users. Router, sockets, plugins,
    general resource authorization, and live services remain uncovered.
-4. Complete J, K, and L in order. Reassess capabilities from actual code and
+3. Complete J, K, and L in order. Reassess capabilities from actual code and
    keep Matter-Bot blocked until all readiness criteria are satisfied.
-5. At each checkpoint, review every README, update this ledger, commit and push
+4. At each checkpoint, review every README, update this ledger, commit and push
    to `matter-beta`, then fetch and verify the exact published SHA. Never claim
    Vault or platform integrations work without real verification.
 
@@ -578,7 +576,10 @@ external services.
   `cargo check --all-targets`, focused key-provider tests (8 passed), full
   `cargo test` (203 passed, 0 failed; 0 doc tests), and `git diff --check`.
 - README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged; relative links
-  resolve. Ready to publish.
+  resolve.
+- Commit `7ffe9c570033b0e50cd0ce4a00c902e3772d786a` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. No stable
+  branch promotion was made.
 
 ## Additional requested ecosystem scope
 
