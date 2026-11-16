@@ -8,14 +8,14 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Previous synchronized base commit: `83daa87bf9df2f97656b2e1506f486ec2955766d`
+- Previous synchronized base commit: `b9ca1d0e46c3f63428d9545da7e9923f6b86b129`
 - Latest confirmed checkpoint before the current local work:
-  `83daa87bf9df2f97656b2e1506f486ec2955766d`
+  `b9ca1d0e46c3f63428d9545da7e9923f6b86b129`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `83daa87bf9df2f97656b2e1506f486ec2955766d` before runtime lifecycle
-  integration. Verify the published tip after its checkpoint push.
+  `b9ca1d0e46c3f63428d9545da7e9923f6b86b129` before the lifecycle resilience
+  tests. A fresh fetch and equality check are still required after publishing.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -439,31 +439,45 @@ verification is the only specifically identified external dependency; most
 remaining blockers are missing code and contracts in this repository, not
 external services.
 
+## Latest checkpoint (local, not yet published)
+
+- Branch: `matter-beta`; after safe stash, fetch, reset, and stash reapply,
+  both `HEAD` and `origin/matter-beta` were
+  `b9ca1d0e46c3f63428d9545da7e9923f6b86b129`. No conflicts; ignored
+  `target/` was preserved.
+- Added a module shutdown retry test and a cloned-runtime concurrent-start
+  integration test. They verify retained cleanup state and serialized lifecycle
+  callbacks.
+- Files changed: `src/modules/mod.rs`, `tests/platform_flow.rs`, and this
+  ledger. No files created or deleted. README audit: 1 found, 1 reviewed,
+  0 updated, 1 unchanged. No README issue applies to these test-only changes.
+- Verification passed: `cargo fmt --all`, `cargo check --all-targets`,
+  `cargo test` (191 tests, 0 failed; 0 doc tests), and `git diff --check`.
+- This checkpoint is not yet committed or pushed. Update this record with its
+  published SHA after the push and fetch confirmation.
+
 ## Exact next task to resume
 
-1. Re-read this file and the root README.
-2. Confirm the current branch, status, and remote tip. Preserve local work;
-   do not discard `Cargo.lock` or `target/` without inspecting ownership.
-3. Continue H by auditing runtime lifecycle edge cases: start failure/panic
-   cleanup, stop retries, concurrent calls through cloned runtimes, and module
-   registration boundaries. Then audit every legal authorization entry point, including
-   policy denial/error paths and role/resource ownership behavior. The new
-   contract delegates identity verification to the caller; it is not a user
-   directory or an authentication provider. Then continue remaining provider,
-   key, and bot-registry corruption cases. Add tests for every confirmed
-   defect. Do not invent a shared-user identity system until a trustworthy
-   authenticated-principal contract is available.
-4. Continue I by adding cross-module resilience cases around runtime startup,
-   bot ownership, provider failure, and legal-store errors. The current suite
-   passes 189 tests;
-   this does not cover absent router, sockets, plugins, general authorization,
-   or live external services. Keep Matter-Bot blocked.
-5. After each coherent checkpoint, audit every README, update this ledger,
-   commit to `matter-beta`, push the branch, then fetch and verify the published
-   SHA before continuing. Run the full verification sequence before release
-   readiness claims.
-6. Update this record after each completed stage. Do not mark H–L complete
-   until the corresponding criteria are implemented and verified.
+1. Finish the resilience checkpoint: inspect the full diff, commit to
+   `matter-beta`, push, fetch, and confirm that local and remote SHAs match.
+   Do not promote to `matter`.
+2. Continue H by auditing legal authorization denial/error paths and remaining
+   provider, key, and bot-registry corruption cases. Add tests for confirmed
+   defects.
+3. Implement persistent shared application users with explicit, authorized
+   external-identity links and bot-scoped user data. Authentication must enter
+   through an explicit trusted-principal contract; never infer identity links
+   from matching platform identifiers. Enforce bot scope at data access
+   boundaries and verify persistence, validation, concurrency, and recovery.
+4. Continue I with cross-module resilience around runtime, bot ownership,
+   provider failures, legal-store errors, and the user registry. The current
+   suite has 191 tests; router, sockets, plugins, general resource
+   authorization, and live services remain uncovered.
+5. Complete J, K, and L in order. Reassess capabilities from actual code and
+   keep Matter-Bot blocked until all readiness criteria are satisfied.
+6. At each checkpoint, review every README, update this ledger, commit and push
+   to `matter-beta`, then fetch and verify the exact published SHA. Never claim
+   Vault or platform integrations work without real verification.
 
 ## Additional requested ecosystem scope
 

@@ -220,6 +220,7 @@ mod tests {
     use crate::core::context::MatterContext;
     use crate::legal::LegalStore;
     use anyhow::{bail, Result};
+    use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex};
 
     struct TestModule {
@@ -287,6 +288,31 @@ mod tests {
             fail_start,
             fail_stop,
         })
+    }
+
+    struct RetryStopModule {
+        fail_once: Arc<AtomicBool>,
+    }
+
+    impl CoreModule for RetryStopModule {
+        fn name(&self) -> &str {
+            "retry-stop"
+        }
+
+        fn initialize(&self, _context: &MatterContext) -> Result<()> {
+            Ok(())
+        }
+
+        fn start(&self, _context: &MatterContext) -> Result<()> {
+            Ok(())
+        }
+
+        fn stop(&self, _context: &MatterContext) -> Result<()> {
+            if self.fail_once.swap(false, Ordering::SeqCst) {
+                bail!("simulated transient shutdown failure");
+            }
+            Ok(())
+        }
     }
 
     fn context() -> MatterContext {
@@ -397,6 +423,24 @@ mod tests {
 
         assert_eq!(*calls.lock().unwrap(), ["first:initialize", "first:stop"]);
         assert!(!manager.is_initialized("first"));
+    }
+
+    #[test]
+    fn failed_stop_retains_cleanup_state_for_retry() {
+        let mut manager = ModuleManager::new();
+        manager
+            .register(Box::new(RetryStopModule {
+                fail_once: Arc::new(AtomicBool::new(true)),
+            }))
+            .unwrap();
+        let context = context();
+        manager.initialize_all(&context).unwrap();
+        manager.start_all(&context).unwrap();
+
+        assert!(manager.stop_all(&context).is_err());
+        assert!(manager.is_started("retry-stop"));
+        assert!(manager.stop_all(&context).is_ok());
+        assert!(!manager.is_started("retry-stop"));
     }
 
     #[test]

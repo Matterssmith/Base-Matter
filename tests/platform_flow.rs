@@ -17,7 +17,7 @@ mod common;
 use common::{legal_admin, legal_user};
 use std::fs;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Barrier, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 struct TemporaryDirectory(PathBuf);
@@ -266,4 +266,43 @@ fn runtime_propagates_start_failure_and_cleans_module_state() {
         ["initialized", "started", "stopped"]
     );
     runtime.shutdown().unwrap();
+}
+
+#[test]
+fn cloned_runtime_serializes_concurrent_start_calls() {
+    let runtime = MatterRuntime::with_legal_store(
+        CoreConfig::default(),
+        matter_base::LegalStore::open_in_memory().unwrap(),
+    );
+    let callbacks = Arc::new(Mutex::new(Vec::new()));
+    runtime
+        .register_module(Box::new(RuntimeModule {
+            callbacks: Arc::clone(&callbacks),
+            fail_start: false,
+        }))
+        .unwrap();
+
+    let barrier = Arc::new(Barrier::new(3));
+    let first_runtime = runtime.clone();
+    let first_barrier = Arc::clone(&barrier);
+    let first = std::thread::spawn(move || {
+        first_barrier.wait();
+        first_runtime.start()
+    });
+    let second_runtime = runtime.clone();
+    let second_barrier = Arc::clone(&barrier);
+    let second = std::thread::spawn(move || {
+        second_barrier.wait();
+        second_runtime.start()
+    });
+
+    barrier.wait();
+    first.join().unwrap().unwrap();
+    second.join().unwrap().unwrap();
+    assert_eq!(*callbacks.lock().unwrap(), ["initialized", "started"]);
+    runtime.shutdown().unwrap();
+    assert_eq!(
+        *callbacks.lock().unwrap(),
+        ["initialized", "started", "stopped"]
+    );
 }
