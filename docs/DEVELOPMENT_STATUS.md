@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `ba100c45433f145d9863e8aeffbb5bce29775b18`
+- Latest confirmed checkpoint commit: `cd351b5c2267fb5ace70fa51b163a2dcb64b07ab`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `ba100c45433f145d9863e8aeffbb5bce29775b18` before module lifecycle coordination.
+  `cd351b5c2267fb5ace70fa51b163a2dcb64b07ab` before lifecycle cleanup refinement.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -189,6 +189,9 @@ platform capabilities or a live external integration.
 - README files reviewed for lifecycle coordination: **1**.
 - README files updated for lifecycle coordination: **1**.
 - README files with no changes for lifecycle coordination: **0**.
+- README files reviewed for lifecycle cleanup refinement: **1**.
+- README files updated for lifecycle cleanup refinement: **0**.
+- README files with no changes for lifecycle cleanup refinement: **1**.
 - Problems found: documented JavaScript/Node project structure and `npm`
   commands did not match the Rust Cargo crate; future bot/provider and other
   systems were presented as available; repository links and component claims
@@ -218,16 +221,20 @@ platform capabilities or a live external integration.
   callback behavior is tested. Provider inputs have bounded size/count.
   EventBus, ServiceRegistry and Translator now recover from poisoned internal
   locks; dedicated lock-poison tests pass. These subsystems still need broader
-  concurrency review. Callback panics propagate; no fallible callback contract
-  exists.
-  The first source/test pass found no `todo!`, `unimplemented!`, or production
-  `panic!`, but did find lock `.expect` calls. The rest of the module audit
-  remains. A caller-owned `ModuleManager` was added with duplicate/name/version
-  validation, initialization order, reverse shutdown, and start-failure cleanup. `EventBus::publish_checked` was added to continue notifying listeners
-  after an individual unwinding panic and return an error summary; default
-  `publish` behavior remains backward compatible. SQLite replay storage now rejects duplicate assertions across
-  independent connections and verifier restarts; four focused tests pass. Legal store tests now cover concurrent idempotent
-document registration and rollback after a simulated SQLite write failure.
+  concurrency review. Legacy `publish` propagates callback panics;
+  `publish_checked` isolates unwinding panics and reports a dispatch error.
+  The source pass found no `todo!`, `unimplemented!`, or production
+  `panic!`; lock `.expect` calls were removed from production event, service,
+  and translation registries. The rest of the module audit remains. A caller-owned `ModuleManager` was added with duplicate/name/version
+  validation, initialization order, reverse shutdown, and start-failure cleanup. `stop_all` also releases modules
+  that initialized but never started, and retains failed-cleanup state for retry.
+  `EventBus::publish_checked` continues notifying listeners after an individual
+  unwinding panic and returns an error summary; default `publish` behavior
+  remains backward compatible. SQLite replay storage rejects duplicate
+  assertions across independent connections and verifier restarts; four focused
+  tests pass. Legal store tests cover concurrent idempotent document
+  registration and rollback after a simulated SQLite write failure. Envelope
+  payloads are capped at 16 MiB before encryption or Base64 decoding.
 - I: **Not complete.** Added runtime legal-store close/reopen recovery and
   changing-provider-identity tests. Broad bot/authorization/socket/service
   integration and resilience tests cannot pass until those subsystems exist.
@@ -241,13 +248,13 @@ document registration and rollback after a simulated SQLite write failure.
   remain outstanding.
 - Matter-Bot: **Blocked by unmet Matter-Base criteria. Do not start.**
 
-Checkpoint `9c77cff43889028606eb384afc708eab0e597ed2` added legal-store
-concurrency and rollback tests. Checkpoint `ba100c45433f145d9863e8aeffbb5bce29775b18` added 16 MiB envelope
-payload bounds. Checkpoint `e48ce509add1e08eaed63dfda3917b3f5d14accd` added panic-isolated
-event dispatch. Earlier checkpoint `9e3cb4b0ca90b667096ecb4e0bf94e1c6ed3901a` recorded lock recovery. Earlier checkpoint `38777f93edd9187010240747b69cdef8cd93213e` added persistent replay
-storage. Checkpoint `c0400d48dde6828bcc3784d8078d17242dcc88d5` added core lock-poison
-recovery; both were pushed to `origin/matter-beta` over authenticated SSH and
-confirmed by fetch. No promotion to `matter` was made. Matter-Vault live
+Checkpoint `cd351b5c2267fb5ace70fa51b163a2dcb64b07ab` added the module lifecycle
+coordinator. Earlier checkpoint `ba100c45433f145d9863e8aeffbb5bce29775b18`
+added 16 MiB envelope payload bounds; `e48ce509add1e08eaed63dfda3917b3f5d14accd`
+added checked event dispatch; `9c77cff43889028606eb384afc708eab0e597ed2`
+added legal-store concurrency/rollback tests. Earlier checkpoints added lock
+recovery and persistent replay storage. These commits were pushed to
+`origin/matter-beta` over authenticated SSH and confirmed by fetch. No promotion to `matter` was made. Matter-Vault live
 verification is the only specifically identified external dependency; most
 remaining blockers are missing code and contracts in this repository, not
 external services.
@@ -265,7 +272,7 @@ external services.
    bounded before decoding. Make
    targeted compatible corrections with behavior tests.
 4. Run the complete verification sequence after the above targeted tests, then
-   update the recorded results here. (Latest full suite for this snapshot: 165 tests passed.) Continue auditing
+   update the recorded results here. (Latest full suite for this snapshot: 166 tests passed.) Continue auditing
    SQLite operation error paths, then provider authentication and key-store
    failure behavior. Add tests and make
    compatible fixes where defects are confirmed.

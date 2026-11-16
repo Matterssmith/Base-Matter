@@ -24,6 +24,7 @@ struct ModuleEntry {
     module: Box<dyn CoreModule>,
     initialized: bool,
     started: bool,
+    cleanup_required: bool,
 }
 
 /// Coordinates module initialization and lifecycle callbacks in registration
@@ -56,7 +57,7 @@ impl ModuleManager {
         if self
             .modules
             .iter()
-            .any(|entry| entry.initialized || entry.started)
+            .any(|entry| entry.initialized || entry.started || entry.cleanup_required)
         {
             bail!("Modules cannot be registered after initialization begins");
         }
@@ -65,6 +66,7 @@ impl ModuleManager {
             module,
             initialized: false,
             started: false,
+            cleanup_required: false,
         });
         Ok(())
     }
@@ -78,17 +80,20 @@ impl ModuleManager {
             if entry.initialized {
                 continue;
             }
-            if entry.started {
-                bail!("Cannot initialize a started module");
+            if entry.started || entry.cleanup_required {
+                bail!("Module cleanup must succeed before initialization");
             }
 
             if let Err(error) = entry.module.initialize(context) {
                 let name = entry.module.name().to_owned();
                 return match entry.module.stop(context) {
                     Ok(()) => Err(error).with_context(|| format!("Initializing module {name}")),
-                    Err(cleanup) => Err(anyhow!(
-                        "Initializing module {name} failed: {error:#}; cleanup failed: {cleanup:#}"
-                    )),
+                    Err(cleanup) => {
+                        entry.cleanup_required = true;
+                        Err(anyhow!(
+                            "Initializing module {name} failed: {error:#}; cleanup failed: {cleanup:#}"
+                        ))
+                    }
                 };
             }
             entry.initialized = true;
@@ -116,15 +121,19 @@ impl ModuleManager {
                 let name = self.modules[index].module.name().to_owned();
                 let mut cleanup_errors = Vec::new();
                 if let Err(cleanup) = self.modules[index].module.stop(context) {
-                    self.modules[index].started = true;
+                    self.modules[index].cleanup_required = true;
                     cleanup_errors.push(format!("{name}: {cleanup:#}"));
+                } else {
+                    self.modules[index].initialized = false;
                 }
                 for started_index in started_this_call.into_iter().rev() {
                     let entry = &mut self.modules[started_index];
                     if let Err(cleanup) = entry.module.stop(context) {
                         cleanup_errors.push(format!("{}: {cleanup:#}", entry.module.name()));
                     } else {
+                        entry.initialized = false;
                         entry.started = false;
+                        entry.cleanup_required = false;
                     }
                 }
 
@@ -143,19 +152,26 @@ impl ModuleManager {
         Ok(())
     }
 
-    /// Stops started modules in reverse registration order.
+    /// Stops initialized or started modules in reverse registration order.
     ///
-    /// Modules whose stop callback fails remain marked as started so callers
-    /// can retry cleanup.
+    /// A successful stop clears lifecycle state. Modules whose stop callback
+    /// fails retain cleanup state so callers can retry it.
     pub fn stop_all(&mut self, context: &MatterContext) -> Result<()> {
         let mut failures = Vec::new();
         for entry in self.modules.iter_mut().rev() {
-            if !entry.started {
+            if !entry.initialized && !entry.started && !entry.cleanup_required {
                 continue;
             }
             match entry.module.stop(context) {
-                Ok(()) => entry.started = false,
-                Err(error) => failures.push(format!("{}: {error:#}", entry.module.name())),
+                Ok(()) => {
+                    entry.initialized = false;
+                    entry.started = false;
+                    entry.cleanup_required = false;
+                }
+                Err(error) => {
+                    entry.cleanup_required = true;
+                    failures.push(format!("{}: {error:#}", entry.module.name()));
+                }
             }
         }
 
@@ -319,6 +335,21 @@ mod tests {
         );
         assert!(!manager.is_started("first"));
         assert!(!manager.is_started("second"));
+        assert!(!manager.is_initialized("first"));
+        assert!(!manager.is_initialized("second"));
+    }
+
+    #[test]
+    fn stop_cleans_initialized_modules_even_before_start() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let mut manager = ModuleManager::new();
+        manager.register(module("first", &calls)).unwrap();
+        let context = context();
+        manager.initialize_all(&context).unwrap();
+        manager.stop_all(&context).unwrap();
+
+        assert_eq!(*calls.lock().unwrap(), ["first:initialize", "first:stop"]);
+        assert!(!manager.is_initialized("first"));
     }
 
     #[test]
