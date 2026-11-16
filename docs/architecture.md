@@ -54,7 +54,8 @@ in memory or caller supplied. There is no persistent bot, user, ownership,
 permission, socket, or plugin registry in this version.
 
 The security provider abstractions allow a caller to supply trusted key
-material and providers. They do not establish that an external Matter-Vault
+material and providers. Envelope plaintext and ciphertext are limited to
+16 MiB; encoded ciphertext length is checked before Base64 decoding. They do not establish that an external Matter-Vault
 service is connected. There is no storage of WhatsApp sessions or external
 platform credentials in Matter-Base. Authenticated key loading checks that the
 Vault identity returned while staging keys still matches the authenticated

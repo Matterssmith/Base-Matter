@@ -21,6 +21,8 @@ const ALGORITHM: &str = "XChaCha20-Poly1305";
 const NONCE_LENGTH: usize = 24;
 const TAG_LENGTH: usize = 16;
 const MAX_TEXT_LENGTH: usize = 128;
+const MAX_CIPHERTEXT_BYTES: usize = 16 * 1024 * 1024;
+const MAX_CIPHERTEXT_BASE64_BYTES: usize = (MAX_CIPHERTEXT_BYTES * 4 + 2) / 3;
 
 const ALLOWED_RECORD_TYPES: &[&str] = &[
     "roles",
@@ -124,7 +126,15 @@ pub fn validate_envelope(envelope: &EncryptedEnvelope) -> Result<()> {
         bail!("Invalid nonce length");
     }
 
+    if envelope.ciphertext.len() > MAX_CIPHERTEXT_BASE64_BYTES {
+        bail!("Ciphertext exceeds the size limit");
+    }
+
     let ciphertext = decode_canonical_base64(&envelope.ciphertext, "ciphertext")?;
+
+    if ciphertext.len() > MAX_CIPHERTEXT_BYTES {
+        bail!("Ciphertext exceeds the size limit");
+    }
 
     if ciphertext.len() < TAG_LENGTH {
         bail!("Ciphertext is too short");
@@ -143,6 +153,10 @@ pub fn encrypt(
     key_id: &str,
     created_at: &str,
 ) -> Result<EncryptedEnvelope> {
+    if plaintext.len() > MAX_CIPHERTEXT_BYTES - TAG_LENGTH {
+        bail!("Plaintext exceeds the encryption size limit");
+    }
+
     validate_text(envelope_id, "envelope_id")?;
     validate_text(scope, "scope")?;
     validate_text(record_type, "record_type")?;

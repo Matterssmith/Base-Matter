@@ -124,8 +124,9 @@ applications that manage storage separately can provide a `LegalStore` with
 - The runtime persists only the legal store. Bot registrations, users, socket
   state, configuration, events, and service metadata do not have persistence
   implementations here.
-- Envelope encryption validates metadata and uses the existing
-  XChaCha20-Poly1305 format. Keep compatibility when changing that contract.
+- Envelope encryption validates metadata, uses the existing
+  XChaCha20-Poly1305 format, and caps plaintext/ciphertext at 16 MiB before
+  encryption or Base64 decoding. Keep compatibility when changing that contract.
 - Key-provider and binding-store interfaces are injection points. A live,
   production Vault connection has not been verified by this repository.
 - Authenticated key loading rechecks the Vault identity when the key set is
