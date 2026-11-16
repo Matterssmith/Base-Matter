@@ -138,6 +138,13 @@ applications that manage storage separately can provide a `LegalStore` with
   are rejected without rewriting the database.
 - Legal access checks evaluate the user and required documents in one SQLite
   statement, so the result uses one database snapshot.
+- Consent writes, legal-user lookups/history, document administration, and
+  access checks require a `LegalPrincipal` backed by the consuming
+  application's `LegalAuthorizer`. The application must authenticate the
+  principal and authorize the requested action/resource; Matter-Base does not
+  authenticate platform identities or provide the shared user directory.
+  Authorization failures are returned as a generic denial without forwarding
+  policy-provider diagnostics.
 - The runtime persists only the legal store. Bot registrations, users, socket
   state, configuration, events, and service metadata do not have persistence
   implementations here.

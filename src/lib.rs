@@ -33,7 +33,10 @@ pub use core::runtime::MatterRuntime;
 pub use events::EventBus;
 pub use i18n::Translator;
 
-pub use legal::{ConsentDecision, ConsentRecord, LegalDocument, LegalDocumentType, LegalStore};
+pub use legal::{
+    ConsentDecision, ConsentRecord, LegalAction, LegalAuthorizationRequest, LegalAuthorizer,
+    LegalDocument, LegalDocumentType, LegalPrincipal, LegalStore,
+};
 
 pub use modules::{CoreModule, ModuleManager};
 pub use security::encryption;

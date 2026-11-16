@@ -17,7 +17,7 @@
 use crate::bots::BotRegistry;
 use crate::core::config::CoreConfig;
 use crate::core::context::MatterContext;
-use crate::legal::LegalStore;
+use crate::legal::{LegalPrincipal, LegalStore};
 use anyhow::Result;
 use std::path::Path;
 
@@ -94,11 +94,25 @@ impl MatterRuntime {
         &self.config
     }
 
-    pub fn is_access_allowed(&self, user_id: &str, scope: &str, locale: &str) -> Result<bool> {
-        self.context.is_access_allowed(user_id, scope, locale)
+    pub fn is_access_allowed(
+        &self,
+        user_id: &str,
+        scope: &str,
+        locale: &str,
+        principal: &LegalPrincipal<'_>,
+    ) -> Result<bool> {
+        self.context
+            .is_access_allowed(user_id, scope, locale, principal)
     }
 
-    pub fn ensure_access(&self, user_id: &str, scope: &str, locale: &str) -> Result<()> {
-        self.context.ensure_access(user_id, scope, locale)
+    pub fn ensure_access(
+        &self,
+        user_id: &str,
+        scope: &str,
+        locale: &str,
+        principal: &LegalPrincipal<'_>,
+    ) -> Result<()> {
+        self.context
+            .ensure_access(user_id, scope, locale, principal)
     }
 }

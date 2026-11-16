@@ -13,6 +13,8 @@ use matter_base::{
     BotRegistry, ConsentDecision, CoreConfig, CoreModule, LegalDocument, LegalDocumentType,
     MatterContext, MatterRuntime, ModuleManager,
 };
+mod common;
+use common::{legal_admin, legal_user};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -87,24 +89,36 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
         Some(identity.clone())
     );
 
-    runtime.context.legal.register_user("flow-user").unwrap();
     runtime
         .context
         .legal
-        .register_document(&LegalDocument {
-            document_id: "flow-terms-v1".to_owned(),
-            scope: "matter-base-flow".to_owned(),
-            document_type: LegalDocumentType::Terms,
-            version: "1.0.0".to_owned(),
-            locale: "es".to_owned(),
-            content: "Integration flow terms".to_owned(),
-            mandatory: true,
-            required_decision: ConsentDecision::Accepted,
-            active: true,
-        })
+        .register_user("flow-user", &legal_user("flow-user"))
+        .unwrap();
+    runtime
+        .context
+        .legal
+        .register_document(
+            &LegalDocument {
+                document_id: "flow-terms-v1".to_owned(),
+                scope: "matter-base-flow".to_owned(),
+                document_type: LegalDocumentType::Terms,
+                version: "1.0.0".to_owned(),
+                locale: "es".to_owned(),
+                content: "Integration flow terms".to_owned(),
+                mandatory: true,
+                required_decision: ConsentDecision::Accepted,
+                active: true,
+            },
+            &legal_admin(),
+        )
         .unwrap();
     assert!(runtime
-        .ensure_access("flow-user", "matter-base-flow", "es")
+        .ensure_access(
+            "flow-user",
+            "matter-base-flow",
+            "es",
+            &legal_user("flow-user")
+        )
         .is_err());
     runtime
         .context
@@ -114,10 +128,16 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
             "flow-terms-v1",
             ConsentDecision::Accepted,
             Some("integration-test"),
+            &legal_user("flow-user"),
         )
         .unwrap();
     assert!(runtime
-        .ensure_access("flow-user", "matter-base-flow", "es")
+        .ensure_access(
+            "flow-user",
+            "matter-base-flow",
+            "es",
+            &legal_user("flow-user")
+        )
         .is_ok());
     runtime
         .context
@@ -127,16 +147,22 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
             "flow-terms-v1",
             ConsentDecision::Declined,
             Some("integration-test"),
+            &legal_user("flow-user"),
         )
         .unwrap();
     assert!(runtime
-        .ensure_access("flow-user", "matter-base-flow", "es")
+        .ensure_access(
+            "flow-user",
+            "matter-base-flow",
+            "es",
+            &legal_user("flow-user")
+        )
         .is_err());
     assert_eq!(
         runtime
             .context
             .legal
-            .decision_history("flow-user")
+            .decision_history("flow-user", &legal_user("flow-user"))
             .unwrap()
             .len(),
         2
@@ -164,7 +190,11 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
     let service = runtime.context.services.get::<RuntimeService>().unwrap();
     assert_eq!(service.0, "initialized");
     assert_eq!(*observed.lock().unwrap(), ["ok"]);
-    assert!(runtime.context.legal.user_exists("flow-user").unwrap());
+    assert!(runtime
+        .context
+        .legal
+        .user_exists("flow-user", &legal_user("flow-user"))
+        .unwrap());
 
     modules.stop_all(runtime.context()).unwrap();
     assert_eq!(
@@ -191,18 +221,23 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
     assert!(recovered_runtime
         .context
         .legal
-        .user_exists("flow-user")
+        .user_exists("flow-user", &legal_user("flow-user"))
         .unwrap());
     assert_eq!(
         recovered_runtime
             .context
             .legal
-            .decision_history("flow-user")
+            .decision_history("flow-user", &legal_user("flow-user"))
             .unwrap()
             .len(),
         2
     );
     assert!(recovered_runtime
-        .ensure_access("flow-user", "matter-base-flow", "es")
+        .ensure_access(
+            "flow-user",
+            "matter-base-flow",
+            "es",
+            &legal_user("flow-user")
+        )
         .is_err());
 }

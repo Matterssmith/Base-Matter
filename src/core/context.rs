@@ -15,7 +15,7 @@
 
 use crate::bots::BotRegistry;
 use crate::events::EventBus;
-use crate::legal::LegalStore;
+use crate::legal::{LegalPrincipal, LegalStore};
 use crate::services::ServiceRegistry;
 use std::sync::Arc;
 
@@ -50,13 +50,21 @@ impl MatterContext {
         user_id: &str,
         scope: &str,
         locale: &str,
+        principal: &LegalPrincipal<'_>,
     ) -> anyhow::Result<bool> {
-        self.legal.is_access_allowed(user_id, scope, locale)
+        self.legal
+            .is_access_allowed(user_id, scope, locale, principal)
     }
 
     /// Rechaza el acceso cuando faltan requisitos legales.
-    pub fn ensure_access(&self, user_id: &str, scope: &str, locale: &str) -> anyhow::Result<()> {
-        if !self.is_access_allowed(user_id, scope, locale)? {
+    pub fn ensure_access(
+        &self,
+        user_id: &str,
+        scope: &str,
+        locale: &str,
+        principal: &LegalPrincipal<'_>,
+    ) -> anyhow::Result<()> {
+        if !self.is_access_allowed(user_id, scope, locale, principal)? {
             anyhow::bail!("Legal requirements not satisfied");
         }
 

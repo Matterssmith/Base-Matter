@@ -8,14 +8,15 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Previous synchronized base commit: `cbe1bc9092427dd08957eb15eb4ff293e19446ac`
+- Previous synchronized base commit: `9be89897b7db5a39cfd15f259f020e7e4ffed419`
 - Latest confirmed checkpoint before the current local work:
-  `cbe1bc9092427dd08957eb15eb4ff293e19446ac`
+  `9be89897b7db5a39cfd15f259f020e7e4ffed419`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `cbe1bc9092427dd08957eb15eb4ff293e19446ac` before legal schema migration
-  hardening. Verify the current published tip from Git after each push.
+  `9be89897b7db5a39cfd15f259f020e7e4ffed419` before the local legal principal
+  authorization work. The current authorization change is not yet committed;
+  verify the published tip after its checkpoint push.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -45,7 +46,7 @@ not ready for Matter-Bot.
 | Persistence and recovery | PARTIAL | SQLite persists bot identities and legal documents/decisions. No config/socket/service persistence or ecosystem-wide migration coordinator; the bot registry has its own transactional schema versions. |
 | Events and messaging | PARTIAL | Named synchronous in-memory event callbacks exist; no durable events or messaging contract. |
 | Router and command registry | ABSENT | No implementation. |
-| Middleware, roles, permissions, authorization | ABSENT | Provider key permissions exist only in the security integration; no general resource authorization. |
+| Middleware, roles, permissions, authorization | PARTIAL | Bot owner/co-owner checks and an injectable legal action/resource authorization contract exist; no shared user identity, general role inheritance, or socket/resource policy engine. |
 | Control Plane, sockets, activation | ABSENT | No implementation; socket ownership/policies cannot be verified. |
 | Services and connections | PARTIAL | Typed in-memory service registry only; no connection manager or lifecycle. |
 | Plugins, extensions, sandbox | ABSENT | No manifest validation, isolation, or resource limits. |
@@ -118,6 +119,29 @@ not ready for Matter-Bot.
   objects plus the `legal_store` component version are committed atomically.
   Existing unversioned records survive upgrade; failed DDL rolls back; negative
   or unsupported future versions are rejected.
+- Added public `LegalAction`, `LegalAuthorizationRequest`, `LegalAuthorizer`,
+  and `LegalPrincipal` contracts. Legal user registration/lookups, document
+  registration/activation, consent writes/history, required-document queries,
+  and access checks now require the supplied principal policy. Runtime/context
+  access checks require it too. Authorization errors are sanitized. The crate
+  delegates real principal authentication and policy to consuming applications;
+  no shared user directory or production authorization provider is implemented.
+- Added `tests/common/mod.rs` with a test-only policy and regression coverage
+  rejecting cross-user consent forgery, unauthorized history reads, and
+  unauthorized document activation. This fixture verifies contract use, not a
+  real external identity integration.
+- Updated README and architecture docs to define the delegated legal identity
+  boundary and the actual implemented/pending scope.
+- Files changed for the legal authorization contract: `src/legal/mod.rs`,
+  `src/core/context.rs`, `src/core/runtime.rs`, `src/lib.rs`,
+  `tests/common/mod.rs` (created), `tests/core.rs`, `tests/legal.rs`, and
+  `tests/platform_flow.rs`; docs: `README.md`, `docs/architecture.md`, and
+  this ledger. No files were deleted.
+- Modified public API files `src/legal/mod.rs`, `src/core/context.rs`,
+  `src/core/runtime.rs`, and `src/lib.rs` to require a principal policy for
+  sensitive legal operations. Updated `tests/core.rs`, `tests/legal.rs`, and
+  `tests/platform_flow.rs`; added the shared test policy at
+  `tests/common/mod.rs`.
 - Added a migration-failure regression for the SQLite bot registry. An injected
   conflicting schema object forces migration to fail; the test verifies the
   schema version and identity columns remain at version 1, legacy rows remain
@@ -227,6 +251,12 @@ After formatting, the following commands completed successfully:
   `cargo fmt --all`, `cargo check --all-targets`, full `cargo test` —
   **186 passed, 0 failed**; doc tests: 0 passed, 0 failed;
   `git diff --check` passed.
+- Current legal authorization verification after denied cross-user consent,
+  denied user-data lookup, denied document registration/activation, and generic
+  error checks: focused legal/core/platform flow tests passed;
+  `cargo fmt --all`, `cargo check --all-targets`, full `cargo test` —
+  **187 passed, 0 failed**; doc tests: 0 passed, 0 failed;
+  `git diff --check` passed.
 
 These results verify only the code that exists. They do not verify absent bot
 platform capabilities or a live external integration.
@@ -300,6 +330,12 @@ platform capabilities or a live external integration.
 - README files reviewed for legal schema versioning and DDL rollback: **1**.
 - README files updated for legal schema versioning and DDL rollback: **1**.
 - README files with no changes for legal schema versioning and DDL rollback: **0**.
+- README files reviewed for the legal principal/action/resource contract: **1**.
+- README files updated for the legal principal/action/resource contract: **1**.
+- README files with no changes for the legal principal/action/resource contract: **0**.
+- README files reviewed for legal principal enforcement across runtime/store APIs: **1**.
+- README files updated for legal principal enforcement across runtime/store APIs: **1**.
+- README files with no changes for that API enforcement checkpoint: **0**.
 - README files reviewed for transactional/versioned legal-store initialization: **1**.
 - README files updated for transactional/versioned legal-store initialization: **1**.
 - README files with no changes for transactional/versioned legal-store initialization: **0**.
@@ -393,17 +429,15 @@ external services.
 1. Re-read this file and the root README.
 2. Confirm the current branch, status, and remote tip. Preserve local work;
    do not discard `Cargo.lock` or `target/` without inspecting ownership.
-3. Continue H by auditing legal authorization boundaries and SQLite corruption
-   and failure paths, then continue the remaining provider/key and bot-registry
-   corruption cases. Legal initialization now has a transactional component
-   version; existing data migration, interrupted DDL rollback/retry, and future
-   version rejection have behavior tests. The next legal audit must decide and
-   document the principal-authorization boundary before exposing consent writes
-   through an application API. Add tests for every confirmed
+3. Continue H by auditing every legal authorization entry point, including
+   policy denial/error paths and role/resource ownership behavior. The new
+   contract delegates identity verification to the caller; it is not a user
+   directory or an authentication provider. Then continue remaining provider,
+   key, and bot-registry corruption cases. Add tests for every confirmed
    defect. Do not invent a shared-user identity system until a trustworthy
    authenticated-principal contract is available.
 4. Continue I by adding cross-module resilience cases around bot ownership,
-   provider failure, and legal-store errors. The current suite passes 182 tests;
+   provider failure, and legal-store errors. The current suite passes 187 tests;
    this does not cover absent router, sockets, plugins, general authorization,
    or live external services. Keep Matter-Bot blocked.
 5. After each coherent checkpoint, audit every README, update this ledger,
