@@ -206,3 +206,23 @@ fn failed_identity_write_rolls_back_and_name_can_be_reused() {
     assert_eq!(registered.display_name(), "matter");
     assert_eq!(registry.list().unwrap(), vec![registered]);
 }
+
+#[test]
+fn registry_rejects_corrupted_persisted_identity_fields() {
+    let directory = TemporaryDirectory::new();
+    let database = directory.0.join("corrupt-identity.db");
+    let registry = BotRegistry::open_sqlite(&database).unwrap();
+    let identity = registry
+        .register("family-a", "release-1", "matter")
+        .unwrap();
+    let connection = rusqlite::Connection::open(database).unwrap();
+    connection
+        .execute(
+            "UPDATE bot_identities SET family_id = '' WHERE instance_id = ?1",
+            [identity.instance_id()],
+        )
+        .unwrap();
+
+    assert!(registry.get(identity.instance_id()).is_err());
+    assert!(registry.list().is_err());
+}

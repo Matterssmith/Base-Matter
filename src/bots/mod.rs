@@ -8,6 +8,7 @@
 use anyhow::{anyhow, bail, Result};
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
 use std::collections::BTreeMap;
+use std::fmt;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -15,6 +16,17 @@ use std::sync::{Arc, Mutex};
 const MAX_IDENTIFIER_BYTES: usize = 128;
 const INSTANCE_ID_RANDOM_BYTES: usize = 16;
 const BOT_REGISTRY_SCHEMA_VERSION: i64 = 1;
+
+#[derive(Debug)]
+struct InstanceIdentifierCollision;
+
+impl fmt::Display for InstanceIdentifierCollision {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("instance identifier collision")
+    }
+}
+
+impl std::error::Error for InstanceIdentifierCollision {}
 
 /// Stable identity of one bot instance.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -96,7 +108,11 @@ impl BotRegistry {
                 .register(family_id, release_key, &instance_id, requested_name)
             {
                 Ok(identity) => return Ok(identity),
-                Err(error) if error.to_string().contains("instance identifier collision") => {
+                Err(error)
+                    if error
+                        .downcast_ref::<InstanceIdentifierCollision>()
+                        .is_some() =>
+                {
                     continue;
                 }
                 Err(error) => return Err(error),
@@ -123,6 +139,14 @@ fn validate_identifier(value: &str, name: &str) -> Result<()> {
     {
         bail!("Invalid {name}");
     }
+    Ok(())
+}
+
+fn validate_identity(identity: &BotIdentity) -> Result<()> {
+    validate_identifier(&identity.family_id, "family_id")?;
+    validate_identifier(&identity.release_key, "release_key")?;
+    validate_identifier(&identity.instance_id, "instance_id")?;
+    validate_identifier(&identity.display_name, "display name")?;
     Ok(())
 }
 
@@ -173,7 +197,7 @@ impl BotIdentityStore for InMemoryBotIdentityStore {
             .lock()
             .map_err(|_| anyhow!("Bot identity store lock poisoned"))?;
         if identities.contains_key(instance_id) {
-            bail!("instance identifier collision");
+            return Err(InstanceIdentifierCollision.into());
         }
         let display_name = resolve_name(requested_name, |candidate| {
             Ok(identities
@@ -195,7 +219,11 @@ impl BotIdentityStore for InMemoryBotIdentityStore {
             .identities
             .lock()
             .map_err(|_| anyhow!("Bot identity store lock poisoned"))?;
-        Ok(identities.get(instance_id).cloned())
+        let identity = identities.get(instance_id).cloned();
+        if let Some(identity) = &identity {
+            validate_identity(identity)?;
+        }
+        Ok(identity)
     }
 
     fn list(&self) -> Result<Vec<BotIdentity>> {
@@ -203,7 +231,11 @@ impl BotIdentityStore for InMemoryBotIdentityStore {
             .identities
             .lock()
             .map_err(|_| anyhow!("Bot identity store lock poisoned"))?;
-        Ok(identities.values().cloned().collect())
+        let identities = identities.values().cloned().collect::<Vec<_>>();
+        for identity in &identities {
+            validate_identity(identity)?;
+        }
+        Ok(identities)
     }
 }
 
@@ -289,7 +321,7 @@ impl BotIdentityStore for SqliteBotIdentityStore {
             |row| row.get(0),
         )?;
         if existing {
-            bail!("instance identifier collision");
+            return Err(InstanceIdentifierCollision.into());
         }
 
         let display_name = resolve_name(requested_name, |candidate| {
@@ -328,10 +360,10 @@ impl BotIdentityStore for SqliteBotIdentityStore {
             .connection
             .lock()
             .map_err(|_| anyhow!("Bot identity store lock poisoned"))?;
-        connection
+        let identity = connection
             .query_row(
                 "SELECT family_id, release_key, instance_id, display_name
-                 FROM bot_identities WHERE instance_id = ?1",
+             FROM bot_identities WHERE instance_id = ?1",
                 params![instance_id],
                 |row| {
                     Ok(BotIdentity {
@@ -342,8 +374,11 @@ impl BotIdentityStore for SqliteBotIdentityStore {
                     })
                 },
             )
-            .optional()
-            .map_err(Into::into)
+            .optional()?;
+        if let Some(identity) = &identity {
+            validate_identity(identity)?;
+        }
+        Ok(identity)
     }
 
     fn list(&self) -> Result<Vec<BotIdentity>> {
@@ -363,7 +398,10 @@ impl BotIdentityStore for SqliteBotIdentityStore {
                 display_name: row.get(3)?,
             })
         })?;
-        rows.collect::<rusqlite::Result<Vec<_>>>()
-            .map_err(Into::into)
+        let identities = rows.collect::<rusqlite::Result<Vec<_>>>()?;
+        for identity in &identities {
+            validate_identity(identity)?;
+        }
+        Ok(identities)
     }
 }

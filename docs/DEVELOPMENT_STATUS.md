@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `3afe91394a6ea014c03e69cda62355eeb42eff2d`
+- Latest confirmed checkpoint commit: `feaa16a5496de1caca18fac69c5afea5baa68573`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `3afe91394a6ea014c03e69cda62355eeb42eff2d` before this architecture wording correction.
+  `feaa16a5496de1caca18fac69c5afea5baa68573` before persisted-identity validation.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -37,7 +37,7 @@ not ready for Matter-Bot.
 | Capability | Status | Evidence / limitation |
 | --- | --- | --- |
 | Runtime and lifecycle | PARTIAL | Caller-owned `ModuleManager` coordinates registration-order initialization/start and reverse shutdown with cleanup on start failures; `MatterRuntime` does not own it and service lifecycle remains separate. |
-| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates independent instance IDs, persists identities through an injectable store/SQLite, and allocates unique display names; ownership, authorization, and controlled removal are absent. |
+| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates independent instance IDs, persists identities through an injectable store/SQLite, validates recovered fields, and allocates unique display names; ownership, authorization, and controlled removal are absent. |
 | Shared application users and bot data isolation | ABSENT | `legal_users` are legal-consent subjects, not a shared application user system. |
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
 | Persistence and recovery | PARTIAL | SQLite persists bot identities and legal documents/decisions. No config/socket/service persistence or versioned migrations framework. |
@@ -217,6 +217,9 @@ platform capabilities or a live external integration.
 - README files reviewed for architecture wording correction: **1**.
 - README files updated for architecture wording correction: **0**.
 - README files with no changes for architecture wording correction: **1**.
+- README files reviewed for persisted identity validation: **1**.
+- README files updated for persisted identity validation: **0**.
+- README files with no changes for persisted identity validation: **1**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
 - Problems found: documented JavaScript/Node project structure and `npm`
@@ -329,4 +332,4 @@ atomic component-scoped schema migration, future-version rejection, and
 cross-connection concurrency. Ownership, authorization,
 controlled deletion remains pending; component-scoped schema versioning is
 transactional and rejects unsupported future versions. The full suite passed
-with 175 tests; `cargo check --all-targets` and `git diff --check` passed.
+with 176 tests; `cargo check --all-targets` and `git diff --check` passed.
