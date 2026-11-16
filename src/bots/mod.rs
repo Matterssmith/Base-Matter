@@ -14,6 +14,7 @@ use std::sync::{Arc, Mutex};
 
 const MAX_IDENTIFIER_BYTES: usize = 128;
 const INSTANCE_ID_RANDOM_BYTES: usize = 16;
+const BOT_REGISTRY_SCHEMA_VERSION: i64 = 1;
 
 /// Stable identity of one bot instance.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -220,20 +221,45 @@ impl SqliteBotIdentityStore {
                 fs::create_dir_all(parent)?;
             }
         }
-        let connection = Connection::open(path)?;
+        let mut connection = Connection::open(path)?;
         connection.busy_timeout(std::time::Duration::from_secs(5))?;
-        connection.execute_batch(
-            "PRAGMA foreign_keys = ON;
-             CREATE TABLE IF NOT EXISTS bot_identities (
-                 instance_id TEXT PRIMARY KEY NOT NULL,
-                 family_id TEXT NOT NULL,
-                 release_key TEXT NOT NULL,
-                 display_name TEXT NOT NULL UNIQUE,
-                 created_at INTEGER NOT NULL
-             );
-             CREATE INDEX IF NOT EXISTS idx_bot_identities_family_release
-                 ON bot_identities (family_id, release_key);",
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        transaction.execute_batch(
+            "CREATE TABLE IF NOT EXISTS matter_schema_versions (
+                 component TEXT PRIMARY KEY NOT NULL,
+                 version INTEGER NOT NULL
+             );",
         )?;
+        let current_version: Option<i64> = transaction
+            .query_row(
+                "SELECT version FROM matter_schema_versions WHERE component = ?1",
+                params!["bot_registry"],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if current_version.is_some_and(|version| version > BOT_REGISTRY_SCHEMA_VERSION) {
+            bail!("Bot registry schema version is newer than this runtime supports");
+        }
+        if current_version.unwrap_or(0) < 1 {
+            transaction.execute_batch(
+                "CREATE TABLE IF NOT EXISTS bot_identities (
+                     instance_id TEXT PRIMARY KEY NOT NULL,
+                     family_id TEXT NOT NULL,
+                     release_key TEXT NOT NULL,
+                     display_name TEXT NOT NULL UNIQUE,
+                     created_at INTEGER NOT NULL
+                 );
+                 CREATE INDEX IF NOT EXISTS idx_bot_identities_family_release
+                     ON bot_identities (family_id, release_key);",
+            )?;
+            transaction.execute(
+                "INSERT INTO matter_schema_versions (component, version)
+                 VALUES (?1, ?2)
+                 ON CONFLICT(component) DO UPDATE SET version = excluded.version",
+                params!["bot_registry", BOT_REGISTRY_SCHEMA_VERSION],
+            )?;
+        }
+        transaction.commit()?;
         Ok(Self {
             connection: Arc::new(Mutex::new(connection)),
         })

@@ -110,3 +110,68 @@ fn registry_rejects_invalid_identity_fields() {
         .is_err());
     assert!(registry.get(" ").is_err());
 }
+
+#[test]
+fn sqlite_registry_migration_preserves_existing_rows_and_records_version() {
+    let directory = TemporaryDirectory::new();
+    let database = directory.0.join("existing-bots.db");
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    connection
+        .execute_batch(
+            "CREATE TABLE bot_identities (
+                 instance_id TEXT PRIMARY KEY NOT NULL,
+                 family_id TEXT NOT NULL,
+                 release_key TEXT NOT NULL,
+                 display_name TEXT NOT NULL UNIQUE,
+                 created_at INTEGER NOT NULL
+             );
+             INSERT INTO bot_identities VALUES (
+                 'inst_existing', 'family-a', 'release-1', 'legacy-bot', 1
+             );",
+        )
+        .unwrap();
+    drop(connection);
+
+    let registry = BotRegistry::open_sqlite(&database).unwrap();
+    let recovered = registry.get("inst_existing").unwrap().unwrap();
+    assert_eq!(recovered.family_id(), "family-a");
+    assert_eq!(recovered.display_name(), "legacy-bot");
+
+    let connection = rusqlite::Connection::open(database).unwrap();
+    let version: i64 = connection
+        .query_row(
+            "SELECT version FROM matter_schema_versions WHERE component = 'bot_registry'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(version, 1);
+}
+
+#[test]
+fn sqlite_registry_rejects_newer_schema_without_rewriting_it() {
+    let directory = TemporaryDirectory::new();
+    let database = directory.0.join("future-schema.db");
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    connection
+        .execute_batch(
+            "CREATE TABLE matter_schema_versions (
+                 component TEXT PRIMARY KEY NOT NULL,
+                 version INTEGER NOT NULL
+             );
+             INSERT INTO matter_schema_versions VALUES ('bot_registry', 99);",
+        )
+        .unwrap();
+    drop(connection);
+
+    assert!(BotRegistry::open_sqlite(&database).is_err());
+    let connection = rusqlite::Connection::open(database).unwrap();
+    let version: i64 = connection
+        .query_row(
+            "SELECT version FROM matter_schema_versions WHERE component = 'bot_registry'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(version, 99);
+}

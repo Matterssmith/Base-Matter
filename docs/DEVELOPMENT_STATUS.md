@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `38e871f8da44ee4f4196df0c39a5cd309684a8ec`
+- Latest confirmed checkpoint commit: `41afb8325c89aaa5c68f7365dcc21b03e574628e`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `38e871f8da44ee4f4196df0c39a5cd309684a8ec` before bot identity registry work.
+  `41afb8325c89aaa5c68f7365dcc21b03e574628e` before schema migration work.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -205,9 +205,9 @@ platform capabilities or a live external integration.
 - README files reviewed for bot identity registry: **1**.
 - README files updated for bot identity registry: **1**.
 - README files with no changes for bot identity registry: **0**.
-- README files reviewed for bot identity registry: **1**.
-- README files updated for bot identity registry: **1**.
-- README files with no changes for bot identity registry: **0**.
+- README files reviewed for transactional identity schema migrations: **1**.
+- README files updated for transactional identity schema migrations: **1**.
+- README files with no changes for transactional identity schema migrations: **0**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
 - Problems found: documented JavaScript/Node project structure and `npm`
@@ -309,9 +309,11 @@ For later work, re-fetch the development branch before verification or code
 changes, using the safe stash/fetch/reset/reapply procedure from the project
 instructions. Never infer publication from local commit state alone.
 
-Bot identity registry implementation in the current checkpoint: `src/bots/mod.rs`,
+Bot identity registry implementation in the current work: `src/bots/mod.rs`,
 `src/lib.rs`, and `tests/bot_registry.rs`. It provides memory and SQLite
 stores, validation, generated instance IDs, atomic unique names, persistence
-recovery, and cross-connection concurrency. Ownership, authorization,
-migration versioning, and controlled deletion remain pending. The full suite
-passed with 171 tests; `cargo check --all-targets` and `git diff --check` passed.
+recovery, atomic component-scoped schema migration, future-version rejection,
+and cross-connection concurrency. Ownership, authorization,
+controlled deletion remains pending; component-scoped schema versioning is
+transactional and rejects unsupported future versions. The full suite passed
+with 173 tests; `cargo check --all-targets` and `git diff --check` passed.

@@ -23,7 +23,7 @@ Public crate API (`src/lib.rs`)
 │                     ├─ ServiceRegistry (in memory)
 │                     └─ LegalStore (SQLite)
 ├── Translator (in memory)
-├── CoreModule trait (contract only)
+├── CoreModule + caller-owned ModuleManager
 └── Security
     ├── EncryptedEnvelope / KeyManager
     ├── ProviderAuthenticator / ProviderAccessPolicy
@@ -45,7 +45,7 @@ with remaining listeners, and returns an error summary.
 
 ## Persistence and trust boundaries
 
-The legal subsystem persists legal documents and consent decisions in SQLite.
+The bot registry persists family/release/instance identity in SQLite when configured; initialization and schema version registration are transactional. Ownership and authorization are not implemented. The legal subsystem persists legal documents and consent decisions in SQLite.
 Document registration and the read/validate/write path for consent decisions
 use immediate transactions, so concurrent independent database connections
 cannot both withdraw the same grant or observe a document-registration race
