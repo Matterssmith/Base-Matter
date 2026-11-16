@@ -8,12 +8,14 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `182bee7b9709dd99df73d9b8e45302dee949f4fb`
+- Previous synchronized base commit: `f6ad9dca1e58275832d992b72802645ad46775ca`
+- Latest confirmed checkpoint before the current local work:
+  `f6ad9dca1e58275832d992b72802645ad46775ca`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `182bee7b9709dd99df73d9b8e45302dee949f4fb` before owner-transfer concurrency coverage.
+  `f6ad9dca1e58275832d992b72802645ad46775ca` before the current integrated-flow
+  extension. The current change is not yet committed or published.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -68,7 +70,7 @@ not ready for Matter-Bot.
   loading now validates the provider's Vault ID again at staging time, before
   any staged key set replaces the existing `KeyManager` state.
 - Added an integration-style SQLite recovery test that closes and reopens the
-  runtime and verifies user, consent history, and access survive.
+  runtime and verifies bot identity, user, consent history, and access survive.
 - Made legal document registration and consent decision validation/writes
   transactional across independent SQLite connections.
 - Changed legal access evaluation to one SQL statement so user and consent
@@ -98,6 +100,11 @@ not ready for Matter-Bot.
   tests.
 - Added this continuity record.
 - Preserved the exact project credit in the root README.
+- Extended `tests/platform_flow.rs` to exercise mandatory legal access denial
+  before consent, grant after acceptance, renewed denial after withdrawal, and
+  recovery of both bot identity and legal history after closing and reopening
+  the SQLite stores. The test uses a unique temporary directory and removes
+  only that test-owned directory.
 
 ### Files created, modified, and deleted
 
@@ -177,6 +184,11 @@ After formatting, the following commands completed successfully:
 
 - Full `cargo test` with persistent identity and cross-module flow — **175 passed, 0 failed**;
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
+- Current local verification after legal grant/withdrawal and dual-store
+  recovery flow — focused `cargo test --test platform_flow`: **1 passed**;
+  `cargo fmt --all`, `cargo check --all-targets`, and full `cargo test`:
+  **182 passed, 0 failed**; doc tests: 0 passed, 0 failed. `git diff --check`
+  passed.
 
 These results verify only the code that exists. They do not verify absent bot
 platform capabilities or a live external integration.
@@ -238,6 +250,9 @@ platform capabilities or a live external integration.
 - README files reviewed for owner-transfer concurrency test: **1**.
 - README files updated for owner-transfer concurrency test: **0**.
 - README files with no changes for owner-transfer concurrency test: **1**.
+- README files reviewed for legal-consent and dual-store recovery flow: **1**.
+- README files updated for legal-consent and dual-store recovery flow: **0**.
+- README files with no changes for legal-consent and dual-store recovery flow: **1**.
 - README files with no changes for runtime registry injection: **0**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
@@ -290,8 +305,10 @@ platform capabilities or a live external integration.
   are capped at 16 MiB before encryption or Base64 decoding. Errors
   from key, binding, and proof providers are sanitized at module boundaries; a
   regression test confirms an upstream secret-like diagnostic is not returned.
-- I: **Not complete.** Added runtime legal-store close/reopen recovery and
-  changing-provider-identity tests. A basic identity/runtime/service/event/module lifecycle flow now passes; broad
+- I: **Not complete.** Added runtime legal-store close/reopen recovery,
+  changing-provider-identity tests, and a cross-module identity/runtime/service/
+  event/module lifecycle flow including legal grant/withdrawal and recovery of
+  bot identity plus legal consent after reopening SQLite. Broad
   authorization/socket/service fault-injection tests remain blocked by absent
   subsystems.
 - J: **Not complete.** Existing security-focused tests pass; general
@@ -321,23 +338,21 @@ external services.
 1. Re-read this file and the root README.
 2. Confirm the current branch, status, and remote tip. Preserve local work;
    do not discard `Cargo.lock` or `target/` without inspecting ownership.
-3. Continue H by auditing and testing the existing implementations, beginning
-   with bot identity-store migration/recovery, legal-store transaction behavior,
-   and security-provider boundaries, including replay cleanup/capacity and
-   sanitized provider errors; caller-owned module lifecycle coordination is now implemented;
-   the event/service/i18n lock and callback pass has been audited,
-   legal-store concurrency/rollback tests pass, and envelope input sizes are
-   bounded before decoding. Cross-module flow coverage now exists in
-   `tests/platform_flow.rs`; extend it with legal acceptance/denial and bot
-   registry failure/recovery paths. Make targeted compatible corrections with
-   behavior tests.
-4. Run the complete verification sequence after the above targeted tests, then
-   update the recorded results here. The latest full suite passed 179 tests.
-   Continue auditing bot-owner audit/error paths, then legal SQLite and provider
-   boundaries. Design shared-user linking only after an explicit authenticated
-   principal contract is defined; keep Matter-Bot blocked. Add tests and make
-   compatible fixes where defects are confirmed.
-5. Update this record after each completed stage. Do not mark H–L complete
+3. Continue H with a module-by-module audit of `src/bots`, `src/legal`, and
+   `src/security`, including migration rollback/corrupt-store behavior, owner
+   audit/error semantics, legal transaction failure paths, replay-store bounds,
+   and key/provider boundary validation. Add behavior tests for every confirmed
+   defect. Do not invent a shared-user identity system until a trustworthy
+   authenticated-principal contract is available.
+4. Continue I by adding cross-module resilience cases around bot ownership,
+   provider failure, and legal-store errors. The current suite passes 182 tests;
+   this does not cover absent router, sockets, plugins, general authorization,
+   or live external services. Keep Matter-Bot blocked.
+5. After each coherent checkpoint, audit every README, update this ledger,
+   commit to `matter-beta`, push the branch, then fetch and verify the published
+   SHA before continuing. Run the full verification sequence before release
+   readiness claims.
+6. Update this record after each completed stage. Do not mark H–L complete
    until the corresponding criteria are implemented and verified.
 
 For later work, re-fetch the development branch before verification or code

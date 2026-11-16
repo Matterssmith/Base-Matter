@@ -10,7 +10,8 @@
 
 use anyhow::Result;
 use matter_base::{
-    BotRegistry, CoreConfig, CoreModule, MatterContext, MatterRuntime, ModuleManager,
+    BotRegistry, ConsentDecision, CoreConfig, CoreModule, LegalDocument, LegalDocumentType,
+    MatterContext, MatterRuntime, ModuleManager,
 };
 use std::fs;
 use std::path::PathBuf;
@@ -83,10 +84,64 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
     .unwrap();
     assert_eq!(
         runtime.context.bots.get(identity.instance_id()).unwrap(),
-        Some(identity)
+        Some(identity.clone())
     );
 
     runtime.context.legal.register_user("flow-user").unwrap();
+    runtime
+        .context
+        .legal
+        .register_document(&LegalDocument {
+            document_id: "flow-terms-v1".to_owned(),
+            scope: "matter-base-flow".to_owned(),
+            document_type: LegalDocumentType::Terms,
+            version: "1.0.0".to_owned(),
+            locale: "es".to_owned(),
+            content: "Integration flow terms".to_owned(),
+            mandatory: true,
+            required_decision: ConsentDecision::Accepted,
+            active: true,
+        })
+        .unwrap();
+    assert!(runtime
+        .ensure_access("flow-user", "matter-base-flow", "es")
+        .is_err());
+    runtime
+        .context
+        .legal
+        .record_decision(
+            "flow-user",
+            "flow-terms-v1",
+            ConsentDecision::Accepted,
+            Some("integration-test"),
+        )
+        .unwrap();
+    assert!(runtime
+        .ensure_access("flow-user", "matter-base-flow", "es")
+        .is_ok());
+    runtime
+        .context
+        .legal
+        .record_decision(
+            "flow-user",
+            "flow-terms-v1",
+            ConsentDecision::Declined,
+            Some("integration-test"),
+        )
+        .unwrap();
+    assert!(runtime
+        .ensure_access("flow-user", "matter-base-flow", "es")
+        .is_err());
+    assert_eq!(
+        runtime
+            .context
+            .legal
+            .decision_history("flow-user")
+            .unwrap()
+            .len(),
+        2
+    );
+
     let callbacks = Arc::new(Mutex::new(Vec::new()));
     let observed = Arc::new(Mutex::new(Vec::new()));
     let observed_event = Arc::clone(&observed);
@@ -116,4 +171,38 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
         *callbacks.lock().unwrap(),
         ["initialized", "started", "stopped"]
     );
+
+    drop(runtime);
+    let recovered_registry = BotRegistry::open_sqlite(&registry_path).unwrap();
+    let recovered_runtime = MatterRuntime::open_with_bot_registry(
+        CoreConfig::default(),
+        directory.0.join("legal.db"),
+        recovered_registry,
+    )
+    .unwrap();
+    assert_eq!(
+        recovered_runtime
+            .context
+            .bots
+            .get(identity.instance_id())
+            .unwrap(),
+        Some(identity.clone())
+    );
+    assert!(recovered_runtime
+        .context
+        .legal
+        .user_exists("flow-user")
+        .unwrap());
+    assert_eq!(
+        recovered_runtime
+            .context
+            .legal
+            .decision_history("flow-user")
+            .unwrap()
+            .len(),
+        2
+    );
+    assert!(recovered_runtime
+        .ensure_access("flow-user", "matter-base-flow", "es")
+        .is_err());
 }
