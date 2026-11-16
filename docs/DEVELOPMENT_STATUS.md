@@ -9,12 +9,12 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`
-- Latest confirmed published checkpoint: `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`
+- Latest confirmed published checkpoint: `6b501997f377e8dd424ba78669b04796f6a2a989`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6` after publishing the lifecycle
-  resilience tests; fetch confirmed the local and remote commit IDs match.
+  `6b501997f377e8dd424ba78669b04796f6a2a989` after publishing the shared-user
+  registry; fetch confirmed local and remote commit IDs match.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -456,7 +456,7 @@ external services.
   `origin/matter-beta`; fetch confirmed the published SHA. No stable branch
   promotion was made.
 
-## Current local work — shared user registry
+## Latest checkpoint — shared user registry
 
 - Implemented `UserRegistry`, `UserPrincipal`, `UserAuthorizer`, and a
   replaceable `UserStore`; provided in-memory and SQLite stores.
@@ -483,8 +483,10 @@ external services.
   (196 passed, 0 failed; 0 doc tests), and `git diff --check`. Platform flow
   passed (3); no live services were used.
 - README audit for this work: 1 found, 1 reviewed, 1 updated, 0 unchanged.
-- This work is local and not yet committed/pushed. The published branch tip at
-  the start was `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`.
+- Commit `6b501997f377e8dd424ba78669b04796f6a2a989` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the same SHA. The README
+  audit found 1 README, reviewed 1, updated 1, unchanged 0; its relative links
+  resolve. No stable-branch promotion was made.
 - Recovery note: an earlier stash attempt failed while intent-to-add entries
   were present; a separate preserved bot-registry stash was partially applied
   and conflicted. It remains in `git stash list` and was not discarded or
@@ -497,18 +499,15 @@ external services.
 
 ## Exact next task to resume
 
-1. Complete the user-registry checkpoint: inspect the staged full diff, audit
-   all README files (1 exists), commit to `matter-beta`, push, fetch, and verify
-   the published SHA. Do not promote to `matter`.
-2. Continue H by auditing legal authorization denial/error paths and remaining
+1. Continue H by auditing legal authorization denial/error paths and remaining
    provider, key, and bot-registry corruption cases. Add tests for confirmed
    defects.
-3. Continue I with cross-module resilience around bot ownership, provider
+2. Continue I with cross-module resilience around bot ownership, provider
    failures, legal-store errors, and shared users. Router, sockets, plugins,
    general resource authorization, and live services remain uncovered.
-4. Complete J, K, and L in order. Reassess capabilities from actual code and
+3. Complete J, K, and L in order. Reassess capabilities from actual code and
    keep Matter-Bot blocked until all readiness criteria are satisfied.
-5. At each checkpoint, review every README, update this ledger, commit and push
+4. At each checkpoint, review every README, update this ledger, commit and push
    to `matter-beta`, then fetch and verify the exact published SHA. Never claim
    Vault or platform integrations work without real verification.
 
