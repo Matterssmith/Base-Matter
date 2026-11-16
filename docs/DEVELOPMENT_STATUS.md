@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `ef3055e16d67cb79e13b75c30bb5e82e52e723d4`
+- Latest confirmed checkpoint commit: `38ff6f51f2e3ec98b06e6e84fb7d73f7262ec1f2`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `ef3055e16d67cb79e13b75c30bb5e82e52e723d4` before registration rollback coverage.
+  `38ff6f51f2e3ec98b06e6e84fb7d73f7262ec1f2` before cross-module flow coverage.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -171,6 +171,9 @@ After formatting, the following commands completed successfully:
 - Secret-pattern scan of the tracked diff — no matches. This is a pattern
   scan, not a comprehensive secret detector.
 
+- Full `cargo test` with persistent identity and cross-module flow — **175 passed, 0 failed**;
+  doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
+
 These results verify only the code that exists. They do not verify absent bot
 platform capabilities or a live external integration.
 
@@ -208,6 +211,9 @@ platform capabilities or a live external integration.
 - README files reviewed for transactional identity schema migrations: **1**.
 - README files updated for transactional identity schema migrations: **1**.
 - README files with no changes for transactional identity schema migrations: **0**.
+- README files reviewed for cross-module flow test: **1**.
+- README files updated for cross-module flow test: **0**.
+- README files with no changes for cross-module flow test: **1**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
 - Problems found: documented JavaScript/Node project structure and `npm`
@@ -260,8 +266,9 @@ platform capabilities or a live external integration.
   from key, binding, and proof providers are sanitized at module boundaries; a
   regression test confirms an upstream secret-like diagnostic is not returned.
 - I: **Not complete.** Added runtime legal-store close/reopen recovery and
-  changing-provider-identity tests. Broad bot/authorization/socket/service
-  integration and resilience tests cannot pass until those subsystems exist.
+  changing-provider-identity tests. A basic identity/runtime/service/event/module lifecycle flow now passes; broad
+  authorization/socket/service fault-injection tests remain blocked by absent
+  subsystems.
 - J: **Not complete.** Existing security-focused tests pass; general
   authorization, socket/plugin isolation, operational auditing, and an
   independent security review remain unavailable or absent.
@@ -295,8 +302,10 @@ external services.
    sanitized provider errors; caller-owned module lifecycle coordination is now implemented;
    the event/service/i18n lock and callback pass has been audited,
    legal-store concurrency/rollback tests pass, and envelope input sizes are
-   bounded before decoding. Make
-   targeted compatible corrections with behavior tests.
+   bounded before decoding. Cross-module flow coverage now exists in
+   `tests/platform_flow.rs`; extend it with legal acceptance/denial and bot
+   registry failure/recovery paths. Make targeted compatible corrections with
+   behavior tests.
 4. Run the complete verification sequence after the above targeted tests, then
    update the recorded results here. The latest full suite passed 171 tests.
    Continue auditing SQLite operation error paths, then provider authentication
@@ -310,10 +319,11 @@ changes, using the safe stash/fetch/reset/reapply procedure from the project
 instructions. Never infer publication from local commit state alone.
 
 Bot identity registry implementation in the current work: `src/bots/mod.rs`,
-`src/lib.rs`, and `tests/bot_registry.rs`. It provides memory and SQLite
-stores, validation, generated instance IDs, atomic unique names, persistence
-recovery, atomic component-scoped schema migration, future-version rejection,
-and cross-connection concurrency. Ownership, authorization,
+`src/lib.rs`, and `tests/bot_registry.rs`, plus cross-module behavior in
+`tests/platform_flow.rs`. The registry provides memory and SQLite stores,
+validation, generated instance IDs, atomic unique names, persistence recovery,
+atomic component-scoped schema migration, future-version rejection, and
+cross-connection concurrency. Ownership, authorization,
 controlled deletion remains pending; component-scoped schema versioning is
 transactional and rejects unsupported future versions. The full suite passed
-with 174 tests; `cargo check --all-targets` and `git diff --check` passed.
+with 175 tests; `cargo check --all-targets` and `git diff --check` passed.
