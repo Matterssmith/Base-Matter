@@ -30,7 +30,6 @@ pub use key_manager::KeyManager;
 
 pub use key_provider::{
     create_provider_binding_proof,
-    derive_provider_binding_key,
     BoundKeyProvider,
     KeyProvider,
 };
