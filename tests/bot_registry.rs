@@ -5,7 +5,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
-use matter_base::{BotRegistry, SqliteBotIdentityStore};
+use matter_base::{BotAction, BotRegistry, OwnerRecoveryAuthorizer, SqliteBotIdentityStore};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Barrier};
@@ -39,10 +39,10 @@ impl Drop for TemporaryDirectory {
 fn in_memory_registry_keeps_identity_independent_and_names_unique() {
     let registry = BotRegistry::in_memory();
     let first = registry
-        .register("family-a", "release-1", "matter")
+        .register("family-a", "release-1", "matter", "owner-1")
         .unwrap();
     let second = registry
-        .register("family-a", "release-2", "matter")
+        .register("family-a", "release-2", "matter", "owner-1")
         .unwrap();
 
     assert_eq!(first.family_id(), second.family_id());
@@ -61,7 +61,7 @@ fn sqlite_registry_recovers_identity_after_reopening() {
     let identity = {
         let registry = BotRegistry::open_sqlite(&database).unwrap();
         registry
-            .register("family-a", "release-1", "matter")
+            .register("family-a", "release-1", "matter", "owner-1")
             .unwrap()
     };
 
@@ -84,12 +84,12 @@ fn sqlite_name_allocation_is_atomic_across_connections() {
     let first_barrier = Arc::clone(&barrier);
     let first_thread = thread::spawn(move || {
         first_barrier.wait();
-        first.register("family-a", "release-1", "matter")
+        first.register("family-a", "release-1", "matter", "owner-1")
     });
     let second_barrier = Arc::clone(&barrier);
     let second_thread = thread::spawn(move || {
         second_barrier.wait();
-        second.register("family-a", "release-1", "matter")
+        second.register("family-a", "release-1", "matter", "owner-1")
     });
 
     barrier.wait();
@@ -103,10 +103,14 @@ fn sqlite_name_allocation_is_atomic_across_connections() {
 #[test]
 fn registry_rejects_invalid_identity_fields() {
     let registry = BotRegistry::in_memory();
-    assert!(registry.register("\n", "release-1", "matter").is_err());
-    assert!(registry.register("family-a", "", "matter").is_err());
     assert!(registry
-        .register("family-a", "release-1", "\u{7f}")
+        .register("\n", "release-1", "matter", "owner-1")
+        .is_err());
+    assert!(registry
+        .register("family-a", "", "matter", "owner-1")
+        .is_err());
+    assert!(registry
+        .register("family-a", "release-1", "\u{7f}", "owner-1")
         .is_err());
     assert!(registry.get(" ").is_err());
 }
@@ -145,7 +149,8 @@ fn sqlite_registry_migration_preserves_existing_rows_and_records_version() {
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(version, 1);
+    assert_eq!(version, 3);
+    assert_eq!(recovered.owner_id(), None);
 }
 
 #[test]
@@ -193,7 +198,7 @@ fn failed_identity_write_rolls_back_and_name_can_be_reused() {
         .unwrap();
 
     assert!(registry
-        .register("family-a", "release-1", "matter")
+        .register("family-a", "release-1", "matter", "owner-1")
         .is_err());
     assert!(registry.list().unwrap().is_empty());
 
@@ -201,7 +206,7 @@ fn failed_identity_write_rolls_back_and_name_can_be_reused() {
         .execute_batch("DROP TRIGGER fail_bot_identity_insert;")
         .unwrap();
     let registered = registry
-        .register("family-a", "release-1", "matter")
+        .register("family-a", "release-1", "matter", "owner-1")
         .unwrap();
     assert_eq!(registered.display_name(), "matter");
     assert_eq!(registry.list().unwrap(), vec![registered]);
@@ -213,7 +218,7 @@ fn registry_rejects_corrupted_persisted_identity_fields() {
     let database = directory.0.join("corrupt-identity.db");
     let registry = BotRegistry::open_sqlite(&database).unwrap();
     let identity = registry
-        .register("family-a", "release-1", "matter")
+        .register("family-a", "release-1", "matter", "owner-1")
         .unwrap();
     let connection = rusqlite::Connection::open(database).unwrap();
     connection
@@ -225,4 +230,164 @@ fn registry_rejects_corrupted_persisted_identity_fields() {
 
     assert!(registry.get(identity.instance_id()).is_err());
     assert!(registry.list().is_err());
+}
+
+struct TestOwnerRecovery;
+
+impl OwnerRecoveryAuthorizer for TestOwnerRecovery {
+    fn authorize_claim(&self, instance_id: &str, actor_id: &str) -> anyhow::Result<()> {
+        if instance_id == "inst_existing" && actor_id == "recovered-owner" {
+            Ok(())
+        } else {
+            anyhow::bail!("ownership recovery denied")
+        }
+    }
+}
+
+#[test]
+fn owner_operations_are_checked_persisted_and_audited() {
+    let directory = TemporaryDirectory::new();
+    let database = directory.0.join("owned-bot.db");
+    let registry = BotRegistry::open_sqlite(&database).unwrap();
+    let identity = registry
+        .register("family-a", "release-1", "matter", "owner-1")
+        .unwrap();
+
+    assert_eq!(identity.owner_id(), Some("owner-1"));
+    assert!(registry
+        .authorize_owner(identity.instance_id(), "intruder")
+        .is_err());
+    registry
+        .authorize_owner(identity.instance_id(), "owner-1")
+        .unwrap();
+    assert!(registry
+        .transfer_owner(identity.instance_id(), "intruder", "owner-2")
+        .is_err());
+    registry
+        .transfer_owner(identity.instance_id(), "owner-1", "owner-2")
+        .unwrap();
+
+    let reopened = BotRegistry::open_sqlite(&database).unwrap();
+    assert_eq!(
+        reopened
+            .get(identity.instance_id())
+            .unwrap()
+            .unwrap()
+            .owner_id(),
+        Some("owner-2")
+    );
+    let audit = reopened.audit_history(identity.instance_id()).unwrap();
+    assert_eq!(audit.len(), 2);
+    assert_eq!(audit[0].action, "register");
+    assert_eq!(audit[0].actor_id, "owner-1");
+    assert_eq!(audit[1].action, "transfer_owner");
+    assert_eq!(audit[1].target_owner_id.as_deref(), Some("owner-2"));
+
+    assert!(reopened
+        .remove_owned(identity.instance_id(), "owner-1")
+        .is_err());
+    assert!(reopened
+        .remove_owned(identity.instance_id(), "owner-2")
+        .is_ok());
+    assert!(reopened.get(identity.instance_id()).unwrap().is_none());
+    assert_eq!(
+        reopened
+            .audit_history(identity.instance_id())
+            .unwrap()
+            .len(),
+        3
+    );
+}
+
+#[test]
+fn legacy_unowned_identity_requires_external_recovery_authorization() {
+    let directory = TemporaryDirectory::new();
+    let database = directory.0.join("legacy-owned-bot.db");
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    connection
+        .execute_batch(
+            "CREATE TABLE bot_identities (
+             instance_id TEXT PRIMARY KEY NOT NULL,
+             family_id TEXT NOT NULL,
+             release_key TEXT NOT NULL,
+             display_name TEXT NOT NULL UNIQUE,
+             created_at INTEGER NOT NULL
+         );
+         INSERT INTO bot_identities VALUES (
+             'inst_existing', 'family-a', 'release-1', 'legacy-bot', 1
+         );",
+        )
+        .unwrap();
+    drop(connection);
+
+    let registry = BotRegistry::open_sqlite(&database).unwrap();
+    let authorizer = TestOwnerRecovery;
+    assert!(registry
+        .claim_unowned("inst_existing", "intruder", &authorizer)
+        .is_err());
+    assert_eq!(
+        registry.get("inst_existing").unwrap().unwrap().owner_id(),
+        None
+    );
+    registry
+        .claim_unowned("inst_existing", "recovered-owner", &authorizer)
+        .unwrap();
+    assert_eq!(
+        registry.get("inst_existing").unwrap().unwrap().owner_id(),
+        Some("recovered-owner")
+    );
+    assert_eq!(
+        registry.audit_history("inst_existing").unwrap()[0].action,
+        "claim_unowned"
+    );
+}
+
+#[test]
+fn co_owner_scope_cannot_transfer_or_delete_and_is_audited() {
+    let directory = TemporaryDirectory::new();
+    let database = directory.0.join("co-owner.db");
+    let registry = BotRegistry::open_sqlite(&database).unwrap();
+    let identity = registry
+        .register("family-a", "release-1", "matter", "owner-1")
+        .unwrap();
+
+    assert!(registry
+        .add_co_owner(identity.instance_id(), "intruder", "co-1")
+        .is_err());
+    registry
+        .add_co_owner(identity.instance_id(), "owner-1", "co-1")
+        .unwrap();
+    registry
+        .authorize(identity.instance_id(), "co-1", BotAction::Manage)
+        .unwrap();
+    assert!(registry
+        .authorize(identity.instance_id(), "co-1", BotAction::ManageOwners)
+        .is_err());
+    assert!(registry
+        .authorize(identity.instance_id(), "co-1", BotAction::Delete)
+        .is_err());
+    assert!(registry
+        .transfer_owner(identity.instance_id(), "co-1", "co-2")
+        .is_err());
+    assert!(registry
+        .remove_owned(identity.instance_id(), "co-1")
+        .is_err());
+
+    let recovered = BotRegistry::open_sqlite(&database).unwrap();
+    let identity = recovered.get(identity.instance_id()).unwrap().unwrap();
+    assert_eq!(identity.co_owner_ids(), &["co-1"]);
+    recovered
+        .remove_co_owner(identity.instance_id(), "owner-1", "co-1")
+        .unwrap();
+    assert!(recovered
+        .authorize(identity.instance_id(), "co-1", BotAction::Manage)
+        .is_err());
+    let audit = recovered.audit_history(identity.instance_id()).unwrap();
+    assert_eq!(
+        audit
+            .iter()
+            .map(|record| record.action.as_str())
+            .collect::<Vec<_>>(),
+        ["register", "add_co_owner", "remove_co_owner"]
+    );
 }

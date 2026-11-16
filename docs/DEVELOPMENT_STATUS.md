@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `feaa16a5496de1caca18fac69c5afea5baa68573`
+- Latest confirmed checkpoint commit: `54d726a9ee2ae0c54e3af59dc3589961acb6e50b`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `feaa16a5496de1caca18fac69c5afea5baa68573` before persisted-identity validation.
+  `54d726a9ee2ae0c54e3af59dc3589961acb6e50b` before ownership enforcement.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -37,10 +37,10 @@ not ready for Matter-Bot.
 | Capability | Status | Evidence / limitation |
 | --- | --- | --- |
 | Runtime and lifecycle | PARTIAL | Context shares a bot registry and caller-owned `ModuleManager` coordinates ordered lifecycle callbacks; `MatterRuntime` still does not own/start modules and services have no lifecycle. |
-| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates independent instance IDs, persists identities through an injectable store/SQLite, validates recovered fields, and allocates unique display names; ownership, authorization, and controlled removal are absent. |
+| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates IDs, persists validated identities, and allocates unique names; owner-only transfer/removal, limited co-owner scope, legacy recovery authorization, and audit history work. Shared-user validation and general role/resource authorization remain absent. |
 | Shared application users and bot data isolation | ABSENT | `legal_users` are legal-consent subjects, not a shared application user system. |
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
-| Persistence and recovery | PARTIAL | SQLite persists bot identities and legal documents/decisions. No config/socket/service persistence or versioned migrations framework. |
+| Persistence and recovery | PARTIAL | SQLite persists bot identities and legal documents/decisions. No config/socket/service persistence or ecosystem-wide migration coordinator; the bot registry has its own transactional schema versions. |
 | Events and messaging | PARTIAL | Named synchronous in-memory event callbacks exist; no durable events or messaging contract. |
 | Router and command registry | ABSENT | No implementation. |
 | Middleware, roles, permissions, authorization | ABSENT | Provider key permissions exist only in the security integration; no general resource authorization. |
@@ -167,6 +167,8 @@ After formatting, the following commands completed successfully:
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
 - Full `cargo test` after provider error sanitization — **167 passed, 0 failed**;
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
+- Full `cargo test` after owner/co-owner enforcement — **179 passed, 0 failed**;
+  doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
 - Local Markdown-link scan — all relative links resolved.
 - Secret-pattern scan of the tracked diff — no matches. This is a pattern
   scan, not a comprehensive secret detector.
@@ -222,6 +224,15 @@ platform capabilities or a live external integration.
 - README files with no changes for persisted identity validation: **1**.
 - README files reviewed for runtime registry injection: **1**.
 - README files updated for runtime registry injection: **1**.
+- README files reviewed for bot ownership and co-owner policy: **1**.
+- README files updated for bot ownership and co-owner policy: **1**.
+- README files with no changes for bot ownership and co-owner policy: **0**.
+- README files reviewed for ownership example/roadmap correction: **1**.
+- README files updated for ownership example/roadmap correction: **1**.
+- README files with no changes for ownership example/roadmap correction: **0**.
+- README files reviewed for co-owner code example and auth boundary: **1**.
+- README files updated for co-owner code example and auth boundary: **1**.
+- README files with no changes for co-owner code example and auth boundary: **0**.
 - README files with no changes for runtime registry injection: **0**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
@@ -316,9 +327,10 @@ external services.
    registry failure/recovery paths. Make targeted compatible corrections with
    behavior tests.
 4. Run the complete verification sequence after the above targeted tests, then
-   update the recorded results here. The latest full suite passed 171 tests.
-   Continue auditing SQLite operation error paths, then provider authentication
-   and key-store failure behavior. Add tests and make
+   update the recorded results here. The latest full suite passed 179 tests.
+   Continue auditing bot-owner audit/error paths, then legal SQLite and provider
+   boundaries. Design shared-user linking only after an explicit authenticated
+   principal contract is defined; keep Matter-Bot blocked. Add tests and make
    compatible fixes where defects are confirmed.
 5. Update this record after each completed stage. Do not mark H–L complete
    until the corresponding criteria are implemented and verified.
@@ -327,12 +339,19 @@ For later work, re-fetch the development branch before verification or code
 changes, using the safe stash/fetch/reset/reapply procedure from the project
 instructions. Never infer publication from local commit state alone.
 
-Bot identity registry implementation in the current work: `src/bots/mod.rs`,
+Bot identity/ownership implementation in the current uncommitted work: `src/bots/mod.rs`,
 `src/lib.rs`, and `tests/bot_registry.rs`, plus cross-module behavior in
 `tests/platform_flow.rs`. The registry provides memory and SQLite stores,
 validation, generated instance IDs, atomic unique names, persistence recovery,
-atomic component-scoped schema migration, future-version rejection, and
-cross-connection concurrency. Ownership, authorization,
-controlled deletion remains pending; component-scoped schema versioning is
-transactional and rejects unsupported future versions. The full suite passed
-with 176 tests; `cargo check --all-targets` and `git diff --check` passed.
+transactional component-scoped schema migrations, future-version rejection,
+cross-connection concurrency, owner-only changes/deletion, bounded co-owner
+authority, legacy owner recovery hooks, and persistent ownership audit records.
+Owner/co-owner operations use point-of-write authorization and transactional
+audit records; legacy unowned records require an injected recovery authorizer.
+Owner IDs must come from an authenticated application principal; this crate does
+not authenticate platform users or verify owner IDs against a shared user store.
+Component-scoped schema versioning is transactional and rejects unsupported
+future versions. The full suite passed
+with 179 tests; `cargo check --all-targets` and `git diff --check` passed.
+The ownership work has not yet been committed/pushed; preserve it before any
+synchronization, then record its checkpoint SHA after a successful push.

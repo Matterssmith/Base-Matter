@@ -22,7 +22,8 @@ pub mod security;
 pub mod services;
 
 pub use bots::{
-    BotIdentity, BotIdentityStore, BotRegistry, InMemoryBotIdentityStore, SqliteBotIdentityStore,
+    BotAction, BotAuditRecord, BotIdentity, BotIdentityStore, BotRegistry,
+    InMemoryBotIdentityStore, OwnerRecoveryAuthorizer, SqliteBotIdentityStore,
 };
 pub use core::config::CoreConfig;
 pub use core::context::MatterContext;

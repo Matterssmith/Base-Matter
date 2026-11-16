@@ -36,8 +36,15 @@ verified stage assessment.
 Matter-Base is intended to host reusable Rust capabilities consumed through
 public APIs. It must remain independent of Matter-Bot and platform adapters.
 This repository currently does **not** implement WhatsApp, Telegram, Discord,
-shared application users, ownership and authorization roles,
+shared application users, general authorization roles,
 command routing, socket control, plugin execution, or a sandbox.
+
+Bot registration requires an owner ID. Consumers must derive actor IDs from
+authenticated requests before calling owner-management APIs. Owners can manage
+co-owners and transfer/delete bots; co-owners can manage bot-scoped operations
+but cannot change ownership or delete. Legacy unowned records require an
+injected `OwnerRecoveryAuthorizer` before ownership can be claimed. Ownership
+changes are written to the registry audit history.
 
 The security module defines provider and key-provider contracts. It does not
 ship a production Matter-Vault integration or store platform sessions or
@@ -51,7 +58,7 @@ service.
 | `core::config` | Default application name, environment, debug flag, and locale | Partial; no validation/loading |
 | `core::runtime` | Opens legal storage and builds a context; can inject a bot registry | Partial; default bot registry is in memory and `initialize` logs only |
 | `core::context` | Shares event bus, typed service registry, legal store, and bot registry | Implemented at this scope |
-| `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented registry; ownership/authorization/deletion are pending |
+| `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; general roles and shared user validation remain pending |
 | `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish`; `publish_checked` catches unwinding panics per listener, continues dispatch, and returns an error |
 | `services` | In-memory type-indexed service registration and retrieval | Basic; no lifecycle management |
 | `i18n` | In-memory translation catalogs and key fallback | Basic; no bundled catalogs or locale validation |
@@ -153,9 +160,25 @@ See [architecture](docs/architecture.md), [services](docs/services.md),
 [internationalization](docs/i18n.md), and [security module source](src/security/)
 for component-level details.
 
+## Bot ownership
+
+```rust,no_run
+use matter_base::{BotAction, BotRegistry};
+
+fn register_bot(bots: &BotRegistry, authenticated_owner_id: &str) -> anyhow::Result<()> {
+    let bot = bots.register("family-key", "release-key", "matter", authenticated_owner_id)?;
+    bots.authorize(bot.instance_id(), authenticated_owner_id, BotAction::Manage)?;
+    Ok(())
+}
+```
+
+Pass an owner ID derived from the application's authenticated request. Do not
+accept it directly from an untrusted request field.
+
 ## Roadmap boundary
 
-Shared users, ownership and authorization, universal command routing, Control Plane/socket policy,
+Shared users and their explicit identity links, general role inheritance,
+universal command routing, Control Plane/socket policy,
 connection and messaging contracts, plugin validation, and effective sandbox
 isolation remain pending. Matter-Bot must not be built on this crate until
 those core contracts are implemented, integrated, documented, and tested.

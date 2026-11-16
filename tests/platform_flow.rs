@@ -73,7 +73,7 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
     let registry_path = directory.0.join("bots.db");
     let registry = BotRegistry::open_sqlite(&registry_path).unwrap();
     let identity = registry
-        .register("shared-family", "release-1", "matter")
+        .register("shared-family", "release-1", "matter", "owner-1")
         .unwrap();
     let runtime = MatterRuntime::open_with_bot_registry(
         CoreConfig::default(),
