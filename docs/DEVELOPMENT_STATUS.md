@@ -9,12 +9,12 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`
-- Latest confirmed published checkpoint: `7212f10bf531f69de417b4a95970a868d92fa490`
+- Latest confirmed published checkpoint: `916fdbbf61c7b6c1668f7d58f0c43df3eb323d09`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
-- Synchronization: `git fetch origin` succeeded before and after the checkpoint
-  push; local `HEAD` matched `origin/matter-beta` at
-  `7212f10bf531f69de417b4a95970a868d92fa490` after publishing router and bot
-  ownership integration coverage; fetch confirmed local and remote IDs match.
+- Synchronization: push and subsequent fetch confirmed local HEAD and
+  origin/matter-beta at `916fdbbf61c7b6c1668f7d58f0c43df3eb323d09` for the
+  persistent socket activation checkpoint. This ledger-only follow-up does not
+  change the tested implementation.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -767,3 +767,8 @@ to `matter` occurred.
 - To resume: read this ledger, inspect actual Git and instructions, preserve local
   changes and ignored data, fetch/synchronize matter-beta, then continue the exact
   next task. Existing legacy bot-registry stash is retained.
+
+- Publication confirmed: activation checkpoint
+  `916fdbbf61c7b6c1668f7d58f0c43df3eb323d09` is on origin/matter-beta.
+  README re-review for this ledger-only commit: 1 found/reviewed, 0 updated,
+  1 unchanged; no new documentation discrepancies. `git diff --check` passed.
