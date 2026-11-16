@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -43,6 +44,35 @@ impl EventBus {
         }
     }
 
+    /// Dispatches to every listener and reports whether any handler panicked.
+    ///
+    /// Unlike `publish`, this method isolates unwinding panics per handler so
+    /// later listeners still run. Panic-abort builds cannot recover panics.
+    pub fn publish_checked(&self, event: &str, payload: &str) -> Result<()> {
+        let handlers = {
+            let handlers = self
+                .handlers
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+
+            handlers.get(event).cloned().unwrap_or_default()
+        };
+
+        let mut panicked_handlers = 0;
+        for handler in handlers {
+            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| handler(payload))).is_err()
+            {
+                panicked_handlers += 1;
+            }
+        }
+
+        if panicked_handlers > 0 {
+            return Err(anyhow!("{panicked_handlers} event handler(s) panicked"));
+        }
+
+        Ok(())
+    }
+
     pub fn listener_count(&self, event: &str) -> usize {
         let handlers = self
             .handlers
@@ -81,6 +111,24 @@ impl Default for EventBus {
 mod tests {
     use super::EventBus;
     use std::panic::{catch_unwind, AssertUnwindSafe};
+
+    #[test]
+    fn checked_publish_runs_remaining_handlers_and_reports_panics() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::sync::Arc;
+
+        let bus = EventBus::new();
+        let calls = Arc::new(AtomicUsize::new(0));
+        bus.subscribe("event", |_| panic!("handler failure"));
+        let called = Arc::clone(&calls);
+        bus.subscribe("event", move |_| {
+            called.fetch_add(1, Ordering::SeqCst);
+        });
+
+        let result = bus.publish_checked("event", "payload");
+        assert!(result.unwrap_err().to_string().contains("1 event handler"));
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
 
     #[test]
     fn recovers_after_registry_lock_poisoning() {

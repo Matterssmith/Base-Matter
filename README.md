@@ -50,7 +50,7 @@ service.
 | `core::config` | Default application name, environment, debug flag, and locale | Partial; no validation/loading |
 | `core::runtime` | Opens the legal SQLite store, builds context, and exposes legal access checks | Partial; `initialize` logs only |
 | `core::context` | Shares event bus, typed service registry, and legal store | Implemented at this scope |
-| `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish` |
+| `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish`; `publish_checked` catches unwinding panics per listener, continues dispatch, and returns an error |
 | `services` | In-memory type-indexed service registration and retrieval | Basic; no lifecycle management |
 | `i18n` | In-memory translation catalogs and key fallback | Basic; no bundled catalogs or locale validation |
 | `legal` | SQLite documents, user IDs, immutable decision history, and access checks | Implemented at this scope |

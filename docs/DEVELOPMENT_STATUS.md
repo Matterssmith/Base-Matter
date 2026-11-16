@@ -153,8 +153,10 @@ After formatting, the following commands completed successfully:
   `git diff --check` passed.
 - Full `cargo test` after lock-poison recovery — **158 passed, 0 failed**;
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
+- Full `cargo test` after checked event dispatch — **159 passed, 0 failed**;
+  doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
 - `git diff --check`
-- Local Markdown-link scan — 7 Markdown files scanned, all relative links
+- Root README link audit — 1 README reviewed; all relative links resolve. — 7 Markdown files scanned, all relative links
   resolved.
 - Secret-pattern scan of the tracked diff — no matches. This is a pattern
   scan, not a comprehensive secret detector.
@@ -169,6 +171,9 @@ platform capabilities or a live external integration.
 - README files updated for the prior replay-store checkpoint: **1**.
 - README files reviewed for the lock-recovery checkpoint: **1**.
 - README files with no changes for the lock-recovery checkpoint: **1**.
+- README files reviewed for checked event dispatch: **1**.
+- README files updated for checked event dispatch: **1**.
+- README files with no changes for checked event dispatch: **0**.
 - Problems found: documented JavaScript/Node project structure and `npm`
   commands did not match the Rust Cargo crate; future bot/provider and other
   systems were presented as available; repository links and component claims
@@ -177,7 +182,8 @@ platform capabilities or a live external integration.
   implemented/pending boundaries, security persistence limitations, exact
   required credits, authenticated Vault revalidation, timestamp validation,
   replay-store configuration and its SQLite persistence boundary, synchronous
-  event callback behavior, and provider input size limits. The Matterssmith
+  event callback behavior, explicit panic-isolated dispatch API, and provider
+  input size limits. The Matterssmith
   banner/heading identity has been retained.
 - Problems pending: component-by-component README examples cannot cover the
   absent subsystems; comprehensive release documentation waits for their
@@ -201,7 +207,9 @@ platform capabilities or a live external integration.
   exists.
   The first source/test pass found no `todo!`, `unimplemented!`, or production
   `panic!`, but did find lock `.expect` calls. The rest of the module audit
-  remains. SQLite replay storage now rejects duplicate assertions across
+  remains. `EventBus::publish_checked` was added to continue notifying listeners
+  after an individual unwinding panic and return an error summary; default
+  `publish` behavior remains backward compatible. SQLite replay storage now rejects duplicate assertions across
   independent connections and verifier restarts; four focused tests pass.
 - I: **Not complete.** Added runtime legal-store close/reopen recovery and
   changing-provider-identity tests. Broad bot/authorization/socket/service
@@ -216,7 +224,8 @@ platform capabilities or a live external integration.
   remain outstanding.
 - Matter-Bot: **Blocked by unmet Matter-Base criteria. Do not start.**
 
-Checkpoint `38777f93edd9187010240747b69cdef8cd93213e` added persistent replay
+Checkpoint `9e3cb4b0ca90b667096ecb4e0bf94e1c6ed3901a` recorded the lock-recovery
+checkpoint. Earlier checkpoint `38777f93edd9187010240747b69cdef8cd93213e` added persistent replay
 storage. Checkpoint `c0400d48dde6828bcc3784d8078d17242dcc88d5` added core lock-poison
 recovery; both were pushed to `origin/matter-beta` over authenticated SSH and
 confirmed by fetch. No promotion to `matter` was made. Matter-Vault live
@@ -230,13 +239,13 @@ external services.
 2. Confirm the current branch, status, and remote tip. Preserve local work;
    do not discard `Cargo.lock` or `target/` without inspecting ownership.
 3. Continue H by auditing and testing the existing implementations, beginning
-   with event/service/i18n lock-poisoning and callback behavior, legal-store
-   transaction/recovery behavior, and security-provider boundaries. Make
+   with legal-store transaction/recovery behavior and security-provider
+   boundaries; the event/service/i18n lock and callback pass has been audited. Make
    targeted compatible corrections with behavior tests.
 4. Run the complete verification sequence after the above targeted tests, then
-   update the recorded results here. (Completed for this snapshot: 155 tests
-   passed.) Continue auditing SQLite operation error paths, then
-   provider authentication and key-store failure behavior. Add tests and make
+   update the recorded results here. (Latest full suite for this snapshot: 159 tests passed.) Continue auditing
+   SQLite operation error paths, then provider authentication and key-store
+   failure behavior. Add tests and make
    compatible fixes where defects are confirmed.
 5. Update this record after each completed stage. Do not mark H–L complete
    until the corresponding criteria are implemented and verified.

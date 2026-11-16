@@ -37,8 +37,9 @@ there is no module registry or lifecycle coordinator. See the crate modules in
 
 The current event bus clones a listener list and releases its registry lock
 before invoking callbacks, so callbacks may subscribe or clear listeners
-reentrantly. Callbacks are synchronous; a panic propagates to the caller and
-prevents later callbacks in that publish operation from running.
+reentrantly. Callbacks are synchronous. `publish` propagates a callback panic and stops
+dispatch; `publish_checked` catches unwinding panics per handler, continues
+with remaining listeners, and returns an error summary.
 
 ## Persistence and trust boundaries
 
