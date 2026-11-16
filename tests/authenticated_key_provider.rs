@@ -1,15 +1,14 @@
 /*
  * Matter-Base — Authenticated Key Provider Tests
  *
- * Verifica permisos, vinculación criptográfica,
- * aislamiento de Vault y carga atómica de claves.
+ * Verifica la vinculación criptográfica de proveedores,
+ * sus permisos y la carga protegida de claves.
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
 use anyhow::{bail, Result};
-
 use matter_base::security::{
     create_provider_binding_proof,
     AuthenticatedProvider,
@@ -30,15 +29,18 @@ const VAULT: &str = "matterssmith-primary-vault";
 const AUDIENCE: &str = "matter-base-production";
 const PROVIDER: &str = "matter-vault-provider";
 
+const ASSERTION_KEY: [u8; 32] = [7u8; 32];
+const BINDING_KEY: [u8; 32] = [9u8; 32];
+
 struct MockKeyProvider {
     vault_id: String,
     keys: HashMap<String, [u8; 32]>,
     active_key_id: Option<String>,
-    authentication_key: [u8; 32],
+    binding_key: [u8; 32],
 }
 
 impl MockKeyProvider {
-    fn new(vault_id: &str, authentication_key: [u8; 32]) -> Self {
+    fn new(vault_id: &str, binding_key: [u8; 32]) -> Self {
         let mut keys = HashMap::new();
 
         keys.insert("vault-key-1".to_owned(), [11u8; 32]);
@@ -48,7 +50,7 @@ impl MockKeyProvider {
             vault_id: vault_id.to_owned(),
             keys,
             active_key_id: Some("vault-key-1".to_owned()),
-            authentication_key,
+            binding_key,
         }
     }
 }
@@ -77,7 +79,7 @@ impl KeyProvider for MockKeyProvider {
 impl BoundKeyProvider for MockKeyProvider {
     fn binding_proof(&self, message: &[u8]) -> Result<[u8; 32]> {
         create_provider_binding_proof(
-            &self.authentication_key,
+            &self.binding_key,
             message,
         )
     }
@@ -111,14 +113,15 @@ fn authenticated_provider(
     permissions: Vec<String>,
     required_permission: ProviderPermission,
     nonce: &[u8; 24],
-    key: &[u8; 32],
+    assertion_key: &[u8; 32],
+    binding_key: [u8; 32],
 ) -> AuthenticatedProvider {
     let assertion = assertion(permissions);
 
     let ciphertext = ProviderAuthenticator::seal_assertion(
         &assertion,
         nonce,
-        key,
+        assertion_key,
     )
     .unwrap();
 
@@ -128,12 +131,13 @@ fn authenticated_provider(
     )
     .unwrap();
 
-    AuthenticatedProvider::authenticate_and_authorize(
+    AuthenticatedProvider::authenticate_and_authorize_with_binding_key(
         &mut authenticator,
         &policy(),
         nonce,
         &ciphertext,
-        key,
+        assertion_key,
+        Zeroizing::new(binding_key),
         required_permission,
     )
     .unwrap()
@@ -149,17 +153,17 @@ fn all_permissions() -> Vec<String> {
 
 #[test]
 fn loads_keys_from_cryptographically_bound_provider() {
-    let key = [7u8; 32];
     let nonce = [1u8; 24];
 
     let session = authenticated_provider(
         all_permissions(),
         ProviderPermission::ReadKeyIds,
         &nonce,
-        &key,
+        &ASSERTION_KEY,
+        BINDING_KEY,
     );
 
-    let source = MockKeyProvider::new(VAULT, key);
+    let source = MockKeyProvider::new(VAULT, BINDING_KEY);
     let mut manager = KeyManager::new();
 
     session
@@ -170,11 +174,11 @@ fn loads_keys_from_cryptographically_bound_provider() {
     assert_eq!(manager.active_key_id(), Some("vault-key-1"));
     assert_eq!(manager.get("vault-key-1").unwrap(), &[11u8; 32]);
     assert_eq!(manager.get("vault-key-2").unwrap(), &[12u8; 32]);
+    assert_eq!(manager.provider_vault_id(), Some(VAULT));
 }
 
 #[test]
 fn rejects_loading_without_key_ids_permission() {
-    let key = [7u8; 32];
     let nonce = [2u8; 24];
 
     let session = authenticated_provider(
@@ -184,10 +188,11 @@ fn rejects_loading_without_key_ids_permission() {
         ],
         ProviderPermission::ReadActiveKey,
         &nonce,
-        &key,
+        &ASSERTION_KEY,
+        BINDING_KEY,
     );
 
-    let source = MockKeyProvider::new(VAULT, key);
+    let source = MockKeyProvider::new(VAULT, BINDING_KEY);
     let mut manager = KeyManager::new();
 
     assert!(session.load_key_manager(&mut manager, &source).is_err());
@@ -196,7 +201,6 @@ fn rejects_loading_without_key_ids_permission() {
 
 #[test]
 fn rejects_loading_without_active_key_permission() {
-    let key = [7u8; 32];
     let nonce = [3u8; 24];
 
     let session = authenticated_provider(
@@ -206,10 +210,11 @@ fn rejects_loading_without_active_key_permission() {
         ],
         ProviderPermission::ReadKeyIds,
         &nonce,
-        &key,
+        &ASSERTION_KEY,
+        BINDING_KEY,
     );
 
-    let source = MockKeyProvider::new(VAULT, key);
+    let source = MockKeyProvider::new(VAULT, BINDING_KEY);
     let mut manager = KeyManager::new();
 
     assert!(session.load_key_manager(&mut manager, &source).is_err());
@@ -218,7 +223,6 @@ fn rejects_loading_without_active_key_permission() {
 
 #[test]
 fn rejects_loading_without_key_material_permission() {
-    let key = [7u8; 32];
     let nonce = [4u8; 24];
 
     let session = authenticated_provider(
@@ -228,10 +232,11 @@ fn rejects_loading_without_key_material_permission() {
         ],
         ProviderPermission::ReadKeyIds,
         &nonce,
-        &key,
+        &ASSERTION_KEY,
+        BINDING_KEY,
     );
 
-    let source = MockKeyProvider::new(VAULT, key);
+    let source = MockKeyProvider::new(VAULT, BINDING_KEY);
     let mut manager = KeyManager::new();
 
     assert!(session.load_key_manager(&mut manager, &source).is_err());
@@ -240,17 +245,17 @@ fn rejects_loading_without_key_material_permission() {
 
 #[test]
 fn rejects_provider_from_different_vault() {
-    let key = [7u8; 32];
     let nonce = [5u8; 24];
 
     let session = authenticated_provider(
         all_permissions(),
         ProviderPermission::ReadKeyIds,
         &nonce,
-        &key,
+        &ASSERTION_KEY,
+        BINDING_KEY,
     );
 
-    let source = MockKeyProvider::new("another-vault", key);
+    let source = MockKeyProvider::new("another-vault", BINDING_KEY);
     let mut manager = KeyManager::new();
 
     assert!(session.load_key_manager(&mut manager, &source).is_err());
@@ -258,19 +263,18 @@ fn rejects_provider_from_different_vault() {
 }
 
 #[test]
-fn rejects_provider_without_matching_secret() {
-    let key = [7u8; 32];
-    let wrong_key = [8u8; 32];
+fn rejects_provider_with_different_binding_secret() {
     let nonce = [6u8; 24];
 
     let session = authenticated_provider(
         all_permissions(),
         ProviderPermission::ReadKeyIds,
         &nonce,
-        &key,
+        &ASSERTION_KEY,
+        BINDING_KEY,
     );
 
-    let source = MockKeyProvider::new(VAULT, wrong_key);
+    let source = MockKeyProvider::new(VAULT, [8u8; 32]);
     let mut manager = KeyManager::new();
 
     assert!(session.load_key_manager(&mut manager, &source).is_err());
@@ -278,19 +282,18 @@ fn rejects_provider_without_matching_secret() {
 }
 
 #[test]
-fn preserves_existing_keys_when_provider_binding_fails() {
-    let key = [7u8; 32];
-    let wrong_key = [8u8; 32];
+fn preserves_existing_keys_when_binding_fails() {
     let nonce = [7u8; 24];
 
     let session = authenticated_provider(
         all_permissions(),
         ProviderPermission::ReadKeyIds,
         &nonce,
-        &key,
+        &ASSERTION_KEY,
+        BINDING_KEY,
     );
 
-    let source = MockKeyProvider::new(VAULT, wrong_key);
+    let source = MockKeyProvider::new(VAULT, [8u8; 32]);
     let mut manager = KeyManager::new();
 
     manager
