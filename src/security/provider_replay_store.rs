@@ -12,6 +12,8 @@ use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+const MAX_TOTAL_REPLAY_ENTRIES: usize = 65_536;
+
 fn validate_identifier(value: &str) -> Result<()> {
     if value.trim().is_empty() || value.len() > 128 || value.chars().any(char::is_control) {
         bail!("Invalid provider replay identifier");
@@ -85,7 +87,10 @@ impl ProviderAssertionReplayStore for InMemoryProviderAssertionReplayStore {
             .count();
 
         if scope_count >= capacity {
-            bail!("Provider replay cache is full");
+            bail!("Provider replay cache is full for this scope");
+        }
+        if entries.len() >= MAX_TOTAL_REPLAY_ENTRIES {
+            bail!("Provider replay store has reached its global capacity");
         }
 
         entries.insert(key, expires_at);
@@ -120,8 +125,8 @@ impl SqliteProviderAssertionReplayStore {
                 PRIMARY KEY (vault_id, audience, assertion_id)
             );
 
-            CREATE INDEX IF NOT EXISTS idx_provider_assertion_replays_expiry
-                ON provider_assertion_replays (vault_id, audience, expires_at);
+            CREATE INDEX IF NOT EXISTS idx_provider_assertion_replays_global_expiry
+                ON provider_assertion_replays (expires_at);
             ",
         )?;
 
@@ -156,9 +161,8 @@ impl ProviderAssertionReplayStore for SqliteProviderAssertionReplayStore {
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
 
         transaction.execute(
-            "DELETE FROM provider_assertion_replays
-             WHERE vault_id = ?1 AND audience = ?2 AND expires_at <= ?3",
-            params![vault_id, audience, now],
+            "DELETE FROM provider_assertion_replays WHERE expires_at <= ?1",
+            params![now],
         )?;
 
         let existing: bool = transaction.query_row(
@@ -181,7 +185,15 @@ impl ProviderAssertionReplayStore for SqliteProviderAssertionReplayStore {
         )?;
         let capacity = i64::try_from(capacity).unwrap_or(i64::MAX);
         if current_count >= capacity {
-            bail!("Provider replay cache is full");
+            bail!("Provider replay cache is full for this scope");
+        }
+        let total_count: i64 = transaction.query_row(
+            "SELECT COUNT(*) FROM provider_assertion_replays",
+            [],
+            |row| row.get(0),
+        )?;
+        if total_count >= MAX_TOTAL_REPLAY_ENTRIES as i64 {
+            bail!("Provider replay store has reached its global capacity");
         }
 
         transaction.execute(

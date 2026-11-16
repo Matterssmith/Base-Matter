@@ -162,3 +162,27 @@ fn authenticator_rejects_replay_after_restart_with_sqlite_store() {
         .authenticate(&nonce, &ciphertext, &key)
         .is_err());
 }
+
+#[test]
+fn sqlite_store_removes_expired_entries_from_other_scopes() {
+    let directory = TemporaryDirectory::new();
+    let database = directory.0.join("global-expiry.db");
+    let store = SqliteProviderAssertionReplayStore::open(&database).unwrap();
+
+    store
+        .record_once("vault-a", "audience-a", "old-id", 150, 100, 10)
+        .unwrap();
+    store
+        .record_once("vault-b", "audience-b", "new-id", 300, 200, 10)
+        .unwrap();
+
+    let connection = rusqlite::Connection::open(database).unwrap();
+    let remaining: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM provider_assertion_replays WHERE expires_at <= 200",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(remaining, 0);
+}

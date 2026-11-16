@@ -63,8 +63,8 @@ Vault identity returned while staging keys still matches the authenticated
 identity before replacing the current key set.
 
 Assertion replay tracking defaults to an in-memory store. An injectable SQLite
-store persists replay IDs and enforces uniqueness transactionally across
-connections and process restarts. Deployments that need restart safety must
+store persists replay IDs, globally removes expired records, and enforces
+uniqueness and capacity transactionally across connections and process restarts. Deployments that need restart safety must
 configure that store; this does not provide a distributed replay service.
 
 ## Planned architecture (not implemented)
