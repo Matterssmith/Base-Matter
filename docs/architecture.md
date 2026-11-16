@@ -60,7 +60,8 @@ platform credentials in Matter-Base. Authenticated key loading checks that the
 Vault identity returned while staging keys still matches the authenticated
 identity before replacing the current key set. Provider key lists must contain
 between 1 and 4,096 entries; an empty or oversized list is rejected without
-replacing the current keys.
+replacing the current keys. The key manager also caps its total number of keys
+at 4,096, including manually inserted or rotated keys.
 
 Assertion replay tracking defaults to an in-memory store. An injectable SQLite
 store persists replay IDs, globally removes expired records, and enforces

@@ -42,6 +42,9 @@ impl KeyManager {
         if self.keys.contains_key(&key_id) {
             bail!("Key already registered");
         }
+        if self.keys.len() >= MAX_PROVIDER_KEYS {
+            bail!("Key manager has reached its capacity");
+        }
 
         self.keys.insert(key_id, key);
 
@@ -59,6 +62,9 @@ impl KeyManager {
 
         if self.keys.contains_key(&key_id) {
             bail!("Key already registered");
+        }
+        if self.keys.len() >= MAX_PROVIDER_KEYS {
+            bail!("Key manager has reached its capacity");
         }
 
         self.keys.insert(key_id.clone(), key);

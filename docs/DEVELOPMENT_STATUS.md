@@ -554,10 +554,10 @@ external services.
 
 ## Exact next task to resume
 
-1. Publish the empty-provider-key checkpoint to `matter-beta`, fetch, and
-   verify the published SHA.
-2. Continue H by auditing remaining provider and key corruption cases; add
-   tests for confirmed defects.
+1. Publish the key-capacity checkpoint to `matter-beta`, fetch, and confirm
+   the published SHA.
+2. Continue H by auditing remaining provider/key corruption cases; add tests
+   for confirmed defects.
 3. Continue I with cross-module resilience around bot ownership, provider
    failures, legal-store errors, and shared users. Router, sockets, plugins,
    general resource authorization, and live services remain uncovered.
@@ -566,6 +566,19 @@ external services.
 5. At each checkpoint, review every README, update this ledger, commit and push
    to `matter-beta`, then fetch and verify the exact published SHA. Never claim
    Vault or platform integrations work without real verification.
+
+## Current local work — total key-manager capacity
+
+- Added the 4,096-key limit to manual `insert` and `rotate`, matching the
+  provider-load limit. At capacity, both operations fail without mutating
+  key count or active-key state.
+- Added a boundary regression test and updated README/architecture docs.
+- Verified after syncing with `origin/matter-beta` at
+  `6b7a7f8e75c5d5409b9e5b81cfdd1e97b4e06b1e`: `cargo fmt --all`,
+  `cargo check --all-targets`, focused key-provider tests (8 passed), full
+  `cargo test` (203 passed, 0 failed; 0 doc tests), and `git diff --check`.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged; relative links
+  resolve. Ready to publish.
 
 ## Additional requested ecosystem scope
 

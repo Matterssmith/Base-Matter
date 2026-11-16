@@ -216,3 +216,23 @@ fn rejects_empty_provider_key_list_without_erasing_existing_keys() {
     assert!(manager.contains("existing-key"));
     assert_eq!(manager.provider_vault_id(), None);
 }
+
+#[test]
+fn manual_key_insertion_and_rotation_obey_the_manager_capacity() {
+    let mut manager = KeyManager::new();
+    for index in 0..4096 {
+        manager
+            .insert(format!("key-{index}"), [index as u8; 32])
+            .unwrap();
+    }
+    manager.set_active("key-0").unwrap();
+
+    assert!(manager.insert("over-limit".to_owned(), [7u8; 32]).is_err());
+    assert!(manager
+        .rotate("rotated-over-limit".to_owned(), [8u8; 32])
+        .is_err());
+    assert_eq!(manager.len(), 4096);
+    assert_eq!(manager.active_key_id(), Some("key-0"));
+    assert!(!manager.contains("over-limit"));
+    assert!(!manager.contains("rotated-over-limit"));
+}

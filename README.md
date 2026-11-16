@@ -181,6 +181,8 @@ platform credentials, and sessions out of the user data store.
 - Authenticated provider assertions are limited to 16 KiB, and a key provider
   must return 1–4,096 key IDs per load. Empty and oversized lists fail closed,
   preserving the current key set.
+- The key manager caps its total key count at 4,096 for provider loads and
+  manual insertion/rotation alike. Capacity errors leave existing keys intact.
 - Errors returned by injected key and binding providers are replaced with
   operation-level messages before they cross the integration boundary; this
   prevents provider-supplied diagnostics from exposing secrets through logs.
