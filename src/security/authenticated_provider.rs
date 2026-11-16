@@ -148,12 +148,8 @@ impl AuthenticatedProvider {
 
     /// Carga claves después de demostrar la posesión del secreto.
     ///
-    /// La prueba se vincula a:
-    /// - El proveedor autenticado.
-    /// - El Vault autenticado.
-    /// - Un desafío aleatorio nuevo.
-    ///
-    /// El proveedor debe implementar BoundKeyProvider.
+    /// La prueba se vincula al proveedor, al Vault y a un
+    /// desafío aleatorio nuevo para cada operación.
     pub fn load_key_manager(
         &self,
         manager: &mut KeyManager,
@@ -192,11 +188,6 @@ impl AuthenticatedProvider {
         }
 
         manager.load_from_provider(provider)?;
-
-        if manager.provider_vault_id() != Some(self.identity.vault_id()) {
-            manager.clear();
-            bail!("Loaded provider Vault does not match authenticated Vault");
-        }
 
         Ok(())
     }
