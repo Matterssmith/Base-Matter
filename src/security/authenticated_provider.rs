@@ -1,3 +1,4 @@
+
 /*
  * Matter-Base — Authenticated Provider
  *
@@ -14,6 +15,7 @@ use crate::security::{
     KeyManager,
     ProviderAccessPolicy,
     ProviderAuthenticator,
+    ProviderBindingResolver,
     ProviderIdentity,
     ProviderPermission,
 };
@@ -55,15 +57,17 @@ impl AuthenticatedProvider {
         })
     }
 
-    /// Autentica y autoriza una sesión con un secreto
-    /// de vinculación independiente del secreto de afirmación.
-    pub fn authenticate_and_authorize_with_binding_key(
+    /// Autentica la identidad y recupera el secreto de vínculo
+    /// desde una fuente de confianza asociada al proveedor y Vault.
+    ///
+    /// El secreto no se recibe desde el solicitante.
+    pub fn authenticate_and_authorize_with_binding_store(
         authenticator: &mut ProviderAuthenticator,
         policy: &ProviderAccessPolicy,
+        resolver: &ProviderBindingResolver,
         nonce: &[u8; 24],
         ciphertext: &[u8],
         assertion_key: &[u8; 32],
-        binding_key: Zeroizing<[u8; 32]>,
         required_permission: ProviderPermission,
     ) -> Result<Self> {
         let mut session = Self::authenticate_and_authorize(
@@ -73,6 +77,10 @@ impl AuthenticatedProvider {
             ciphertext,
             assertion_key,
             required_permission,
+        )?;
+
+        let binding_key = resolver.resolve_for_identity(
+            &session.identity,
         )?;
 
         session.binding_key = Some(binding_key);
