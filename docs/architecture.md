@@ -45,7 +45,7 @@ with remaining listeners, and returns an error summary.
 
 ## Persistence and trust boundaries
 
-The bot registry is shared through `MatterContext` and persists family/release/instance identity in SQLite when injected; initialization and schema version registration are transactional. Owner and co-owner checks, controlled removal, and registry ownership audit records are implemented. General role inheritance, shared-user existence checks, and authorization across other resource types are not. The legal subsystem persists legal documents and consent decisions in SQLite.
+The bot registry is shared through `MatterContext` and persists family/release/instance identity in SQLite when injected; initialization and schema version registration are transactional. Owner and co-owner checks, controlled removal, and registry ownership audit records are implemented. Reading bot audit history requires the current owner. General role inheritance, shared-user existence checks, and authorization across other resource types are not. The legal subsystem persists legal documents and consent decisions in SQLite; initialization and component schema-version updates are transactional, preserve unversioned existing data, roll back failed DDL, and reject unsupported future schema versions.
 Document registration and the read/validate/write path for consent decisions
 use immediate transactions, so concurrent independent database connections
 cannot both withdraw the same grant or observe a document-registration race

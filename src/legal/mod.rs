@@ -31,6 +31,8 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+const LEGAL_STORE_SCHEMA_VERSION: i64 = 1;
+
 /// Tipo de documento administrado por el sistema legal.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LegalDocumentType {
@@ -152,16 +154,37 @@ impl LegalStore {
     ///
     /// Las tablas existentes se conservan. Los triggers se agregan
     /// mediante IF NOT EXISTS para permitir inicializaciones repetidas.
+    /// La creación y el versionado del esquema son una sola transacción.
     fn initialize(&self) -> Result<()> {
-        let connection = self
+        let mut connection = self
             .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
 
-        connection.execute_batch(
-            "
-            PRAGMA foreign_keys = ON;
+        // SQLite only changes foreign-key enforcement outside a transaction.
+        connection.execute_batch("PRAGMA foreign_keys = ON;")?;
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        transaction.execute_batch(
+            "CREATE TABLE IF NOT EXISTS matter_schema_versions (
+                 component TEXT PRIMARY KEY NOT NULL,
+                 version INTEGER NOT NULL
+             );",
+        )?;
+        let current_version: Option<i64> = transaction
+            .query_row(
+                "SELECT version FROM matter_schema_versions WHERE component = ?1",
+                params!["legal_store"],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if current_version
+            .is_some_and(|version| !(0..=LEGAL_STORE_SCHEMA_VERSION).contains(&version))
+        {
+            bail!("Legal store schema version is invalid or newer than this runtime supports");
+        }
 
+        transaction.execute_batch(
+            "
             CREATE TABLE IF NOT EXISTS legal_users (
                 user_id TEXT PRIMARY KEY,
                 created_at INTEGER NOT NULL
@@ -260,6 +283,14 @@ impl LegalStore {
             END;
             ",
         )?;
+
+        transaction.execute(
+            "INSERT INTO matter_schema_versions (component, version)
+             VALUES (?1, ?2)
+             ON CONFLICT(component) DO UPDATE SET version = excluded.version",
+            params!["legal_store", LEGAL_STORE_SCHEMA_VERSION],
+        )?;
+        transaction.commit()?;
 
         Ok(())
     }

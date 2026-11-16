@@ -8,14 +8,15 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Previous synchronized base commit: `2030512e552b9d0ebf69feba547649012d1a8c62`
+- Previous synchronized base commit: `e05b0f3c4805f2cedb5660fbeb6c500d4a8f1fe7`
 - Latest confirmed checkpoint before the current local work:
-  `2030512e552b9d0ebf69feba547649012d1a8c62`
+  `e05b0f3c4805f2cedb5660fbeb6c500d4a8f1fe7`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `2030512e552b9d0ebf69feba547649012d1a8c62` before the registry migration
-  rollback test. Verify the current published tip from Git after each push.
+  `e05b0f3c4805f2cedb5660fbeb6c500d4a8f1fe7` before transactional legal-store
+  schema initialization. Verify the current published tip from Git after each
+  push.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -110,10 +111,18 @@ not ready for Matter-Bot.
   transaction as retrieving records. Co-owners and unrelated actors are
   denied. Records remain stored after bot deletion but are inaccessible through
   the current registry API after the identity is removed.
+- Current legal-store schema work modifies `src/legal/mod.rs` and adds three
+  isolated migration tests in `tests/legal.rs`; `README.md` and
+  `docs/architecture.md` now describe the transactional versioned initialization.
 - Added a migration-failure regression for the SQLite bot registry. An injected
   conflicting schema object forces migration to fail; the test verifies the
   schema version and identity columns remain at version 1, legacy rows remain
   present, and a clean retry completes to version 3.
+- Added component-scoped schema version 1 for the legal SQLite store. Schema
+  creation, indexes, immutability triggers, and the version row are now one
+  immediate transaction. Existing unversioned legal tables/data are preserved;
+  failed DDL rolls back, negative/future versions fail closed, and retry after
+  resolving a test-injected schema conflict succeeds.
 
 ### Files created, modified, and deleted
 
@@ -206,6 +215,10 @@ After formatting, the following commands completed successfully:
   `cargo fmt --all`, `cargo check --all-targets`, and full `cargo test` —
   **183 passed, 0 failed**; doc tests: 0 passed, 0 failed; `git diff --check`
   passed.
+- Current legal schema migration verification: 3 focused migration tests passed;
+  `cargo fmt --all`, `cargo check --all-targets`, full `cargo test` —
+  **186 passed, 0 failed**; doc tests: 0 passed, 0 failed;
+  `git diff --check` passed.
 
 These results verify only the code that exists. They do not verify absent bot
 platform capabilities or a live external integration.
@@ -276,6 +289,9 @@ platform capabilities or a live external integration.
 - README files reviewed for bot-registry migration rollback coverage: **1**.
 - README files updated for bot-registry migration rollback coverage: **0**.
 - README files with no changes for bot-registry migration rollback coverage: **1**.
+- README files reviewed for transactional/versioned legal-store initialization: **1**.
+- README files updated for transactional/versioned legal-store initialization: **1**.
+- README files with no changes for transactional/versioned legal-store initialization: **0**.
 - README files reviewed for the added Vault and WhatsApp/Telegram/Discord
   integration scope: **1**.
 - README files updated for that scope: **0**.
@@ -366,12 +382,11 @@ external services.
 1. Re-read this file and the root README.
 2. Confirm the current branch, status, and remote tip. Preserve local work;
    do not discard `Cargo.lock` or `target/` without inspecting ownership.
-3. Continue H with schema durability and failure paths in the legal store:
-   add transactional component-versioned initialization/migration coverage for
-   existing legal databases, interrupted schema writes, and unsupported future
-   versions. Preserve current legal data and test retry after migration failure.
-   Then continue auditing legal authorization boundaries and the remaining
-   provider/key and bot-registry corruption cases. Add behavior tests for every confirmed
+3. Continue H by auditing legal authorization boundaries and SQLite corruption
+   and failure paths, then continue the remaining provider/key and bot-registry
+   corruption cases. Legal initialization now has a transactional component
+   version; existing data migration, interrupted DDL rollback/retry, and future
+   version rejection have behavior tests. Add tests for every confirmed
    defect. Do not invent a shared-user identity system until a trustworthy
    authenticated-principal contract is available.
 4. Continue I by adding cross-module resilience cases around bot ownership,

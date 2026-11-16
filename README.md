@@ -132,7 +132,10 @@ applications that manage storage separately can provide a `LegalStore` with
 
 - Legal documents and consent decisions use SQLite; document registration and
   consent validation/writes run in transactions. Decision history is append-only
-  through the store's database triggers.
+  through the store's database triggers. Schema initialization and component
+  version registration are transactional; unversioned existing tables and their
+  data are preserved, failed DDL rolls back, and unsupported future versions
+  are rejected without rewriting the database.
 - Legal access checks evaluate the user and required documents in one SQLite
   statement, so the result uses one database snapshot.
 - The runtime persists only the legal store. Bot registrations, users, socket

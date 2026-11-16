@@ -9,6 +9,31 @@
  */
 
 use matter_base::{ConsentDecision, LegalDocument, LegalDocumentType, LegalStore};
+use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+struct TemporaryDirectory(PathBuf);
+
+impl TemporaryDirectory {
+    fn new(label: &str) -> Self {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "matter-base-legal-{label}-{}-{nonce}",
+            std::process::id()
+        ));
+        std::fs::create_dir(&path).unwrap();
+        Self(path)
+    }
+}
+
+impl Drop for TemporaryDirectory {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
 
 fn create_document(
     document_id: &str,
@@ -36,6 +61,160 @@ fn create_terms() -> LegalDocument {
         true,
         ConsentDecision::Accepted,
     )
+}
+
+#[test]
+fn legal_store_migration_versions_existing_schema_and_preserves_data() {
+    let directory = TemporaryDirectory::new("legacy-schema");
+    let database = directory.0.join("legal.db");
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    connection
+        .execute_batch(
+            "CREATE TABLE legal_users (
+                 user_id TEXT PRIMARY KEY,
+                 created_at INTEGER NOT NULL
+             );
+             CREATE TABLE legal_documents (
+                 document_id TEXT PRIMARY KEY,
+                 scope TEXT NOT NULL,
+                 document_type TEXT NOT NULL,
+                 version TEXT NOT NULL,
+                 locale TEXT NOT NULL,
+                 content TEXT NOT NULL,
+                 content_hash TEXT NOT NULL,
+                 mandatory INTEGER NOT NULL,
+                 required_decision TEXT NOT NULL,
+                 active INTEGER NOT NULL,
+                 created_at INTEGER NOT NULL,
+                 UNIQUE(scope, document_type, version, locale)
+             );
+             CREATE TABLE legal_decisions (
+                 record_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                 user_id TEXT NOT NULL,
+                 document_id TEXT NOT NULL,
+                 document_hash TEXT NOT NULL,
+                 decision TEXT NOT NULL,
+                 platform TEXT,
+                 created_at INTEGER NOT NULL,
+                 FOREIGN KEY(user_id) REFERENCES legal_users(user_id),
+                 FOREIGN KEY(document_id) REFERENCES legal_documents(document_id)
+             );
+             INSERT INTO legal_users VALUES ('legacy-user', 1);
+             INSERT INTO legal_documents VALUES (
+                 'legacy-terms', 'scope', 'terms', '1.0.0', 'es',
+                 'legacy terms', 'sha256:legacy', 1, 'accepted', 1, 1
+             );
+             INSERT INTO legal_decisions VALUES (
+                 7, 'legacy-user', 'legacy-terms', 'sha256:legacy',
+                 'accepted', 'legacy-platform', 2
+             );",
+        )
+        .unwrap();
+    drop(connection);
+
+    let store = LegalStore::open(&database).unwrap();
+    assert!(store.user_exists("legacy-user").unwrap());
+    let history = store.decision_history("legacy-user").unwrap();
+    assert_eq!(history.len(), 1);
+    assert_eq!(history[0].record_id, 7);
+    assert_eq!(history[0].document_hash, "sha256:legacy");
+    assert_eq!(history[0].decision, "accepted");
+    assert_eq!(history[0].platform.as_deref(), Some("legacy-platform"));
+    drop(store);
+
+    let connection = rusqlite::Connection::open(database).unwrap();
+    let version: i64 = connection
+        .query_row(
+            "SELECT version FROM matter_schema_versions WHERE component = 'legal_store'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(version, 1);
+}
+
+#[test]
+fn legal_store_schema_initialization_rolls_back_after_ddl_failure() {
+    let directory = TemporaryDirectory::new("schema-rollback");
+    let database = directory.0.join("legal.db");
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    connection
+        .execute_batch(
+            "CREATE TABLE matter_schema_versions (
+                 component TEXT PRIMARY KEY NOT NULL,
+                 version INTEGER NOT NULL
+             );
+             INSERT INTO matter_schema_versions VALUES ('legal_store', 0);
+             CREATE TABLE idx_legal_decisions_user (unrelated INTEGER);",
+        )
+        .unwrap();
+    drop(connection);
+
+    assert!(LegalStore::open(&database).is_err());
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    let version: i64 = connection
+        .query_row(
+            "SELECT version FROM matter_schema_versions WHERE component = 'legal_store'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(version, 0);
+    let legal_table_count: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master
+             WHERE type = 'table' AND name IN (
+                 'legal_users', 'legal_documents', 'legal_decisions'
+             )",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(legal_table_count, 0);
+    drop(connection);
+
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    connection
+        .execute_batch("DROP TABLE idx_legal_decisions_user;")
+        .unwrap();
+    drop(connection);
+
+    let store = LegalStore::open(&database).unwrap();
+    store.register_user("recovered-user").unwrap();
+    assert!(store.user_exists("recovered-user").unwrap());
+}
+
+#[test]
+fn legal_store_rejects_future_schema_without_modifying_it() {
+    let directory = TemporaryDirectory::new("future-schema");
+    let database = directory.0.join("legal.db");
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    connection
+        .execute_batch(
+            "CREATE TABLE matter_schema_versions (
+                 component TEXT PRIMARY KEY NOT NULL,
+                 version INTEGER NOT NULL
+             );
+             INSERT INTO matter_schema_versions VALUES ('legal_store', 99);
+             CREATE TABLE caller_sentinel (value TEXT NOT NULL);
+             INSERT INTO caller_sentinel VALUES ('preserve');",
+        )
+        .unwrap();
+    drop(connection);
+
+    assert!(LegalStore::open(&database).is_err());
+    let connection = rusqlite::Connection::open(database).unwrap();
+    let (version, sentinel): (i64, String) = connection
+        .query_row(
+            "SELECT
+                (SELECT version FROM matter_schema_versions WHERE component = 'legal_store'),
+                (SELECT value FROM caller_sentinel)",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(version, 99);
+    assert_eq!(sentinel, "preserve");
 }
 
 #[test]
