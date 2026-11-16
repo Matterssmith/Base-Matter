@@ -9,12 +9,13 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`
-- Latest confirmed published checkpoint: `66b327616c05344305f3351195541869161c4e6b`
+- Latest confirmed published checkpoint: `7b455090f1cf25ed2b6b1dc6a1cd25da57a1a5b3`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `66b327616c05344305f3351195541869161c4e6b` after publishing authenticated
-  Vault key-read isolation; fetch confirmed local and remote IDs match.
+  `7b455090f1cf25ed2b6b1dc6a1cd25da57a1a5b3` after recording the authenticated
+  Vault key-read isolation checkpoint; fetch confirmed local and remote IDs
+  match.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -558,8 +559,9 @@ external services.
    for confirmed defects. The authenticated key-read cross-Vault defect is
    fixed and published.
 2. Continue I with cross-module resilience around bot ownership, provider
-   failures, legal-store errors, and shared users. Router, sockets, plugins,
-   general resource authorization, and live services remain uncovered.
+   failures, legal-store errors, and shared users. One bot-owner/shared-user
+   isolation flow is now covered; router, sockets, plugins, general resource
+   authorization, and live services remain uncovered.
 3. Complete J, K, and L in order. Reassess capabilities from actual code and
    keep Matter-Bot blocked until all readiness criteria are satisfied.
 4. At each checkpoint, review every README, update this ledger, commit and push
@@ -600,6 +602,19 @@ external services.
 - Commit `66b327616c05344305f3351195541869161c4e6b` was pushed to
   `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. No stable
   branch promotion was made.
+
+## Current local work — bot and shared-user integration
+
+- Added a cross-module test that creates two bot instances and a shared user,
+  authorizes access through each bot owner's registry permissions, verifies
+  data remains isolated by instance, and rejects cross-owner reads and writes.
+- After syncing with `origin/matter-beta` at
+  `7b455090f1cf25ed2b6b1dc6a1cd25da57a1a5b3`, `cargo fmt --all -- --check`,
+  `cargo check --all-targets`, the full suite (205 passed, 0 failed; 0 doc
+  tests), and `git diff --check` passed.
+- README audit: 1 found, 1 reviewed, 0 updated, 1 unchanged. This test adds no
+  public behavior; README and architecture claims remain accurate.
+- Ready to publish on `matter-beta`; H and I remain in progress.
 
 ## Additional requested ecosystem scope
 

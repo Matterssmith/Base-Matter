@@ -11,7 +11,8 @@
 use anyhow::Result;
 use matter_base::{
     BotRegistry, ConsentDecision, CoreConfig, CoreModule, LegalDocument, LegalDocumentType,
-    MatterContext, MatterRuntime,
+    MatterContext, MatterRuntime, UserAction, UserAuthorizationRequest, UserAuthorizer,
+    UserPrincipal, UserRegistry,
 };
 mod common;
 use common::{legal_admin, legal_user};
@@ -72,6 +73,111 @@ impl CoreModule for RuntimeModule {
         self.callbacks.lock().unwrap().push("stopped");
         Ok(())
     }
+}
+
+struct AllowUserCreation;
+
+impl UserAuthorizer for AllowUserCreation {
+    fn authorize(&self, request: &UserAuthorizationRequest<'_>) -> Result<()> {
+        if request.action == UserAction::Create {
+            Ok(())
+        } else {
+            anyhow::bail!("unexpected action")
+        }
+    }
+}
+
+struct BotOwnerDataPolicy {
+    bots: BotRegistry,
+    user_id: String,
+}
+
+impl UserAuthorizer for BotOwnerDataPolicy {
+    fn authorize(&self, request: &UserAuthorizationRequest<'_>) -> Result<()> {
+        if !matches!(
+            request.action,
+            UserAction::ReadData | UserAction::WriteData | UserAction::DeleteData
+        ) || request.user_id != Some(self.user_id.as_str())
+        {
+            anyhow::bail!("user data scope denied");
+        }
+
+        let bot_id = request
+            .bot_instance_id
+            .ok_or_else(|| anyhow::anyhow!("bot scope required"))?;
+        self.bots
+            .authorize(bot_id, request.principal_id, matter_base::BotAction::Manage)
+    }
+}
+
+#[test]
+fn bot_owner_authorization_and_shared_user_data_are_isolated_together() {
+    let bots = BotRegistry::in_memory();
+    let first_bot = bots.register("family", "v1", "first", "owner-a").unwrap();
+    let second_bot = bots.register("family", "v1", "second", "owner-b").unwrap();
+    let users = UserRegistry::in_memory();
+    let create_principal = UserPrincipal::new("owner-a", &AllowUserCreation).unwrap();
+    let user_id = users.create_user(&create_principal).unwrap();
+    let owner_policy = BotOwnerDataPolicy {
+        bots: bots.clone(),
+        user_id: user_id.clone(),
+    };
+    let owner_principal = UserPrincipal::new("owner-a", &owner_policy).unwrap();
+
+    users
+        .set_bot_data(
+            first_bot.instance_id(),
+            &user_id,
+            "preference",
+            "dark",
+            &owner_principal,
+        )
+        .unwrap();
+    assert_eq!(
+        users
+            .bot_data(
+                first_bot.instance_id(),
+                &user_id,
+                "preference",
+                &owner_principal
+            )
+            .unwrap()
+            .as_deref(),
+        Some("dark")
+    );
+    assert!(users
+        .set_bot_data(
+            second_bot.instance_id(),
+            &user_id,
+            "preference",
+            "leak",
+            &owner_principal
+        )
+        .is_err());
+    let other_owner_policy = BotOwnerDataPolicy {
+        bots: bots.clone(),
+        user_id: user_id.clone(),
+    };
+    let other_owner = UserPrincipal::new("owner-b", &other_owner_policy).unwrap();
+    assert_eq!(
+        users
+            .bot_data(
+                second_bot.instance_id(),
+                &user_id,
+                "preference",
+                &other_owner
+            )
+            .unwrap(),
+        None
+    );
+    assert!(users
+        .bot_data(
+            first_bot.instance_id(),
+            &other_owner_policy.user_id,
+            "preference",
+            &other_owner
+        )
+        .is_err());
 }
 
 #[test]
