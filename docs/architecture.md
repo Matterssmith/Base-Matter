@@ -15,6 +15,7 @@ and diagrams do not imply that missing systems already work.
 
 ```text
 Public crate API (`src/lib.rs`)
+├── Bot identity registry (memory or SQLite)
 ├── Core
 │   ├── CoreConfig
 │   ├── MatterRuntime
@@ -72,7 +73,7 @@ configure that store; this does not provide a distributed replay service.
 The following systems are future work and must be designed behind stable
 contracts before applications consume them:
 
-- Bot family, release, and instance identity with durable registration.
+- Ownership, authorization, and audited registration control for bots.
 - Shared user identity with bot-scoped private data.
 - Ownership, roles, permissions, and audited authorization.
 - Platform-neutral router, command registry, middleware, and filters.

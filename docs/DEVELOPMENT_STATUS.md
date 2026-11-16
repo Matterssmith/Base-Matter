@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `b788929235653a829f007f1ef38407b1d39ff4a9`
+- Latest confirmed checkpoint commit: `38e871f8da44ee4f4196df0c39a5cd309684a8ec`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `b788929235653a829f007f1ef38407b1d39ff4a9` before provider error sanitization.
+  `38e871f8da44ee4f4196df0c39a5cd309684a8ec` before bot identity registry work.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -32,15 +32,15 @@ before acquiring write locks so caller-supplied conversion code cannot poison
 those locks by panicking. The H–L stages are not complete, and Matter-Base is
 not ready for Matter-Bot.
 
-## Capability assessment from the synchronized code
+## Capability assessment from the current working tree
 
 | Capability | Status | Evidence / limitation |
 | --- | --- | --- |
 | Runtime and lifecycle | PARTIAL | Caller-owned `ModuleManager` coordinates registration-order initialization/start and reverse shutdown with cleanup on start failures; `MatterRuntime` does not own it and service lifecycle remains separate. |
-| Bot identity, family/release/instance IDs, registration | ABSENT | No implementation in `src/`. |
+| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates independent instance IDs, persists identities through an injectable store/SQLite, and allocates unique display names; ownership, authorization, and controlled removal are absent. |
 | Shared application users and bot data isolation | ABSENT | `legal_users` are legal-consent subjects, not a shared application user system. |
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
-| Persistence and recovery | PARTIAL | SQLite persistence exists for legal documents/decisions only. No bot/config/socket/service persistence or migrations framework. |
+| Persistence and recovery | PARTIAL | SQLite persists bot identities and legal documents/decisions. No config/socket/service persistence or versioned migrations framework. |
 | Events and messaging | PARTIAL | Named synchronous in-memory event callbacks exist; no durable events or messaging contract. |
 | Router and command registry | ABSENT | No implementation. |
 | Middleware, roles, permissions, authorization | ABSENT | Provider key permissions exist only in the security integration; no general resource authorization. |
@@ -202,6 +202,12 @@ platform capabilities or a live external integration.
 - README files reviewed for provider error sanitization: **1**.
 - README files updated for provider error sanitization: **1**.
 - README files with no changes for provider error sanitization: **0**.
+- README files reviewed for bot identity registry: **1**.
+- README files updated for bot identity registry: **1**.
+- README files with no changes for bot identity registry: **0**.
+- README files reviewed for bot identity registry: **1**.
+- README files updated for bot identity registry: **1**.
+- README files with no changes for bot identity registry: **0**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
 - Problems found: documented JavaScript/Node project structure and `npm`
@@ -247,8 +253,10 @@ platform capabilities or a live external integration.
   remains backward compatible. SQLite replay storage rejects duplicate
   assertions across independent connections and verifier restarts; four focused
   tests pass. Legal store tests cover concurrent idempotent document
-  registration and rollback after a simulated SQLite write failure. Envelope
-  payloads are capped at 16 MiB before encryption or Base64 decoding. Errors
+  registration and rollback after a simulated SQLite write failure. Bot identity
+  registration persists family/release/instance identity and atomically resolves
+  display-name collisions; ownership controls remain absent. Envelope payloads
+  are capped at 16 MiB before encryption or Base64 decoding. Errors
   from key, binding, and proof providers are sanitized at module boundaries; a
   regression test confirms an upstream secret-like diagnostic is not returned.
 - I: **Not complete.** Added runtime legal-store close/reopen recovery and
@@ -282,16 +290,17 @@ external services.
 2. Confirm the current branch, status, and remote tip. Preserve local work;
    do not discard `Cargo.lock` or `target/` without inspecting ownership.
 3. Continue H by auditing and testing the existing implementations, beginning
-   with legal-store transaction/recovery behavior and security-provider
-   boundaries, including replay cleanup/capacity and sanitized provider errors; caller-owned module lifecycle coordination is now implemented;
+   with bot identity-store migration/recovery, legal-store transaction behavior,
+   and security-provider boundaries, including replay cleanup/capacity and
+   sanitized provider errors; caller-owned module lifecycle coordination is now implemented;
    the event/service/i18n lock and callback pass has been audited,
    legal-store concurrency/rollback tests pass, and envelope input sizes are
    bounded before decoding. Make
    targeted compatible corrections with behavior tests.
 4. Run the complete verification sequence after the above targeted tests, then
-   update the recorded results here. (Latest full suite for this snapshot: 167 tests passed.) Continue auditing
-   SQLite operation error paths, then provider authentication and key-store
-   failure behavior. Add tests and make
+   update the recorded results here. The latest full suite passed 171 tests.
+   Continue auditing SQLite operation error paths, then provider authentication
+   and key-store failure behavior. Add tests and make
    compatible fixes where defects are confirmed.
 5. Update this record after each completed stage. Do not mark H–L complete
    until the corresponding criteria are implemented and verified.
@@ -299,3 +308,10 @@ external services.
 For later work, re-fetch the development branch before verification or code
 changes, using the safe stash/fetch/reset/reapply procedure from the project
 instructions. Never infer publication from local commit state alone.
+
+Bot identity registry implementation in the current checkpoint: `src/bots/mod.rs`,
+`src/lib.rs`, and `tests/bot_registry.rs`. It provides memory and SQLite
+stores, validation, generated instance IDs, atomic unique names, persistence
+recovery, and cross-connection concurrency. Ownership, authorization,
+migration versioning, and controlled deletion remain pending. The full suite
+passed with 171 tests; `cargo check --all-targets` and `git diff --check` passed.

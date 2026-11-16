@@ -12,6 +12,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
+pub mod bots;
 pub mod core;
 pub mod events;
 pub mod i18n;
@@ -20,6 +21,9 @@ pub mod modules;
 pub mod security;
 pub mod services;
 
+pub use bots::{
+    BotIdentity, BotIdentityStore, BotRegistry, InMemoryBotIdentityStore, SqliteBotIdentityStore,
+};
 pub use core::config::CoreConfig;
 pub use core::context::MatterContext;
 pub use core::logger::init_logger;

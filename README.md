@@ -23,9 +23,10 @@ width="100%"
 ## Project status
 
 Matter-Base is an **incomplete development library**. The current repository
-contains a small runtime/context foundation, in-memory event and service
-registries, translation lookup, a persistent legal-consent store, and
-cryptographic key/envelope and provider-authentication components. The bot
+contains a runtime/context foundation, in-memory event and service
+registries, translation lookup, a persistent bot identity registry, a persistent
+legal-consent store, and cryptographic key/envelope and provider-authentication
+components. The bot
 platform capabilities listed in the long-term architecture are not yet
 implemented. See [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
@@ -35,7 +36,7 @@ verified stage assessment.
 Matter-Base is intended to host reusable Rust capabilities consumed through
 public APIs. It must remain independent of Matter-Bot and platform adapters.
 This repository currently does **not** implement WhatsApp, Telegram, Discord,
-bot identity or registration, shared application users, authorization roles,
+shared application users, ownership and authorization roles,
 command routing, socket control, plugin execution, or a sandbox.
 
 The security module defines provider and key-provider contracts. It does not
@@ -50,6 +51,7 @@ service.
 | `core::config` | Default application name, environment, debug flag, and locale | Partial; no validation/loading |
 | `core::runtime` | Opens the legal SQLite store, builds context, and exposes legal access checks | Partial; `initialize` logs only |
 | `core::context` | Shares event bus, typed service registry, and legal store | Implemented at this scope |
+| `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery | Implemented registry; ownership/authorization/deletion are pending |
 | `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish`; `publish_checked` catches unwinding panics per listener, continues dispatch, and returns an error |
 | `services` | In-memory type-indexed service registration and retrieval | Basic; no lifecycle management |
 | `i18n` | In-memory translation catalogs and key fallback | Basic; no bundled catalogs or locale validation |
@@ -64,6 +66,7 @@ Matter-Base platform.
 
 ```text
 src/
+  bots/       Bot identity contracts and in-memory/SQLite registry
   core/       Configuration, shared context, logging, runtime
   events/     In-memory event bus
   i18n/       Translation catalog lookup
@@ -151,8 +154,7 @@ for component-level details.
 
 ## Roadmap boundary
 
-Bot identity and persistent registration, shared users, ownership and
-authorization, universal command routing, Control Plane/socket policy,
+Shared users, ownership and authorization, universal command routing, Control Plane/socket policy,
 connection and messaging contracts, plugin validation, and effective sandbox
 isolation remain pending. Matter-Bot must not be built on this crate until
 those core contracts are implemented, integrated, documented, and tested.
