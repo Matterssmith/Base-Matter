@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Authenticated Provider Tests
  *
@@ -9,10 +8,7 @@
  */
 
 use matter_base::security::{
-    AuthenticatedProvider,
-    ProviderAccessPolicy,
-    ProviderAssertion,
-    ProviderAuthenticator,
+    AuthenticatedProvider, ProviderAccessPolicy, ProviderAssertion, ProviderAuthenticator,
     ProviderPermission,
 };
 use std::collections::HashSet;
@@ -53,25 +49,12 @@ fn policy() -> ProviderAccessPolicy {
     .unwrap()
 }
 
-fn prepare_assertion(
-    assertion: &ProviderAssertion,
-    nonce: &[u8; 24],
-    key: &[u8; 32],
-) -> Vec<u8> {
-    ProviderAuthenticator::seal_assertion(
-        assertion,
-        nonce,
-        key,
-    )
-    .unwrap()
+fn prepare_assertion(assertion: &ProviderAssertion, nonce: &[u8; 24], key: &[u8; 32]) -> Vec<u8> {
+    ProviderAuthenticator::seal_assertion(assertion, nonce, key).unwrap()
 }
 
 fn authenticator() -> ProviderAuthenticator {
-    ProviderAuthenticator::new(
-        VAULT.to_owned(),
-        AUDIENCE.to_owned(),
-    )
-    .unwrap()
+    ProviderAuthenticator::new(VAULT.to_owned(), AUDIENCE.to_owned()).unwrap()
 }
 
 #[test]

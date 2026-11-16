@@ -5,16 +5,8 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
-use base64::{
-    engine::general_purpose::URL_SAFE_NO_PAD,
-    Engine,
-};
-use matter_base::security::{
-    decrypt,
-    encrypt,
-    validate_envelope,
-    EncryptedEnvelope,
-};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use matter_base::security::{decrypt, encrypt, validate_envelope, EncryptedEnvelope};
 
 const ENVELOPE_ID: &str = "test-envelope-001";
 const SCOPE: &str = "test-application";
@@ -58,8 +50,7 @@ fn encryption_and_decryption_roundtrip() {
     )
     .expect("Encryption should succeed");
 
-    let decrypted = decrypt(&envelope, &test_key())
-        .expect("Decryption should succeed");
+    let decrypted = decrypt(&envelope, &test_key()).expect("Decryption should succeed");
 
     assert_eq!(decrypted, plaintext);
 }
@@ -356,4 +347,28 @@ fn valid_rfc3339_timestamp_with_offset_is_accepted() {
     );
 
     assert!(result.is_ok());
+}
+
+#[test]
+fn oversized_ciphertext_is_rejected_before_base64_decoding() {
+    let mut envelope = encrypted_envelope();
+    envelope.ciphertext = "A".repeat((16 * 1024 * 1024 * 4 + 2) / 3 + 1);
+
+    assert!(validate_envelope(&envelope).is_err());
+}
+
+#[test]
+fn oversized_plaintext_is_rejected_before_encryption() {
+    let plaintext = vec![0; 16 * 1024 * 1024];
+
+    assert!(encrypt(
+        &plaintext,
+        &test_key(),
+        ENVELOPE_ID,
+        SCOPE,
+        RECORD_TYPE,
+        KEY_ID,
+        CREATED_AT,
+    )
+    .is_err());
 }

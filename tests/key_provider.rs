@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Key Provider Tests
  *
@@ -51,7 +50,7 @@ impl KeyProvider for MockKeyProvider {
 
     fn load_key(&self, key_id: &str) -> Result<Zeroizing<[u8; 32]>> {
         if self.failing_key_id.as_deref() == Some(key_id) {
-            bail!("Simulated provider failure");
+            bail!("upstream diagnostic leaked-secret-token");
         }
 
         let key = self
@@ -61,6 +60,26 @@ impl KeyProvider for MockKeyProvider {
             .ok_or_else(|| anyhow::anyhow!("Key not available"))?;
 
         Ok(Zeroizing::new(key))
+    }
+}
+
+struct OversizedKeyListProvider;
+
+impl KeyProvider for OversizedKeyListProvider {
+    fn vault_id(&self) -> Result<String> {
+        Ok("test-vault".to_owned())
+    }
+
+    fn key_ids(&self) -> Result<Vec<String>> {
+        Ok((0..4097).map(|index| format!("key-{index}")).collect())
+    }
+
+    fn active_key_id(&self) -> Result<Option<String>> {
+        Ok(None)
+    }
+
+    fn load_key(&self, _key_id: &str) -> Result<Zeroizing<[u8; 32]>> {
+        bail!("key loading must not start for an oversized list")
     }
 }
 
@@ -102,7 +121,9 @@ fn failed_load_preserves_existing_keys() {
     let mut provider = MockKeyProvider::new();
     provider.failing_key_id = Some("key-1".to_owned());
 
-    assert!(manager.load_from_provider(&provider).is_err());
+    let error = manager.load_from_provider(&provider).unwrap_err();
+    assert!(!error.to_string().contains("leaked-secret-token"));
+    assert_eq!(error.to_string(), "Key provider key retrieval failed");
 
     assert_eq!(manager.len(), 1);
     assert!(manager.contains("existing-key"));
@@ -139,4 +160,21 @@ fn loaded_active_key_can_encrypt() {
 
     assert_eq!(key_id, "key-2");
     assert_eq!(key, &[2u8; 32]);
+}
+
+#[test]
+fn rejects_oversized_provider_key_list_without_replacing_existing_keys() {
+    let provider = OversizedKeyListProvider;
+    let mut manager = KeyManager::new();
+    manager
+        .insert("existing-key".to_owned(), [9u8; 32])
+        .unwrap();
+    manager.set_active("existing-key").unwrap();
+
+    assert!(manager.load_from_provider(&provider).is_err());
+    assert_eq!(manager.len(), 1);
+    assert!(manager.contains("existing-key"));
+    assert!(!manager.contains("key-0"));
+    assert_eq!(manager.active_key_id(), Some("existing-key"));
+    assert_eq!(manager.provider_vault_id(), None);
 }

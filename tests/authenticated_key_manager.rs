@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Authenticated Key Manager Tests
  *
@@ -9,12 +8,8 @@
  */
 
 use matter_base::security::{
-    AuthenticatedProvider,
-    KeyManager,
-    ProviderAccessPolicy,
-    ProviderAssertion,
-    ProviderAuthenticator,
-    ProviderPermission,
+    AuthenticatedProvider, KeyManager, ProviderAccessPolicy, ProviderAssertion,
+    ProviderAuthenticator, ProviderPermission,
 };
 use std::collections::HashSet;
 use time::OffsetDateTime;
@@ -37,25 +32,14 @@ fn assertion(permissions: Vec<String>) -> ProviderAssertion {
     }
 }
 
-fn prepare(
-    permissions: Vec<String>,
-    nonce: &[u8; 24],
-    key: &[u8; 32],
-) -> Vec<u8> {
-    ProviderAuthenticator::seal_assertion(
-        &assertion(permissions),
-        nonce,
-        key,
-    )
-    .unwrap()
+fn prepare(permissions: Vec<String>, nonce: &[u8; 24], key: &[u8; 32]) -> Vec<u8> {
+    ProviderAuthenticator::seal_assertion(&assertion(permissions), nonce, key).unwrap()
 }
 
 fn policy() -> ProviderAccessPolicy {
     ProviderAccessPolicy::new(
         VAULT.to_owned(),
-        [PROVIDER.to_owned()]
-            .into_iter()
-            .collect::<HashSet<_>>(),
+        [PROVIDER.to_owned()].into_iter().collect::<HashSet<_>>(),
     )
     .unwrap()
 }
@@ -63,13 +47,9 @@ fn policy() -> ProviderAccessPolicy {
 fn manager() -> KeyManager {
     let mut manager = KeyManager::new();
 
-    manager
-        .insert("key-1".to_owned(), [9u8; 32])
-        .unwrap();
+    manager.insert("key-1".to_owned(), [9u8; 32]).unwrap();
 
-    manager
-        .insert("key-2".to_owned(), [8u8; 32])
-        .unwrap();
+    manager.insert("key-2".to_owned(), [8u8; 32]).unwrap();
 
     manager.set_active("key-1").unwrap();
 
@@ -84,11 +64,8 @@ fn authenticate(
 ) -> AuthenticatedProvider {
     let ciphertext = prepare(permissions, nonce, key);
 
-    let mut authenticator = ProviderAuthenticator::new(
-        VAULT.to_owned(),
-        AUDIENCE.to_owned(),
-    )
-    .unwrap();
+    let mut authenticator =
+        ProviderAuthenticator::new(VAULT.to_owned(), AUDIENCE.to_owned()).unwrap();
 
     AuthenticatedProvider::authenticate_and_authorize(
         &mut authenticator,
@@ -115,10 +92,7 @@ fn reads_active_key_id_with_permission() {
 
     let manager = manager();
 
-    assert_eq!(
-        provider.read_active_key_id(&manager).unwrap(),
-        "key-1"
-    );
+    assert_eq!(provider.read_active_key_id(&manager).unwrap(), "key-1");
 }
 
 #[test]
@@ -135,10 +109,7 @@ fn reads_key_material_with_permission() {
 
     let manager = manager();
 
-    assert_eq!(
-        provider.read_key(&manager, "key-2").unwrap(),
-        &[8u8; 32]
-    );
+    assert_eq!(provider.read_key(&manager, "key-2").unwrap(), &[8u8; 32]);
 }
 
 #[test]
@@ -147,10 +118,7 @@ fn reads_active_key_with_both_permissions() {
     let nonce = [3u8; 24];
 
     let provider = authenticate(
-        vec![
-            "read_active_key".to_owned(),
-            "read_key_material".to_owned(),
-        ],
+        vec!["read_active_key".to_owned(), "read_key_material".to_owned()],
         &nonce,
         &key,
         ProviderPermission::ReadKeyMaterial,
@@ -158,8 +126,7 @@ fn reads_active_key_with_both_permissions() {
 
     let manager = manager();
 
-    let (key_id, material) =
-        provider.read_active_key(&manager).unwrap();
+    let (key_id, material) = provider.read_active_key(&manager).unwrap();
 
     assert_eq!(key_id, "key-1");
     assert_eq!(material, &[9u8; 32]);

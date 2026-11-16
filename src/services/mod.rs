@@ -21,7 +21,7 @@ impl ServiceRegistry {
         let mut services = self
             .services
             .write()
-            .expect("ServiceRegistry lock poisoned");
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         services.insert(TypeId::of::<T>(), Arc::new(service));
     }
@@ -33,7 +33,7 @@ impl ServiceRegistry {
         let services = self
             .services
             .read()
-            .expect("ServiceRegistry lock poisoned");
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         services
             .get(&TypeId::of::<T>())
@@ -48,7 +48,7 @@ impl ServiceRegistry {
         let services = self
             .services
             .read()
-            .expect("ServiceRegistry lock poisoned");
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         services.contains_key(&TypeId::of::<T>())
     }
@@ -60,7 +60,7 @@ impl ServiceRegistry {
         let mut services = self
             .services
             .write()
-            .expect("ServiceRegistry lock poisoned");
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         services.remove(&TypeId::of::<T>()).is_some()
     }
@@ -69,7 +69,7 @@ impl ServiceRegistry {
         let mut services = self
             .services
             .write()
-            .expect("ServiceRegistry lock poisoned");
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         services.clear();
     }
@@ -78,12 +78,33 @@ impl ServiceRegistry {
         let services = self
             .services
             .read()
-            .expect("ServiceRegistry lock poisoned");
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         services.len()
     }
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ServiceRegistry;
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+
+    #[test]
+    fn recovers_after_registry_lock_poisoning() {
+        let registry = ServiceRegistry::new();
+        let poisoned_registry = &registry;
+        let _ = catch_unwind(AssertUnwindSafe(|| {
+            let mut services = poisoned_registry.services.write().unwrap();
+            services.clear();
+            panic!("simulate a panic while mutating the registry");
+        }));
+
+        registry.register(42_u32);
+        assert_eq!(*registry.get::<u32>().unwrap(), 42);
+        assert_eq!(registry.len(), 1);
     }
 }

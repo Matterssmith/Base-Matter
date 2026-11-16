@@ -42,10 +42,7 @@ pub trait BoundKeyProvider: KeyProvider {
 /// Calcula una prueba HMAC-SHA-256 de vinculación.
 ///
 /// El secreto debe proceder de una configuración de confianza.
-pub fn create_provider_binding_proof(
-    binding_key: &[u8; 32],
-    message: &[u8],
-) -> Result<[u8; 32]> {
+pub fn create_provider_binding_proof(binding_key: &[u8; 32], message: &[u8]) -> Result<[u8; 32]> {
     let mut mac = HmacSha256::new_from_slice(binding_key)
         .map_err(|_| anyhow!("Invalid provider binding key"))?;
 

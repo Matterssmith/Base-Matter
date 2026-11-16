@@ -1,34 +1,94 @@
-# Matter Base Architecture
+# Matter-Base architecture
 
-## Purpose
+## Purpose and dependency direction
 
-Matter Base is the reusable foundation of the Matterssmith
-ecosystem.
+Matter-Base is intended to provide reusable, platform-independent Rust
+infrastructure to applications in the Matterssmith ecosystem. Applications may
+depend on Matter-Base; the core must not depend on Matter-Bot or a concrete
+messaging platform.
 
-It provides infrastructure consumed by other repositories.
+The intended full platform architecture is not yet present. This document
+separates the implemented crate from the planned capabilities so interfaces
+and diagrams do not imply that missing systems already work.
 
-## Dependency direction
+## Current crate structure
 
-Applications and services depend on Matter Base.
-
-Matter Base must never depend on individual applications.
-
+```text
+Public crate API (`src/lib.rs`)
+├── Bot identity registry (memory or SQLite)
+├── Core
+│   ├── CoreConfig
+│   ├── MatterRuntime
+│   └── MatterContext ── EventBus (in memory)
+│                     ├─ ServiceRegistry (in memory)
+│                     └─ LegalStore (SQLite)
+├── Translator (in memory)
+├── CoreModule + caller-owned ModuleManager
+└── Security
+    ├── EncryptedEnvelope / KeyManager
+    ├── ProviderAuthenticator / ProviderAccessPolicy
+    └── KeyProvider / ProviderBindingStore contracts
 ```
-Matter Ecosystem
-       |
-       v
-  Applications
-       |
-       v
-   Matter Base
-       |
-       +-- Core
-       +-- Runtime
-       +-- Context
-       +-- Configuration
-       +-- Logger
-       +-- Services
-       +-- Events
-       +-- Modules
-       +-- i18n
-```
+
+`MatterRuntime::open` opens the SQLite legal store and constructs a context with an in-memory bot registry. `open_with_bot_registry` accepts an explicitly configured registry, including SQLite persistence.
+`initialize` currently emits an informational log; it does not start managed
+modules or services. `ModuleManager` registers and coordinates modules when an
+application explicitly owns and calls it; `MatterRuntime` does not yet own or
+invoke that manager. See the crate modules in
+[`src/`](../src/).
+
+The current event bus clones a listener list and releases its registry lock
+before invoking callbacks, so callbacks may subscribe or clear listeners
+reentrantly. Callbacks are synchronous. `publish` propagates a callback panic and stops
+dispatch; `publish_checked` catches unwinding panics per handler, continues
+with remaining listeners, and returns an error summary.
+
+## Persistence and trust boundaries
+
+The bot registry is shared through `MatterContext` and persists family/release/instance identity in SQLite when injected; initialization and schema version registration are transactional. Owner and co-owner checks, controlled removal, and registry ownership audit records are implemented. General role inheritance, shared-user existence checks, and authorization across other resource types are not. The legal subsystem persists legal documents and consent decisions in SQLite.
+Document registration and the read/validate/write path for consent decisions
+use immediate transactions, so concurrent independent database connections
+cannot both withdraw the same grant or observe a document-registration race
+between its duplicate check and insert. An access check uses one SQL statement
+to read the user and applicable document/decision state from one snapshot.
+The event bus, service registry, translation catalogs, and runtime config are
+in memory or caller supplied. Shared application users, ownership, permission,
+socket, and plugin registries remain unimplemented.
+
+The security provider abstractions allow a caller to supply trusted key
+material and providers. Envelope plaintext and ciphertext are limited to
+16 MiB; encoded ciphertext length is checked before Base64 decoding. They do not establish that an external Matter-Vault
+service is connected. There is no storage of WhatsApp sessions or external
+platform credentials in Matter-Base. Authenticated key loading checks that the
+Vault identity returned while staging keys still matches the authenticated
+identity before replacing the current key set.
+
+Assertion replay tracking defaults to an in-memory store. An injectable SQLite
+store persists replay IDs, globally removes expired records, and enforces
+uniqueness and capacity transactionally across connections and process restarts. Deployments that need restart safety must
+configure that store; this does not provide a distributed replay service.
+
+## Planned architecture (not implemented)
+
+The following systems are future work and must be designed behind stable
+contracts before applications consume them:
+
+- Ownership, authorization, and audited registration control for bots.
+- Shared user identity with bot-scoped private data.
+- Ownership, roles, permissions, and audited authorization.
+- Platform-neutral router, command registry, middleware, and filters.
+- Control Plane, socket ownership, activation policy, and isolation.
+- Session/credential interfaces, services, connections, and messaging.
+- Plugin manifest validation, resource limits, and effective sandboxing.
+- Persistent recovery, migrations, and end-to-end integration tests.
+
+Matter-Bot and platform adapters remain separate consumers. No concrete
+WhatsApp, Telegram, or Discord implementation belongs in this crate.
+
+## Verification status
+
+The current automated suite exercises legal storage, encryption/key handling,
+provider-authentication contracts, and basic in-memory core components. It is
+not an end-to-end bot platform suite. Current stage classifications and exact
+verification results are maintained in
+[`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).

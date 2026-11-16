@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Provider Identity
  *
@@ -64,10 +63,7 @@ impl ProviderIdentity {
     }
 
     fn validate_identifier(value: &str) -> Result<()> {
-        if value.trim().is_empty()
-            || value.len() > 128
-            || value.chars().any(char::is_control)
-        {
+        if value.trim().is_empty() || value.len() > 128 || value.chars().any(char::is_control) {
             bail!("Invalid provider identity");
         }
 
@@ -81,10 +77,7 @@ pub struct ProviderAccessPolicy {
 }
 
 impl ProviderAccessPolicy {
-    pub fn new(
-        expected_vault_id: String,
-        allowed_providers: HashSet<String>,
-    ) -> Result<Self> {
+    pub fn new(expected_vault_id: String, allowed_providers: HashSet<String>) -> Result<Self> {
         ProviderIdentity::validate_identifier(&expected_vault_id)?;
 
         if allowed_providers.is_empty() {
@@ -103,10 +96,7 @@ impl ProviderAccessPolicy {
 
     /// Comprueba que la identidad pertenece al Vault esperado
     /// y que el proveedor está autorizado.
-    pub fn authorize_provider(
-        &self,
-        identity: &ProviderIdentity,
-    ) -> Result<()> {
+    pub fn authorize_provider(&self, identity: &ProviderIdentity) -> Result<()> {
         if identity.vault_id != self.expected_vault_id {
             bail!("Provider Vault mismatch");
         }

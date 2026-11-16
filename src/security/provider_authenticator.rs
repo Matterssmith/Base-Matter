@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Provider Authenticator
  *
@@ -9,23 +8,24 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
-use crate::security::provider_identity::{
-    ProviderIdentity,
-    ProviderPermission,
+use crate::security::provider_identity::{ProviderIdentity, ProviderPermission};
+use crate::security::provider_replay_store::{
+    InMemoryProviderAssertionReplayStore, ProviderAssertionReplayStore,
 };
 use anyhow::{bail, Result};
 use chacha20poly1305::{
     aead::{Aead, KeyInit, Payload},
-    XChaCha20Poly1305,
-    XNonce,
+    XChaCha20Poly1305, XNonce,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::sync::Arc;
 use time::OffsetDateTime;
 
 const MAX_ASSERTION_LIFETIME: i64 = 300;
 const CLOCK_SKEW_SECONDS: i64 = 30;
 const MAX_REPLAY_ENTRIES: usize = 4096;
+const MAX_ASSERTION_CIPHERTEXT_BYTES: usize = 16 * 1024;
+const AUTHENTICATION_TAG_BYTES: usize = 16;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -42,13 +42,27 @@ pub struct ProviderAssertion {
 pub struct ProviderAuthenticator {
     expected_vault_id: String,
     expected_audience: String,
-    used_assertions: HashMap<String, i64>,
+    replay_store: Arc<dyn ProviderAssertionReplayStore>,
 }
 
 impl ProviderAuthenticator {
-    pub fn new(
+    pub fn new(expected_vault_id: String, expected_audience: String) -> Result<Self> {
+        Self::new_with_replay_store(
+            expected_vault_id,
+            expected_audience,
+            Arc::new(InMemoryProviderAssertionReplayStore::default()),
+        )
+    }
+
+    /// Creates an authenticator with an injected atomic replay store.
+    ///
+    /// Use a shared store when multiple verifier instances must reject the
+    /// same assertion IDs, or a SQLite store to retain replay records across
+    /// process restarts.
+    pub fn new_with_replay_store(
         expected_vault_id: String,
         expected_audience: String,
+        replay_store: Arc<dyn ProviderAssertionReplayStore>,
     ) -> Result<Self> {
         Self::validate_identifier(&expected_vault_id)?;
         Self::validate_identifier(&expected_audience)?;
@@ -56,7 +70,7 @@ impl ProviderAuthenticator {
         Ok(Self {
             expected_vault_id,
             expected_audience,
-            used_assertions: HashMap::new(),
+            replay_store,
         })
     }
 
@@ -66,18 +80,19 @@ impl ProviderAuthenticator {
     /// El nonce debe ser único para cada cifrado realizado
     /// con la misma clave.
     pub fn authenticate(
-        &mut self,
+        &self,
         nonce: &[u8; 24],
         ciphertext: &[u8],
         key: &[u8; 32],
     ) -> Result<ProviderIdentity> {
+        if ciphertext.len() > MAX_ASSERTION_CIPHERTEXT_BYTES {
+            bail!("Provider assertion exceeds the size limit");
+        }
+
         let cipher = XChaCha20Poly1305::new_from_slice(key)
             .map_err(|_| anyhow::anyhow!("Invalid authentication key"))?;
 
-        let aad = Self::associated_data(
-            &self.expected_vault_id,
-            &self.expected_audience,
-        );
+        let aad = Self::associated_data(&self.expected_vault_id, &self.expected_audience);
 
         let plaintext = cipher
             .decrypt(
@@ -87,16 +102,22 @@ impl ProviderAuthenticator {
                     aad: aad.as_bytes(),
                 },
             )
-            .map_err(|_| {
-                anyhow::anyhow!("Provider assertion authentication failed")
-            })?;
+            .map_err(|_| anyhow::anyhow!("Provider assertion authentication failed"))?;
 
-        let assertion: ProviderAssertion =
-            serde_json::from_slice(&plaintext)?;
+        let assertion: ProviderAssertion = serde_json::from_slice(&plaintext)?;
 
-        self.validate_assertion(&assertion)?;
+        let now = self.validate_assertion(&assertion)?;
 
         let permissions = Self::parse_permissions(&assertion.permissions)?;
+
+        self.replay_store.record_once(
+            &assertion.vault_id,
+            &assertion.audience,
+            &assertion.assertion_id,
+            assertion.expires_at,
+            now,
+            MAX_REPLAY_ENTRIES,
+        )?;
 
         let identity = ProviderIdentity::from_verified_assertion(
             assertion.provider_id,
@@ -104,16 +125,10 @@ impl ProviderAuthenticator {
             permissions,
         )?;
 
-        self.used_assertions
-            .insert(assertion.assertion_id, assertion.expires_at);
-
         Ok(identity)
     }
 
-    fn validate_assertion(
-        &mut self,
-        assertion: &ProviderAssertion,
-    ) -> Result<()> {
+    fn validate_assertion(&self, assertion: &ProviderAssertion) -> Result<i64> {
         Self::validate_identifier(&assertion.provider_id)?;
         Self::validate_identifier(&assertion.vault_id)?;
         Self::validate_identifier(&assertion.audience)?;
@@ -128,9 +143,15 @@ impl ProviderAuthenticator {
         }
 
         let now = OffsetDateTime::now_utc().unix_timestamp();
+        let earliest_issued_at = now.saturating_sub(MAX_ASSERTION_LIFETIME + CLOCK_SKEW_SECONDS);
+        let latest_issued_at = now.saturating_add(CLOCK_SKEW_SECONDS);
 
-        if assertion.issued_at > now + CLOCK_SKEW_SECONDS {
+        if assertion.issued_at > latest_issued_at {
             bail!("Provider assertion issued in the future");
+        }
+
+        if assertion.issued_at < earliest_issued_at {
+            bail!("Provider assertion is too old");
         }
 
         if assertion.expires_at <= now {
@@ -141,30 +162,16 @@ impl ProviderAuthenticator {
             bail!("Invalid provider assertion lifetime");
         }
 
-        let lifetime = assertion.expires_at - assertion.issued_at;
+        let lifetime = assertion
+            .expires_at
+            .checked_sub(assertion.issued_at)
+            .ok_or_else(|| anyhow::anyhow!("Invalid provider assertion lifetime"))?;
 
         if lifetime > MAX_ASSERTION_LIFETIME {
             bail!("Provider assertion lifetime too long");
         }
 
-        if now - assertion.issued_at
-            > MAX_ASSERTION_LIFETIME + CLOCK_SKEW_SECONDS
-        {
-            bail!("Provider assertion is too old");
-        }
-
-        self.used_assertions
-            .retain(|_, expires_at| *expires_at > now);
-
-        if self.used_assertions.contains_key(&assertion.assertion_id) {
-            bail!("Provider assertion replay detected");
-        }
-
-        if self.used_assertions.len() >= MAX_REPLAY_ENTRIES {
-            bail!("Provider replay cache is full");
-        }
-
-        Ok(())
+        Ok(now)
     }
 
     fn parse_permissions(
@@ -206,10 +213,11 @@ impl ProviderAuthenticator {
 
         let plaintext = serde_json::to_vec(assertion)?;
 
-        let aad = Self::associated_data(
-            &assertion.vault_id,
-            &assertion.audience,
-        );
+        if plaintext.len() > MAX_ASSERTION_CIPHERTEXT_BYTES - AUTHENTICATION_TAG_BYTES {
+            bail!("Provider assertion exceeds the size limit");
+        }
+
+        let aad = Self::associated_data(&assertion.vault_id, &assertion.audience);
 
         cipher
             .encrypt(
@@ -219,9 +227,7 @@ impl ProviderAuthenticator {
                     aad: aad.as_bytes(),
                 },
             )
-            .map_err(|_| {
-                anyhow::anyhow!("Provider assertion encryption failed")
-            })
+            .map_err(|_| anyhow::anyhow!("Provider assertion encryption failed"))
     }
 
     fn associated_data(vault_id: &str, audience: &str) -> String {
@@ -232,10 +238,7 @@ impl ProviderAuthenticator {
     }
 
     fn validate_identifier(value: &str) -> Result<()> {
-        if value.trim().is_empty()
-            || value.len() > 128
-            || value.chars().any(char::is_control)
-        {
+        if value.trim().is_empty() || value.len() > 128 || value.chars().any(char::is_control) {
             bail!("Invalid provider assertion identifier");
         }
 

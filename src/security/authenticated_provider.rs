@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Authenticated Provider
  *
@@ -10,14 +9,8 @@
  */
 
 use crate::security::{
-    create_provider_binding_proof,
-    BoundKeyProvider,
-    KeyManager,
-    ProviderAccessPolicy,
-    ProviderAuthenticator,
-    ProviderBindingResolver,
-    ProviderIdentity,
-    ProviderPermission,
+    create_provider_binding_proof, BoundKeyProvider, KeyManager, ProviderAccessPolicy,
+    ProviderAuthenticator, ProviderBindingResolver, ProviderIdentity, ProviderPermission,
 };
 
 use anyhow::{anyhow, bail, Result};
@@ -42,11 +35,7 @@ impl AuthenticatedProvider {
         key: &[u8; 32],
         required_permission: ProviderPermission,
     ) -> Result<Self> {
-        let identity = authenticator.authenticate(
-            nonce,
-            ciphertext,
-            key,
-        )?;
+        let identity = authenticator.authenticate(nonce, ciphertext, key)?;
 
         policy.authorize(&identity, required_permission)?;
 
@@ -79,9 +68,7 @@ impl AuthenticatedProvider {
             required_permission,
         )?;
 
-        let binding_key = resolver.resolve_for_identity(
-            &session.identity,
-        )?;
+        let binding_key = resolver.resolve_for_identity(&session.identity)?;
 
         session.binding_key = Some(binding_key);
 
@@ -89,13 +76,8 @@ impl AuthenticatedProvider {
     }
 
     /// Comprueba el permiso autorizado para la sesión.
-    fn require_permission(
-        &self,
-        permission: ProviderPermission,
-    ) -> Result<()> {
-        if self.authorized_permission != permission
-            || !self.identity.has_permission(permission)
-        {
+    fn require_permission(&self, permission: ProviderPermission) -> Result<()> {
+        if self.authorized_permission != permission || !self.identity.has_permission(permission) {
             bail!("Provider operation is not authorized");
         }
 
@@ -103,10 +85,7 @@ impl AuthenticatedProvider {
     }
 
     /// Comprueba un permiso declarado por la identidad.
-    fn require_identity_permission(
-        &self,
-        permission: ProviderPermission,
-    ) -> Result<()> {
+    fn require_identity_permission(&self, permission: ProviderPermission) -> Result<()> {
         if !self.identity.has_permission(permission) {
             bail!("Provider identity lacks required permission");
         }
@@ -136,15 +115,11 @@ impl AuthenticatedProvider {
 
     /// Comprueba si la sesión permite el permiso solicitado.
     pub fn permits(&self, permission: ProviderPermission) -> bool {
-        self.authorized_permission == permission
-            && self.identity.has_permission(permission)
+        self.authorized_permission == permission && self.identity.has_permission(permission)
     }
 
     /// Consulta el identificador de la clave activa.
-    pub fn read_active_key_id<'a>(
-        &self,
-        manager: &'a KeyManager,
-    ) -> Result<&'a str> {
+    pub fn read_active_key_id<'a>(&self, manager: &'a KeyManager) -> Result<&'a str> {
         self.require_permission(ProviderPermission::ReadActiveKey)?;
 
         let (key_id, _) = manager.get_active()?;
@@ -153,21 +128,14 @@ impl AuthenticatedProvider {
     }
 
     /// Recupera una clave por su identificador.
-    pub fn read_key<'a>(
-        &self,
-        manager: &'a KeyManager,
-        key_id: &str,
-    ) -> Result<&'a [u8; 32]> {
+    pub fn read_key<'a>(&self, manager: &'a KeyManager, key_id: &str) -> Result<&'a [u8; 32]> {
         self.require_permission(ProviderPermission::ReadKeyMaterial)?;
 
         manager.get(key_id)
     }
 
     /// Recupera la clave activa.
-    pub fn read_active_key<'a>(
-        &self,
-        manager: &'a KeyManager,
-    ) -> Result<(&'a str, &'a [u8; 32])> {
+    pub fn read_active_key<'a>(&self, manager: &'a KeyManager) -> Result<(&'a str, &'a [u8; 32])> {
         self.require_permission(ProviderPermission::ReadKeyMaterial)?;
         self.require_identity_permission(ProviderPermission::ReadActiveKey)?;
 
@@ -184,11 +152,14 @@ impl AuthenticatedProvider {
         self.require_identity_permission(ProviderPermission::ReadActiveKey)?;
         self.require_identity_permission(ProviderPermission::ReadKeyMaterial)?;
 
-        let binding_key = self.binding_key.as_ref().ok_or_else(|| {
-            anyhow!("Authenticated session has no provider binding key")
-        })?;
+        let binding_key = self
+            .binding_key
+            .as_ref()
+            .ok_or_else(|| anyhow!("Authenticated session has no provider binding key"))?;
 
-        let provider_vault_id = provider.vault_id()?;
+        let provider_vault_id = provider
+            .vault_id()
+            .map_err(|_| anyhow!("Bound provider Vault lookup failed"))?;
 
         if provider_vault_id != self.identity.vault_id() {
             bail!("Provider Vault does not match authenticated Vault");
@@ -205,41 +176,32 @@ impl AuthenticatedProvider {
             self.identity.vault_id(),
         )?;
 
-        let received_proof = provider.binding_proof(&message)?;
+        let received_proof = provider
+            .binding_proof(&message)
+            .map_err(|_| anyhow!("Provider binding proof failed"))?;
 
-        let expected_proof = create_provider_binding_proof(
-            binding_key,
-            &message,
-        )?;
+        let expected_proof = create_provider_binding_proof(binding_key, &message)?;
 
         if !bool::from(received_proof.ct_eq(&expected_proof)) {
             bail!("Provider cryptographic binding failed");
         }
 
-        manager.load_from_provider(provider)?;
+        manager.load_from_provider_for_vault(provider, self.identity.vault_id())?;
 
         Ok(())
     }
 
     /// Construye un mensaje de vinculación sin ambigüedad.
-    fn binding_message(
-        challenge: &[u8; 32],
-        provider_id: &str,
-        vault_id: &str,
-    ) -> Result<Vec<u8>> {
+    fn binding_message(challenge: &[u8; 32], provider_id: &str, vault_id: &str) -> Result<Vec<u8>> {
         let provider_len = u32::try_from(provider_id.len())
             .map_err(|_| anyhow!("Invalid provider identifier length"))?;
 
         let vault_len = u32::try_from(vault_id.len())
             .map_err(|_| anyhow!("Invalid Vault identifier length"))?;
 
-        let mut message = Vec::with_capacity(
-            64 + provider_id.len() + vault_id.len(),
-        );
+        let mut message = Vec::with_capacity(64 + provider_id.len() + vault_id.len());
 
-        message.extend_from_slice(
-            b"matter-base:provider-binding:v1\0",
-        );
+        message.extend_from_slice(b"matter-base:provider-binding:v1\0");
         message.extend_from_slice(challenge);
         message.extend_from_slice(&provider_len.to_be_bytes());
         message.extend_from_slice(provider_id.as_bytes());

@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Key Manager
  *
@@ -10,9 +9,11 @@
  */
 
 use crate::security::key_provider::KeyProvider;
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
 use zeroize::Zeroizing;
+
+const MAX_PROVIDER_KEYS: usize = 4096;
 
 pub struct KeyManager {
     keys: HashMap<String, Zeroizing<[u8; 32]>>,
@@ -35,11 +36,7 @@ impl KeyManager {
     }
 
     /// Registra una clave transfiriendo su memoria protegida.
-    pub fn insert_zeroizing(
-        &mut self,
-        key_id: String,
-        key: Zeroizing<[u8; 32]>,
-    ) -> Result<()> {
+    pub fn insert_zeroizing(&mut self, key_id: String, key: Zeroizing<[u8; 32]>) -> Result<()> {
         Self::validate_key_id(&key_id)?;
 
         if self.keys.contains_key(&key_id) {
@@ -57,11 +54,7 @@ impl KeyManager {
     }
 
     /// Rota la clave activa transfiriendo memoria protegida.
-    pub fn rotate_zeroizing(
-        &mut self,
-        key_id: String,
-        key: Zeroizing<[u8; 32]>,
-    ) -> Result<()> {
+    pub fn rotate_zeroizing(&mut self, key_id: String, key: Zeroizing<[u8; 32]>) -> Result<()> {
         Self::validate_key_id(&key_id)?;
 
         if self.keys.contains_key(&key_id) {
@@ -89,15 +82,46 @@ impl KeyManager {
     ///
     /// La operación sustituye el conjunto actual únicamente
     /// cuando todas las claves se han recuperado correctamente.
-    pub fn load_from_provider(
+    pub fn load_from_provider(&mut self, provider: &dyn KeyProvider) -> Result<()> {
+        self.load_from_provider_with_expected_vault(provider, None)
+    }
+
+    /// Carga las claves solo si el proveedor sigue presentando el Vault
+    /// asociado a la sesión autenticada. La validación ocurre antes de
+    /// recuperar claves o reemplazar el estado actual.
+    pub(crate) fn load_from_provider_for_vault(
         &mut self,
         provider: &dyn KeyProvider,
+        expected_vault_id: &str,
     ) -> Result<()> {
-        let vault_id = provider.vault_id()?;
+        self.load_from_provider_with_expected_vault(provider, Some(expected_vault_id))
+    }
+
+    fn load_from_provider_with_expected_vault(
+        &mut self,
+        provider: &dyn KeyProvider,
+        expected_vault_id: Option<&str>,
+    ) -> Result<()> {
+        let vault_id = provider
+            .vault_id()
+            .map_err(|_| anyhow!("Key provider Vault lookup failed"))?;
         Self::validate_vault_id(&vault_id)?;
 
-        let key_ids = provider.key_ids()?;
-        let active_key_id = provider.active_key_id()?;
+        if expected_vault_id.is_some_and(|expected| expected != vault_id) {
+            bail!("Provider Vault does not match authenticated Vault");
+        }
+
+        let key_ids = provider
+            .key_ids()
+            .map_err(|_| anyhow!("Key provider key list retrieval failed"))?;
+
+        if key_ids.len() > MAX_PROVIDER_KEYS {
+            bail!("Provider returned too many keys");
+        }
+
+        let active_key_id = provider
+            .active_key_id()
+            .map_err(|_| anyhow!("Key provider active key lookup failed"))?;
 
         if let Some(active_id) = active_key_id.as_deref() {
             Self::validate_key_id(active_id)?;
@@ -112,7 +136,9 @@ impl KeyManager {
                 bail!("Duplicate key identifier from provider");
             }
 
-            let key = provider.load_key(&key_id)?;
+            let key = provider
+                .load_key(&key_id)
+                .map_err(|_| anyhow!("Key provider key retrieval failed"))?;
             loaded_keys.insert(key_id, key);
         }
 
@@ -191,10 +217,7 @@ impl KeyManager {
     }
 
     fn validate_key_id(key_id: &str) -> Result<()> {
-        if key_id.trim().is_empty()
-            || key_id.len() > 128
-            || key_id.chars().any(char::is_control)
-        {
+        if key_id.trim().is_empty() || key_id.len() > 128 || key_id.chars().any(char::is_control) {
             bail!("Invalid key identifier");
         }
 

@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Key Rotation Tests
  *
@@ -6,11 +5,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
-use matter_base::security::{
-    decrypt_with_manager,
-    encrypt_with_manager,
-    KeyManager,
-};
+use matter_base::security::{decrypt_with_manager, encrypt_with_manager, KeyManager};
 
 const TIMESTAMP: &str = "2026-11-15T12:00:00Z";
 
@@ -177,15 +172,13 @@ fn wrong_key_for_existing_id_is_rejected() {
 fn encryption_without_active_key_is_rejected() {
     let manager = KeyManager::new();
 
-    assert!(
-        encrypt_with_manager(
-            b"matter",
-            &manager,
-            "envelope-005",
-            "global",
-            "configuration",
-            TIMESTAMP,
-        )
-        .is_err()
-    );
+    assert!(encrypt_with_manager(
+        b"matter",
+        &manager,
+        "envelope-005",
+        "global",
+        "configuration",
+        TIMESTAMP,
+    )
+    .is_err());
 }

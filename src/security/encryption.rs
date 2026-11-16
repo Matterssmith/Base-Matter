@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Authenticated Encryption
  *
@@ -7,19 +6,13 @@
  */
 
 use anyhow::{bail, Context, Result};
-use base64::{
-    engine::general_purpose::URL_SAFE_NO_PAD,
-    Engine,
-};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use chacha20poly1305::{
     aead::{Aead, AeadCore, KeyInit, OsRng, Payload},
     XChaCha20Poly1305, XNonce,
 };
 use serde::{Deserialize, Serialize};
-use time::{
-    format_description::well_known::Rfc3339,
-    OffsetDateTime,
-};
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 use crate::security::key_manager::KeyManager;
 
@@ -28,6 +21,8 @@ const ALGORITHM: &str = "XChaCha20-Poly1305";
 const NONCE_LENGTH: usize = 24;
 const TAG_LENGTH: usize = 16;
 const MAX_TEXT_LENGTH: usize = 128;
+const MAX_CIPHERTEXT_BYTES: usize = 16 * 1024 * 1024;
+const MAX_CIPHERTEXT_BASE64_BYTES: usize = (MAX_CIPHERTEXT_BYTES * 4 + 2) / 3;
 
 const ALLOWED_RECORD_TYPES: &[&str] = &[
     "roles",
@@ -51,18 +46,10 @@ pub struct EncryptedEnvelope {
     pub created_at: String,
 }
 
-fn associated_data(
-    envelope_id: &str,
-    scope: &str,
-    record_type: &str,
-    key_id: &str,
-) -> Vec<u8> {
+fn associated_data(envelope_id: &str, scope: &str, record_type: &str, key_id: &str) -> Vec<u8> {
     format!(
         "matter-vault:v1\0{}\0{}\0{}\0{}",
-        envelope_id,
-        scope,
-        record_type,
-        key_id
+        envelope_id, scope, record_type, key_id
     )
     .into_bytes()
 }
@@ -139,8 +126,15 @@ pub fn validate_envelope(envelope: &EncryptedEnvelope) -> Result<()> {
         bail!("Invalid nonce length");
     }
 
-    let ciphertext =
-        decode_canonical_base64(&envelope.ciphertext, "ciphertext")?;
+    if envelope.ciphertext.len() > MAX_CIPHERTEXT_BASE64_BYTES {
+        bail!("Ciphertext exceeds the size limit");
+    }
+
+    let ciphertext = decode_canonical_base64(&envelope.ciphertext, "ciphertext")?;
+
+    if ciphertext.len() > MAX_CIPHERTEXT_BYTES {
+        bail!("Ciphertext exceeds the size limit");
+    }
 
     if ciphertext.len() < TAG_LENGTH {
         bail!("Ciphertext is too short");
@@ -159,6 +153,10 @@ pub fn encrypt(
     key_id: &str,
     created_at: &str,
 ) -> Result<EncryptedEnvelope> {
+    if plaintext.len() > MAX_CIPHERTEXT_BYTES - TAG_LENGTH {
+        bail!("Plaintext exceeds the encryption size limit");
+    }
+
     validate_text(envelope_id, "envelope_id")?;
     validate_text(scope, "scope")?;
     validate_text(record_type, "record_type")?;
@@ -170,12 +168,7 @@ pub fn encrypt(
     let cipher = XChaCha20Poly1305::new(key.into());
     let nonce = XChaCha20Poly1305::generate_nonce(&mut OsRng);
 
-    let aad = associated_data(
-        envelope_id,
-        scope,
-        record_type,
-        key_id,
-    );
+    let aad = associated_data(envelope_id, scope, record_type, key_id);
 
     let ciphertext = cipher
         .encrypt(
@@ -205,16 +198,12 @@ pub fn encrypt(
 }
 
 /// Validates and decrypts an authenticated envelope.
-pub fn decrypt(
-    envelope: &EncryptedEnvelope,
-    key: &[u8; 32],
-) -> Result<Vec<u8>> {
+pub fn decrypt(envelope: &EncryptedEnvelope, key: &[u8; 32]) -> Result<Vec<u8>> {
     validate_envelope(envelope)?;
 
     let nonce_bytes = decode_canonical_base64(&envelope.nonce, "nonce")?;
 
-    let ciphertext =
-        decode_canonical_base64(&envelope.ciphertext, "ciphertext")?;
+    let ciphertext = decode_canonical_base64(&envelope.ciphertext, "ciphertext")?;
 
     let nonce: [u8; NONCE_LENGTH] = nonce_bytes
         .try_into()
@@ -263,10 +252,7 @@ pub fn encrypt_with_manager(
 }
 
 /// Decrypts an envelope using the key identified by its key_id.
-pub fn decrypt_with_manager(
-    envelope: &EncryptedEnvelope,
-    manager: &KeyManager,
-) -> Result<Vec<u8>> {
+pub fn decrypt_with_manager(envelope: &EncryptedEnvelope, manager: &KeyManager) -> Result<Vec<u8>> {
     validate_envelope(envelope)?;
 
     let key = manager.get(&envelope.key_id)?;
