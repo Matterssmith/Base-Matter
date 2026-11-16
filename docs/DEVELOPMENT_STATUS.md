@@ -9,12 +9,12 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`
-- Latest confirmed published checkpoint: `7ffe9c570033b0e50cd0ce4a00c902e3772d786a`
+- Latest confirmed published checkpoint: `66b327616c05344305f3351195541869161c4e6b`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `7ffe9c570033b0e50cd0ce4a00c902e3772d786a` after publishing the bounded
-  key-manager capacity; fetch confirmed local and remote IDs match.
+  `66b327616c05344305f3351195541869161c4e6b` after publishing authenticated
+  Vault key-read isolation; fetch confirmed local and remote IDs match.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -555,7 +555,8 @@ external services.
 ## Exact next task to resume
 
 1. Continue H by auditing remaining provider/key corruption cases; add tests
-   for confirmed defects.
+   for confirmed defects. The authenticated key-read cross-Vault defect is
+   fixed and published.
 2. Continue I with cross-module resilience around bot ownership, provider
    failures, legal-store errors, and shared users. Router, sockets, plugins,
    general resource authorization, and live services remain uncovered.
@@ -596,7 +597,9 @@ external services.
   tests), and `git diff --check`.
 - README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged. The architecture
   note was updated too; the documented internal links still resolve.
-- Ready to publish on `matter-beta`; no stable branch promotion is intended.
+- Commit `66b327616c05344305f3351195541869161c4e6b` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. No stable
+  branch promotion was made.
 
 ## Additional requested ecosystem scope
 
