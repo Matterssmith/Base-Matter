@@ -9,7 +9,7 @@
  */
 
 use crate::security::{
-    derive_provider_binding_key,
+    create_provider_binding_proof,
     BoundKeyProvider,
     KeyManager,
     ProviderAccessPolicy,
@@ -19,22 +19,19 @@ use crate::security::{
 };
 
 use anyhow::{anyhow, bail, Result};
-use hmac::{Hmac, Mac};
-use sha2::Sha256;
 use subtle::ConstantTimeEq;
 use zeroize::Zeroizing;
-
-type HmacSha256 = Hmac<Sha256>;
 
 /// Proveedor autenticado y autorizado para operaciones protegidas.
 pub struct AuthenticatedProvider {
     identity: ProviderIdentity,
     authorized_permission: ProviderPermission,
-    binding_key: Zeroizing<[u8; 32]>,
+    binding_key: Option<Zeroizing<[u8; 32]>>,
 }
 
 impl AuthenticatedProvider {
-    /// Autentica al proveedor y autoriza el permiso solicitado.
+    /// Autentica y autoriza una operación sin habilitar
+    /// la carga de claves desde un proveedor externo.
     pub fn authenticate_and_authorize(
         authenticator: &mut ProviderAuthenticator,
         policy: &ProviderAccessPolicy,
@@ -51,13 +48,36 @@ impl AuthenticatedProvider {
 
         policy.authorize(&identity, required_permission)?;
 
-        let binding_key = derive_provider_binding_key(key)?;
-
         Ok(Self {
             identity,
             authorized_permission: required_permission,
-            binding_key,
+            binding_key: None,
         })
+    }
+
+    /// Autentica y autoriza una sesión con un secreto
+    /// de vinculación independiente del secreto de afirmación.
+    pub fn authenticate_and_authorize_with_binding_key(
+        authenticator: &mut ProviderAuthenticator,
+        policy: &ProviderAccessPolicy,
+        nonce: &[u8; 24],
+        ciphertext: &[u8],
+        assertion_key: &[u8; 32],
+        binding_key: Zeroizing<[u8; 32]>,
+        required_permission: ProviderPermission,
+    ) -> Result<Self> {
+        let mut session = Self::authenticate_and_authorize(
+            authenticator,
+            policy,
+            nonce,
+            ciphertext,
+            assertion_key,
+            required_permission,
+        )?;
+
+        session.binding_key = Some(binding_key);
+
+        Ok(session)
     }
 
     /// Comprueba el permiso autorizado para la sesión.
@@ -74,7 +94,7 @@ impl AuthenticatedProvider {
         Ok(())
     }
 
-    /// Comprueba un permiso declarado por la identidad autenticada.
+    /// Comprueba un permiso declarado por la identidad.
     fn require_identity_permission(
         &self,
         permission: ProviderPermission,
@@ -146,10 +166,7 @@ impl AuthenticatedProvider {
         manager.get_active()
     }
 
-    /// Carga claves después de demostrar la posesión del secreto.
-    ///
-    /// La prueba se vincula al proveedor, al Vault y a un
-    /// desafío aleatorio nuevo para cada operación.
+    /// Comprueba la posesión del secreto del proveedor y carga sus claves.
     pub fn load_key_manager(
         &self,
         manager: &mut KeyManager,
@@ -158,6 +175,10 @@ impl AuthenticatedProvider {
         self.require_permission(ProviderPermission::ReadKeyIds)?;
         self.require_identity_permission(ProviderPermission::ReadActiveKey)?;
         self.require_identity_permission(ProviderPermission::ReadKeyMaterial)?;
+
+        let binding_key = self.binding_key.as_ref().ok_or_else(|| {
+            anyhow!("Authenticated session has no provider binding key")
+        })?;
 
         let provider_vault_id = provider.vault_id()?;
 
@@ -178,8 +199,8 @@ impl AuthenticatedProvider {
 
         let received_proof = provider.binding_proof(&message)?;
 
-        let expected_proof = Self::calculate_binding_proof(
-            &self.binding_key,
+        let expected_proof = create_provider_binding_proof(
+            binding_key,
             &message,
         )?;
 
@@ -218,23 +239,5 @@ impl AuthenticatedProvider {
         message.extend_from_slice(vault_id.as_bytes());
 
         Ok(message)
-    }
-
-    /// Calcula la prueba esperada para la sesión autenticada.
-    fn calculate_binding_proof(
-        binding_key: &[u8; 32],
-        message: &[u8],
-    ) -> Result<[u8; 32]> {
-        let mut mac = HmacSha256::new_from_slice(binding_key)
-            .map_err(|_| anyhow!("Invalid provider binding key"))?;
-
-        mac.update(message);
-
-        let output = mac.finalize().into_bytes();
-        let mut proof = [0u8; 32];
-
-        proof.copy_from_slice(&output);
-
-        Ok(proof)
     }
 }
