@@ -112,27 +112,56 @@ impl UserAuthorizer for BotOwnerDataPolicy {
 
 #[test]
 fn bot_owner_authorization_and_shared_user_data_are_isolated_together() {
-    let bots = BotRegistry::in_memory();
-    let first_bot = bots.register("family", "v1", "first", "owner-a").unwrap();
-    let second_bot = bots.register("family", "v1", "second", "owner-b").unwrap();
-    let users = UserRegistry::in_memory();
-    let create_principal = UserPrincipal::new("owner-a", &AllowUserCreation).unwrap();
-    let user_id = users.create_user(&create_principal).unwrap();
+    let directory = TemporaryDirectory::new();
+    let bots_path = directory.0.join("bots.db");
+    let users_path = directory.0.join("users.db");
+    let (first_bot, second_bot, user_id) = {
+        let bots = BotRegistry::open_sqlite(&bots_path).unwrap();
+        let first_bot = bots.register("family", "v1", "first", "owner-a").unwrap();
+        let second_bot = bots.register("family", "v1", "second", "owner-b").unwrap();
+        let users = UserRegistry::open_sqlite(&users_path).unwrap();
+        let create_principal = UserPrincipal::new("owner-a", &AllowUserCreation).unwrap();
+        let user_id = users.create_user(&create_principal).unwrap();
+        let owner_policy = BotOwnerDataPolicy {
+            bots,
+            user_id: user_id.clone(),
+        };
+        let owner_principal = UserPrincipal::new("owner-a", &owner_policy).unwrap();
+
+        users
+            .set_bot_data(
+                first_bot.instance_id(),
+                &user_id,
+                "preference",
+                "dark",
+                &owner_principal,
+            )
+            .unwrap();
+        assert!(users
+            .set_bot_data(
+                second_bot.instance_id(),
+                &user_id,
+                "preference",
+                "leak",
+                &owner_principal
+            )
+            .is_err());
+        (first_bot, second_bot, user_id)
+    };
+
+    // Reopen both independent stores to verify the cross-module policy is
+    // still based on recovered bot ownership and user-scoped data.
+    let bots = BotRegistry::open_sqlite(&bots_path).unwrap();
+    let users = UserRegistry::open_sqlite(&users_path).unwrap();
+    assert_eq!(
+        bots.get(first_bot.instance_id()).unwrap(),
+        Some(first_bot.clone())
+    );
     let owner_policy = BotOwnerDataPolicy {
         bots: bots.clone(),
         user_id: user_id.clone(),
     };
     let owner_principal = UserPrincipal::new("owner-a", &owner_policy).unwrap();
-
-    users
-        .set_bot_data(
-            first_bot.instance_id(),
-            &user_id,
-            "preference",
-            "dark",
-            &owner_principal,
-        )
-        .unwrap();
     assert_eq!(
         users
             .bot_data(
@@ -145,17 +174,9 @@ fn bot_owner_authorization_and_shared_user_data_are_isolated_together() {
             .as_deref(),
         Some("dark")
     );
-    assert!(users
-        .set_bot_data(
-            second_bot.instance_id(),
-            &user_id,
-            "preference",
-            "leak",
-            &owner_principal
-        )
-        .is_err());
+
     let other_owner_policy = BotOwnerDataPolicy {
-        bots: bots.clone(),
+        bots,
         user_id: user_id.clone(),
     };
     let other_owner = UserPrincipal::new("owner-b", &other_owner_policy).unwrap();
@@ -173,7 +194,7 @@ fn bot_owner_authorization_and_shared_user_data_are_isolated_together() {
     assert!(users
         .bot_data(
             first_bot.instance_id(),
-            &other_owner_policy.user_id,
+            &user_id,
             "preference",
             &other_owner
         )

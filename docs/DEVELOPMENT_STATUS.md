@@ -605,8 +605,9 @@ external services.
 ## Current local work — bot and shared-user integration
 
 - Added a cross-module test that creates two bot instances and a shared user,
-  authorizes access through each bot owner's registry permissions, verifies
-  data remains isolated by instance, and rejects cross-owner reads and writes.
+  persists them in separate SQLite stores, closes and reopens both stores,
+  authorizes access through recovered bot-owner permissions, verifies user data
+  remains isolated by instance, and rejects cross-owner reads and writes.
 - After syncing with `origin/matter-beta` at
   `7b455090f1cf25ed2b6b1dc6a1cd25da57a1a5b3`, `cargo fmt --all -- --check`,
   `cargo check --all-targets`, the full suite (205 passed, 0 failed; 0 doc
