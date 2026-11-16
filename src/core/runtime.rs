@@ -17,14 +17,18 @@
 use crate::bots::BotRegistry;
 use crate::core::config::CoreConfig;
 use crate::core::context::MatterContext;
-use crate::legal::LegalStore;
+use crate::legal::{LegalPrincipal, LegalStore};
+use crate::modules::{CoreModule, ModuleManager};
+use crate::users::UserRegistry;
 use anyhow::Result;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct MatterRuntime {
     pub config: CoreConfig,
     pub context: MatterContext,
+    modules: Arc<Mutex<ModuleManager>>,
 }
 
 impl MatterRuntime {
@@ -41,6 +45,7 @@ impl MatterRuntime {
         Ok(Self {
             config,
             context: MatterContext::new(legal),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
         })
     }
 
@@ -56,6 +61,22 @@ impl MatterRuntime {
         Ok(Self {
             config,
             context: MatterContext::with_bot_registry(legal, bots),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
+        })
+    }
+
+    /// Opens the runtime with explicit bot and shared-user registries.
+    pub fn open_with_registries(
+        config: CoreConfig,
+        legal_database: impl AsRef<Path>,
+        bots: BotRegistry,
+        users: UserRegistry,
+    ) -> Result<Self> {
+        let legal = LegalStore::open(legal_database)?;
+        Ok(Self {
+            config,
+            context: MatterContext::with_registries(legal, bots, users),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
         })
     }
 
@@ -67,6 +88,7 @@ impl MatterRuntime {
         Self {
             config,
             context: MatterContext::new(legal),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
         }
     }
 
@@ -75,15 +97,62 @@ impl MatterRuntime {
         Self {
             config,
             context: MatterContext::with_bot_registry(legal, bots),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
         }
     }
 
-    pub fn initialize(&self) {
+    /// Builds a runtime with explicit legal, bot, and shared-user stores.
+    pub fn with_stores_and_users(
+        config: CoreConfig,
+        legal: LegalStore,
+        bots: BotRegistry,
+        users: UserRegistry,
+    ) -> Self {
+        Self {
+            config,
+            context: MatterContext::with_registries(legal, bots, users),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
+        }
+    }
+
+    /// Registers a runtime module before initialization starts.
+    pub fn register_module(&self, module: Box<dyn CoreModule>) -> Result<()> {
+        self.modules
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Runtime module manager lock poisoned"))?
+            .register(module)
+    }
+
+    /// Initializes registered modules and the runtime context.
+    pub fn initialize(&self) -> Result<()> {
+        self.modules
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Runtime module manager lock poisoned"))?
+            .initialize_all(&self.context)?;
         tracing::info!(
             application = %self.config.name,
             environment = %self.config.environment,
             "Matter runtime initialized"
         );
+        Ok(())
+    }
+
+    /// Initializes modules if needed, then starts them in registration order.
+    pub fn start(&self) -> Result<()> {
+        let mut modules = self
+            .modules
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Runtime module manager lock poisoned"))?;
+        modules.initialize_all(&self.context)?;
+        modules.start_all(&self.context)
+    }
+
+    /// Stops runtime modules in reverse registration order.
+    pub fn shutdown(&self) -> Result<()> {
+        self.modules
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Runtime module manager lock poisoned"))?
+            .stop_all(&self.context)
     }
 
     pub fn context(&self) -> &MatterContext {
@@ -94,11 +163,25 @@ impl MatterRuntime {
         &self.config
     }
 
-    pub fn is_access_allowed(&self, user_id: &str, scope: &str, locale: &str) -> Result<bool> {
-        self.context.is_access_allowed(user_id, scope, locale)
+    pub fn is_access_allowed(
+        &self,
+        user_id: &str,
+        scope: &str,
+        locale: &str,
+        principal: &LegalPrincipal<'_>,
+    ) -> Result<bool> {
+        self.context
+            .is_access_allowed(user_id, scope, locale, principal)
     }
 
-    pub fn ensure_access(&self, user_id: &str, scope: &str, locale: &str) -> Result<()> {
-        self.context.ensure_access(user_id, scope, locale)
+    pub fn ensure_access(
+        &self,
+        user_id: &str,
+        scope: &str,
+        locale: &str,
+        principal: &LegalPrincipal<'_>,
+    ) -> Result<()> {
+        self.context
+            .ensure_access(user_id, scope, locale, principal)
     }
 }

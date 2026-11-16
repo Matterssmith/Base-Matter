@@ -8,14 +8,13 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Previous synchronized base commit: `60adf425ad9e9c8b7a62df760bd2260a0e8f6794`
-- Latest confirmed checkpoint before the current local work:
-  `60adf425ad9e9c8b7a62df760bd2260a0e8f6794`
+- Previous synchronized base commit: `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`
+- Latest confirmed published checkpoint: `916fdbbf61c7b6c1668f7d58f0c43df3eb323d09`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
-- Synchronization: `git fetch origin` succeeded before and after the checkpoint
-  push; local `HEAD` matched `origin/matter-beta` at
-  `60adf425ad9e9c8b7a62df760bd2260a0e8f6794` before the current audit fix.
-  Verify the current published tip from Git after pushing this checkpoint.
+- Synchronization: push and subsequent fetch confirmed local HEAD and
+  origin/matter-beta at `916fdbbf61c7b6c1668f7d58f0c43df3eb323d09` for the
+  persistent socket activation checkpoint. This ledger-only follow-up does not
+  change the tested implementation.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -38,15 +37,15 @@ not ready for Matter-Bot.
 
 | Capability | Status | Evidence / limitation |
 | --- | --- | --- |
-| Runtime and lifecycle | PARTIAL | Context shares a bot registry and caller-owned `ModuleManager` coordinates ordered lifecycle callbacks; `MatterRuntime` still does not own/start modules and services have no lifecycle. |
-| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates IDs, persists validated identities, and allocates unique names; owner-only transfer/removal, limited co-owner scope, legacy recovery authorization, and audit history work. Shared-user validation and general role/resource authorization remain absent. |
-| Shared application users and bot data isolation | ABSENT | `legal_users` are legal-consent subjects, not a shared application user system. |
+| Runtime and lifecycle | PARTIAL | `MatterRuntime` owns a shared `ModuleManager` and propagates initialize/start/shutdown errors; no built-in modules are registered and services have no lifecycle. |
+| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates IDs, persists validated identities, and allocates unique names; owner-only transfer/removal, owner/co-owner-scoped identity reads and lists, co-owner operations bounded to 256, legacy recovery authorization, and audit history work. General role/resource authorization remains absent. |
+| Shared application users and bot data isolation | PARTIAL | `src/users` provides in-memory/SQLite global IDs, explicit unique external links, and bot/user/key-scoped text data with authorization hooks. A consuming application's `UserAuthorizer` must authenticate principals and verify bot existence/ownership; user storage does not consult the bot registry or implement general roles. |
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
-| Persistence and recovery | PARTIAL | SQLite persists bot identities and legal documents/decisions. No config/socket/service persistence or ecosystem-wide migration coordinator; the bot registry has its own transactional schema versions. |
+| Persistence and recovery | PARTIAL | SQLite persists bot identities, shared users/identity links/bot-scoped data, and legal documents/decisions. No config/network-connection/service persistence or ecosystem-wide migration coordinator; each persistent component has its own versioned schema. |
 | Events and messaging | PARTIAL | Named synchronous in-memory event callbacks exist; no durable events or messaging contract. |
-| Router and command registry | ABSENT | No implementation. |
-| Middleware, roles, permissions, authorization | ABSENT | Provider key permissions exist only in the security integration; no general resource authorization. |
-| Control Plane, sockets, activation | ABSENT | No implementation; socket ownership/policies cannot be verified. |
+| Router and command registry | PARTIAL | `CommandRouter` supports bounded prefixes/names/aliases/arguments, mandatory injected authorization, middleware, and synchronous handlers; no durable audit integration, Control Plane activation, or platform-specific parsing exists. |
+| Middleware, roles, permissions, authorization | PARTIAL | Bot owner/co-owner checks and injectable user/legal action/resource authorization contracts exist; no general role inheritance or socket/resource policy engine. |
+| Control Plane, sockets, activation | PARTIAL | SQLite socket activation store provides owner checks, power, group/socket overrides, recovery and atomic audit. Bot binding, network lifecycle, control-prefix interception and router gating remain absent. |
 | Services and connections | PARTIAL | Typed in-memory service registry only; no connection manager or lifecycle. |
 | Plugins, extensions, sandbox | ABSENT | No manifest validation, isolation, or resource limits. |
 | Application audit log | ABSENT | Legal decisions are append-only; no general administrative audit system. |
@@ -110,6 +109,55 @@ not ready for Matter-Bot.
   transaction as retrieving records. Co-owners and unrelated actors are
   denied. Records remain stored after bot deletion but are inaccessible through
   the current registry API after the identity is removed.
+- Current legal-store schema work modifies `src/legal/mod.rs` and adds three
+  isolated migration tests in `tests/legal.rs`; `README.md` and
+  `docs/architecture.md` now describe the transactional versioned initialization.
+- Legal schema hardening is now implemented locally in `src/legal/mod.rs`:
+  SQLite foreign keys are enabled before the migration transaction, and schema
+  objects plus the `legal_store` component version are committed atomically.
+  Existing unversioned records survive upgrade; failed DDL rolls back; negative
+  or unsupported future versions are rejected.
+- Added public `LegalAction`, `LegalAuthorizationRequest`, `LegalAuthorizer`,
+  and `LegalPrincipal` contracts. Legal user registration/lookups, document
+  registration/activation, consent writes/history, required-document queries,
+  and access checks now require the supplied principal policy. Runtime/context
+  access checks require it too. Authorization errors are sanitized. The crate
+  delegates real principal authentication and policy to consuming applications;
+  no shared user directory or production authorization provider is implemented.
+- Added `tests/common/mod.rs` with a test-only policy and regression coverage
+  rejecting cross-user consent forgery, unauthorized history reads, and
+  unauthorized document activation. This fixture verifies contract use, not a
+  real external identity integration.
+- Updated README and architecture docs to define the delegated legal identity
+  boundary and the actual implemented/pending scope.
+- Files changed for the legal authorization contract: `src/legal/mod.rs`,
+  `src/core/context.rs`, `src/core/runtime.rs`, `src/lib.rs`,
+  `tests/common/mod.rs` (created), `tests/core.rs`, `tests/legal.rs`, and
+  `tests/platform_flow.rs`; docs: `README.md`, `docs/architecture.md`, and
+  this ledger. No files were deleted.
+- Wired `ModuleManager` into `MatterRuntime` through shared synchronized state.
+  Consumers register modules before initialization and invoke runtime
+  initialize/start/shutdown. Errors propagate; lifecycle callback panics are
+  converted to errors and failed initialization attempts cleanup. The
+  cross-module flow exercises success, and a second integration test verifies
+  start-error propagation plus cleanup.
+- Files changed for runtime lifecycle integration: `src/core/runtime.rs`,
+  `src/modules/mod.rs`, `tests/platform_flow.rs`, `README.md`,
+  `docs/architecture.md`, and this ledger. No files were deleted.
+- Modified public API files `src/legal/mod.rs`, `src/core/context.rs`,
+  `src/core/runtime.rs`, and `src/lib.rs` to require a principal policy for
+  sensitive legal operations. Updated `tests/core.rs`, `tests/legal.rs`, and
+  `tests/platform_flow.rs`; added the shared test policy at
+  `tests/common/mod.rs`.
+- Added a migration-failure regression for the SQLite bot registry. An injected
+  conflicting schema object forces migration to fail; the test verifies the
+  schema version and identity columns remain at version 1, legacy rows remain
+  present, and a clean retry completes to version 3.
+- Added component-scoped schema version 1 for the legal SQLite store. Schema
+  creation, indexes, immutability triggers, and the version row are now one
+  immediate transaction. Existing unversioned legal tables/data are preserved;
+  failed DDL rolls back, negative/future versions fail closed, and retry after
+  resolving a test-injected schema conflict succeeds.
 
 ### Files created, modified, and deleted
 
@@ -198,6 +246,28 @@ After formatting, the following commands completed successfully:
   **12 passed**; `cargo fmt --all`, `cargo check --all-targets`, full
   `cargo test` — **182 passed, 0 failed**; doc tests: 0 passed, 0 failed;
   `git diff --check` passed.
+- Current bot migration rollback verification: focused test passed;
+  `cargo fmt --all`, `cargo check --all-targets`, and full `cargo test` —
+  **183 passed, 0 failed**; doc tests: 0 passed, 0 failed; `git diff --check`
+  passed.
+- Current legal schema migration verification: the three focused migration
+  tests passed; `cargo fmt --all`, `cargo check --all-targets`, and full
+  `cargo test` — **186 passed, 0 failed**; doc tests: 0 passed, 0 failed;
+  `git diff --check` passed.
+- Current legal schema migration verification: 3 focused migration tests passed;
+  `cargo fmt --all`, `cargo check --all-targets`, full `cargo test` —
+  **186 passed, 0 failed**; doc tests: 0 passed, 0 failed;
+  `git diff --check` passed.
+- Current legal authorization verification after denied cross-user consent,
+  denied user-data lookup, denied document registration/activation, and generic
+  error checks: focused legal/core/platform flow tests passed;
+  `cargo fmt --all`, `cargo check --all-targets`, full `cargo test` —
+  **187 passed, 0 failed**; doc tests: 0 passed, 0 failed;
+  `git diff --check` passed.
+- Current runtime-owned lifecycle verification: focused callback-panic cleanup
+  and cross-module runtime success/start-failure tests passed; `cargo fmt --all`,
+  `cargo check --all-targets`, full `cargo test` — **189 passed, 0 failed**;
+  doc tests: 0 passed, 0 failed; `git diff --check` passed.
 
 These results verify only the code that exists. They do not verify absent bot
 platform capabilities or a live external integration.
@@ -265,6 +335,28 @@ platform capabilities or a live external integration.
 - README files reviewed for owner-only audit-history reads: **1**.
 - README files updated for owner-only audit-history reads and API example: **1**.
 - README files with no changes for owner-only audit-history reads: **0**.
+- README files reviewed for bot-registry migration rollback coverage: **1**.
+- README files updated for bot-registry migration rollback coverage: **0**.
+- README files with no changes for bot-registry migration rollback coverage: **1**.
+- README files reviewed for legal schema versioning and DDL rollback: **1**.
+- README files updated for legal schema versioning and DDL rollback: **1**.
+- README files with no changes for legal schema versioning and DDL rollback: **0**.
+- README files reviewed for the legal principal/action/resource contract: **1**.
+- README files updated for the legal principal/action/resource contract: **1**.
+- README files with no changes for the legal principal/action/resource contract: **0**.
+- README files reviewed for legal principal enforcement across runtime/store APIs: **1**.
+- README files updated for legal principal enforcement across runtime/store APIs: **1**.
+- README files with no changes for that API enforcement checkpoint: **0**.
+- README files reviewed for runtime-owned module lifecycle: **1**.
+- README files updated for runtime initialize/start/shutdown: **1**.
+- README files with no changes for runtime lifecycle integration: **0**.
+- README files reviewed for transactional/versioned legal-store initialization: **1**.
+- README files updated for transactional/versioned legal-store initialization: **1**.
+- README files with no changes for transactional/versioned legal-store initialization: **0**.
+- README files reviewed for the added Vault and WhatsApp/Telegram/Discord
+  integration scope: **1**.
+- README files updated for that scope: **0**.
+- README files with no changes for that scope: **1**.
 - README files with no changes for runtime registry injection: **0**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
@@ -346,27 +438,275 @@ verification is the only specifically identified external dependency; most
 remaining blockers are missing code and contracts in this repository, not
 external services.
 
+## Previous published checkpoint
+
+- Branch: `matter-beta`; after safe stash, fetch, reset, and stash reapply,
+  both `HEAD` and `origin/matter-beta` were
+  `b9ca1d0e46c3f63428d9545da7e9923f6b86b129`. No conflicts; ignored
+  `target/` was preserved.
+- Added a module shutdown retry test and a cloned-runtime concurrent-start
+  integration test. They verify retained cleanup state and serialized lifecycle
+  callbacks.
+- Files changed: `src/modules/mod.rs`, `tests/platform_flow.rs`, and this
+  ledger. No files created or deleted. README audit: 1 found, 1 reviewed,
+  0 updated, 1 unchanged. No README issue applies to these test-only changes.
+- Verification passed: `cargo fmt --all`, `cargo check --all-targets`,
+  `cargo test` (191 tests, 0 failed; 0 doc tests), and `git diff --check`.
+- Commit `348431451771822581505484b4d042c098e92cba` was pushed to
+  `origin/matter-beta`; fetch confirmed the published SHA. No stable branch
+  promotion was made.
+
+## Latest checkpoint — shared user registry
+
+- Implemented `UserRegistry`, `UserPrincipal`, `UserAuthorizer`, and a
+  replaceable `UserStore`; provided in-memory and SQLite stores.
+- Identity links are explicit and unique by provider plus external subject.
+  Repeated links to the same user are idempotent; linking the same external
+  identity to another user fails. Matching identifiers across providers remain
+  distinct.
+- Bot data is keyed by bot instance, shared user ID, and data key. Every
+  create/link/unlink/resolve/read/write/delete operation requires the supplied
+  authorization policy. The application must authenticate principal IDs and
+  verify bot existence/ownership; that integration is not yet provided here.
+- Added optional user-registry injection to `MatterContext` and
+  `MatterRuntime::open_with_registries` / `with_stores_and_users`.
+- Added tests for SQLite reopen recovery, bot isolation, denial sanitization,
+  provider namespace separation, link ownership, and concurrent link claims.
+- Files changed: `src/users/mod.rs` (new), `src/lib.rs`,
+  `src/core/context.rs`, `src/core/runtime.rs`, `tests/users.rs` (new),
+  `README.md`, `docs/architecture.md`, and this ledger. No files deleted.
+- Verification before the recovery interruption: `cargo fmt --all`,
+  `cargo check --all-targets`, full `cargo test` (195 passed, 0 failed; 0 doc
+  tests), `git diff --check`, and focused user tests (5 passed after the runtime
+  injection/recovery case). After restoring the working tree, the full sequence
+  passed again: `cargo fmt --all`, `cargo check --all-targets`, `cargo test`
+  (196 passed, 0 failed; 0 doc tests), and `git diff --check`. Platform flow
+  passed (3); no live services were used.
+- README audit for this work: 1 found, 1 reviewed, 1 updated, 0 unchanged.
+- Commit `6b501997f377e8dd424ba78669b04796f6a2a989` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the same SHA. The README
+  audit found 1 README, reviewed 1, updated 1, unchanged 0; its relative links
+  resolve. No stable-branch promotion was made.
+- Recovery note: an earlier stash attempt failed while intent-to-add entries
+  were present; a separate preserved bot-registry stash was partially applied
+  and conflicted. It remains in `git stash list` and was not discarded or
+  merged. Its files and conflict snapshots were copied to
+  `/tmp/Matter-Base-recovery-20261116`. The user-registry work was restored from
+  Git objects `d1f504f…` (tracked files) and `e213e3b…` (new source/tests).
+  Review the preserved bot stash later; its alternative in-memory bot registry
+  conflicts with the existing persistent bot registry and should not be merged
+  without a deliberate architecture review.
+
+## Current checkpoint — user-store resilience tests
+
+- Added SQLite migration rollback/retry coverage, future-schema rejection
+  without rewriting stored data, and rejection of writes to unregistered users
+  or over-limit values.
+- Changed files: `tests/users.rs` and this status ledger. No files created or
+  deleted. No production behavior changed in this checkpoint.
+- Verified after synchronizing with `origin/matter-beta` at
+  `81b48f5a1a42c927650ea4e9b5e3b9230c615bea`: `cargo fmt --all`,
+  `cargo check --all-targets`, focused user tests (8 passed), full `cargo test`
+  (199 passed, 0 failed; 0 doc tests), and `git diff --check` all passed.
+- README audit: 1 found, 1 reviewed, 0 updated, 1 unchanged; test-only changes
+  do not affect README claims.
+- Commit `7f385de9579094221ab55e52d3ac672969b846ed` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. No stable
+  branch promotion was made. The original separate bot-registry stash remains
+  preserved.
+
+## Current local work — bot co-owner resource bound
+
+- Added a 256 co-owner cap to both in-memory and SQLite assignment paths.
+  Persisted identities with larger lists fail validation; ownership transfer
+  and removal also fail closed when they encounter an oversized list.
+- Added coverage for both stores and a corrupted SQLite row.
+- Updated README and architecture documentation to state the cap.
+- Audited public legal-store entry points. Sensitive reads, writes, document
+  administration, and consent paths invoke `LegalPrincipal` before storage
+  access. Authorization diagnostics are sanitized; no omitted auth path was
+  confirmed in this pass.
+- Verified after syncing with `origin/matter-beta` at
+  `34f31718da728822cde3d12aca69437fb96ec553`: `cargo fmt --all`,
+  `cargo check --all-targets`, focused bot-registry tests (15 passed), full
+  `cargo test` (201 passed, 0 failed; 0 doc tests), and `git diff --check`.
+- README audit for this code checkpoint: 1 found, 1 reviewed, 1 updated,
+  0 unchanged; relative links resolve.
+- Commit `82e4562ca6b022c2d45a53744f92da87d0b7ad92` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the same SHA. No stable
+  branch promotion was made.
+
+## Current local work — reject empty provider key sets
+
+- Confirmed that a provider returning a successful but empty key list caused
+  `KeyManager` to replace and erase its current keys. Empty results now fail
+  closed, preserving the current key set and active key.
+- Added a regression test. Updated README and architecture documentation.
+- Verified after syncing with `origin/matter-beta` at
+  `b1f286c982e580608d2f37be6610fc8b5ea479a4`: `cargo fmt --all`,
+  `cargo check --all-targets`, focused key-provider tests (7 passed), full
+  `cargo test` (202 passed, 0 failed; 0 doc tests), and `git diff --check`.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged; relative links
+  resolve.
+- Commit `b1afcc84490de64436a909072bf4f15ae699d912` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. No stable
+  branch promotion was made.
+
 ## Exact next task to resume
 
-1. Re-read this file and the root README.
-2. Confirm the current branch, status, and remote tip. Preserve local work;
-   do not discard `Cargo.lock` or `target/` without inspecting ownership.
-3. Continue H with a module-by-module audit of `src/bots`, `src/legal`, and
-   `src/security`, beginning with migration rollback/corrupt-store behavior,
-   owner audit/error semantics, legal transaction failure paths, replay-store
-   bounds, and key/provider boundary validation. Add behavior tests for every confirmed
-   defect. Do not invent a shared-user identity system until a trustworthy
-   authenticated-principal contract is available.
-4. Continue I by adding cross-module resilience cases around bot ownership,
-   provider failure, and legal-store errors. The current suite passes 182 tests;
-   this does not cover absent router, sockets, plugins, general authorization,
-   or live external services. Keep Matter-Bot blocked.
-5. After each coherent checkpoint, audit every README, update this ledger,
-   commit to `matter-beta`, push the branch, then fetch and verify the published
-   SHA before continuing. Run the full verification sequence before release
-   readiness claims.
-6. Update this record after each completed stage. Do not mark H–L complete
-   until the corresponding criteria are implemented and verified.
+1. Continue H by auditing remaining provider/key and cross-module trust
+   boundaries; add tests for confirmed defects. Authenticated key reads are
+   Vault-scoped, and bot identity reads/lists now enforce owner/co-owner scope.
+2. Continue I with cross-module resilience around bot ownership, provider
+   failures, legal-store errors, and shared users. One bot-owner/shared-user
+   isolation flow is now covered; router, sockets, plugins, general resource
+   authorization, and live services remain uncovered.
+3. Complete J, K, and L in order. Reassess capabilities from actual code and
+   keep Matter-Bot blocked until all readiness criteria are satisfied.
+4. At each checkpoint, review every README, update this ledger, commit and push
+   to `matter-beta`, then fetch and verify the exact published SHA. Never claim
+   Vault or platform integrations work without real verification.
+
+## Documentation audit — service registry
+
+- Corrected `docs/services.md`: its lock-poisoning note no longer matches the
+  implementation. The registry recovers poisoned locks and has a regression
+  test; lifecycle, health checks, persistence, and authorization remain
+  unimplemented.
+- README audit: 1 found, 1 reviewed, 0 updated, 1 unchanged. No README claims
+  the service registry provides lifecycle or connection management.
+- Documentation-only correction; no tests were run for this edit.
+- Base before publication: `5ee4a71e562decc3e72b38fbe54e765b2736ed02`.
+
+## Current local work — total key-manager capacity
+
+- Added the 4,096-key limit to manual `insert` and `rotate`, matching the
+  provider-load limit. At capacity, both operations fail without mutating
+  key count or active-key state.
+- Added a boundary regression test and updated README/architecture docs.
+- Verified after syncing with `origin/matter-beta` at
+  `6b7a7f8e75c5d5409b9e5b81cfdd1e97b4e06b1e`: `cargo fmt --all`,
+  `cargo check --all-targets`, focused key-provider tests (8 passed), full
+  `cargo test` (203 passed, 0 failed; 0 doc tests), and `git diff --check`.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged; relative links
+  resolve.
+- Commit `7ffe9c570033b0e50cd0ce4a00c902e3772d786a` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. No stable
+  branch promotion was made.
+
+## Current local work — key-manager Vault isolation
+
+- Confirmed that an `AuthenticatedProvider` could read from a `KeyManager`
+  loaded from a different Vault when the manager handle was reused.
+- Authenticated key ID, key material, and active-key reads now compare the
+  manager's recorded Vault ID with the authenticated identity and reject a
+  mismatch. In-memory manually inserted keys without a provider Vault remain
+  usable by existing direct tests.
+- Added a two-Vault regression and documented the scope check.
+- Verified after syncing with `origin/matter-beta` at
+  `40c3bcac140aaab8b91be8541a849293b6f0ec71`: `cargo fmt --all -- --check`,
+  `cargo check --all-targets`, full `cargo test` (204 passed, 0 failed; 0 doc
+  tests), and `git diff --check`.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged. The architecture
+  note was updated too; the documented internal links still resolve.
+- Commit `66b327616c05344305f3351195541869161c4e6b` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. No stable
+  branch promotion was made.
+
+## Current local work — bot and shared-user integration
+
+- Added a cross-module test that creates two bot instances and a shared user,
+  persists them in separate SQLite stores, closes and reopens both stores,
+  authorizes access through recovered bot-owner permissions, verifies user data
+  remains isolated by instance, and rejects cross-owner reads and writes.
+- After syncing with `origin/matter-beta` at
+  `7b455090f1cf25ed2b6b1dc6a1cd25da57a1a5b3`, `cargo fmt --all -- --check`,
+  `cargo check --all-targets`, the full suite (205 passed, 0 failed; 0 doc
+  tests), and `git diff --check` passed.
+- README audit: 1 found, 1 reviewed, 0 updated, 1 unchanged. This test adds no
+  public behavior; README and architecture claims remain accurate.
+- Commit `d1e9af11bad9785b137cb9018b4024e7ebd864ed` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. H and I
+  remain in progress; no stable branch promotion was made.
+
+## Current local work — bot identity read authorization
+
+- Confirmed that `BotRegistry::get` and `list` returned owner and co-owner
+  identity data without an actor scope.
+- Both methods and the `BotIdentityStore` contract now require an actor ID;
+  reads return only records owned by or shared with that actor. Inaccessible
+  single records appear absent, and list results are filtered. The registry
+  repeats filtering for replaceable store implementations.
+- Updated SQLite and in-memory stores, legacy migration tests, and call sites.
+  Legacy unowned records stay hidden until successfully claimed through the
+  recovery authorizer.
+- README and architecture now show the actor-scoped signatures and the
+  required authenticated-request boundary.
+- After syncing with `origin/matter-beta` at
+  `007d4e0e52cc42a9c629111cc0c0b33984078cf4`, format, all-target check, focused
+  bot/platform integration tests, full suite (205 passed, 0 failed; 0 doc
+  tests), and `git diff --check` passed.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged.
+- Commit `ff2301abbb01bd4d7b0beca05f7bd26cce708cf0` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. H remains
+  in progress; no stable branch promotion was made.
+
+## Current local work — universal command router
+
+- Added and exported `CommandRouter`, `CommandInvocation`, and the mandatory
+  `CommandAuthorizer` contract. It handles configured prefixes, case-insensitive
+  canonical names and aliases, whitespace arguments, middleware order, and
+  synchronous handler dispatch.
+- Enforced limits for input bytes, prefixes, command names/count, aliases,
+  middleware count, and argument count. Aliases resolve to canonical names
+  before authorization. Authorization, middleware, and handler callbacks run
+  outside the registry lock; callback errors/panics are returned as sanitized
+  errors.
+- Added unit coverage for alias authorization, middleware order/rejection,
+  unauthorized dispatch, duplicate names, size limits, and callback panics, as
+  well as an integration test exercising the documented root API.
+- Added a cross-module flow test wiring `CommandRouter` authorization directly
+  to the real bot registry: one owner executes against its instance, another
+  owner's request is rejected before handler effects, and that owner can use
+  its own separate instance.
+- Command routing remains PARTIAL: durable audit records, platform-specific
+  argument parsing, and Control Plane/socket activation are not integrated.
+  The authorizer must verify authenticated actor, bot ownership, permissions,
+  and operational activation.
+- After syncing with `origin/matter-beta` at
+  `9eb8943b281f7e8a35a981068d08406fcf7859ce`, format, all-target check, full
+  suite (214 passed, 0 failed; 0 doc tests), and `git diff --check` passed.
+- README audit: 1 found, 1 reviewed, 0 updated, 1 unchanged. The public example
+  is compiled and exercised by `tests/commands.rs`.
+- Router implementation commit `1c3225ba3e8ac93bd669203c914421c571dc3705` and
+  integration commit `7212f10bf531f69de417b4a95970a868d92fa490` were pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. H and I
+  remain in progress; no stable branch promotion was made.
+
+## Additional requested ecosystem scope
+
+The user added the following required scope; it is a goal, not an implemented
+or verified capability:
+
+1. Complete Matter-Base stages H–L and meet the existing readiness criteria.
+2. Integrate Matter-Vault through its independent repository/service contract
+   and verify a real integration when that service is available. Matter-Base
+   must not store platform credentials or WhatsApp sessions.
+3. Build and verify a functional WhatsApp adapter in Matter-Baileys, including
+   account linking (QR/code where supported), receive/send, filters, activation
+   controls, instance isolation, reconnect, and persistence. Live verification
+   must use a secondary test account; do not overwrite existing sessions.
+4. Then add Telegram (Matter-Telegraf) and Discord (Matter-Discord) adapters
+   with equivalent capabilities where each platform supports them, against
+   Matter-Base's stable platform-neutral contracts.
+5. Keep provider-specific logic in the adapter repositories. Do not start
+   adapter development before Matter-Base is ready, and do not claim a live
+   integration based only on mocks.
+
+These repositories and services must each be inspected for their real branch,
+state, instructions, and API before work. At this checkpoint the only verified
+repository is Matter-Base; the availability and state of Matter-Vault and the
+three adapter repositories have not yet been inspected.
 
 For later work, re-fetch the development branch before verification or code
 changes, using the safe stash/fetch/reset/reapply procedure from the project
@@ -392,3 +732,43 @@ links resolve.
 Owner/co-owner checkpoint `1a4750ca90572701192451d9cd635d6c3e9eb495` was pushed to
 `origin/matter-beta`; a subsequent fetch confirmed the same SHA. No promotion
 to `matter` occurred.
+
+## 2026-11-16 — Persistent activation prerequisite for WhatsApp
+
+- Branch: `matter-beta`; synchronized base: `77648da3658fed79cd6a18e7de10f4cadae70a13`.
+- Stage H corrections and prerequisite implementation remain in progress; H–L
+  and Matter-Base readiness are NOT complete.
+- Added `src/activation.rs`, `tests/activation.rs`, and `docs/activation.md`;
+  updated `src/lib.rs`, README, architecture and this ledger; no files deleted.
+- Implemented SQLite activation ownership, default power-off, group/socket
+  overrides, trusted global fallback, versioned transactional schema and atomic
+  policy/audit writes. Audit failure rolls back the state mutation. Corrupt
+  persisted policy values fail closed rather than interpreting any nonzero
+  integer as enabled.
+- Trusted application provisioning and actor authentication remain required.
+  There is no network connection, session storage, bot/socket binding, ownership
+  transfer, interchangeable backend or integrated command gate yet.
+- Executed `cargo fmt --all`, `cargo check --all-targets`, focused activation
+  tests (4 passed), full `cargo test` (218 passed, zero failed) and
+  `git diff --check` successfully after synchronization.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged. Corrected stale
+  claims that command routing and shared users were absent; added actual module
+  paths and activation limitations. Internal links were checked. Credits preserved.
+- Read-only GitHub inspection: Matterssmith/Matter-Baileys has only branch
+  `matter`, at `57226de377c1dfeecd9de49415fb593c8ac01936`, with only README.md
+  in its root. No runnable adapter is available there. No session was opened.
+- Exact next task: add authenticated bot/socket binding and a dispatch boundary
+  that intercepts control prefixes before normal routing and rejects normal
+  commands while powered off. Test owner denial, concurrent changes, persistence
+  and handler side effects before declaring that flow verified.
+- Continue with session/credential contracts, connections/messaging, persistent
+  command audit and remaining readiness criteria; real WhatsApp testing also
+  requires implementing the external adapter and linking a secondary test account.
+- To resume: read this ledger, inspect actual Git and instructions, preserve local
+  changes and ignored data, fetch/synchronize matter-beta, then continue the exact
+  next task. Existing legacy bot-registry stash is retained.
+
+- Publication confirmed: activation checkpoint
+  `916fdbbf61c7b6c1668f7d58f0c43df3eb323d09` is on origin/matter-beta.
+  README re-review for this ledger-only commit: 1 found/reviewed, 0 updated,
+  1 unchanged; no new documentation discrepancies. `git diff --check` passed.

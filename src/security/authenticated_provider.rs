@@ -93,6 +93,16 @@ impl AuthenticatedProvider {
         Ok(())
     }
 
+    fn require_manager_vault(&self, manager: &KeyManager) -> Result<()> {
+        if manager
+            .provider_vault_id()
+            .is_some_and(|vault_id| vault_id != self.identity.vault_id())
+        {
+            bail!("Key manager Vault does not match authenticated Vault");
+        }
+        Ok(())
+    }
+
     /// Devuelve el identificador autenticado del proveedor.
     pub fn provider_id(&self) -> &str {
         self.identity.provider_id()
@@ -121,6 +131,7 @@ impl AuthenticatedProvider {
     /// Consulta el identificador de la clave activa.
     pub fn read_active_key_id<'a>(&self, manager: &'a KeyManager) -> Result<&'a str> {
         self.require_permission(ProviderPermission::ReadActiveKey)?;
+        self.require_manager_vault(manager)?;
 
         let (key_id, _) = manager.get_active()?;
 
@@ -130,6 +141,7 @@ impl AuthenticatedProvider {
     /// Recupera una clave por su identificador.
     pub fn read_key<'a>(&self, manager: &'a KeyManager, key_id: &str) -> Result<&'a [u8; 32]> {
         self.require_permission(ProviderPermission::ReadKeyMaterial)?;
+        self.require_manager_vault(manager)?;
 
         manager.get(key_id)
     }
@@ -138,6 +150,7 @@ impl AuthenticatedProvider {
     pub fn read_active_key<'a>(&self, manager: &'a KeyManager) -> Result<(&'a str, &'a [u8; 32])> {
         self.require_permission(ProviderPermission::ReadKeyMaterial)?;
         self.require_identity_permission(ProviderPermission::ReadActiveKey)?;
+        self.require_manager_vault(manager)?;
 
         manager.get_active()
     }

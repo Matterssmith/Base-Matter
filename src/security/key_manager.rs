@@ -42,6 +42,9 @@ impl KeyManager {
         if self.keys.contains_key(&key_id) {
             bail!("Key already registered");
         }
+        if self.keys.len() >= MAX_PROVIDER_KEYS {
+            bail!("Key manager has reached its capacity");
+        }
 
         self.keys.insert(key_id, key);
 
@@ -59,6 +62,9 @@ impl KeyManager {
 
         if self.keys.contains_key(&key_id) {
             bail!("Key already registered");
+        }
+        if self.keys.len() >= MAX_PROVIDER_KEYS {
+            bail!("Key manager has reached its capacity");
         }
 
         self.keys.insert(key_id.clone(), key);
@@ -117,6 +123,9 @@ impl KeyManager {
 
         if key_ids.len() > MAX_PROVIDER_KEYS {
             bail!("Provider returned too many keys");
+        }
+        if key_ids.is_empty() {
+            bail!("Provider returned no keys");
         }
 
         let active_key_id = provider

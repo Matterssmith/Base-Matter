@@ -2,6 +2,8 @@ use matter_base::{
     ConsentDecision, CoreConfig, EventBus, LegalDocument, LegalDocumentType, LegalStore,
     MatterContext, MatterRuntime, ServiceRegistry, Translator,
 };
+mod common;
+use common::{legal_admin, legal_user};
 use std::fs;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::PathBuf;
@@ -89,33 +91,50 @@ fn context_creates_event_bus() {
 fn context_exposes_legal_store() {
     let context = MatterContext::new(create_legal_store());
 
-    context.legal.register_user("user-1").unwrap();
+    context
+        .legal
+        .register_user("user-1", &legal_user("user-1"))
+        .unwrap();
 
-    assert!(context.legal.decision_history("user-1").unwrap().is_empty());
+    assert!(context
+        .legal
+        .decision_history("user-1", &legal_user("user-1"))
+        .unwrap()
+        .is_empty());
 }
 
 #[test]
 fn runtime_blocks_access_without_legal_acceptance() {
     let legal = create_legal_store();
 
-    legal.register_user("user-1").unwrap();
-    legal.register_document(&create_terms()).unwrap();
+    legal
+        .register_user("user-1", &legal_user("user-1"))
+        .unwrap();
+    legal
+        .register_document(&create_terms(), &legal_admin())
+        .unwrap();
 
     let runtime = MatterRuntime::with_legal_store(CoreConfig::default(), legal);
 
     assert!(!runtime
-        .is_access_allowed("user-1", "test-app", "es")
+        .is_access_allowed("user-1", "test-app", "es", &legal_user("user-1"))
         .unwrap());
 
-    assert!(runtime.ensure_access("user-1", "test-app", "es").is_err());
+    assert!(runtime
+        .ensure_access("user-1", "test-app", "es", &legal_user("user-1"))
+        .is_err());
 }
 
 #[test]
 fn runtime_allows_access_after_acceptance() {
     let legal = create_legal_store();
 
-    legal.register_user("user-1").unwrap();
-    legal.register_document(&create_terms()).unwrap();
+    legal
+        .register_user("user-1", &legal_user("user-1"))
+        .unwrap();
+    legal
+        .register_document(&create_terms(), &legal_admin())
+        .unwrap();
 
     legal
         .record_decision(
@@ -123,16 +142,19 @@ fn runtime_allows_access_after_acceptance() {
             "app-terms-v1",
             ConsentDecision::Accepted,
             Some("test"),
+            &legal_user("user-1"),
         )
         .unwrap();
 
     let runtime = MatterRuntime::with_legal_store(CoreConfig::default(), legal);
 
     assert!(runtime
-        .is_access_allowed("user-1", "test-app", "es")
+        .is_access_allowed("user-1", "test-app", "es", &legal_user("user-1"))
         .unwrap());
 
-    assert!(runtime.ensure_access("user-1", "test-app", "es").is_ok());
+    assert!(runtime
+        .ensure_access("user-1", "test-app", "es", &legal_user("user-1"))
+        .is_ok());
 }
 
 #[test]
@@ -146,12 +168,12 @@ fn runtime_recovers_legal_access_after_reopening_database() {
         runtime
             .context
             .legal
-            .register_user("persistent-user")
+            .register_user("persistent-user", &legal_user("persistent-user"))
             .unwrap();
         runtime
             .context
             .legal
-            .register_document(&create_terms())
+            .register_document(&create_terms(), &legal_admin())
             .unwrap();
         runtime
             .context
@@ -161,10 +183,16 @@ fn runtime_recovers_legal_access_after_reopening_database() {
                 "app-terms-v1",
                 ConsentDecision::Accepted,
                 Some("integration-test"),
+                &legal_user("persistent-user"),
             )
             .unwrap();
         assert!(runtime
-            .is_access_allowed("persistent-user", "test-app", "es")
+            .is_access_allowed(
+                "persistent-user",
+                "test-app",
+                "es",
+                &legal_user("persistent-user")
+            )
             .unwrap());
     }
 
@@ -172,19 +200,24 @@ fn runtime_recovers_legal_access_after_reopening_database() {
     assert!(recovered
         .context
         .legal
-        .user_exists("persistent-user")
+        .user_exists("persistent-user", &legal_user("persistent-user"))
         .unwrap());
     assert_eq!(
         recovered
             .context
             .legal
-            .decision_history("persistent-user")
+            .decision_history("persistent-user", &legal_user("persistent-user"))
             .unwrap()
             .len(),
         1
     );
     assert!(recovered
-        .is_access_allowed("persistent-user", "test-app", "es")
+        .is_access_allowed(
+            "persistent-user",
+            "test-app",
+            "es",
+            &legal_user("persistent-user")
+        )
         .unwrap());
 }
 
@@ -198,14 +231,19 @@ fn concurrent_consent_withdrawals_are_serialized_across_connections() {
     consent_document.mandatory = false;
     consent_document.required_decision = ConsentDecision::Granted;
     let initial = LegalStore::open(&database).unwrap();
-    initial.register_user("concurrent-user").unwrap();
-    initial.register_document(&consent_document).unwrap();
+    initial
+        .register_user("concurrent-user", &legal_user("concurrent-user"))
+        .unwrap();
+    initial
+        .register_document(&consent_document, &legal_admin())
+        .unwrap();
     initial
         .record_decision(
             "concurrent-user",
             "app-consent-v1",
             ConsentDecision::Granted,
             None,
+            &legal_user("concurrent-user"),
         )
         .unwrap();
 
@@ -222,6 +260,7 @@ fn concurrent_consent_withdrawals_are_serialized_across_connections() {
             "app-consent-v1",
             ConsentDecision::Withdrawn,
             None,
+            &legal_user("concurrent-user"),
         )
     });
     let second_barrier = Arc::clone(&barrier);
@@ -232,6 +271,7 @@ fn concurrent_consent_withdrawals_are_serialized_across_connections() {
             "app-consent-v1",
             ConsentDecision::Withdrawn,
             None,
+            &legal_user("concurrent-user"),
         )
     });
 
@@ -243,7 +283,9 @@ fn concurrent_consent_withdrawals_are_serialized_across_connections() {
 
     assert_eq!(successes, 1);
     let recovered = LegalStore::open(&database).unwrap();
-    let history = recovered.decision_history("concurrent-user").unwrap();
+    let history = recovered
+        .decision_history("concurrent-user", &legal_user("concurrent-user"))
+        .unwrap();
     assert_eq!(history.len(), 2);
     assert_eq!(history[0].decision, "granted");
     assert_eq!(history[1].decision, "withdrawn");

@@ -15,6 +15,8 @@
  *
  * Seguridad:
  * - No almacena credenciales de plataformas.
+ * - Delega acciones sensibles a LegalAuthorizer por principal y recurso.
+ * - No autentica por sí mismo identidades de plataformas.
  * - Impide UPDATE y DELETE ordinarios del historial.
  * - Protege el contenido y los metadatos de documentos.
  * - Permite cambiar únicamente el estado activo de un documento.
@@ -30,6 +32,78 @@ use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+const LEGAL_STORE_SCHEMA_VERSION: i64 = 1;
+
+/// Sensitive legal-store operation delegated to the consuming application's
+/// authenticated identity and authorization layer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LegalAction {
+    RegisterUser,
+    ReadUser,
+    RegisterDocument,
+    SetDocumentActive,
+    RecordDecision,
+    ReadDecision,
+    CheckAccess,
+    ReadRequiredDocuments,
+}
+
+/// Resource details presented to an application authorization policy.
+#[derive(Debug, Clone, Copy)]
+pub struct LegalAuthorizationRequest<'a> {
+    pub principal_id: &'a str,
+    pub action: LegalAction,
+    pub user_id: Option<&'a str>,
+    pub document_id: Option<&'a str>,
+    pub scope: Option<&'a str>,
+}
+
+/// Application policy that authenticates a principal and authorizes legal
+/// operations. Matter-Base does not authenticate external platform identities.
+pub trait LegalAuthorizer: Send + Sync {
+    fn authorize(&self, request: &LegalAuthorizationRequest<'_>) -> Result<()>;
+}
+
+/// Authenticated principal supplied by the consuming application for a legal
+/// operation. The authorizer must verify this ID against its trusted identity
+/// context and enforce the requested action and resource.
+pub struct LegalPrincipal<'a> {
+    id: &'a str,
+    authorizer: &'a dyn LegalAuthorizer,
+}
+
+impl<'a> LegalPrincipal<'a> {
+    pub fn new(id: &'a str, authorizer: &'a dyn LegalAuthorizer) -> Result<Self> {
+        validate_identifier(id, "principal_id")?;
+        Ok(Self { id, authorizer })
+    }
+
+    fn authorize(
+        &self,
+        action: LegalAction,
+        user_id: Option<&str>,
+        document_id: Option<&str>,
+        scope: Option<&str>,
+    ) -> Result<()> {
+        self.authorizer
+            .authorize(&LegalAuthorizationRequest {
+                principal_id: self.id,
+                action,
+                user_id,
+                document_id,
+                scope,
+            })
+            .map_err(|_| anyhow!("Legal authorization denied"))
+    }
+}
+
+fn validate_identifier(value: &str, name: &str) -> Result<()> {
+    if value.trim().is_empty() || value.len() > 128 || value.chars().any(char::is_control) {
+        bail!("Invalid {name}");
+    }
+    Ok(())
+}
 
 /// Tipo de documento administrado por el sistema legal.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -152,16 +226,37 @@ impl LegalStore {
     ///
     /// Las tablas existentes se conservan. Los triggers se agregan
     /// mediante IF NOT EXISTS para permitir inicializaciones repetidas.
+    /// La creación y el versionado del esquema son una sola transacción.
     fn initialize(&self) -> Result<()> {
-        let connection = self
+        let mut connection = self
             .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
 
-        connection.execute_batch(
-            "
-            PRAGMA foreign_keys = ON;
+        // SQLite only changes foreign-key enforcement outside a transaction.
+        connection.execute_batch("PRAGMA foreign_keys = ON;")?;
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        transaction.execute_batch(
+            "CREATE TABLE IF NOT EXISTS matter_schema_versions (
+                 component TEXT PRIMARY KEY NOT NULL,
+                 version INTEGER NOT NULL
+             );",
+        )?;
+        let current_version: Option<i64> = transaction
+            .query_row(
+                "SELECT version FROM matter_schema_versions WHERE component = ?1",
+                params!["legal_store"],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if current_version
+            .is_some_and(|version| !(0..=LEGAL_STORE_SCHEMA_VERSION).contains(&version))
+        {
+            bail!("Legal store schema version is invalid or newer than this runtime supports");
+        }
 
+        transaction.execute_batch(
+            "
             CREATE TABLE IF NOT EXISTS legal_users (
                 user_id TEXT PRIMARY KEY,
                 created_at INTEGER NOT NULL
@@ -261,6 +356,14 @@ impl LegalStore {
             ",
         )?;
 
+        transaction.execute(
+            "INSERT INTO matter_schema_versions (component, version)
+             VALUES (?1, ?2)
+             ON CONFLICT(component) DO UPDATE SET version = excluded.version",
+            params!["legal_store", LEGAL_STORE_SCHEMA_VERSION],
+        )?;
+        transaction.commit()?;
+
         Ok(())
     }
 
@@ -322,10 +425,9 @@ impl LegalStore {
     }
 
     /// Registra un usuario sin duplicar su identificador.
-    pub fn register_user(&self, user_id: &str) -> Result<()> {
-        if user_id.trim().is_empty() {
-            bail!("User ID cannot be empty");
-        }
+    pub fn register_user(&self, user_id: &str, principal: &LegalPrincipal<'_>) -> Result<()> {
+        validate_identifier(user_id, "user_id")?;
+        principal.authorize(LegalAction::RegisterUser, Some(user_id), None, None)?;
 
         let connection = self
             .connection
@@ -346,7 +448,9 @@ impl LegalStore {
     }
 
     /// Comprueba si un usuario está registrado.
-    pub fn user_exists(&self, user_id: &str) -> Result<bool> {
+    pub fn user_exists(&self, user_id: &str, principal: &LegalPrincipal<'_>) -> Result<bool> {
+        validate_identifier(user_id, "user_id")?;
+        principal.authorize(LegalAction::ReadUser, Some(user_id), None, None)?;
         let connection = self
             .connection
             .lock()
@@ -371,7 +475,11 @@ impl LegalStore {
     ///
     /// Un identificador existente no puede reutilizarse con
     /// contenido o metadatos diferentes.
-    pub fn register_document(&self, document: &LegalDocument) -> Result<String> {
+    pub fn register_document(
+        &self,
+        document: &LegalDocument,
+        principal: &LegalPrincipal<'_>,
+    ) -> Result<String> {
         if document.document_id.trim().is_empty()
             || document.scope.trim().is_empty()
             || document.version.trim().is_empty()
@@ -382,6 +490,12 @@ impl LegalStore {
         }
 
         Self::validate_required_decision(&document.document_type, &document.required_decision)?;
+        principal.authorize(
+            LegalAction::RegisterDocument,
+            None,
+            Some(&document.document_id),
+            Some(&document.scope),
+        )?;
 
         let hash = Self::hash_content(&document.content);
 
@@ -498,10 +612,19 @@ impl LegalStore {
     /// Cambia únicamente el estado activo de un documento.
     ///
     /// El contenido, la versión y los metadatos permanecen inmutables.
-    pub fn set_document_active(&self, document_id: &str, active: bool) -> Result<()> {
-        if document_id.trim().is_empty() {
-            bail!("Document ID cannot be empty");
-        }
+    pub fn set_document_active(
+        &self,
+        document_id: &str,
+        active: bool,
+        principal: &LegalPrincipal<'_>,
+    ) -> Result<()> {
+        validate_identifier(document_id, "document_id")?;
+        principal.authorize(
+            LegalAction::SetDocumentActive,
+            None,
+            Some(document_id),
+            None,
+        )?;
 
         let connection = self
             .connection
@@ -531,14 +654,20 @@ impl LegalStore {
         document_id: &str,
         decision: ConsentDecision,
         platform: Option<&str>,
+        principal: &LegalPrincipal<'_>,
     ) -> Result<()> {
-        if user_id.trim().is_empty() || document_id.trim().is_empty() {
-            bail!("User ID and document ID cannot be empty");
-        }
+        validate_identifier(user_id, "user_id")?;
+        validate_identifier(document_id, "document_id")?;
 
         if platform.is_some_and(|value| value.trim().is_empty()) {
             bail!("Platform cannot be empty");
         }
+        principal.authorize(
+            LegalAction::RecordDecision,
+            Some(user_id),
+            Some(document_id),
+            None,
+        )?;
 
         let mut connection = self
             .connection
@@ -630,7 +759,13 @@ impl LegalStore {
     }
 
     /// Comprueba si existen documentos obligatorios activos.
-    pub fn has_required_documents(&self, scope: &str, locale: &str) -> Result<bool> {
+    pub fn has_required_documents(
+        &self,
+        scope: &str,
+        locale: &str,
+        principal: &LegalPrincipal<'_>,
+    ) -> Result<bool> {
+        principal.authorize(LegalAction::ReadRequiredDocuments, None, None, Some(scope))?;
         let connection = self
             .connection
             .lock()
@@ -657,7 +792,15 @@ impl LegalStore {
     /// El usuario y todos los requisitos se evalúan dentro de una única
     /// sentencia SQLite para observar una instantánea coherente.
     /// Si no hay documentos obligatorios activos, devuelve false.
-    pub fn is_access_allowed(&self, user_id: &str, scope: &str, locale: &str) -> Result<bool> {
+    pub fn is_access_allowed(
+        &self,
+        user_id: &str,
+        scope: &str,
+        locale: &str,
+        principal: &LegalPrincipal<'_>,
+    ) -> Result<bool> {
+        validate_identifier(user_id, "user_id")?;
+        principal.authorize(LegalAction::CheckAccess, Some(user_id), None, Some(scope))?;
         let connection = self
             .connection
             .lock()
@@ -707,7 +850,16 @@ impl LegalStore {
         &self,
         user_id: &str,
         document_id: &str,
+        principal: &LegalPrincipal<'_>,
     ) -> Result<Option<ConsentRecord>> {
+        validate_identifier(user_id, "user_id")?;
+        validate_identifier(document_id, "document_id")?;
+        principal.authorize(
+            LegalAction::ReadDecision,
+            Some(user_id),
+            Some(document_id),
+            None,
+        )?;
         let connection = self
             .connection
             .lock()
@@ -749,7 +901,13 @@ impl LegalStore {
     }
 
     /// Recupera el historial completo de decisiones de un usuario.
-    pub fn decision_history(&self, user_id: &str) -> Result<Vec<ConsentRecord>> {
+    pub fn decision_history(
+        &self,
+        user_id: &str,
+        principal: &LegalPrincipal<'_>,
+    ) -> Result<Vec<ConsentRecord>> {
+        validate_identifier(user_id, "user_id")?;
+        principal.authorize(LegalAction::ReadDecision, Some(user_id), None, None)?;
         let connection = self
             .connection
             .lock()

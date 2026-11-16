@@ -83,6 +83,26 @@ impl KeyProvider for OversizedKeyListProvider {
     }
 }
 
+struct EmptyKeyProvider;
+
+impl KeyProvider for EmptyKeyProvider {
+    fn vault_id(&self) -> Result<String> {
+        Ok("empty-vault".to_owned())
+    }
+
+    fn key_ids(&self) -> Result<Vec<String>> {
+        Ok(Vec::new())
+    }
+
+    fn active_key_id(&self) -> Result<Option<String>> {
+        Ok(None)
+    }
+
+    fn load_key(&self, _key_id: &str) -> Result<Zeroizing<[u8; 32]>> {
+        bail!("empty provider must not request a key")
+    }
+}
+
 #[test]
 fn loads_keys_from_provider() {
     let provider = MockKeyProvider::new();
@@ -177,4 +197,42 @@ fn rejects_oversized_provider_key_list_without_replacing_existing_keys() {
     assert!(!manager.contains("key-0"));
     assert_eq!(manager.active_key_id(), Some("existing-key"));
     assert_eq!(manager.provider_vault_id(), None);
+}
+
+#[test]
+fn rejects_empty_provider_key_list_without_erasing_existing_keys() {
+    let mut manager = KeyManager::new();
+    manager
+        .insert("existing-key".to_owned(), [9u8; 32])
+        .unwrap();
+    manager.set_active("existing-key").unwrap();
+    let provider = EmptyKeyProvider;
+
+    let error = manager.load_from_provider(&provider).unwrap_err();
+
+    assert_eq!(error.to_string(), "Provider returned no keys");
+    assert_eq!(manager.len(), 1);
+    assert_eq!(manager.active_key_id(), Some("existing-key"));
+    assert!(manager.contains("existing-key"));
+    assert_eq!(manager.provider_vault_id(), None);
+}
+
+#[test]
+fn manual_key_insertion_and_rotation_obey_the_manager_capacity() {
+    let mut manager = KeyManager::new();
+    for index in 0..4096 {
+        manager
+            .insert(format!("key-{index}"), [index as u8; 32])
+            .unwrap();
+    }
+    manager.set_active("key-0").unwrap();
+
+    assert!(manager.insert("over-limit".to_owned(), [7u8; 32]).is_err());
+    assert!(manager
+        .rotate("rotated-over-limit".to_owned(), [8u8; 32])
+        .is_err());
+    assert_eq!(manager.len(), 4096);
+    assert_eq!(manager.active_key_id(), Some("key-0"));
+    assert!(!manager.contains("over-limit"));
+    assert!(!manager.contains("rotated-over-limit"));
 }

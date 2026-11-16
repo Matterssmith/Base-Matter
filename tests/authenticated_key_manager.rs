@@ -7,12 +7,14 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
+use anyhow::Result;
 use matter_base::security::{
-    AuthenticatedProvider, KeyManager, ProviderAccessPolicy, ProviderAssertion,
+    AuthenticatedProvider, KeyManager, KeyProvider, ProviderAccessPolicy, ProviderAssertion,
     ProviderAuthenticator, ProviderPermission,
 };
 use std::collections::HashSet;
 use time::OffsetDateTime;
+use zeroize::Zeroizing;
 
 const VAULT: &str = "matterssmith-primary-vault";
 const AUDIENCE: &str = "matter-base-production";
@@ -54,6 +56,26 @@ fn manager() -> KeyManager {
     manager.set_active("key-1").unwrap();
 
     manager
+}
+
+struct OtherVaultKeyProvider;
+
+impl KeyProvider for OtherVaultKeyProvider {
+    fn vault_id(&self) -> Result<String> {
+        Ok("unrelated-vault".to_owned())
+    }
+
+    fn key_ids(&self) -> Result<Vec<String>> {
+        Ok(vec!["foreign-key".to_owned()])
+    }
+
+    fn active_key_id(&self) -> Result<Option<String>> {
+        Ok(Some("foreign-key".to_owned()))
+    }
+
+    fn load_key(&self, _key_id: &str) -> Result<Zeroizing<[u8; 32]>> {
+        Ok(Zeroizing::new([6u8; 32]))
+    }
 }
 
 fn authenticate(
@@ -198,4 +220,32 @@ fn rejects_unknown_key_id() {
     let manager = manager();
 
     assert!(provider.read_key(&manager, "unknown-key").is_err());
+}
+
+#[test]
+fn authenticated_provider_cannot_read_keys_loaded_from_another_vault() {
+    let mut foreign_manager = KeyManager::new();
+    foreign_manager
+        .load_from_provider(&OtherVaultKeyProvider)
+        .unwrap();
+
+    let material_provider = authenticate(
+        vec!["read_key_material".to_owned()],
+        &[31u8; 24],
+        &[7u8; 32],
+        ProviderPermission::ReadKeyMaterial,
+    );
+    assert!(material_provider
+        .read_key(&foreign_manager, "foreign-key")
+        .is_err());
+
+    let active_provider = authenticate(
+        vec!["read_active_key".to_owned()],
+        &[32u8; 24],
+        &[7u8; 32],
+        ProviderPermission::ReadActiveKey,
+    );
+    assert!(active_provider
+        .read_active_key_id(&foreign_manager)
+        .is_err());
 }

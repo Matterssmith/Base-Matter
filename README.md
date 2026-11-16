@@ -24,9 +24,11 @@ width="100%"
 
 Matter-Base is an **incomplete development library**. The current repository
 contains a runtime/context foundation, in-memory event and service
-registries, translation lookup, a persistent bot identity registry, a persistent
-legal-consent store, and cryptographic key/envelope and provider-authentication
-components. The bot
+registries, translation lookup, a persistent bot identity registry, an
+optionally persistent shared-user registry with explicitly authorized external
+identity links and bot-scoped user data, a persistent legal-consent store, and
+cryptographic key/envelope and provider-authentication components, a command
+router, and persistent socket activation policies. The bot
 platform capabilities listed in the long-term architecture are not yet
 implemented. See [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
@@ -36,13 +38,15 @@ verified stage assessment.
 Matter-Base is intended to host reusable Rust capabilities consumed through
 public APIs. It must remain independent of Matter-Bot and platform adapters.
 This repository currently does **not** implement WhatsApp, Telegram, Discord,
-shared application users, general authorization roles,
-command routing, socket control, plugin execution, or a sandbox.
+general authorization roles, network socket control, plugin execution,
+or a sandbox. Command routing and persistent activation policies are partial.
 
 Bot registration requires an owner ID. Consumers must derive actor IDs from
 authenticated requests before calling owner-management APIs. Owners can manage
 co-owners and transfer/delete bots; co-owners can manage bot-scoped operations
-but cannot change ownership or delete. Legacy unowned records require an
+but cannot change ownership or delete. Each bot supports at most 256
+co-owners; additions beyond the limit are rejected in memory and SQLite.
+Legacy unowned records require an
 injected `OwnerRecoveryAuthorizer` before ownership can be claimed. Ownership
 changes are written to the registry audit history.
 Reading a bot's audit history requires the current owner ID and is checked by
@@ -59,15 +63,18 @@ service.
 | Component | Current behavior | State |
 | --- | --- | --- |
 | `core::config` | Default application name, environment, debug flag, and locale | Partial; no validation/loading |
-| `core::runtime` | Opens legal storage and builds a context; can inject a bot registry | Partial; default bot registry is in memory and `initialize` logs only |
-| `core::context` | Shares event bus, typed service registry, legal store, and bot registry | Implemented at this scope |
-| `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; general roles and shared user validation remain pending |
+| `core::runtime` | Opens legal storage, builds a context, owns module initialize/start/shutdown lifecycle; can inject bot and user registries | Partial; default registries are in memory, no built-in modules are registered |
+| `core::context` | Shares event bus, typed service registry, legal store, bot registry, and user registry | Implemented at this scope |
+| `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; general roles remain pending |
+| `users` | Global application user IDs, explicit unique external identity links, and per-bot/user key-value data in memory or SQLite | Implemented with an injected `UserAuthorizer`; the application authenticates principals and enforces ownership and bot scope |
+| `commands` | Prefixes, canonical aliases, authorization, middleware and handlers | Partial; no durable command audit; socket gating via ControlDispatcher |
+| `activation` | SQLite owner-scoped power, group/socket policy overrides and atomic audit | Partial; trusted provisioning, durable bot binding; no network connections |
 | `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish`; `publish_checked` catches unwinding panics per listener, continues dispatch, and returns an error |
 | `services` | In-memory type-indexed service registration and retrieval | Basic; no lifecycle management |
 | `i18n` | In-memory translation catalogs and key fallback | Basic; no bundled catalogs or locale validation |
 | `legal` | SQLite documents, user IDs, immutable decision history, and access checks | Implemented at this scope |
 | `security` | Authenticated encryption envelopes, key management, provider identity/policy, replay-aware assertions, binding contracts | Implemented contracts/primitives; external integration unverified |
-| `modules` | `CoreModule` plus caller-owned `ModuleManager` for ordered initialize/start and reverse stop with failure cleanup | Implemented lifecycle coordinator; not wired into `MatterRuntime` |
+| `modules` | `CoreModule` plus ordered initialize/start and reverse stop with failure cleanup; unwinding callback panics become errors | Implemented and coordinated by `MatterRuntime`; consumers register their own modules |
 
 These states describe this repository's present behavior, not the full planned
 Matter-Base platform.
@@ -76,7 +83,11 @@ Matter-Base platform.
 
 ```text
 src/
+  activation.rs  Persistent socket activation policy and owner checks
+  commands.rs    Universal command routing
+  control.rs     Control-prefix interception and socket-gated dispatch
   bots/       Bot identity contracts and in-memory/SQLite registry
+  users/      Shared users, explicit external identity links, scoped user data
   core/       Configuration, shared context, logging, runtime
   events/     In-memory event bus
   i18n/       Translation catalog lookup
@@ -118,7 +129,9 @@ fn main() -> anyhow::Result<()> {
         CoreConfig::default(),
         "data/legal/registry.db",
     )?;
-    runtime.initialize();
+    runtime.initialize()?;
+    runtime.start()?;
+    runtime.shutdown()?;
     Ok(())
 }
 ```
@@ -126,18 +139,39 @@ fn main() -> anyhow::Result<()> {
 The default `MatterRuntime::new` path is `data/legal/registry.db`. Tests and
 applications that manage storage separately can provide a `LegalStore` with
 `MatterRuntime::with_legal_store`. Use `open_with_bot_registry` with
-`BotRegistry::open_sqlite` when bot identities must survive restarts.
+`BotRegistry::open_sqlite` when bot identities must survive restarts. Use
+`open_with_registries` with `UserRegistry::open_sqlite` to persist shared users,
+explicit external identity links, and bot-scoped user data. User operations need
+a `UserPrincipal` backed by the consuming application's `UserAuthorizer`; never
+link platform identities by matching names or IDs automatically. Keep secrets,
+platform credentials, and sessions out of the user data store.
 
 ## Security and persistence notes
 
 - Legal documents and consent decisions use SQLite; document registration and
   consent validation/writes run in transactions. Decision history is append-only
-  through the store's database triggers.
+  through the store's database triggers. Schema initialization and component
+  version registration are transactional; unversioned existing tables and their
+  data are preserved, failed DDL rolls back, and unsupported future versions
+  are rejected without rewriting the database.
 - Legal access checks evaluate the user and required documents in one SQLite
   statement, so the result uses one database snapshot.
-- The runtime persists only the legal store. Bot registrations, users, socket
-  state, configuration, events, and service metadata do not have persistence
-  implementations here.
+- Consent writes, legal-user lookups/history, document administration, and
+  access checks require a `LegalPrincipal` backed by the consuming
+  application's `LegalAuthorizer`. The application must authenticate the
+  principal and authorize the requested action/resource; Matter-Base does not
+  authenticate platform identities; the shared user directory is provided by `users`.
+  Authorization failures are returned as a generic denial without forwarding
+  policy-provider diagnostics.
+- The standard runtime persists only the legal store. Bot registrations and
+  shared users have independent SQLite stores that must be explicitly injected
+  to survive restarts. Socket activation policies have a separate SQLite store in `activation`.
+  Network connections, configuration, events, and service metadata do not have
+  persistence implementations here.
+- Shared user data is a generic, bounded text value store. The consuming
+  application must reject unauthorized owners and unknown bot instance IDs in
+  its `UserAuthorizer`; the user store does not itself query the bot registry.
+  Do not put credentials, sessions, secrets, or sensitive personal data in it.
 - Envelope encryption validates metadata, uses the existing
   XChaCha20-Poly1305 format, and caps plaintext/ciphertext at 16 MiB before
   encryption or Base64 decoding. Keep compatibility when changing that contract.
@@ -145,14 +179,18 @@ applications that manage storage separately can provide a `LegalStore` with
   production Vault connection has not been verified by this repository.
 - Authenticated key loading rechecks the Vault identity when the key set is
   staged; a mismatch is rejected before replacing the current key manager
-  contents.
+  contents. Authenticated key reads also reject a key manager scoped to a
+  different Vault.
 - `ProviderAuthenticator::new` uses a bounded in-memory replay store.
   Applications can inject `SqliteProviderAssertionReplayStore` through
   `new_with_replay_store` to reject assertion replays across verifier restarts
   and independent database connections. Expired rows are cleaned across scopes;
   both per-scope and global capacity are bounded. It is not a distributed store.
 - Authenticated provider assertions are limited to 16 KiB, and a key provider
-  may return at most 4,096 key IDs per load. Oversized inputs fail closed.
+  must return 1–4,096 key IDs per load. Empty and oversized lists fail closed,
+  preserving the current key set.
+- The key manager caps its total key count at 4,096 for provider loads and
+  manual insertion/rotation alike. Capacity errors leave existing keys intact.
 - Errors returned by injected key and binding providers are replaced with
   operation-level messages before they cross the integration boundary; this
   prevents provider-supplied diagnostics from exposing secrets through logs.
@@ -171,23 +209,89 @@ use matter_base::{BotAction, BotRegistry};
 fn register_bot(bots: &BotRegistry, authenticated_owner_id: &str) -> anyhow::Result<()> {
     let bot = bots.register("family-key", "release-key", "matter", authenticated_owner_id)?;
     bots.authorize(bot.instance_id(), authenticated_owner_id, BotAction::Manage)?;
+    let _owned_bot = bots.get(bot.instance_id(), authenticated_owner_id)?;
+    let _owned_bots = bots.list(authenticated_owner_id)?;
     let _audit = bots.audit_history(bot.instance_id(), authenticated_owner_id)?;
     Ok(())
 }
 ```
 
 Pass an owner ID derived from the application's authenticated request. Do not
-accept it directly from an untrusted request field.
+accept it directly from an untrusted request field. `get` and `list` also
+require that authenticated actor ID and return only bots owned by or shared
+with that actor; inaccessible instances are returned as absent. Legacy
+unowned records must be claimed through the recovery authorization flow before
+they become visible to a regular owner query.
+
+## Universal command routing
+
+`CommandRouter` matches configured prefixes, resolves case-insensitive command
+names and aliases, and passes a platform-neutral invocation to an injected
+authorization policy, middleware, and handler. Authorization runs before
+middleware or handler code. Message size, command count, aliases, middleware,
+and argument count are bounded. Arguments are split on whitespace; adapters
+must handle platform-specific quoting and message parsing.
+
+The router does not provide durable audit records. `ControlDispatcher` adds
+socket activation checks before normal command routing.
+The injected authorizer must enforce authenticated identity, bot scope,
+permissions, and operational activation before dispatch.
+
+```rust,no_run
+use anyhow::Result;
+use matter_base::{CommandAuthorizer, CommandInvocation, CommandRouter};
+use std::sync::Arc;
+
+struct Policy;
+
+impl CommandAuthorizer for Policy {
+    fn authorize(&self, invocation: &CommandInvocation) -> Result<()> {
+        if invocation.bot_instance_id == "known-bot" {
+            Ok(())
+        } else {
+            anyhow::bail!("command denied")
+        }
+    }
+}
+
+fn make_router() -> Result<CommandRouter> {
+    let router = CommandRouter::new(vec!["#".to_owned()], Arc::new(Policy))?;
+    router.register("help", &["h".to_owned()], |invocation| {
+        Ok(format!("{} {}", invocation.command, invocation.args.join(" ")))
+    })?;
+    Ok(router)
+}
+```
+
+## Socket activation policies
+
+`activation::SocketActivationStore` persists socket ownership, operational power,
+and group/socket overrides with atomic audit writes. New sockets start powered
+off. When powered on, resolution uses Group > Socket > trusted global default >
+deny. Only the stored owner can change policies or read its audit history.
+The application must authenticate provisioning and actors; this store does not
+authenticate platform sessions. `bind_bot` establishes a durable bot association;
+`ControlDispatcher` intercepts `=on`, `=off` (also `/>` and `=/>`) and gates
+normal commands. Explicit socket targets still require the target owner. See [activation contracts](docs/activation.md).
 
 ## Roadmap boundary
 
-Shared users and their explicit identity links, general role inheritance,
-universal command routing, Control Plane/socket policy,
-connection and messaging contracts, plugin validation, and effective sandbox
-isolation remain pending. Matter-Bot must not be built on this crate until
-those core contracts are implemented, integrated, documented, and tested.
+General role inheritance, durable command audit integration, Control Plane and
+socket policy, connection and messaging contracts, plugin validation, and
+effective sandbox isolation remain pending. Matter-Bot must not be built on
+this crate until those core contracts are implemented, integrated, documented,
+and tested.
 
 ## Credits
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Ecosystem names and provider layout
+
+The requested target repositories are **Matter-WhatsApp** (formerly
+Matter-Baileys) and **Matter-Telegram** (formerly Matter-Telegraf). Remote renames
+and provider imports are pending ecosystem work. Provider methods belong in
+separate directories such as `providers/baileys` and `providers/telegraf`, using
+verified official upstream revisions and preserved licenses/history. Base and
+Vault readiness remains the immediate priority. See [repository instructions](AGENTS.md).

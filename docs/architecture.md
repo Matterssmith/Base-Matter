@@ -16,26 +16,26 @@ and diagrams do not imply that missing systems already work.
 ```text
 Public crate API (`src/lib.rs`)
 ├── Bot identity registry (memory or SQLite)
+├── Shared users and bot-scoped data (memory or SQLite)
 ├── Core
 │   ├── CoreConfig
 │   ├── MatterRuntime
 │   └── MatterContext ── EventBus (in memory)
 │                     ├─ ServiceRegistry (in memory)
+│                     ├─ UserRegistry (injected; memory or SQLite)
 │                     └─ LegalStore (SQLite)
+├── SocketActivationStore (SQLite policy/ownership/bot binding/audit)
+├── ControlDispatcher (control interception and socket activation gate)
+├── CommandRouter (prefixes, aliases, injected authorization and middleware)
 ├── Translator (in memory)
-├── CoreModule + caller-owned ModuleManager
+├── CoreModule + runtime-owned ModuleManager
 └── Security
     ├── EncryptedEnvelope / KeyManager
     ├── ProviderAuthenticator / ProviderAccessPolicy
     └── KeyProvider / ProviderBindingStore contracts
 ```
 
-`MatterRuntime::open` opens the SQLite legal store and constructs a context with an in-memory bot registry. `open_with_bot_registry` accepts an explicitly configured registry, including SQLite persistence.
-`initialize` currently emits an informational log; it does not start managed
-modules or services. `ModuleManager` registers and coordinates modules when an
-application explicitly owns and calls it; `MatterRuntime` does not yet own or
-invoke that manager. See the crate modules in
-[`src/`](../src/).
+`MatterRuntime::open` opens the SQLite legal store and constructs a context with in-memory bot and user registries. `open_with_bot_registry` configures bot persistence. `open_with_registries` accepts explicit bot and user registries, including SQLite persistence. The runtime owns a shared `ModuleManager`; callers register modules before initialization, then call `initialize`, `start`, and `shutdown`. Lifecycle errors propagate to the application. Callback unwinding panics become errors; failed initialization attempts cleanup. No modules are registered automatically. See the crate modules in [`src/`](../src/).
 
 The current event bus clones a listener list and releases its registry lock
 before invoking callbacks, so callbacks may subscribe or clear listeners
@@ -43,17 +43,26 @@ reentrantly. Callbacks are synchronous. `publish` propagates a callback panic an
 dispatch; `publish_checked` catches unwinding panics per handler, continues
 with remaining listeners, and returns an error summary.
 
+`CommandRouter` resolves configured prefixes, canonical command names and
+aliases, and whitespace-separated arguments. It requires an injected
+`CommandAuthorizer`, runs bounded middleware after authorization, and invokes
+synchronous handlers outside its registry lock. Authorization sees the
+canonical command name, so aliases cannot change permission matching. Callback
+errors and unwinding panics fail closed with sanitized errors. Platform parsing,
+durable command audit and network connection lifecycle are not integrated;
+the caller's authorizer must enforce bot scope, permissions, and activation.
+
 ## Persistence and trust boundaries
 
-The bot registry is shared through `MatterContext` and persists family/release/instance identity in SQLite when injected; initialization and schema version registration are transactional. Owner and co-owner checks, controlled removal, and registry ownership audit records are implemented. General role inheritance, shared-user existence checks, and authorization across other resource types are not. The legal subsystem persists legal documents and consent decisions in SQLite.
+The bot registry is shared through `MatterContext` and persists family/release/instance identity in SQLite when injected; initialization and schema version registration are transactional. Owner and co-owner checks, controlled removal, and registry ownership audit records are implemented. Each bot accepts at most 256 co-owners, and corrupted persisted lists over that limit fail validation. Reading bot audit history requires the current owner. Identity reads require an actor ID and reveal a record only to its owner or a co-owner; list results are limited to records shared with that actor. Consumers must pass an ID from authenticated request context. General role inheritance and authorization across other resource types are not. Shared users have global IDs and explicit provider/subject links; every link, resolution, and bot-scoped data operation requires a caller-supplied `UserPrincipal` policy. Matching external identifiers are never merged automatically. Private user data is keyed by bot instance, user, and key. The caller's `UserAuthorizer` must verify principal authentication, bot existence, ownership, and scope; this registry does not query the bot registry itself. The legal subsystem persists legal documents and consent decisions in SQLite; initialization and component schema-version updates are transactional, preserve unversioned existing data, roll back failed DDL, and reject unsupported future schema versions. Sensitive legal reads/writes require a `LegalPrincipal` evaluated by an application-supplied `LegalAuthorizer`; this crate delegates external identity authentication.
 Document registration and the read/validate/write path for consent decisions
 use immediate transactions, so concurrent independent database connections
 cannot both withdraw the same grant or observe a document-registration race
 between its duplicate check and insert. An access check uses one SQL statement
 to read the user and applicable document/decision state from one snapshot.
 The event bus, service registry, translation catalogs, and runtime config are
-in memory or caller supplied. Shared application users, ownership, permission,
-socket, and plugin registries remain unimplemented.
+in memory or caller supplied. General roles, socket control, plugin isolation,
+and a general authorization/audit service remain unimplemented.
 
 The security provider abstractions allow a caller to supply trusted key
 material and providers. Envelope plaintext and ciphertext are limited to
@@ -61,7 +70,11 @@ material and providers. Envelope plaintext and ciphertext are limited to
 service is connected. There is no storage of WhatsApp sessions or external
 platform credentials in Matter-Base. Authenticated key loading checks that the
 Vault identity returned while staging keys still matches the authenticated
-identity before replacing the current key set.
+identity before replacing the current key set. Provider key lists must contain
+between 1 and 4,096 entries; an empty or oversized list is rejected without
+replacing the current keys. The key manager also caps its total number of keys
+at 4,096, including manually inserted or rotated keys. Authenticated key reads
+reject a key manager associated with a different Vault.
 
 Assertion replay tracking defaults to an in-memory store. An injectable SQLite
 store persists replay IDs, globally removes expired records, and enforces
@@ -73,11 +86,10 @@ configure that store; this does not provide a distributed replay service.
 The following systems are future work and must be designed behind stable
 contracts before applications consume them:
 
-- Ownership, authorization, and audited registration control for bots.
-- Shared user identity with bot-scoped private data.
+- General role and resource authorization beyond the existing bot owner/co-owner checks.
 - Ownership, roles, permissions, and audited authorization.
-- Platform-neutral router, command registry, middleware, and filters.
-- Control Plane, socket ownership, activation policy, and isolation.
+- Durable command audit and socket-aware dispatch beyond the existing command router.
+- Full Control Plane/network lifecycle and ownership transfer; binding, activation storage and control dispatch are implemented in `activation`/`control`.
 - Session/credential interfaces, services, connections, and messaging.
 - Plugin manifest validation, resource limits, and effective sandboxing.
 - Persistent recovery, migrations, and end-to-end integration tests.
@@ -92,3 +104,8 @@ provider-authentication contracts, and basic in-memory core components. It is
 not an end-to-end bot platform suite. Current stage classifications and exact
 verification results are maintained in
 [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).
+
+Socket activation policy storage is described in [activation contracts](activation.md).
+It provides durable ownership/power/overrides and atomic audits, but does not
+manage network connections. `ControlDispatcher` enforces activation before
+normal routing and intercepts power commands with owner checks.
