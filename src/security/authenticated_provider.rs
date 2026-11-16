@@ -1,28 +1,36 @@
-
 /*
  * Matter-Base — Authenticated Provider
  *
- * Integra autenticación, autorización y acceso protegido
- * al administrador de claves y sus proveedores.
+ * Integra autenticación, autorización y vinculación
+ * criptográfica de proveedores de claves.
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
 use crate::security::{
+    derive_provider_binding_key,
+    BoundKeyProvider,
     KeyManager,
-    KeyProvider,
     ProviderAccessPolicy,
     ProviderAuthenticator,
     ProviderIdentity,
     ProviderPermission,
 };
-use anyhow::{bail, Result};
 
-/// Proveedor autenticado y autorizado para una operación.
+use anyhow::{anyhow, bail, Result};
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
+use subtle::ConstantTimeEq;
+use zeroize::Zeroizing;
+
+type HmacSha256 = Hmac<Sha256>;
+
+/// Proveedor autenticado y autorizado para operaciones protegidas.
 pub struct AuthenticatedProvider {
     identity: ProviderIdentity,
     authorized_permission: ProviderPermission,
+    binding_key: Zeroizing<[u8; 32]>,
 }
 
 impl AuthenticatedProvider {
@@ -43,13 +51,16 @@ impl AuthenticatedProvider {
 
         policy.authorize(&identity, required_permission)?;
 
+        let binding_key = derive_provider_binding_key(key)?;
+
         Ok(Self {
             identity,
             authorized_permission: required_permission,
+            binding_key,
         })
     }
 
-    /// Comprueba que la sesión fue autorizada para el permiso.
+    /// Comprueba el permiso autorizado para la sesión.
     fn require_permission(
         &self,
         permission: ProviderPermission,
@@ -125,9 +136,6 @@ impl AuthenticatedProvider {
     }
 
     /// Recupera la clave activa.
-    ///
-    /// Exige permiso de material criptográfico y permiso
-    /// de lectura de la clave activa.
     pub fn read_active_key<'a>(
         &self,
         manager: &'a KeyManager,
@@ -138,16 +146,20 @@ impl AuthenticatedProvider {
         manager.get_active()
     }
 
-    /// Carga las claves desde un proveedor después de autenticarlo.
+    /// Carga claves después de demostrar la posesión del secreto.
     ///
-    /// Exige los tres permisos de lectura y comprueba que el
-    /// identificador del Vault coincida con la identidad autenticada.
+    /// La prueba se vincula a:
+    /// - El proveedor autenticado.
+    /// - El Vault autenticado.
+    /// - Un desafío aleatorio nuevo.
+    ///
+    /// El proveedor debe implementar BoundKeyProvider.
     pub fn load_key_manager(
         &self,
         manager: &mut KeyManager,
-        provider: &dyn KeyProvider,
+        provider: &dyn BoundKeyProvider,
     ) -> Result<()> {
-        self.require_identity_permission(ProviderPermission::ReadKeyIds)?;
+        self.require_permission(ProviderPermission::ReadKeyIds)?;
         self.require_identity_permission(ProviderPermission::ReadActiveKey)?;
         self.require_identity_permission(ProviderPermission::ReadKeyMaterial)?;
 
@@ -157,8 +169,81 @@ impl AuthenticatedProvider {
             bail!("Provider Vault does not match authenticated Vault");
         }
 
+        let mut challenge = [0u8; 32];
+
+        getrandom::fill(&mut challenge)
+            .map_err(|_| anyhow!("Could not generate provider challenge"))?;
+
+        let message = Self::binding_message(
+            &challenge,
+            self.identity.provider_id(),
+            self.identity.vault_id(),
+        )?;
+
+        let received_proof = provider.binding_proof(&message)?;
+
+        let expected_proof = Self::calculate_binding_proof(
+            &self.binding_key,
+            &message,
+        )?;
+
+        if !bool::from(received_proof.ct_eq(&expected_proof)) {
+            bail!("Provider cryptographic binding failed");
+        }
+
         manager.load_from_provider(provider)?;
 
+        if manager.provider_vault_id() != Some(self.identity.vault_id()) {
+            manager.clear();
+            bail!("Loaded provider Vault does not match authenticated Vault");
+        }
+
         Ok(())
+    }
+
+    /// Construye un mensaje de vinculación sin ambigüedad.
+    fn binding_message(
+        challenge: &[u8; 32],
+        provider_id: &str,
+        vault_id: &str,
+    ) -> Result<Vec<u8>> {
+        let provider_len = u32::try_from(provider_id.len())
+            .map_err(|_| anyhow!("Invalid provider identifier length"))?;
+
+        let vault_len = u32::try_from(vault_id.len())
+            .map_err(|_| anyhow!("Invalid Vault identifier length"))?;
+
+        let mut message = Vec::with_capacity(
+            64 + provider_id.len() + vault_id.len(),
+        );
+
+        message.extend_from_slice(
+            b"matter-base:provider-binding:v1\0",
+        );
+        message.extend_from_slice(challenge);
+        message.extend_from_slice(&provider_len.to_be_bytes());
+        message.extend_from_slice(provider_id.as_bytes());
+        message.extend_from_slice(&vault_len.to_be_bytes());
+        message.extend_from_slice(vault_id.as_bytes());
+
+        Ok(message)
+    }
+
+    /// Calcula la prueba esperada para la sesión autenticada.
+    fn calculate_binding_proof(
+        binding_key: &[u8; 32],
+        message: &[u8],
+    ) -> Result<[u8; 32]> {
+        let mut mac = HmacSha256::new_from_slice(binding_key)
+            .map_err(|_| anyhow!("Invalid provider binding key"))?;
+
+        mac.update(message);
+
+        let output = mac.finalize().into_bytes();
+        let mut proof = [0u8; 32];
+
+        proof.copy_from_slice(&output);
+
+        Ok(proof)
     }
 }
