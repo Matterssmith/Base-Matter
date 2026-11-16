@@ -9,13 +9,12 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `b9ca1d0e46c3f63428d9545da7e9923f6b86b129`
-- Latest confirmed checkpoint before the current local work:
-  `b9ca1d0e46c3f63428d9545da7e9923f6b86b129`
+- Latest confirmed published checkpoint: `348431451771822581505484b4d042c098e92cba`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `b9ca1d0e46c3f63428d9545da7e9923f6b86b129` before the lifecycle resilience
-  tests. A fresh fetch and equality check are still required after publishing.
+  `348431451771822581505484b4d042c098e92cba` after publishing the lifecycle
+  resilience tests; fetch confirmed the local and remote commit IDs match.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -439,7 +438,7 @@ verification is the only specifically identified external dependency; most
 remaining blockers are missing code and contracts in this repository, not
 external services.
 
-## Latest checkpoint (local, not yet published)
+## Latest checkpoint (published)
 
 - Branch: `matter-beta`; after safe stash, fetch, reset, and stash reapply,
   both `HEAD` and `origin/matter-beta` were
@@ -458,24 +457,21 @@ external services.
 
 ## Exact next task to resume
 
-1. Finish the resilience checkpoint: inspect the full diff, commit to
-   `matter-beta`, push, fetch, and confirm that local and remote SHAs match.
-   Do not promote to `matter`.
-2. Continue H by auditing legal authorization denial/error paths and remaining
+1. Continue H by auditing legal authorization denial/error paths and remaining
    provider, key, and bot-registry corruption cases. Add tests for confirmed
    defects.
-3. Implement persistent shared application users with explicit, authorized
+2. Implement persistent shared application users with explicit, authorized
    external-identity links and bot-scoped user data. Authentication must enter
    through an explicit trusted-principal contract; never infer identity links
    from matching platform identifiers. Enforce bot scope at data access
    boundaries and verify persistence, validation, concurrency, and recovery.
-4. Continue I with cross-module resilience around runtime, bot ownership,
+3. Continue I with cross-module resilience around runtime, bot ownership,
    provider failures, legal-store errors, and the user registry. The current
    suite has 191 tests; router, sockets, plugins, general resource
    authorization, and live services remain uncovered.
-5. Complete J, K, and L in order. Reassess capabilities from actual code and
+4. Complete J, K, and L in order. Reassess capabilities from actual code and
    keep Matter-Bot blocked until all readiness criteria are satisfied.
-6. At each checkpoint, review every README, update this ledger, commit and push
+5. At each checkpoint, review every README, update this ledger, commit and push
    to `matter-beta`, then fetch and verify the exact published SHA. Never claim
    Vault or platform integrations work without real verification.
 
