@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `54d726a9ee2ae0c54e3af59dc3589961acb6e50b`
+- Latest confirmed checkpoint commit: `1a4750ca90572701192451d9cd635d6c3e9eb495`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `54d726a9ee2ae0c54e3af59dc3589961acb6e50b` before ownership enforcement.
+  `1a4750ca90572701192451d9cd635d6c3e9eb495` after the owner/co-owner checkpoint push.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -339,7 +339,7 @@ For later work, re-fetch the development branch before verification or code
 changes, using the safe stash/fetch/reset/reapply procedure from the project
 instructions. Never infer publication from local commit state alone.
 
-Bot identity/ownership implementation in the current uncommitted work: `src/bots/mod.rs`,
+Bot identity/ownership implementation in checkpoint `1a4750ca90572701192451d9cd635d6c3e9eb495`: `src/bots/mod.rs`,
 `src/lib.rs`, and `tests/bot_registry.rs`, plus cross-module behavior in
 `tests/platform_flow.rs`. The registry provides memory and SQLite stores,
 validation, generated instance IDs, atomic unique names, persistence recovery,
@@ -352,6 +352,9 @@ Owner IDs must come from an authenticated application principal; this crate does
 not authenticate platform users or verify owner IDs against a shared user store.
 Component-scoped schema versioning is transactional and rejects unsupported
 future versions. The full suite passed
-with 179 tests; `cargo check --all-targets` and `git diff --check` passed.
-The ownership work has not yet been committed/pushed; preserve it before any
-synchronization, then record its checkpoint SHA after a successful push.
+with 179 tests; `cargo check --all-targets` and `git diff --check` passed. The
+README audit found 1 README, reviewed 1, updated 1, unchanged 0; all relative
+links resolve.
+Owner/co-owner checkpoint `1a4750ca90572701192451d9cd635d6c3e9eb495` was pushed to
+`origin/matter-beta`; a subsequent fetch confirmed the same SHA. No promotion
+to `matter` occurred.
