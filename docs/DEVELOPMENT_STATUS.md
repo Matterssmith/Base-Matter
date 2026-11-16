@@ -44,7 +44,7 @@ not ready for Matter-Bot.
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
 | Persistence and recovery | PARTIAL | SQLite persists bot identities, shared users/identity links/bot-scoped data, and legal documents/decisions. No config/socket/service persistence or ecosystem-wide migration coordinator; each persistent component has its own versioned schema. |
 | Events and messaging | PARTIAL | Named synchronous in-memory event callbacks exist; no durable events or messaging contract. |
-| Router and command registry | ABSENT | No implementation. |
+| Router and command registry | PARTIAL | `CommandRouter` supports bounded prefixes/names/aliases/arguments, mandatory injected authorization, middleware, and synchronous handlers; no durable audit integration, Control Plane activation, or platform-specific parsing exists. |
 | Middleware, roles, permissions, authorization | PARTIAL | Bot owner/co-owner checks and injectable user/legal action/resource authorization contracts exist; no general role inheritance or socket/resource policy engine. |
 | Control Plane, sockets, activation | ABSENT | No implementation; socket ownership/policies cannot be verified. |
 | Services and connections | PARTIAL | Typed in-memory service registry only; no connection manager or lifecycle. |
@@ -651,6 +651,31 @@ external services.
 - Commit `ff2301abbb01bd4d7b0beca05f7bd26cce708cf0` was pushed to
   `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. H remains
   in progress; no stable branch promotion was made.
+
+## Current local work — universal command router
+
+- Added and exported `CommandRouter`, `CommandInvocation`, and the mandatory
+  `CommandAuthorizer` contract. It handles configured prefixes, case-insensitive
+  canonical names and aliases, whitespace arguments, middleware order, and
+  synchronous handler dispatch.
+- Enforced limits for input bytes, prefixes, command names/count, aliases,
+  middleware count, and argument count. Aliases resolve to canonical names
+  before authorization. Authorization, middleware, and handler callbacks run
+  outside the registry lock; callback errors/panics are returned as sanitized
+  errors.
+- Added unit coverage for alias authorization, middleware order/rejection,
+  unauthorized dispatch, duplicate names, size limits, and callback panics, as
+  well as an integration test exercising the documented root API.
+- Command routing remains PARTIAL: durable audit records, platform-specific
+  argument parsing, and Control Plane/socket activation are not integrated.
+  The authorizer must verify authenticated actor, bot ownership, permissions,
+  and operational activation.
+- After syncing with `origin/matter-beta` at
+  `d9f980cddcf2dda52555ebd178d89c1fef82a297`, format, all-target check, full
+  suite (213 passed, 0 failed; 0 doc tests), and `git diff --check` passed.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged. The public example
+  is also compiled and exercised by `tests/commands.rs`.
+- Ready to publish on `matter-beta`; H and I remain in progress.
 
 ## Additional requested ecosystem scope
 

@@ -24,6 +24,7 @@ Public crate API (`src/lib.rs`)
 │                     ├─ ServiceRegistry (in memory)
 │                     ├─ UserRegistry (injected; memory or SQLite)
 │                     └─ LegalStore (SQLite)
+├── CommandRouter (prefixes, aliases, injected authorization and middleware)
 ├── Translator (in memory)
 ├── CoreModule + runtime-owned ModuleManager
 └── Security
@@ -39,6 +40,15 @@ before invoking callbacks, so callbacks may subscribe or clear listeners
 reentrantly. Callbacks are synchronous. `publish` propagates a callback panic and stops
 dispatch; `publish_checked` catches unwinding panics per handler, continues
 with remaining listeners, and returns an error summary.
+
+`CommandRouter` resolves configured prefixes, canonical command names and
+aliases, and whitespace-separated arguments. It requires an injected
+`CommandAuthorizer`, runs bounded middleware after authorization, and invokes
+synchronous handlers outside its registry lock. Authorization sees the
+canonical command name, so aliases cannot change permission matching. Callback
+errors and unwinding panics fail closed with sanitized errors. Platform parsing,
+durable command audit, and Control Plane socket activation are not integrated;
+the caller's authorizer must enforce bot scope, permissions, and activation.
 
 ## Persistence and trust boundaries
 

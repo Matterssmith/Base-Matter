@@ -216,12 +216,52 @@ with that actor; inaccessible instances are returned as absent. Legacy
 unowned records must be claimed through the recovery authorization flow before
 they become visible to a regular owner query.
 
+## Universal command routing
+
+`CommandRouter` matches configured prefixes, resolves case-insensitive command
+names and aliases, and passes a platform-neutral invocation to an injected
+authorization policy, middleware, and handler. Authorization runs before
+middleware or handler code. Message size, command count, aliases, middleware,
+and argument count are bounded. Arguments are split on whitespace; adapters
+must handle platform-specific quoting and message parsing.
+
+The router does not provide durable audit records or socket activation policy.
+The injected authorizer must enforce authenticated identity, bot scope,
+permissions, and operational activation before dispatch.
+
+```rust,no_run
+use anyhow::Result;
+use matter_base::{CommandAuthorizer, CommandInvocation, CommandRouter};
+use std::sync::Arc;
+
+struct Policy;
+
+impl CommandAuthorizer for Policy {
+    fn authorize(&self, invocation: &CommandInvocation) -> Result<()> {
+        if invocation.bot_instance_id == "known-bot" {
+            Ok(())
+        } else {
+            anyhow::bail!("command denied")
+        }
+    }
+}
+
+fn make_router() -> Result<CommandRouter> {
+    let router = CommandRouter::new(vec!["#".to_owned()], Arc::new(Policy))?;
+    router.register("help", &["h".to_owned()], |invocation| {
+        Ok(format!("{} {}", invocation.command, invocation.args.join(" ")))
+    })?;
+    Ok(router)
+}
+```
+
 ## Roadmap boundary
 
-General role inheritance, universal command routing, Control Plane/socket policy,
-connection and messaging contracts, plugin validation, and effective sandbox
-isolation remain pending. Matter-Bot must not be built on this crate until
-those core contracts are implemented, integrated, documented, and tested.
+General role inheritance, durable command audit integration, Control Plane and
+socket policy, connection and messaging contracts, plugin validation, and
+effective sandbox isolation remain pending. Matter-Bot must not be built on
+this crate until those core contracts are implemented, integrated, documented,
+and tested.
 
 ## Credits
 

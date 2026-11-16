@@ -13,6 +13,7 @@
  */
 
 pub mod bots;
+pub mod commands;
 pub mod core;
 pub mod events;
 pub mod i18n;
@@ -26,6 +27,7 @@ pub use bots::{
     BotAction, BotAuditRecord, BotIdentity, BotIdentityStore, BotRegistry,
     InMemoryBotIdentityStore, OwnerRecoveryAuthorizer, SqliteBotIdentityStore,
 };
+pub use commands::{CommandAuthorizer, CommandInvocation, CommandRouter};
 pub use core::config::CoreConfig;
 pub use core::context::MatterContext;
 pub use core::logger::init_logger;
