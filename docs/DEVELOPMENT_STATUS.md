@@ -581,6 +581,23 @@ external services.
   `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. No stable
   branch promotion was made.
 
+## Current local work — key-manager Vault isolation
+
+- Confirmed that an `AuthenticatedProvider` could read from a `KeyManager`
+  loaded from a different Vault when the manager handle was reused.
+- Authenticated key ID, key material, and active-key reads now compare the
+  manager's recorded Vault ID with the authenticated identity and reject a
+  mismatch. In-memory manually inserted keys without a provider Vault remain
+  usable by existing direct tests.
+- Added a two-Vault regression and documented the scope check.
+- Verified after syncing with `origin/matter-beta` at
+  `40c3bcac140aaab8b91be8541a849293b6f0ec71`: `cargo fmt --all -- --check`,
+  `cargo check --all-targets`, full `cargo test` (204 passed, 0 failed; 0 doc
+  tests), and `git diff --check`.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged. The architecture
+  note was updated too; the documented internal links still resolve.
+- Ready to publish on `matter-beta`; no stable branch promotion is intended.
+
 ## Additional requested ecosystem scope
 
 The user added the following required scope; it is a goal, not an implemented

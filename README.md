@@ -172,7 +172,8 @@ platform credentials, and sessions out of the user data store.
   production Vault connection has not been verified by this repository.
 - Authenticated key loading rechecks the Vault identity when the key set is
   staged; a mismatch is rejected before replacing the current key manager
-  contents.
+  contents. Authenticated key reads also reject a key manager scoped to a
+  different Vault.
 - `ProviderAuthenticator::new` uses a bounded in-memory replay store.
   Applications can inject `SqliteProviderAssertionReplayStore` through
   `new_with_replay_store` to reject assertion replays across verifier restarts
