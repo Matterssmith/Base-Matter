@@ -1,8 +1,9 @@
+
 /*
  * Matter-Base — Authenticated Key Provider Tests
  *
  * Verifica la vinculación criptográfica de proveedores,
- * sus permisos y la carga protegida de claves.
+ * la recuperación confiable del secreto y la carga protegida.
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
@@ -18,10 +19,12 @@ use matter_base::security::{
     ProviderAccessPolicy,
     ProviderAssertion,
     ProviderAuthenticator,
+    ProviderBindingResolver,
+    ProviderBindingStore,
     ProviderPermission,
 };
-
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 use time::OffsetDateTime;
 use zeroize::Zeroizing;
 
@@ -85,6 +88,28 @@ impl BoundKeyProvider for MockKeyProvider {
     }
 }
 
+/// Almacén simulado. En producción lo sustituirá el adaptador
+/// que recupere secretos desde la fuente externa de confianza.
+struct TestBindingStore {
+    provider_id: String,
+    vault_id: String,
+    binding_key: [u8; 32],
+}
+
+impl ProviderBindingStore for TestBindingStore {
+    fn load_binding_key(
+        &self,
+        provider_id: &str,
+        vault_id: &str,
+    ) -> Result<Zeroizing<[u8; 32]>> {
+        if provider_id != self.provider_id || vault_id != self.vault_id {
+            bail!("Provider binding not found");
+        }
+
+        Ok(Zeroizing::new(self.binding_key))
+    }
+}
+
 fn assertion(permissions: Vec<String>) -> ProviderAssertion {
     let now = OffsetDateTime::now_utc().unix_timestamp();
 
@@ -109,6 +134,16 @@ fn policy() -> ProviderAccessPolicy {
     .unwrap()
 }
 
+fn binding_resolver(binding_key: [u8; 32]) -> ProviderBindingResolver {
+    let store = TestBindingStore {
+        provider_id: PROVIDER.to_owned(),
+        vault_id: VAULT.to_owned(),
+        binding_key,
+    };
+
+    ProviderBindingResolver::new(Arc::new(store))
+}
+
 fn authenticated_provider(
     permissions: Vec<String>,
     required_permission: ProviderPermission,
@@ -131,13 +166,15 @@ fn authenticated_provider(
     )
     .unwrap();
 
-    AuthenticatedProvider::authenticate_and_authorize_with_binding_key(
+    let resolver = binding_resolver(binding_key);
+
+    AuthenticatedProvider::authenticate_and_authorize_with_binding_store(
         &mut authenticator,
         &policy(),
+        &resolver,
         nonce,
         &ciphertext,
         assertion_key,
-        Zeroizing::new(binding_key),
         required_permission,
     )
     .unwrap()
