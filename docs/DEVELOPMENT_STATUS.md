@@ -8,14 +8,14 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Previous synchronized base commit: `60adf425ad9e9c8b7a62df760bd2260a0e8f6794`
+- Previous synchronized base commit: `2c3f4250a97dc9bfb304aed89b16f27d6a85913a`
 - Latest confirmed checkpoint before the current local work:
-  `60adf425ad9e9c8b7a62df760bd2260a0e8f6794`
+  `2c3f4250a97dc9bfb304aed89b16f27d6a85913a`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `60adf425ad9e9c8b7a62df760bd2260a0e8f6794` before the current audit fix.
-  Verify the current published tip from Git after pushing this checkpoint.
+  `2c3f4250a97dc9bfb304aed89b16f27d6a85913a` after the owner-only audit-history
+  fix and its tests. Verify the current published tip from Git after each push.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -265,6 +265,10 @@ platform capabilities or a live external integration.
 - README files reviewed for owner-only audit-history reads: **1**.
 - README files updated for owner-only audit-history reads and API example: **1**.
 - README files with no changes for owner-only audit-history reads: **0**.
+- README files reviewed for the added Vault and WhatsApp/Telegram/Discord
+  integration scope: **1**.
+- README files updated for that scope: **0**.
+- README files with no changes for that scope: **1**.
 - README files with no changes for runtime registry injection: **0**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
@@ -367,6 +371,31 @@ external services.
    readiness claims.
 6. Update this record after each completed stage. Do not mark H–L complete
    until the corresponding criteria are implemented and verified.
+
+## Additional requested ecosystem scope
+
+The user added the following required scope; it is a goal, not an implemented
+or verified capability:
+
+1. Complete Matter-Base stages H–L and meet the existing readiness criteria.
+2. Integrate Matter-Vault through its independent repository/service contract
+   and verify a real integration when that service is available. Matter-Base
+   must not store platform credentials or WhatsApp sessions.
+3. Build and verify a functional WhatsApp adapter in Matter-Baileys, including
+   account linking (QR/code where supported), receive/send, filters, activation
+   controls, instance isolation, reconnect, and persistence. Live verification
+   must use a secondary test account; do not overwrite existing sessions.
+4. Then add Telegram (Matter-Telegraf) and Discord (Matter-Discord) adapters
+   with equivalent capabilities where each platform supports them, against
+   Matter-Base's stable platform-neutral contracts.
+5. Keep provider-specific logic in the adapter repositories. Do not start
+   adapter development before Matter-Base is ready, and do not claim a live
+   integration based only on mocks.
+
+These repositories and services must each be inspected for their real branch,
+state, instructions, and API before work. At this checkpoint the only verified
+repository is Matter-Base; the availability and state of Matter-Vault and the
+three adapter repositories have not yet been inspected.
 
 For later work, re-fetch the development branch before verification or code
 changes, using the safe stash/fetch/reset/reapply procedure from the project
