@@ -38,7 +38,7 @@ not ready for Matter-Bot.
 | Capability | Status | Evidence / limitation |
 | --- | --- | --- |
 | Runtime and lifecycle | PARTIAL | `MatterRuntime` owns a shared `ModuleManager` and propagates initialize/start/shutdown errors; no built-in modules are registered and services have no lifecycle. |
-| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates IDs, persists validated identities, and allocates unique names; owner-only transfer/removal, co-owner operations bounded to 256, legacy recovery authorization, and audit history work. General role/resource authorization remains absent. |
+| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates IDs, persists validated identities, and allocates unique names; owner-only transfer/removal, owner/co-owner-scoped identity reads and lists, co-owner operations bounded to 256, legacy recovery authorization, and audit history work. General role/resource authorization remains absent. |
 | Shared application users and bot data isolation | PARTIAL | `src/users` provides in-memory/SQLite global IDs, explicit unique external links, and bot/user/key-scoped text data with authorization hooks. A consuming application's `UserAuthorizer` must authenticate principals and verify bot existence/ownership; user storage does not consult the bot registry or implement general roles. |
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
 | Persistence and recovery | PARTIAL | SQLite persists bot identities, shared users/identity links/bot-scoped data, and legal documents/decisions. No config/socket/service persistence or ecosystem-wide migration coordinator; each persistent component has its own versioned schema. |
@@ -554,9 +554,9 @@ external services.
 
 ## Exact next task to resume
 
-1. Continue H by auditing remaining provider/key corruption cases; add tests
-   for confirmed defects. The authenticated key-read cross-Vault defect is
-   fixed and published.
+1. Continue H by auditing remaining provider/key and cross-module trust
+   boundaries; add tests for confirmed defects. Authenticated key reads are
+   Vault-scoped, and bot identity reads/lists now enforce owner/co-owner scope.
 2. Continue I with cross-module resilience around bot ownership, provider
    failures, legal-store errors, and shared users. One bot-owner/shared-user
    isolation flow is now covered; router, sockets, plugins, general resource
@@ -617,6 +617,26 @@ external services.
 - Commit `d1e9af11bad9785b137cb9018b4024e7ebd864ed` was pushed to
   `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. H and I
   remain in progress; no stable branch promotion was made.
+
+## Current local work — bot identity read authorization
+
+- Confirmed that `BotRegistry::get` and `list` returned owner and co-owner
+  identity data without an actor scope.
+- Both methods and the `BotIdentityStore` contract now require an actor ID;
+  reads return only records owned by or shared with that actor. Inaccessible
+  single records appear absent, and list results are filtered. The registry
+  repeats filtering for replaceable store implementations.
+- Updated SQLite and in-memory stores, legacy migration tests, and call sites.
+  Legacy unowned records stay hidden until successfully claimed through the
+  recovery authorizer.
+- README and architecture now show the actor-scoped signatures and the
+  required authenticated-request boundary.
+- After syncing with `origin/matter-beta` at
+  `007d4e0e52cc42a9c629111cc0c0b33984078cf4`, format, all-target check, focused
+  bot/platform integration tests, full suite (205 passed, 0 failed; 0 doc
+  tests), and `git diff --check` passed.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged. Ready to publish
+  on `matter-beta`; H remains in progress.
 
 ## Additional requested ecosystem scope
 

@@ -154,7 +154,7 @@ fn bot_owner_authorization_and_shared_user_data_are_isolated_together() {
     let bots = BotRegistry::open_sqlite(&bots_path).unwrap();
     let users = UserRegistry::open_sqlite(&users_path).unwrap();
     assert_eq!(
-        bots.get(first_bot.instance_id()).unwrap(),
+        bots.get(first_bot.instance_id(), "owner-a").unwrap(),
         Some(first_bot.clone())
     );
     let owner_policy = BotOwnerDataPolicy {
@@ -216,7 +216,11 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
     )
     .unwrap();
     assert_eq!(
-        runtime.context.bots.get(identity.instance_id()).unwrap(),
+        runtime
+            .context
+            .bots
+            .get(identity.instance_id(), "owner-1")
+            .unwrap(),
         Some(identity.clone())
     );
 
@@ -345,7 +349,7 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
         recovered_runtime
             .context
             .bots
-            .get(identity.instance_id())
+            .get(identity.instance_id(), "owner-1")
             .unwrap(),
         Some(identity.clone())
     );

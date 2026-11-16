@@ -116,9 +116,11 @@ pub trait BotIdentityStore: Send + Sync {
 
     fn audit_history(&self, instance_id: &str, actor_id: &str) -> Result<Vec<BotAuditRecord>>;
 
-    fn get(&self, instance_id: &str) -> Result<Option<BotIdentity>>;
+    /// Reads an identity only for its owner or a registered co-owner.
+    fn get(&self, instance_id: &str, actor_id: &str) -> Result<Option<BotIdentity>>;
 
-    fn list(&self) -> Result<Vec<BotIdentity>>;
+    /// Lists only identities owned by or shared with the authenticated actor.
+    fn list(&self, actor_id: &str) -> Result<Vec<BotIdentity>>;
 }
 
 /// Thread-safe bot registry backed by an interchangeable identity store.
@@ -184,7 +186,7 @@ impl BotRegistry {
         validate_identifier(actor_id, "actor_id")?;
         let identity = self
             .store
-            .get(instance_id)?
+            .get(instance_id, actor_id)?
             .ok_or_else(|| anyhow!("Bot instance not found"))?;
         if identity.owner_id() != Some(actor_id) {
             bail!("Bot owner authorization denied");
@@ -198,7 +200,7 @@ impl BotRegistry {
         validate_identifier(actor_id, "actor_id")?;
         let identity = self
             .store
-            .get(instance_id)?
+            .get(instance_id, actor_id)?
             .ok_or_else(|| anyhow!("Bot instance not found"))?;
         if identity.owner_id() == Some(actor_id) {
             return Ok(());
@@ -271,13 +273,43 @@ impl BotRegistry {
         self.store.audit_history(instance_id, actor_id)
     }
 
-    pub fn get(&self, instance_id: &str) -> Result<Option<BotIdentity>> {
+    /// Retrieves an identity for its owner or a co-owner. `actor_id` must come
+    /// from the caller's authenticated request context.
+    pub fn get(&self, instance_id: &str, actor_id: &str) -> Result<Option<BotIdentity>> {
         validate_identifier(instance_id, "instance_id")?;
-        self.store.get(instance_id)
+        validate_identifier(actor_id, "actor_id")?;
+        let identity = self.store.get(instance_id, actor_id)?;
+        if let Some(identity) = &identity {
+            if identity.owner_id() != Some(actor_id)
+                && !identity
+                    .co_owner_ids()
+                    .iter()
+                    .any(|owner| owner == actor_id)
+            {
+                return Ok(None);
+            }
+            validate_identity(identity)?;
+        }
+        Ok(identity)
     }
 
-    pub fn list(&self) -> Result<Vec<BotIdentity>> {
-        self.store.list()
+    /// Lists only identities owned by or shared with the authenticated actor.
+    pub fn list(&self, actor_id: &str) -> Result<Vec<BotIdentity>> {
+        validate_identifier(actor_id, "actor_id")?;
+        let identities = self.store.list(actor_id)?;
+        let mut visible = Vec::with_capacity(identities.len());
+        for identity in identities {
+            if identity.owner_id() == Some(actor_id)
+                || identity
+                    .co_owner_ids()
+                    .iter()
+                    .any(|owner| owner == actor_id)
+            {
+                validate_identity(&identity)?;
+                visible.push(identity);
+            }
+        }
+        Ok(visible)
     }
 }
 
@@ -396,24 +428,46 @@ impl BotIdentityStore for InMemoryBotIdentityStore {
         Ok(identity)
     }
 
-    fn get(&self, instance_id: &str) -> Result<Option<BotIdentity>> {
+    fn get(&self, instance_id: &str, actor_id: &str) -> Result<Option<BotIdentity>> {
+        validate_identifier(instance_id, "instance_id")?;
+        validate_identifier(actor_id, "actor_id")?;
         let state = self
             .state
             .lock()
             .map_err(|_| anyhow!("Bot identity store lock poisoned"))?;
         let identity = state.identities.get(instance_id).cloned();
         if let Some(identity) = &identity {
+            if identity.owner_id() != Some(actor_id)
+                && !identity
+                    .co_owner_ids()
+                    .iter()
+                    .any(|owner| owner == actor_id)
+            {
+                return Ok(None);
+            }
             validate_identity(identity)?;
         }
         Ok(identity)
     }
 
-    fn list(&self) -> Result<Vec<BotIdentity>> {
+    fn list(&self, actor_id: &str) -> Result<Vec<BotIdentity>> {
+        validate_identifier(actor_id, "actor_id")?;
         let state = self
             .state
             .lock()
             .map_err(|_| anyhow!("Bot identity store lock poisoned"))?;
-        let identities = state.identities.values().cloned().collect::<Vec<_>>();
+        let identities = state
+            .identities
+            .values()
+            .filter(|identity| {
+                identity.owner_id() == Some(actor_id)
+                    || identity
+                        .co_owner_ids()
+                        .iter()
+                        .any(|owner| owner == actor_id)
+            })
+            .cloned()
+            .collect::<Vec<_>>();
         for identity in &identities {
             validate_identity(identity)?;
         }
@@ -775,7 +829,9 @@ impl BotIdentityStore for SqliteBotIdentityStore {
         })
     }
 
-    fn get(&self, instance_id: &str) -> Result<Option<BotIdentity>> {
+    fn get(&self, instance_id: &str, actor_id: &str) -> Result<Option<BotIdentity>> {
+        validate_identifier(instance_id, "instance_id")?;
+        validate_identifier(actor_id, "actor_id")?;
         let connection = self
             .connection
             .lock()
@@ -799,12 +855,21 @@ impl BotIdentityStore for SqliteBotIdentityStore {
             )
             .optional()?;
         if let Some(identity) = &identity {
+            if identity.owner_id() != Some(actor_id)
+                && !identity
+                    .co_owner_ids()
+                    .iter()
+                    .any(|owner| owner == actor_id)
+            {
+                return Ok(None);
+            }
             validate_identity(identity)?;
         }
         Ok(identity)
     }
 
-    fn list(&self) -> Result<Vec<BotIdentity>> {
+    fn list(&self, actor_id: &str) -> Result<Vec<BotIdentity>> {
+        validate_identifier(actor_id, "actor_id")?;
         let connection = self
             .connection
             .lock()
@@ -824,7 +889,17 @@ impl BotIdentityStore for SqliteBotIdentityStore {
                     .map_err(|_| rusqlite::Error::InvalidQuery)?,
             })
         })?;
-        let identities = rows.collect::<rusqlite::Result<Vec<_>>>()?;
+        let identities = rows
+            .collect::<rusqlite::Result<Vec<_>>>()?
+            .into_iter()
+            .filter(|identity| {
+                identity.owner_id() == Some(actor_id)
+                    || identity
+                        .co_owner_ids()
+                        .iter()
+                        .any(|owner| owner == actor_id)
+            })
+            .collect::<Vec<_>>();
         for identity in &identities {
             validate_identity(identity)?;
         }

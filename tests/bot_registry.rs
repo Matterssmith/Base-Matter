@@ -42,7 +42,7 @@ fn in_memory_registry_keeps_identity_independent_and_names_unique() {
         .register("family-a", "release-1", "matter", "owner-1")
         .unwrap();
     let second = registry
-        .register("family-a", "release-2", "matter", "owner-1")
+        .register("family-a", "release-2", "matter", "owner-2")
         .unwrap();
 
     assert_eq!(first.family_id(), second.family_id());
@@ -60,8 +60,21 @@ fn in_memory_registry_keeps_identity_independent_and_names_unique() {
             .len(),
         1
     );
-    assert_eq!(registry.get(first.instance_id()).unwrap(), Some(first));
-    assert_eq!(registry.list().unwrap().len(), 2);
+    assert_eq!(
+        registry.get(first.instance_id(), "owner-1").unwrap(),
+        Some(first.clone())
+    );
+    assert_eq!(registry.list("owner-1").unwrap(), vec![first.clone()]);
+    assert_eq!(registry.list("owner-2").unwrap(), vec![second.clone()]);
+    assert!(registry
+        .get(second.instance_id(), "owner-1")
+        .unwrap()
+        .is_none());
+    assert!(registry
+        .get(second.instance_id(), "outsider")
+        .unwrap()
+        .is_none());
+    assert!(registry.list("outsider").unwrap().is_empty());
 }
 
 #[test]
@@ -77,10 +90,10 @@ fn sqlite_registry_recovers_identity_after_reopening() {
 
     let recovered = BotRegistry::open_sqlite(&database).unwrap();
     assert_eq!(
-        recovered.get(identity.instance_id()).unwrap(),
+        recovered.get(identity.instance_id(), "owner-1").unwrap(),
         Some(identity.clone())
     );
-    assert_eq!(recovered.list().unwrap(), vec![identity]);
+    assert_eq!(recovered.list("owner-1").unwrap(), vec![identity]);
 }
 
 #[test]
@@ -122,7 +135,7 @@ fn registry_rejects_invalid_identity_fields() {
     assert!(registry
         .register("family-a", "release-1", "\u{7f}", "owner-1")
         .is_err());
-    assert!(registry.get(" ").is_err());
+    assert!(registry.get(" ", "owner-1").is_err());
 }
 
 #[test]
@@ -146,12 +159,17 @@ fn sqlite_registry_migration_preserves_existing_rows_and_records_version() {
         .unwrap();
     drop(connection);
 
-    let registry = BotRegistry::open_sqlite(&database).unwrap();
-    let recovered = registry.get("inst_existing").unwrap().unwrap();
-    assert_eq!(recovered.family_id(), "family-a");
-    assert_eq!(recovered.display_name(), "legacy-bot");
-
+    let _registry = BotRegistry::open_sqlite(&database).unwrap();
     let connection = rusqlite::Connection::open(database).unwrap();
+    let recovered: (String, String, Option<String>) = connection
+        .query_row(
+            "SELECT family_id, display_name, owner_id FROM bot_identities WHERE instance_id = 'inst_existing'",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )
+        .unwrap();
+    assert_eq!(recovered.0, "family-a");
+    assert_eq!(recovered.1, "legacy-bot");
     let version: i64 = connection
         .query_row(
             "SELECT version FROM matter_schema_versions WHERE component = 'bot_registry'",
@@ -160,7 +178,7 @@ fn sqlite_registry_migration_preserves_existing_rows_and_records_version() {
         )
         .unwrap();
     assert_eq!(version, 3);
-    assert_eq!(recovered.owner_id(), None);
+    assert_eq!(recovered.2, None);
 }
 
 #[test]
@@ -227,8 +245,15 @@ fn sqlite_registry_migration_failure_rolls_back_schema_version_and_columns() {
     drop(connection);
 
     let recovered = BotRegistry::open_sqlite(&database).unwrap();
+    recovered
+        .claim_unowned("inst_existing", "recovered-owner", &TestOwnerRecovery)
+        .unwrap();
     assert_eq!(
-        recovered.get("inst_existing").unwrap().unwrap().family_id(),
+        recovered
+            .get("inst_existing", "recovered-owner")
+            .unwrap()
+            .unwrap()
+            .family_id(),
         "family-a"
     );
     let connection = rusqlite::Connection::open(database).unwrap();
@@ -289,7 +314,7 @@ fn failed_identity_write_rolls_back_and_name_can_be_reused() {
     assert!(registry
         .register("family-a", "release-1", "matter", "owner-1")
         .is_err());
-    assert!(registry.list().unwrap().is_empty());
+    assert!(registry.list("owner-1").unwrap().is_empty());
 
     connection
         .execute_batch("DROP TRIGGER fail_bot_identity_insert;")
@@ -298,7 +323,7 @@ fn failed_identity_write_rolls_back_and_name_can_be_reused() {
         .register("family-a", "release-1", "matter", "owner-1")
         .unwrap();
     assert_eq!(registered.display_name(), "matter");
-    assert_eq!(registry.list().unwrap(), vec![registered]);
+    assert_eq!(registry.list("owner-1").unwrap(), vec![registered]);
 }
 
 #[test]
@@ -317,8 +342,8 @@ fn registry_rejects_corrupted_persisted_identity_fields() {
         )
         .unwrap();
 
-    assert!(registry.get(identity.instance_id()).is_err());
-    assert!(registry.list().is_err());
+    assert!(registry.get(identity.instance_id(), "owner-1").is_err());
+    assert!(registry.list("owner-1").is_err());
 }
 
 struct TestOwnerRecovery;
@@ -359,7 +384,7 @@ fn owner_operations_are_checked_persisted_and_audited() {
     let reopened = BotRegistry::open_sqlite(&database).unwrap();
     assert_eq!(
         reopened
-            .get(identity.instance_id())
+            .get(identity.instance_id(), "owner-2")
             .unwrap()
             .unwrap()
             .owner_id(),
@@ -383,7 +408,10 @@ fn owner_operations_are_checked_persisted_and_audited() {
     assert!(reopened
         .remove_owned(identity.instance_id(), "owner-2")
         .is_ok());
-    assert!(reopened.get(identity.instance_id()).unwrap().is_none());
+    assert!(reopened
+        .get(identity.instance_id(), "owner-2")
+        .unwrap()
+        .is_none());
     assert!(reopened
         .audit_history(identity.instance_id(), "owner-2")
         .is_err());
@@ -424,15 +452,19 @@ fn legacy_unowned_identity_requires_external_recovery_authorization() {
     assert!(registry
         .claim_unowned("inst_existing", "intruder", &authorizer)
         .is_err());
-    assert_eq!(
-        registry.get("inst_existing").unwrap().unwrap().owner_id(),
-        None
-    );
+    assert!(registry
+        .get("inst_existing", "recovered-owner")
+        .unwrap()
+        .is_none());
     registry
         .claim_unowned("inst_existing", "recovered-owner", &authorizer)
         .unwrap();
     assert_eq!(
-        registry.get("inst_existing").unwrap().unwrap().owner_id(),
+        registry
+            .get("inst_existing", "recovered-owner")
+            .unwrap()
+            .unwrap()
+            .owner_id(),
         Some("recovered-owner")
     );
     assert_eq!(
@@ -476,14 +508,23 @@ fn co_owner_scope_cannot_transfer_or_delete_and_is_audited() {
         .is_err());
 
     let recovered = BotRegistry::open_sqlite(&database).unwrap();
-    let identity = recovered.get(identity.instance_id()).unwrap().unwrap();
+    let identity = recovered
+        .get(identity.instance_id(), "co-1")
+        .unwrap()
+        .unwrap();
     assert_eq!(identity.co_owner_ids(), &["co-1"]);
+    assert_eq!(recovered.list("co-1").unwrap(), vec![identity.clone()]);
     recovered
         .remove_co_owner(identity.instance_id(), "owner-1", "co-1")
         .unwrap();
     assert!(recovered
         .authorize(identity.instance_id(), "co-1", BotAction::Manage)
         .is_err());
+    assert!(recovered
+        .get(identity.instance_id(), "co-1")
+        .unwrap()
+        .is_none());
+    assert!(recovered.list("co-1").unwrap().is_empty());
     assert!(recovered
         .audit_history(identity.instance_id(), "co-1")
         .is_err());
@@ -534,7 +575,11 @@ fn concurrent_owner_transfers_from_separate_connections_have_one_winner() {
     assert_eq!(results.iter().filter(|result| result.is_ok()).count(), 1);
 
     let recovered = BotRegistry::open_sqlite(&database).unwrap();
-    let persisted = recovered.get(bot.instance_id()).unwrap().unwrap();
+    let persisted = recovered
+        .get(bot.instance_id(), "owner-2")
+        .unwrap()
+        .or(recovered.get(bot.instance_id(), "owner-3").unwrap())
+        .unwrap();
     assert!(matches!(persisted.owner_id(), Some("owner-2" | "owner-3")));
     let audit = recovered
         .audit_history(bot.instance_id(), persisted.owner_id().unwrap())
@@ -572,7 +617,7 @@ fn co_owner_assignments_are_bounded_in_memory_and_sqlite_stores() {
     }
     assert_eq!(
         memory
-            .get(memory_identity.instance_id())
+            .get(memory_identity.instance_id(), "owner")
             .unwrap()
             .unwrap()
             .co_owner_ids()
@@ -581,7 +626,7 @@ fn co_owner_assignments_are_bounded_in_memory_and_sqlite_stores() {
     );
     assert_eq!(
         persistent
-            .get(persistent_identity.instance_id())
+            .get(persistent_identity.instance_id(), "owner")
             .unwrap()
             .unwrap()
             .co_owner_ids()
@@ -601,7 +646,7 @@ fn co_owner_assignments_are_bounded_in_memory_and_sqlite_stores() {
     assert_eq!(
         BotRegistry::open_sqlite(&database)
             .unwrap()
-            .get(persistent_identity.instance_id())
+            .get(persistent_identity.instance_id(), "owner")
             .unwrap()
             .unwrap()
             .co_owner_ids()
@@ -631,7 +676,7 @@ fn sqlite_registry_rejects_oversized_persisted_co_owner_list() {
         .unwrap();
     drop(connection);
     let recovered = BotRegistry::open_sqlite(&database).unwrap();
-    assert!(recovered.get(identity.instance_id()).is_err());
+    assert!(recovered.get(identity.instance_id(), "owner").is_err());
     assert!(recovered
         .authorize(identity.instance_id(), "staff-0", BotAction::Manage)
         .is_err());

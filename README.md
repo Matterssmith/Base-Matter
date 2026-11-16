@@ -202,13 +202,19 @@ use matter_base::{BotAction, BotRegistry};
 fn register_bot(bots: &BotRegistry, authenticated_owner_id: &str) -> anyhow::Result<()> {
     let bot = bots.register("family-key", "release-key", "matter", authenticated_owner_id)?;
     bots.authorize(bot.instance_id(), authenticated_owner_id, BotAction::Manage)?;
+    let _owned_bot = bots.get(bot.instance_id(), authenticated_owner_id)?;
+    let _owned_bots = bots.list(authenticated_owner_id)?;
     let _audit = bots.audit_history(bot.instance_id(), authenticated_owner_id)?;
     Ok(())
 }
 ```
 
 Pass an owner ID derived from the application's authenticated request. Do not
-accept it directly from an untrusted request field.
+accept it directly from an untrusted request field. `get` and `list` also
+require that authenticated actor ID and return only bots owned by or shared
+with that actor; inaccessible instances are returned as absent. Legacy
+unowned records must be claimed through the recovery authorization flow before
+they become visible to a regular owner query.
 
 ## Roadmap boundary
 
