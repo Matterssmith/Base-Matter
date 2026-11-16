@@ -8,15 +8,14 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Previous synchronized base commit: `e05b0f3c4805f2cedb5660fbeb6c500d4a8f1fe7`
+- Previous synchronized base commit: `cbe1bc9092427dd08957eb15eb4ff293e19446ac`
 - Latest confirmed checkpoint before the current local work:
-  `e05b0f3c4805f2cedb5660fbeb6c500d4a8f1fe7`
+  `cbe1bc9092427dd08957eb15eb4ff293e19446ac`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `e05b0f3c4805f2cedb5660fbeb6c500d4a8f1fe7` before transactional legal-store
-  schema initialization. Verify the current published tip from Git after each
-  push.
+  `cbe1bc9092427dd08957eb15eb4ff293e19446ac` before legal schema migration
+  hardening. Verify the current published tip from Git after each push.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -114,6 +113,11 @@ not ready for Matter-Bot.
 - Current legal-store schema work modifies `src/legal/mod.rs` and adds three
   isolated migration tests in `tests/legal.rs`; `README.md` and
   `docs/architecture.md` now describe the transactional versioned initialization.
+- Legal schema hardening is now implemented locally in `src/legal/mod.rs`:
+  SQLite foreign keys are enabled before the migration transaction, and schema
+  objects plus the `legal_store` component version are committed atomically.
+  Existing unversioned records survive upgrade; failed DDL rolls back; negative
+  or unsupported future versions are rejected.
 - Added a migration-failure regression for the SQLite bot registry. An injected
   conflicting schema object forces migration to fail; the test verifies the
   schema version and identity columns remain at version 1, legacy rows remain
@@ -215,6 +219,10 @@ After formatting, the following commands completed successfully:
   `cargo fmt --all`, `cargo check --all-targets`, and full `cargo test` —
   **183 passed, 0 failed**; doc tests: 0 passed, 0 failed; `git diff --check`
   passed.
+- Current legal schema migration verification: the three focused migration
+  tests passed; `cargo fmt --all`, `cargo check --all-targets`, and full
+  `cargo test` — **186 passed, 0 failed**; doc tests: 0 passed, 0 failed;
+  `git diff --check` passed.
 - Current legal schema migration verification: 3 focused migration tests passed;
   `cargo fmt --all`, `cargo check --all-targets`, full `cargo test` —
   **186 passed, 0 failed**; doc tests: 0 passed, 0 failed;
@@ -289,6 +297,9 @@ platform capabilities or a live external integration.
 - README files reviewed for bot-registry migration rollback coverage: **1**.
 - README files updated for bot-registry migration rollback coverage: **0**.
 - README files with no changes for bot-registry migration rollback coverage: **1**.
+- README files reviewed for legal schema versioning and DDL rollback: **1**.
+- README files updated for legal schema versioning and DDL rollback: **1**.
+- README files with no changes for legal schema versioning and DDL rollback: **0**.
 - README files reviewed for transactional/versioned legal-store initialization: **1**.
 - README files updated for transactional/versioned legal-store initialization: **1**.
 - README files with no changes for transactional/versioned legal-store initialization: **0**.
@@ -386,7 +397,9 @@ external services.
    and failure paths, then continue the remaining provider/key and bot-registry
    corruption cases. Legal initialization now has a transactional component
    version; existing data migration, interrupted DDL rollback/retry, and future
-   version rejection have behavior tests. Add tests for every confirmed
+   version rejection have behavior tests. The next legal audit must decide and
+   document the principal-authorization boundary before exposing consent writes
+   through an application API. Add tests for every confirmed
    defect. Do not invent a shared-user identity system until a trustworthy
    authenticated-principal contract is available.
 4. Continue I by adding cross-module resilience cases around bot ownership,
