@@ -15,6 +15,7 @@
 pub mod activation;
 pub mod bots;
 pub mod commands;
+pub mod control;
 pub mod core;
 pub mod events;
 pub mod i18n;

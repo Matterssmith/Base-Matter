@@ -49,7 +49,7 @@ impl SocketActivationStore {
                 |row| row.get(0),
             )
             .optional()?;
-        if version.is_some_and(|v| v != 1) {
+        if version.is_some_and(|v| v != 1 && v != 2) {
             bail!("Unsupported socket activation schema");
         }
         tx.execute_batch(
@@ -65,7 +65,11 @@ impl SocketActivationStore {
             id INTEGER PRIMARY KEY AUTOINCREMENT, socket_id TEXT NOT NULL,
             actor_id TEXT NOT NULL, action TEXT NOT NULL, group_id TEXT,
             value INTEGER, created_at INTEGER NOT NULL);
-            INSERT OR IGNORE INTO matter_schema_versions VALUES('socket_activation',1);",
+            CREATE TABLE IF NOT EXISTS activation_bindings (
+            socket_id TEXT PRIMARY KEY NOT NULL REFERENCES activation_sockets(socket_id),
+            bot_instance_id TEXT NOT NULL);
+            INSERT INTO matter_schema_versions VALUES('socket_activation',2)
+            ON CONFLICT(component) DO UPDATE SET version=excluded.version;",
         )?;
         tx.commit()?;
         Ok(Self {
@@ -97,6 +101,65 @@ impl SocketActivationStore {
         )?;
         tx.commit()?;
         Ok(())
+    }
+
+    /// Establishes a durable socket/bot association. Caller identity must be
+    /// authenticated. Both socket ownership and current bot ownership are needed.
+    /// Socket ownership remains separate from bot ownership after provisioning.
+    pub fn bind_bot(
+        &self,
+        socket: &str,
+        actor: &str,
+        bot: &str,
+        bots: &crate::BotRegistry,
+    ) -> Result<()> {
+        validate(socket)?;
+        validate(actor)?;
+        validate(bot)?;
+        bots.authorize_owner(bot, actor)?;
+        let mut c = self
+            .connection
+            .lock()
+            .map_err(|_| anyhow!("Activation lock poisoned"))?;
+        let tx = c.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        require_owner(&tx, socket, actor)?;
+        let existing: Option<String> = tx
+            .query_row(
+                "SELECT bot_instance_id FROM activation_bindings WHERE socket_id=?1",
+                [socket],
+                |r| r.get(0),
+            )
+            .optional()?;
+        if let Some(existing) = existing {
+            if existing != bot {
+                bail!("Socket is already bound to another bot");
+            }
+            return Ok(());
+        }
+        tx.execute(
+            "INSERT INTO activation_bindings VALUES(?1,?2)",
+            params![socket, bot],
+        )?;
+        audit(&tx, socket, actor, "bind_bot", None, None)?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Trusted dispatcher lookup; adapters cannot choose a different bot ID.
+    pub(crate) fn binding(&self, socket: &str) -> Result<(String, String)> {
+        validate(socket)?;
+        let c = self
+            .connection
+            .lock()
+            .map_err(|_| anyhow!("Activation lock poisoned"))?;
+        c.query_row(
+            "SELECT b.bot_instance_id,s.owner_id FROM activation_bindings b
+            JOIN activation_sockets s ON s.socket_id=b.socket_id WHERE b.socket_id=?1",
+            [socket],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .optional()?
+        .ok_or_else(|| anyhow!("Socket has no bot binding"))
     }
 
     pub fn set_power(&self, socket: &str, actor: &str, powered: bool) -> Result<()> {

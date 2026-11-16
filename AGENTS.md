@@ -1,0 +1,74 @@
+# Matterssmith — repository instructions
+
+Read `docs/DEVELOPMENT_STATUS.md`, the root README and architecture before work.
+Inspect actual code, Git status, branch, ignored files and applicable nested instructions.
+Do not assume a past report is current. Preserve useful existing implementations.
+
+## Identity
+
+Preserve the project's visual identity and existing credits. Where credits apply:
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+Do not add a separate author line or attribute project authorship to automation.
+Preserve upstream copyright/license notices when importing provider code.
+
+## Git and verification
+
+Work on `matter-beta`; `matter` is stable. GitHub is the source of truth.
+Inspect all local differences first. When dirty, protect tracked and new
+nonignored files with `git stash push -u`. Fetch origin, switch to matter-beta,
+reset to origin/matter-beta, restore the stash and inspect conflicts. If fetch
+or stash restoration fails, stop dependent modifications/verification, retain
+recovery data and report the failure. Never use git clean or remove ignored
+sessions, databases or credentials. Preserve unrelated stashes and user changes.
+
+Run cargo fmt --all, cargo check --all-targets, cargo test and git diff --check
+for implementation checkpoints. Report actual results. Do not change global
+linker/toolchain configuration without demonstrated need.
+
+The user has authorized committing and pushing verified development checkpoints
+to matter-beta. Review EVERY repository README before EACH commit, report total,
+reviewed, updated, unchanged, findings, fixes and pending issues. Update affected
+README/code/contracts together; preserve correct content and design. Check new
+files, full diff, examples, internal links, credits and accidental secrets.
+Confirm the pushed SHA against origin. Never promote to matter automatically.
+
+## Scope and continuity
+
+Finish Matter-Base before starting Matter-Bot. Continue H audit/corrections,
+I integration/resilience, J security, K contracts and L release readiness.
+Missing earlier prerequisites must be implemented and tested; do not call
+interfaces, mocks or isolated tests a completed external integration.
+Record exact next work, changes, tests and blockers in docs/DEVELOPMENT_STATUS.md
+at checkpoints and before ending a session. Preserve its historical entries.
+
+Priority is Matter-Base with the real Matter-Vault contract and global control
+commands. Vault is independent and must not store platform credentials/sessions.
+Do not change cryptographic formats without compatibility/migration review.
+Intercept `=` and `/>` control prefixes before the normal router. Only the socket
+owner can power it on/off. A global owner label is not authority over another
+socket; an explicit socket ID still needs authorization. Operational power is
+independent of network connection. Powered-off sockets execute no normal commands.
+Policy precedence when powered on: Group > Socket > Global > None (deny).
+Preserve socket isolation and persist/audit administrative changes atomically.
+
+## Updated ecosystem direction (user instruction)
+
+- Target name Matter-WhatsApp replaces Matter-Baileys.
+- Target name Matter-Telegram replaces Matter-Telegraf.
+- Inspect and rename the actual GitHub repositories when ecosystem work begins;
+  documenting these targets does not mean remote repositories were renamed.
+- Each platform repository may contain multiple provider methods in separate
+  directories, e.g. providers/baileys and providers/telegraf. Verify the official
+  upstream source, pin its revision, preserve history/licenses/notices and keep
+  local modifications traceable. Do not clone unverified lookalike repositories.
+- Adapters implement universal Matter-Base contracts. Platform libraries and
+  provider-specific changes remain in their platform repository, outside Base.
+- Full ecosystem management does not imply bypassing a platform's permissions.
+- Real WhatsApp verification uses a secondary test account and a single process
+  owning its connection; never overwrite an existing session. Then verify
+  equivalent Telegram and Discord functionality where supported.
+- This scope does not relax Matter-Base readiness criteria. External service
+  availability/account linking must be reported honestly when blocked.

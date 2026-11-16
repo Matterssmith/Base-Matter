@@ -24,7 +24,8 @@ Public crate API (`src/lib.rs`)
 │                     ├─ ServiceRegistry (in memory)
 │                     ├─ UserRegistry (injected; memory or SQLite)
 │                     └─ LegalStore (SQLite)
-├── SocketActivationStore (SQLite policy/ownership/audit; no network connections)
+├── SocketActivationStore (SQLite policy/ownership/bot binding/audit)
+├── ControlDispatcher (control interception and socket activation gate)
 ├── CommandRouter (prefixes, aliases, injected authorization and middleware)
 ├── Translator (in memory)
 ├── CoreModule + runtime-owned ModuleManager
@@ -48,7 +49,7 @@ aliases, and whitespace-separated arguments. It requires an injected
 synchronous handlers outside its registry lock. Authorization sees the
 canonical command name, so aliases cannot change permission matching. Callback
 errors and unwinding panics fail closed with sanitized errors. Platform parsing,
-durable command audit, and Control Plane socket activation are not integrated;
+durable command audit and network connection lifecycle are not integrated;
 the caller's authorizer must enforce bot scope, permissions, and activation.
 
 ## Persistence and trust boundaries
@@ -88,7 +89,7 @@ contracts before applications consume them:
 - General role and resource authorization beyond the existing bot owner/co-owner checks.
 - Ownership, roles, permissions, and audited authorization.
 - Durable command audit and socket-aware dispatch beyond the existing command router.
-- Full Control Plane, socket/bot binding and networking; activation policy storage is implemented separately in `activation`.
+- Full Control Plane/network lifecycle and ownership transfer; binding, activation storage and control dispatch are implemented in `activation`/`control`.
 - Session/credential interfaces, services, connections, and messaging.
 - Plugin manifest validation, resource limits, and effective sandboxing.
 - Persistent recovery, migrations, and end-to-end integration tests.
@@ -106,4 +107,5 @@ verification results are maintained in
 
 Socket activation policy storage is described in [activation contracts](activation.md).
 It provides durable ownership/power/overrides and atomic audits, but does not
-manage connection ownership or enforce activation in the command router yet.
+manage network connections. `ControlDispatcher` enforces activation before
+normal routing and intercepts power commands with owner checks.

@@ -67,8 +67,8 @@ service.
 | `core::context` | Shares event bus, typed service registry, legal store, bot registry, and user registry | Implemented at this scope |
 | `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; general roles remain pending |
 | `users` | Global application user IDs, explicit unique external identity links, and per-bot/user key-value data in memory or SQLite | Implemented with an injected `UserAuthorizer`; the application authenticates principals and enforces ownership and bot scope |
-| `commands` | Prefixes, canonical aliases, authorization, middleware and handlers | Partial; no durable command audit or socket dispatcher |
-| `activation` | SQLite owner-scoped power, group/socket policy overrides and atomic audit | Partial; trusted provisioning, no bot binding or network connections |
+| `commands` | Prefixes, canonical aliases, authorization, middleware and handlers | Partial; no durable command audit; socket gating via ControlDispatcher |
+| `activation` | SQLite owner-scoped power, group/socket policy overrides and atomic audit | Partial; trusted provisioning, durable bot binding; no network connections |
 | `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish`; `publish_checked` catches unwinding panics per listener, continues dispatch, and returns an error |
 | `services` | In-memory type-indexed service registration and retrieval | Basic; no lifecycle management |
 | `i18n` | In-memory translation catalogs and key fallback | Basic; no bundled catalogs or locale validation |
@@ -85,6 +85,7 @@ Matter-Base platform.
 src/
   activation.rs  Persistent socket activation policy and owner checks
   commands.rs    Universal command routing
+  control.rs     Control-prefix interception and socket-gated dispatch
   bots/       Bot identity contracts and in-memory/SQLite registry
   users/      Shared users, explicit external identity links, scoped user data
   core/       Configuration, shared context, logging, runtime
@@ -231,7 +232,8 @@ middleware or handler code. Message size, command count, aliases, middleware,
 and argument count are bounded. Arguments are split on whitespace; adapters
 must handle platform-specific quoting and message parsing.
 
-The router does not provide durable audit records or socket activation policy.
+The router does not provide durable audit records. `ControlDispatcher` adds
+socket activation checks before normal command routing.
 The injected authorizer must enforce authenticated identity, bot scope,
 permissions, and operational activation before dispatch.
 
@@ -268,8 +270,9 @@ and group/socket overrides with atomic audit writes. New sockets start powered
 off. When powered on, resolution uses Group > Socket > trusted global default >
 deny. Only the stored owner can change policies or read its audit history.
 The application must authenticate provisioning and actors; this store does not
-bind sockets to bot instances or platform sessions, and it is not yet wired into
-command dispatch. See [activation contracts](docs/activation.md).
+authenticate platform sessions. `bind_bot` establishes a durable bot association;
+`ControlDispatcher` intercepts `=on`, `=off` (also `/>` and `=/>`) and gates
+normal commands. Explicit socket targets still require the target owner. See [activation contracts](docs/activation.md).
 
 ## Roadmap boundary
 
@@ -283,3 +286,12 @@ and tested.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Ecosystem names and provider layout
+
+The requested target repositories are **Matter-WhatsApp** (formerly
+Matter-Baileys) and **Matter-Telegram** (formerly Matter-Telegraf). Remote renames
+and provider imports are pending ecosystem work. Provider methods belong in
+separate directories such as `providers/baileys` and `providers/telegraf`, using
+verified official upstream revisions and preserved licenses/history. Base and
+Vault readiness remains the immediate priority. See [repository instructions](AGENTS.md).
