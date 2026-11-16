@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `66252c1fddf79c96193a8528468d8ce7d5a2a90b`
+- Latest confirmed checkpoint commit: `38777f93edd9187010240747b69cdef8cd93213e`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `66252c1fddf79c96193a8528468d8ce7d5a2a90b` before this work.
+  `38777f93edd9187010240747b69cdef8cd93213e` before this work.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -151,6 +151,8 @@ After formatting, the following commands completed successfully:
 - Full `cargo test` with SQLite replay-store implementation — **155 passed, 0 failed**;
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed;
   `git diff --check` passed.
+- Full `cargo test` after lock-poison recovery — **158 passed, 0 failed**;
+  doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
 - `git diff --check`
 - Local Markdown-link scan — 7 Markdown files scanned, all relative links
   resolved.
@@ -192,8 +194,10 @@ platform capabilities or a live external integration.
   The default constructor remains process-local. Caller string
   conversions now run outside EventBus/Translator write locks, and reentrant
   callback behavior is tested. Provider inputs have bounded size/count.
-  These subsystems still need broader concurrency review. Callback panics
-  propagate; no fallible callback contract exists.
+  EventBus, ServiceRegistry and Translator now recover from poisoned internal
+  locks; dedicated lock-poison tests pass. These subsystems still need broader
+  concurrency review. Callback panics propagate; no fallible callback contract
+  exists.
   The first source/test pass found no `todo!`, `unimplemented!`, or production
   `panic!`, but did find lock `.expect` calls. The rest of the module audit
   remains. SQLite replay storage now rejects duplicate assertions across
@@ -211,9 +215,9 @@ platform capabilities or a live external integration.
   remain outstanding.
 - Matter-Bot: **Blocked by unmet Matter-Base criteria. Do not start.**
 
-Checkpoint `66252c1fddf79c96193a8528468d8ce7d5a2a90b` was pushed to
-`origin/matter-beta` over authenticated SSH. Its head was fetched and confirmed
-before this replay-store work began. The persistent replay-store checkpoint is the current local change set and has not yet been committed or pushed. No promotion to `matter` was made. Matter-Vault live
+Checkpoint `38777f93edd9187010240747b69cdef8cd93213e` was pushed to
+`origin/matter-beta` over authenticated SSH and confirmed by fetch. Lock-poison
+recovery changes are local and not yet committed. No promotion to `matter` was made. Matter-Vault live
 verification is the only specifically identified external dependency; most
 remaining blockers are missing code and contracts in this repository, not
 external services.
@@ -230,7 +234,7 @@ external services.
 4. Run the complete verification sequence after the above targeted tests, then
    update the recorded results here. (Completed for this snapshot: 155 tests
    passed.) Continue auditing SQLite operation error paths, then
-   events/services/i18n lock and callback behavior. Add tests and make
+   provider authentication and key-store failure behavior. Add tests and make
    compatible fixes where defects are confirmed.
 5. Update this record after each completed stage. Do not mark H–L complete
    until the corresponding criteria are implemented and verified.

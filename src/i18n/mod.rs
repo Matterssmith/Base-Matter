@@ -16,7 +16,10 @@ impl Translator {
 
     pub fn set_locale(&self, locale: impl Into<String>) {
         let locale = locale.into();
-        let mut current = self.locale.write().expect("Translator lock poisoned");
+        let mut current = self
+            .locale
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         *current = locale;
     }
@@ -24,13 +27,16 @@ impl Translator {
     pub fn locale(&self) -> String {
         self.locale
             .read()
-            .expect("Translator lock poisoned")
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
     }
 
     pub fn register(&self, locale: impl Into<String>, translations: HashMap<String, String>) {
         let locale = locale.into();
-        let mut catalogs = self.catalogs.write().expect("Translator lock poisoned");
+        let mut catalogs = self
+            .catalogs
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         catalogs.insert(locale, translations);
     }
@@ -38,7 +44,10 @@ impl Translator {
     pub fn translate(&self, key: &str) -> String {
         let locale = self.locale();
 
-        let catalogs = self.catalogs.read().expect("Translator lock poisoned");
+        let catalogs = self
+            .catalogs
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         catalogs
             .get(&locale)
@@ -48,7 +57,10 @@ impl Translator {
     }
 
     pub fn contains(&self, locale: &str, key: &str) -> bool {
-        let catalogs = self.catalogs.read().expect("Translator lock poisoned");
+        let catalogs = self
+            .catalogs
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         catalogs
             .get(locale)
@@ -59,5 +71,29 @@ impl Translator {
 impl Default for Translator {
     fn default() -> Self {
         Self::new("es")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Translator;
+    use std::collections::HashMap;
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+
+    #[test]
+    fn recovers_after_locale_lock_poisoning() {
+        let translator = Translator::new("es");
+        let _ = catch_unwind(AssertUnwindSafe(|| {
+            let mut locale = translator.locale.write().unwrap();
+            *locale = "en".to_owned();
+            panic!("simulate a panic while changing locale");
+        }));
+
+        translator.register(
+            "en",
+            HashMap::from([("hello".to_owned(), "Hello".to_owned())]),
+        );
+        assert_eq!(translator.locale(), "en");
+        assert_eq!(translator.translate("hello"), "Hello");
     }
 }
