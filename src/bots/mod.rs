@@ -14,6 +14,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 const MAX_IDENTIFIER_BYTES: usize = 128;
+const MAX_BOT_CO_OWNERS: usize = 256;
 const INSTANCE_ID_RANDOM_BYTES: usize = 16;
 const BOT_REGISTRY_SCHEMA_VERSION: i64 = 3;
 
@@ -298,6 +299,9 @@ fn validate_identity(identity: &BotIdentity) -> Result<()> {
     if let Some(owner_id) = &identity.owner_id {
         validate_identifier(owner_id, "owner_id")?;
     }
+    if identity.co_owner_ids.len() > MAX_BOT_CO_OWNERS {
+        bail!("Invalid bot co-owner list");
+    }
     let mut co_owners = std::collections::HashSet::new();
     for co_owner_id in &identity.co_owner_ids {
         validate_identifier(co_owner_id, "co_owner_id")?;
@@ -467,6 +471,9 @@ impl BotIdentityStore for InMemoryBotIdentityStore {
             bail!("Owner cannot also be a co-owner");
         }
         if !identity.co_owner_ids.iter().any(|id| id == co_owner_id) {
+            if identity.co_owner_ids.len() >= MAX_BOT_CO_OWNERS {
+                bail!("Bot co-owner limit reached");
+            }
             identity.co_owner_ids.push(co_owner_id.to_owned());
             append_memory_audit(
                 &mut state,
@@ -853,6 +860,9 @@ impl BotIdentityStore for SqliteBotIdentityStore {
             |row| row.get(0),
         )?;
         let mut co_owners: Vec<String> = serde_json::from_str(&co_owners_json)?;
+        if co_owners.len() > MAX_BOT_CO_OWNERS {
+            bail!("Invalid bot co-owner list");
+        }
         co_owners.retain(|id| id != actor_id && id != new_owner_id);
         transaction.execute(
             "UPDATE bot_identities SET owner_id = ?1, co_owner_ids = ?2 WHERE instance_id = ?3",
@@ -897,7 +907,13 @@ impl BotIdentityStore for SqliteBotIdentityStore {
             bail!("Bot owner authorization denied");
         }
         let mut co_owners: Vec<String> = serde_json::from_str(&encoded)?;
+        if co_owners.len() > MAX_BOT_CO_OWNERS {
+            bail!("Invalid bot co-owner list");
+        }
         if !co_owners.iter().any(|id| id == co_owner_id) {
+            if co_owners.len() >= MAX_BOT_CO_OWNERS {
+                bail!("Bot co-owner limit reached");
+            }
             co_owners.push(co_owner_id.to_owned());
             transaction.execute(
                 "UPDATE bot_identities SET co_owner_ids = ?1 WHERE instance_id = ?2",
@@ -936,6 +952,9 @@ impl BotIdentityStore for SqliteBotIdentityStore {
             bail!("Bot owner authorization denied");
         }
         let mut co_owners: Vec<String> = serde_json::from_str(&encoded)?;
+        if co_owners.len() > MAX_BOT_CO_OWNERS {
+            bail!("Invalid bot co-owner list");
+        }
         let before = co_owners.len();
         co_owners.retain(|id| id != co_owner_id);
         if co_owners.len() == before {

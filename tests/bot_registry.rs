@@ -547,3 +547,92 @@ fn concurrent_owner_transfers_from_separate_connections_have_one_winner() {
         1
     );
 }
+
+#[test]
+fn co_owner_assignments_are_bounded_in_memory_and_sqlite_stores() {
+    let directory = TemporaryDirectory::new();
+    let memory = BotRegistry::in_memory();
+    let memory_identity = memory
+        .register("family-a", "release-1", "memory", "owner")
+        .unwrap();
+    let database = directory.0.join("owner-limit.db");
+    let persistent = BotRegistry::open_sqlite(&database).unwrap();
+    let persistent_identity = persistent
+        .register("family-a", "release-1", "persistent", "owner")
+        .unwrap();
+
+    for index in 0..256 {
+        let actor = format!("staff-{index}");
+        memory
+            .add_co_owner(memory_identity.instance_id(), "owner", &actor)
+            .unwrap();
+        persistent
+            .add_co_owner(persistent_identity.instance_id(), "owner", &actor)
+            .unwrap();
+    }
+    assert_eq!(
+        memory
+            .get(memory_identity.instance_id())
+            .unwrap()
+            .unwrap()
+            .co_owner_ids()
+            .len(),
+        256
+    );
+    assert_eq!(
+        persistent
+            .get(persistent_identity.instance_id())
+            .unwrap()
+            .unwrap()
+            .co_owner_ids()
+            .len(),
+        256
+    );
+    assert!(memory
+        .add_co_owner(memory_identity.instance_id(), "owner", "staff-over-limit")
+        .is_err());
+    assert!(persistent
+        .add_co_owner(
+            persistent_identity.instance_id(),
+            "owner",
+            "staff-over-limit"
+        )
+        .is_err());
+    assert_eq!(
+        BotRegistry::open_sqlite(&database)
+            .unwrap()
+            .get(persistent_identity.instance_id())
+            .unwrap()
+            .unwrap()
+            .co_owner_ids()
+            .len(),
+        256
+    );
+}
+
+#[test]
+fn sqlite_registry_rejects_oversized_persisted_co_owner_list() {
+    let directory = TemporaryDirectory::new();
+    let database = directory.0.join("corrupt-co-owners.db");
+    let registry = BotRegistry::open_sqlite(&database).unwrap();
+    let identity = registry
+        .register("family-a", "release-1", "matter", "owner")
+        .unwrap();
+    let oversized: Vec<_> = (0..257).map(|index| format!("staff-{index}")).collect();
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    connection
+        .execute(
+            "UPDATE bot_identities SET co_owner_ids=?1 WHERE instance_id=?2",
+            rusqlite::params![
+                serde_json::to_string(&oversized).unwrap(),
+                identity.instance_id()
+            ],
+        )
+        .unwrap();
+    drop(connection);
+    let recovered = BotRegistry::open_sqlite(&database).unwrap();
+    assert!(recovered.get(identity.instance_id()).is_err());
+    assert!(recovered
+        .authorize(identity.instance_id(), "staff-0", BotAction::Manage)
+        .is_err());
+}

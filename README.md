@@ -43,7 +43,9 @@ or a sandbox.
 Bot registration requires an owner ID. Consumers must derive actor IDs from
 authenticated requests before calling owner-management APIs. Owners can manage
 co-owners and transfer/delete bots; co-owners can manage bot-scoped operations
-but cannot change ownership or delete. Legacy unowned records require an
+but cannot change ownership or delete. Each bot supports at most 256
+co-owners; additions beyond the limit are rejected in memory and SQLite.
+Legacy unowned records require an
 injected `OwnerRecoveryAuthorizer` before ownership can be claimed. Ownership
 changes are written to the registry audit history.
 Reading a bot's audit history requires the current owner ID and is checked by

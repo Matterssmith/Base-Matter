@@ -38,7 +38,7 @@ not ready for Matter-Bot.
 | Capability | Status | Evidence / limitation |
 | --- | --- | --- |
 | Runtime and lifecycle | PARTIAL | `MatterRuntime` owns a shared `ModuleManager` and propagates initialize/start/shutdown errors; no built-in modules are registered and services have no lifecycle. |
-| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates IDs, persists validated identities, and allocates unique names; owner-only transfer/removal, limited co-owner scope, legacy recovery authorization, and audit history work. General role/resource authorization remains absent. |
+| Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates IDs, persists validated identities, and allocates unique names; owner-only transfer/removal, co-owner operations bounded to 256, legacy recovery authorization, and audit history work. General role/resource authorization remains absent. |
 | Shared application users and bot data isolation | PARTIAL | `src/users` provides in-memory/SQLite global IDs, explicit unique external links, and bot/user/key-scoped text data with authorization hooks. A consuming application's `UserAuthorizer` must authenticate principals and verify bot existence/ownership; user storage does not consult the bot registry or implement general roles. |
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
 | Persistence and recovery | PARTIAL | SQLite persists bot identities, shared users/identity links/bot-scoped data, and legal documents/decisions. No config/socket/service persistence or ecosystem-wide migration coordinator; each persistent component has its own versioned schema. |
@@ -515,12 +515,30 @@ external services.
   branch promotion was made. The original separate bot-registry stash remains
   preserved.
 
+## Current local work — bot co-owner resource bound
+
+- Added a 256 co-owner cap to both in-memory and SQLite assignment paths.
+  Persisted identities with larger lists fail validation; ownership transfer
+  and removal also fail closed when they encounter an oversized list.
+- Added coverage for both stores and a corrupted SQLite row.
+- Updated README and architecture documentation to state the cap.
+- Audited public legal-store entry points. Sensitive reads, writes, document
+  administration, and consent paths invoke `LegalPrincipal` before storage
+  access. Authorization diagnostics are sanitized; no omitted auth path was
+  confirmed in this pass.
+- Verified after syncing with `origin/matter-beta` at
+  `34f31718da728822cde3d12aca69437fb96ec553`: `cargo fmt --all`,
+  `cargo check --all-targets`, focused bot-registry tests (15 passed), full
+  `cargo test` (201 passed, 0 failed; 0 doc tests), and `git diff --check`.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged; relative links
+  resolve. This checkpoint is ready to publish.
+
 ## Exact next task to resume
 
-1. Complete this test-only checkpoint: commit/push to `matter-beta`, fetch,
-   and verify the published SHA.
-2. Continue H by auditing remaining provider, key, and bot-registry corruption
-   cases. Add tests for confirmed defects.
+1. Publish the bot resource-bound checkpoint to `matter-beta`, fetch, and
+   verify the published SHA.
+2. Continue H by auditing remaining provider and key corruption cases; add
+   tests for confirmed defects.
 3. Continue I with cross-module resilience around bot ownership, provider
    failures, legal-store errors, and shared users. Router, sockets, plugins,
    general resource authorization, and live services remain uncovered.
