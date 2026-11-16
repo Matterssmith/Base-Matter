@@ -9,12 +9,12 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `ea36faf68944b0d9be1a8563ebb0bfbc8782bfb6`
-- Latest confirmed published checkpoint: `6b501997f377e8dd424ba78669b04796f6a2a989`
+- Latest confirmed published checkpoint: `7f385de9579094221ab55e52d3ac672969b846ed`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `6b501997f377e8dd424ba78669b04796f6a2a989` after publishing the shared-user
-  registry; fetch confirmed local and remote commit IDs match.
+  `7f385de9579094221ab55e52d3ac672969b846ed` after publishing shared-user
+  storage resilience tests; fetch confirmed local and remote IDs match.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -510,8 +510,10 @@ external services.
   (199 passed, 0 failed; 0 doc tests), and `git diff --check` all passed.
 - README audit: 1 found, 1 reviewed, 0 updated, 1 unchanged; test-only changes
   do not affect README claims.
-- This checkpoint is local and awaits its commit/push. The original separate
-  bot-registry stash remains preserved.
+- Commit `7f385de9579094221ab55e52d3ac672969b846ed` was pushed to
+  `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. No stable
+  branch promotion was made. The original separate bot-registry stash remains
+  preserved.
 
 ## Exact next task to resume
 
