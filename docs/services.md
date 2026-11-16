@@ -7,9 +7,11 @@ same concrete type replaces the prior value. `remove`, `contains`, `len`, and
 `clear` operate on the registry.
 
 `MatterContext` shares one registry through `Arc<ServiceRegistry>`.
-Registration and retrieval are synchronized, but the registry does not start,
-stop, health-check, persist, or authorize services. Those behaviors are not
-implemented. Poisoned synchronization locks currently panic via `expect`.
+Registration and retrieval are synchronized. If a lock is poisoned by an
+unwinding panic, the registry recovers its inner map and remains usable; service
+registration and removal mutate the map through single lock-protected
+operations. The registry does not start, stop, health-check, persist, or
+authorize services. Those behaviors are not implemented.
 
 This is a core utility, not a provider or network connection manager. Avoid
 putting platform credentials or secret material into generic services unless

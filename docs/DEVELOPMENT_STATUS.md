@@ -567,6 +567,17 @@ external services.
    to `matter-beta`, then fetch and verify the exact published SHA. Never claim
    Vault or platform integrations work without real verification.
 
+## Documentation audit — service registry
+
+- Corrected `docs/services.md`: its lock-poisoning note no longer matches the
+  implementation. The registry recovers poisoned locks and has a regression
+  test; lifecycle, health checks, persistence, and authorization remain
+  unimplemented.
+- README audit: 1 found, 1 reviewed, 0 updated, 1 unchanged. No README claims
+  the service registry provides lifecycle or connection management.
+- Documentation-only correction; no tests were run for this edit.
+- Base before publication: `5ee4a71e562decc3e72b38fbe54e765b2736ed02`.
+
 ## Current local work — total key-manager capacity
 
 - Added the 4,096-key limit to manual `insert` and `rotate`, matching the
