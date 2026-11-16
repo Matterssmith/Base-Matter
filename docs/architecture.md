@@ -31,8 +31,9 @@ Public crate API (`src/lib.rs`)
 
 `MatterRuntime::open` opens the SQLite legal store and constructs a context.
 `initialize` currently emits an informational log; it does not start managed
-modules or services. `CoreModule` defines initialize/start/stop methods, but
-there is no module registry or lifecycle coordinator. See the crate modules in
+modules or services. `ModuleManager` registers and coordinates modules when an
+application explicitly owns and calls it; `MatterRuntime` does not yet own or
+invoke that manager. See the crate modules in
 [`src/`](../src/).
 
 The current event bus clones a listener list and releases its registry lock

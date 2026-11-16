@@ -55,7 +55,7 @@ service.
 | `i18n` | In-memory translation catalogs and key fallback | Basic; no bundled catalogs or locale validation |
 | `legal` | SQLite documents, user IDs, immutable decision history, and access checks | Implemented at this scope |
 | `security` | Authenticated encryption envelopes, key management, provider identity/policy, replay-aware assertions, binding contracts | Implemented contracts/primitives; external integration unverified |
-| `modules` | `CoreModule` lifecycle trait | Contract only; no module manager |
+| `modules` | `CoreModule` plus caller-owned `ModuleManager` for ordered initialize/start and reverse stop with failure cleanup | Implemented lifecycle coordinator; not wired into `MatterRuntime` |
 
 These states describe this repository's present behavior, not the full planned
 Matter-Base platform.

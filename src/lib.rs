@@ -30,6 +30,6 @@ pub use i18n::Translator;
 
 pub use legal::{ConsentDecision, ConsentRecord, LegalDocument, LegalDocumentType, LegalStore};
 
-pub use modules::CoreModule;
+pub use modules::{CoreModule, ModuleManager};
 pub use security::encryption;
 pub use services::ServiceRegistry;

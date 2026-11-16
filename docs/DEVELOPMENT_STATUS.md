@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `9c77cff43889028606eb384afc708eab0e597ed2`
+- Latest confirmed checkpoint commit: `ba100c45433f145d9863e8aeffbb5bce29775b18`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `9c77cff43889028606eb384afc708eab0e597ed2` before envelope-size hardening.
+  `ba100c45433f145d9863e8aeffbb5bce29775b18` before module lifecycle coordination.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -36,7 +36,7 @@ not ready for Matter-Bot.
 
 | Capability | Status | Evidence / limitation |
 | --- | --- | --- |
-| Runtime and lifecycle | PARTIAL | Runtime opens the legal store and logs initialization; no coordinated startup/shutdown lifecycle. |
+| Runtime and lifecycle | PARTIAL | Caller-owned `ModuleManager` coordinates registration-order initialization/start and reverse shutdown with cleanup on start failures; `MatterRuntime` does not own it and service lifecycle remains separate. |
 | Bot identity, family/release/instance IDs, registration | ABSENT | No implementation in `src/`. |
 | Shared application users and bot data isolation | ABSENT | `legal_users` are legal-consent subjects, not a shared application user system. |
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
@@ -160,6 +160,8 @@ After formatting, the following commands completed successfully:
 - `git diff --check`
 - Root README link audit — 1 README reviewed; all relative links resolve.
 - Full `cargo test` after envelope-size limits — **163 passed, 0 failed**;
+  doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
+- Full `cargo test` after adding `ModuleManager` — **165 passed, 0 failed**;
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed. — 7 Markdown files scanned, all relative links
   resolved.
 - Secret-pattern scan of the tracked diff — no matches. This is a pattern
@@ -184,6 +186,9 @@ platform capabilities or a live external integration.
 - README files reviewed for envelope-size hardening: **1**.
 - README files updated for envelope-size hardening: **1**.
 - README files with no changes for envelope-size hardening: **0**.
+- README files reviewed for lifecycle coordination: **1**.
+- README files updated for lifecycle coordination: **1**.
+- README files with no changes for lifecycle coordination: **0**.
 - Problems found: documented JavaScript/Node project structure and `npm`
   commands did not match the Rust Cargo crate; future bot/provider and other
   systems were presented as available; repository links and component claims
@@ -217,7 +222,8 @@ platform capabilities or a live external integration.
   exists.
   The first source/test pass found no `todo!`, `unimplemented!`, or production
   `panic!`, but did find lock `.expect` calls. The rest of the module audit
-  remains. `EventBus::publish_checked` was added to continue notifying listeners
+  remains. A caller-owned `ModuleManager` was added with duplicate/name/version
+  validation, initialization order, reverse shutdown, and start-failure cleanup. `EventBus::publish_checked` was added to continue notifying listeners
   after an individual unwinding panic and return an error summary; default
   `publish` behavior remains backward compatible. SQLite replay storage now rejects duplicate assertions across
   independent connections and verifier restarts; four focused tests pass. Legal store tests now cover concurrent idempotent
@@ -236,7 +242,8 @@ document registration and rollback after a simulated SQLite write failure.
 - Matter-Bot: **Blocked by unmet Matter-Base criteria. Do not start.**
 
 Checkpoint `9c77cff43889028606eb384afc708eab0e597ed2` added legal-store
-concurrency and rollback tests. Checkpoint `e48ce509add1e08eaed63dfda3917b3f5d14accd` added panic-isolated
+concurrency and rollback tests. Checkpoint `ba100c45433f145d9863e8aeffbb5bce29775b18` added 16 MiB envelope
+payload bounds. Checkpoint `e48ce509add1e08eaed63dfda3917b3f5d14accd` added panic-isolated
 event dispatch. Earlier checkpoint `9e3cb4b0ca90b667096ecb4e0bf94e1c6ed3901a` recorded lock recovery. Earlier checkpoint `38777f93edd9187010240747b69cdef8cd93213e` added persistent replay
 storage. Checkpoint `c0400d48dde6828bcc3784d8078d17242dcc88d5` added core lock-poison
 recovery; both were pushed to `origin/matter-beta` over authenticated SSH and
@@ -252,12 +259,13 @@ external services.
    do not discard `Cargo.lock` or `target/` without inspecting ownership.
 3. Continue H by auditing and testing the existing implementations, beginning
    with legal-store transaction/recovery behavior and security-provider
-   boundaries; the event/service/i18n lock and callback pass has been audited,
+   boundaries; caller-owned module lifecycle coordination is now implemented;
+   the event/service/i18n lock and callback pass has been audited,
    legal-store concurrency/rollback tests pass, and envelope input sizes are
    bounded before decoding. Make
    targeted compatible corrections with behavior tests.
 4. Run the complete verification sequence after the above targeted tests, then
-   update the recorded results here. (Latest full suite for this snapshot: 163 tests passed.) Continue auditing
+   update the recorded results here. (Latest full suite for this snapshot: 165 tests passed.) Continue auditing
    SQLite operation error paths, then provider authentication and key-store
    failure behavior. Add tests and make
    compatible fixes where defects are confirmed.
