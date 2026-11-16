@@ -6,13 +6,10 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
-pub mod authenticated_key_manager;
-pub mod authenticated_key_provider;
 pub mod authenticated_provider;
 pub mod encryption;
 pub mod key_manager;
 pub mod key_provider;
-pub mod key_rotation;
 pub mod provider_authenticator;
 pub mod provider_binding_store;
 pub mod provider_identity;
