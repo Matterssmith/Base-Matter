@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Key Provider Tests
  *

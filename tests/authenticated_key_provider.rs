@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Authenticated Key Provider Tests
  *
@@ -11,19 +10,12 @@
 
 use anyhow::{bail, Result};
 use matter_base::security::{
-    create_provider_binding_proof,
-    AuthenticatedProvider,
-    BoundKeyProvider,
-    KeyManager,
-    KeyProvider,
-    ProviderAccessPolicy,
-    ProviderAssertion,
-    ProviderAuthenticator,
-    ProviderBindingResolver,
-    ProviderBindingStore,
-    ProviderPermission,
+    create_provider_binding_proof, AuthenticatedProvider, BoundKeyProvider, KeyManager,
+    KeyProvider, ProviderAccessPolicy, ProviderAssertion, ProviderAuthenticator,
+    ProviderBindingResolver, ProviderBindingStore, ProviderPermission,
 };
 use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use time::OffsetDateTime;
 use zeroize::Zeroizing;
@@ -81,10 +73,40 @@ impl KeyProvider for MockKeyProvider {
 
 impl BoundKeyProvider for MockKeyProvider {
     fn binding_proof(&self, message: &[u8]) -> Result<[u8; 32]> {
-        create_provider_binding_proof(
-            &self.binding_key,
-            message,
-        )
+        create_provider_binding_proof(&self.binding_key, message)
+    }
+}
+
+struct SwitchingVaultProvider {
+    vault_queries: AtomicUsize,
+    binding_key: [u8; 32],
+}
+
+impl KeyProvider for SwitchingVaultProvider {
+    fn vault_id(&self) -> Result<String> {
+        if self.vault_queries.fetch_add(1, Ordering::SeqCst) == 0 {
+            Ok(VAULT.to_owned())
+        } else {
+            Ok("attacker-controlled-vault".to_owned())
+        }
+    }
+
+    fn key_ids(&self) -> Result<Vec<String>> {
+        Ok(vec!["attacker-key".to_owned()])
+    }
+
+    fn active_key_id(&self) -> Result<Option<String>> {
+        Ok(Some("attacker-key".to_owned()))
+    }
+
+    fn load_key(&self, _key_id: &str) -> Result<Zeroizing<[u8; 32]>> {
+        Ok(Zeroizing::new([77u8; 32]))
+    }
+}
+
+impl BoundKeyProvider for SwitchingVaultProvider {
+    fn binding_proof(&self, message: &[u8]) -> Result<[u8; 32]> {
+        create_provider_binding_proof(&self.binding_key, message)
     }
 }
 
@@ -97,11 +119,7 @@ struct TestBindingStore {
 }
 
 impl ProviderBindingStore for TestBindingStore {
-    fn load_binding_key(
-        &self,
-        provider_id: &str,
-        vault_id: &str,
-    ) -> Result<Zeroizing<[u8; 32]>> {
+    fn load_binding_key(&self, provider_id: &str, vault_id: &str) -> Result<Zeroizing<[u8; 32]>> {
         if provider_id != self.provider_id || vault_id != self.vault_id {
             bail!("Provider binding not found");
         }
@@ -127,9 +145,7 @@ fn assertion(permissions: Vec<String>) -> ProviderAssertion {
 fn policy() -> ProviderAccessPolicy {
     ProviderAccessPolicy::new(
         VAULT.to_owned(),
-        [PROVIDER.to_owned()]
-            .into_iter()
-            .collect::<HashSet<_>>(),
+        [PROVIDER.to_owned()].into_iter().collect::<HashSet<_>>(),
     )
     .unwrap()
 }
@@ -153,18 +169,11 @@ fn authenticated_provider(
 ) -> AuthenticatedProvider {
     let assertion = assertion(permissions);
 
-    let ciphertext = ProviderAuthenticator::seal_assertion(
-        &assertion,
-        nonce,
-        assertion_key,
-    )
-    .unwrap();
+    let ciphertext =
+        ProviderAuthenticator::seal_assertion(&assertion, nonce, assertion_key).unwrap();
 
-    let mut authenticator = ProviderAuthenticator::new(
-        VAULT.to_owned(),
-        AUDIENCE.to_owned(),
-    )
-    .unwrap();
+    let mut authenticator =
+        ProviderAuthenticator::new(VAULT.to_owned(), AUDIENCE.to_owned()).unwrap();
 
     let resolver = binding_resolver(binding_key);
 
@@ -203,9 +212,7 @@ fn loads_keys_from_cryptographically_bound_provider() {
     let source = MockKeyProvider::new(VAULT, BINDING_KEY);
     let mut manager = KeyManager::new();
 
-    session
-        .load_key_manager(&mut manager, &source)
-        .unwrap();
+    session.load_key_manager(&mut manager, &source).unwrap();
 
     assert_eq!(manager.len(), 2);
     assert_eq!(manager.active_key_id(), Some("vault-key-1"));
@@ -219,10 +226,7 @@ fn rejects_loading_without_key_ids_permission() {
     let nonce = [2u8; 24];
 
     let session = authenticated_provider(
-        vec![
-            "read_active_key".to_owned(),
-            "read_key_material".to_owned(),
-        ],
+        vec!["read_active_key".to_owned(), "read_key_material".to_owned()],
         ProviderPermission::ReadActiveKey,
         &nonce,
         &ASSERTION_KEY,
@@ -241,10 +245,7 @@ fn rejects_loading_without_active_key_permission() {
     let nonce = [3u8; 24];
 
     let session = authenticated_provider(
-        vec![
-            "read_key_ids".to_owned(),
-            "read_key_material".to_owned(),
-        ],
+        vec!["read_key_ids".to_owned(), "read_key_material".to_owned()],
         ProviderPermission::ReadKeyIds,
         &nonce,
         &ASSERTION_KEY,
@@ -263,10 +264,7 @@ fn rejects_loading_without_key_material_permission() {
     let nonce = [4u8; 24];
 
     let session = authenticated_provider(
-        vec![
-            "read_key_ids".to_owned(),
-            "read_active_key".to_owned(),
-        ],
+        vec!["read_key_ids".to_owned(), "read_active_key".to_owned()],
         ProviderPermission::ReadKeyIds,
         &nonce,
         &ASSERTION_KEY,
@@ -344,4 +342,31 @@ fn preserves_existing_keys_when_binding_fails() {
     assert_eq!(manager.len(), 1);
     assert_eq!(manager.active_key_id(), Some("existing-key"));
     assert_eq!(manager.get("existing-key").unwrap(), &[99u8; 32]);
+}
+
+#[test]
+fn rejects_vault_change_between_binding_and_key_loading() {
+    let nonce = [8u8; 24];
+    let session = authenticated_provider(
+        all_permissions(),
+        ProviderPermission::ReadKeyIds,
+        &nonce,
+        &ASSERTION_KEY,
+        BINDING_KEY,
+    );
+    let source = SwitchingVaultProvider {
+        vault_queries: AtomicUsize::new(0),
+        binding_key: BINDING_KEY,
+    };
+    let mut manager = KeyManager::new();
+    manager
+        .insert("existing-key".to_owned(), [99u8; 32])
+        .unwrap();
+    manager.set_active("existing-key").unwrap();
+
+    assert!(session.load_key_manager(&mut manager, &source).is_err());
+    assert_eq!(manager.len(), 1);
+    assert_eq!(manager.active_key_id(), Some("existing-key"));
+    assert_eq!(manager.get("existing-key").unwrap(), &[99u8; 32]);
+    assert!(!manager.contains("attacker-key"));
 }

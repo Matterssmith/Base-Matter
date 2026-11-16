@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Authenticated Encryption
  *
@@ -7,19 +6,13 @@
  */
 
 use anyhow::{bail, Context, Result};
-use base64::{
-    engine::general_purpose::URL_SAFE_NO_PAD,
-    Engine,
-};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use chacha20poly1305::{
     aead::{Aead, AeadCore, KeyInit, OsRng, Payload},
     XChaCha20Poly1305, XNonce,
 };
 use serde::{Deserialize, Serialize};
-use time::{
-    format_description::well_known::Rfc3339,
-    OffsetDateTime,
-};
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 use crate::security::key_manager::KeyManager;
 
@@ -51,18 +44,10 @@ pub struct EncryptedEnvelope {
     pub created_at: String,
 }
 
-fn associated_data(
-    envelope_id: &str,
-    scope: &str,
-    record_type: &str,
-    key_id: &str,
-) -> Vec<u8> {
+fn associated_data(envelope_id: &str, scope: &str, record_type: &str, key_id: &str) -> Vec<u8> {
     format!(
         "matter-vault:v1\0{}\0{}\0{}\0{}",
-        envelope_id,
-        scope,
-        record_type,
-        key_id
+        envelope_id, scope, record_type, key_id
     )
     .into_bytes()
 }
@@ -139,8 +124,7 @@ pub fn validate_envelope(envelope: &EncryptedEnvelope) -> Result<()> {
         bail!("Invalid nonce length");
     }
 
-    let ciphertext =
-        decode_canonical_base64(&envelope.ciphertext, "ciphertext")?;
+    let ciphertext = decode_canonical_base64(&envelope.ciphertext, "ciphertext")?;
 
     if ciphertext.len() < TAG_LENGTH {
         bail!("Ciphertext is too short");
@@ -170,12 +154,7 @@ pub fn encrypt(
     let cipher = XChaCha20Poly1305::new(key.into());
     let nonce = XChaCha20Poly1305::generate_nonce(&mut OsRng);
 
-    let aad = associated_data(
-        envelope_id,
-        scope,
-        record_type,
-        key_id,
-    );
+    let aad = associated_data(envelope_id, scope, record_type, key_id);
 
     let ciphertext = cipher
         .encrypt(
@@ -205,16 +184,12 @@ pub fn encrypt(
 }
 
 /// Validates and decrypts an authenticated envelope.
-pub fn decrypt(
-    envelope: &EncryptedEnvelope,
-    key: &[u8; 32],
-) -> Result<Vec<u8>> {
+pub fn decrypt(envelope: &EncryptedEnvelope, key: &[u8; 32]) -> Result<Vec<u8>> {
     validate_envelope(envelope)?;
 
     let nonce_bytes = decode_canonical_base64(&envelope.nonce, "nonce")?;
 
-    let ciphertext =
-        decode_canonical_base64(&envelope.ciphertext, "ciphertext")?;
+    let ciphertext = decode_canonical_base64(&envelope.ciphertext, "ciphertext")?;
 
     let nonce: [u8; NONCE_LENGTH] = nonce_bytes
         .try_into()
@@ -263,10 +238,7 @@ pub fn encrypt_with_manager(
 }
 
 /// Decrypts an envelope using the key identified by its key_id.
-pub fn decrypt_with_manager(
-    envelope: &EncryptedEnvelope,
-    manager: &KeyManager,
-) -> Result<Vec<u8>> {
+pub fn decrypt_with_manager(envelope: &EncryptedEnvelope, manager: &KeyManager) -> Result<Vec<u8>> {
     validate_envelope(envelope)?;
 
     let key = manager.get(&envelope.key_id)?;

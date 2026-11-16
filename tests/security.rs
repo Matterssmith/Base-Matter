@@ -5,16 +5,8 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
-use base64::{
-    engine::general_purpose::URL_SAFE_NO_PAD,
-    Engine,
-};
-use matter_base::security::{
-    decrypt,
-    encrypt,
-    validate_envelope,
-    EncryptedEnvelope,
-};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use matter_base::security::{decrypt, encrypt, validate_envelope, EncryptedEnvelope};
 
 const ENVELOPE_ID: &str = "test-envelope-001";
 const SCOPE: &str = "test-application";
@@ -58,8 +50,7 @@ fn encryption_and_decryption_roundtrip() {
     )
     .expect("Encryption should succeed");
 
-    let decrypted = decrypt(&envelope, &test_key())
-        .expect("Decryption should succeed");
+    let decrypted = decrypt(&envelope, &test_key()).expect("Decryption should succeed");
 
     assert_eq!(decrypted, plaintext);
 }

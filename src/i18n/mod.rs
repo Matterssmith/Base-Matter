@@ -1,4 +1,3 @@
-
 use std::collections::HashMap;
 use std::sync::RwLock;
 
@@ -16,12 +15,10 @@ impl Translator {
     }
 
     pub fn set_locale(&self, locale: impl Into<String>) {
-        let mut current = self
-            .locale
-            .write()
-            .expect("Translator lock poisoned");
+        let locale = locale.into();
+        let mut current = self.locale.write().expect("Translator lock poisoned");
 
-        *current = locale.into();
+        *current = locale;
     }
 
     pub fn locale(&self) -> String {
@@ -31,26 +28,17 @@ impl Translator {
             .clone()
     }
 
-    pub fn register(
-        &self,
-        locale: impl Into<String>,
-        translations: HashMap<String, String>,
-    ) {
-        let mut catalogs = self
-            .catalogs
-            .write()
-            .expect("Translator lock poisoned");
+    pub fn register(&self, locale: impl Into<String>, translations: HashMap<String, String>) {
+        let locale = locale.into();
+        let mut catalogs = self.catalogs.write().expect("Translator lock poisoned");
 
-        catalogs.insert(locale.into(), translations);
+        catalogs.insert(locale, translations);
     }
 
     pub fn translate(&self, key: &str) -> String {
         let locale = self.locale();
 
-        let catalogs = self
-            .catalogs
-            .read()
-            .expect("Translator lock poisoned");
+        let catalogs = self.catalogs.read().expect("Translator lock poisoned");
 
         catalogs
             .get(&locale)
@@ -60,10 +48,7 @@ impl Translator {
     }
 
     pub fn contains(&self, locale: &str, key: &str) -> bool {
-        let catalogs = self
-            .catalogs
-            .read()
-            .expect("Translator lock poisoned");
+        let catalogs = self.catalogs.read().expect("Translator lock poisoned");
 
         catalogs
             .get(locale)

@@ -1,45 +1,17 @@
-# Matter Base
+# Matter-Base
 
-Reusable core infrastructure for the Matterssmith ecosystem.
+Matter-Base is a Rust library under development for reusable infrastructure
+in the Matterssmith ecosystem. Its current implementation and limitations are
+documented in [`README.md`](README.md) and
+[`docs/DEVELOPMENT_STATUS.md`](docs/DEVELOPMENT_STATUS.md).
 
-Matter Base is the public foundation used by applications and
-services belonging to the Matterssmith ecosystem.
+Applications are intended to depend on Matter-Base through public contracts.
+The crate currently provides a runtime/context foundation, in-memory events
+and typed services, translation lookup, SQLite legal-consent storage, and
+security primitives/provider contracts. It does not yet provide bot
+registration, application users, roles/permissions, routing, sockets, plugin
+execution, or sandbox isolation.
 
-It provides reusable infrastructure without containing the
-business logic of individual applications.
+Repository: <https://github.com/Matterssmith/Matter-Base>
 
-## Responsibilities
-
-- Runtime foundation
-- Application context
-- Configuration management
-- Logging
-- Lifecycle foundation
-- Service registry
-- Event system
-- Internationalization foundation
-- Module contracts
-
-## Architecture
-
-Matter Base is designed as an independent library.
-
-Applications consume Matter Base as a dependency.
-
-Matter Base does not depend on Matter Bot, Matter Web,
-Matter AI, Matter API, or any other ecosystem application.
-
-## Repository
-
-https://github.com/matterssmith-net/Matter-Base
-
-## Usage
-
-Add Matter Base to a Rust project:
-
-```toml
-[dependencies]
-matter-base = {
-    git = "https://github.com/matterssmith-net/Matter-Base",
-    branch = "matter"
-}
+Development branch: `matter-beta`.

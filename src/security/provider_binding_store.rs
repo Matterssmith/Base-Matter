@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Provider Binding Store
  *
@@ -21,11 +20,7 @@ use zeroize::Zeroizing;
 /// variables públicas ni datos proporcionados por el solicitante.
 pub trait ProviderBindingStore: Send + Sync {
     /// Recupera la clave asociada exactamente al proveedor y Vault.
-    fn load_binding_key(
-        &self,
-        provider_id: &str,
-        vault_id: &str,
-    ) -> Result<Zeroizing<[u8; 32]>>;
+    fn load_binding_key(&self, provider_id: &str, vault_id: &str) -> Result<Zeroizing<[u8; 32]>>;
 }
 
 /// Resuelve claves de vínculo para identidades previamente autenticadas.
@@ -56,9 +51,7 @@ impl ProviderBindingResolver {
         Self::validate_identifier(provider_id)?;
         Self::validate_identifier(vault_id)?;
 
-        let binding_key = self
-            .store
-            .load_binding_key(provider_id, vault_id)?;
+        let binding_key = self.store.load_binding_key(provider_id, vault_id)?;
 
         if binding_key.iter().all(|byte| *byte == 0) {
             bail!("Provider binding key is invalid");
@@ -68,10 +61,7 @@ impl ProviderBindingResolver {
     }
 
     fn validate_identifier(value: &str) -> Result<()> {
-        if value.trim().is_empty()
-            || value.len() > 128
-            || value.chars().any(char::is_control)
-        {
+        if value.trim().is_empty() || value.len() > 128 || value.chars().any(char::is_control) {
             bail!("Invalid provider binding identifier");
         }
 
@@ -97,9 +87,7 @@ mod tests {
             provider_id: &str,
             vault_id: &str,
         ) -> Result<Zeroizing<[u8; 32]>> {
-            if provider_id != self.expected_provider
-                || vault_id != self.expected_vault
-            {
+            if provider_id != self.expected_provider || vault_id != self.expected_vault {
                 bail!("Provider binding not found");
             }
 
@@ -108,9 +96,7 @@ mod tests {
     }
 
     fn test_identity() -> ProviderIdentity {
-        let permissions = HashSet::from([
-            ProviderPermission::ReadKeyIds,
-        ]);
+        let permissions = HashSet::from([ProviderPermission::ReadKeyIds]);
 
         ProviderIdentity::from_verified_assertion(
             "matter-vault".to_owned(),
@@ -146,9 +132,7 @@ mod tests {
     fn rejects_unknown_provider_or_vault() {
         let resolver = test_resolver([9; 32]);
 
-        let permissions = HashSet::from([
-            ProviderPermission::ReadKeyIds,
-        ]);
+        let permissions = HashSet::from([ProviderPermission::ReadKeyIds]);
 
         let identity = ProviderIdentity::from_verified_assertion(
             "unknown-provider".to_owned(),
@@ -157,9 +141,7 @@ mod tests {
         )
         .expect("test identity must be valid");
 
-        assert!(
-            resolver.resolve_for_identity(&identity).is_err()
-        );
+        assert!(resolver.resolve_for_identity(&identity).is_err());
     }
 
     #[test]
@@ -167,8 +149,6 @@ mod tests {
         let resolver = test_resolver([0; 32]);
         let identity = test_identity();
 
-        assert!(
-            resolver.resolve_for_identity(&identity).is_err()
-        );
+        assert!(resolver.resolve_for_identity(&identity).is_err());
     }
 }

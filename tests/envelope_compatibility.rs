@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Encrypted Envelope Compatibility Tests
  *
@@ -6,16 +5,8 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
-use base64::{
-    engine::general_purpose::URL_SAFE_NO_PAD,
-    Engine,
-};
-use matter_base::security::{
-    decrypt,
-    encrypt,
-    validate_envelope,
-    EncryptedEnvelope,
-};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use matter_base::security::{decrypt, encrypt, validate_envelope, EncryptedEnvelope};
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 
@@ -47,8 +38,7 @@ fn create_envelope() -> EncryptedEnvelope {
 }
 
 fn serialized_envelope() -> Value {
-    serde_json::to_value(create_envelope())
-        .expect("Envelope serialization should succeed")
+    serde_json::to_value(create_envelope()).expect("Envelope serialization should succeed")
 }
 
 #[test]
@@ -59,8 +49,7 @@ fn serialized_envelope_contains_exact_schema_fields() {
         .as_object()
         .expect("Envelope must serialize as a JSON object");
 
-    let actual: BTreeSet<String> =
-        object.keys().cloned().collect();
+    let actual: BTreeSet<String> = object.keys().cloned().collect();
 
     let expected: BTreeSet<String> = [
         "format_version",
@@ -85,24 +74,16 @@ fn serialized_envelope_uses_schema_constants() {
     let value = serialized_envelope();
 
     assert_eq!(value["format_version"], json!(1));
-    assert_eq!(
-        value["algorithm"],
-        json!("XChaCha20-Poly1305")
-    );
+    assert_eq!(value["algorithm"], json!("XChaCha20-Poly1305"));
 
-    assert_eq!(
-        value["record_type"],
-        json!("configuration")
-    );
+    assert_eq!(value["record_type"], json!("configuration"));
 }
 
 #[test]
 fn serialized_nonce_matches_schema_encoding() {
     let value = serialized_envelope();
 
-    let nonce = value["nonce"]
-        .as_str()
-        .expect("Nonce must be a string");
+    let nonce = value["nonce"].as_str().expect("Nonce must be a string");
 
     assert_eq!(nonce.len(), 32);
     assert!(!nonce.contains('='));
@@ -147,12 +128,10 @@ fn serialized_timestamp_uses_rfc3339() {
 fn envelope_json_roundtrip_preserves_all_fields() {
     let original = create_envelope();
 
-    let json = serde_json::to_string(&original)
-        .expect("Serialization should succeed");
+    let json = serde_json::to_string(&original).expect("Serialization should succeed");
 
     let restored: EncryptedEnvelope =
-        serde_json::from_str(&json)
-            .expect("Deserialization should succeed");
+        serde_json::from_str(&json).expect("Deserialization should succeed");
 
     assert_eq!(original.format_version, restored.format_version);
     assert_eq!(original.envelope_id, restored.envelope_id);
@@ -171,15 +150,12 @@ fn envelope_json_roundtrip_preserves_all_fields() {
 fn restored_envelope_can_decrypt_original_plaintext() {
     let original = create_envelope();
 
-    let json = serde_json::to_string(&original)
-        .expect("Serialization should succeed");
+    let json = serde_json::to_string(&original).expect("Serialization should succeed");
 
     let restored: EncryptedEnvelope =
-        serde_json::from_str(&json)
-            .expect("Deserialization should succeed");
+        serde_json::from_str(&json).expect("Deserialization should succeed");
 
-    let plaintext = decrypt(&restored, &test_key())
-        .expect("Restored envelope should decrypt");
+    let plaintext = decrypt(&restored, &test_key()).expect("Restored envelope should decrypt");
 
     assert_eq!(plaintext, test_plaintext());
 }
@@ -190,8 +166,7 @@ fn unknown_json_fields_are_rejected() {
 
     value["unexpected_field"] = json!("not-allowed");
 
-    let result =
-        serde_json::from_value::<EncryptedEnvelope>(value);
+    let result = serde_json::from_value::<EncryptedEnvelope>(value);
 
     assert!(result.is_err());
 }
@@ -218,13 +193,9 @@ fn missing_required_fields_are_rejected() {
             .expect("Envelope must be an object")
             .remove(field);
 
-        let result =
-            serde_json::from_value::<EncryptedEnvelope>(value);
+        let result = serde_json::from_value::<EncryptedEnvelope>(value);
 
-        assert!(
-            result.is_err(),
-            "Missing field must be rejected: {field}"
-        );
+        assert!(result.is_err(), "Missing field must be rejected: {field}");
     }
 }
 
@@ -233,8 +204,7 @@ fn invalid_json_field_types_are_rejected() {
     let mut value = serialized_envelope();
     value["format_version"] = json!("1");
 
-    let result =
-        serde_json::from_value::<EncryptedEnvelope>(value);
+    let result = serde_json::from_value::<EncryptedEnvelope>(value);
 
     assert!(result.is_err());
 }
@@ -245,8 +215,7 @@ fn unsupported_record_type_is_rejected_after_deserialization() {
     value["record_type"] = json!("unknown");
 
     let envelope: EncryptedEnvelope =
-        serde_json::from_value(value)
-            .expect("JSON structure should deserialize");
+        serde_json::from_value(value).expect("JSON structure should deserialize");
 
     assert!(validate_envelope(&envelope).is_err());
 }
@@ -257,8 +226,7 @@ fn unsupported_algorithm_is_rejected_after_deserialization() {
     value["algorithm"] = json!("AES-256-GCM");
 
     let envelope: EncryptedEnvelope =
-        serde_json::from_value(value)
-            .expect("JSON structure should deserialize");
+        serde_json::from_value(value).expect("JSON structure should deserialize");
 
     assert!(validate_envelope(&envelope).is_err());
 }
@@ -269,8 +237,7 @@ fn invalid_nonce_is_rejected_after_deserialization() {
     value["nonce"] = json!("invalid");
 
     let envelope: EncryptedEnvelope =
-        serde_json::from_value(value)
-            .expect("JSON structure should deserialize");
+        serde_json::from_value(value).expect("JSON structure should deserialize");
 
     assert!(validate_envelope(&envelope).is_err());
 }
@@ -281,8 +248,7 @@ fn invalid_timestamp_is_rejected_after_deserialization() {
     value["created_at"] = json!("not-a-date");
 
     let envelope: EncryptedEnvelope =
-        serde_json::from_value(value)
-            .expect("JSON structure should deserialize");
+        serde_json::from_value(value).expect("JSON structure should deserialize");
 
     assert!(validate_envelope(&envelope).is_err());
 }

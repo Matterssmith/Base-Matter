@@ -1,4 +1,3 @@
-
 /*!
  * Pruebas: Legal & Consent Manager
  *
@@ -9,12 +8,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
-use matter_base::{
-    ConsentDecision,
-    LegalDocument,
-    LegalDocumentType,
-    LegalStore,
-};
+use matter_base::{ConsentDecision, LegalDocument, LegalDocumentType, LegalStore};
 
 fn create_document(
     document_id: &str,
@@ -68,12 +62,14 @@ fn accepted_terms_allow_access() {
         .is_access_allowed("user-002", "matter-base", "es")
         .unwrap());
 
-    store.record_decision(
-        "user-002",
-        "base-terms-1.0.0-es",
-        ConsentDecision::Accepted,
-        Some("test"),
-    ).unwrap();
+    store
+        .record_decision(
+            "user-002",
+            "base-terms-1.0.0-es",
+            ConsentDecision::Accepted,
+            Some("test"),
+        )
+        .unwrap();
 
     assert!(store
         .is_access_allowed("user-002", "matter-base", "es")
@@ -87,12 +83,14 @@ fn declined_terms_block_access() {
     store.register_user("user-003").unwrap();
     store.register_document(&create_terms()).unwrap();
 
-    store.record_decision(
-        "user-003",
-        "base-terms-1.0.0-es",
-        ConsentDecision::Declined,
-        None,
-    ).unwrap();
+    store
+        .record_decision(
+            "user-003",
+            "base-terms-1.0.0-es",
+            ConsentDecision::Declined,
+            None,
+        )
+        .unwrap();
 
     assert!(!store
         .is_access_allowed("user-003", "matter-base", "es")
@@ -106,32 +104,33 @@ fn latest_decline_replaces_previous_acceptance() {
     store.register_user("user-004").unwrap();
     store.register_document(&create_terms()).unwrap();
 
-    store.record_decision(
-        "user-004",
-        "base-terms-1.0.0-es",
-        ConsentDecision::Accepted,
-        None,
-    ).unwrap();
+    store
+        .record_decision(
+            "user-004",
+            "base-terms-1.0.0-es",
+            ConsentDecision::Accepted,
+            None,
+        )
+        .unwrap();
 
     assert!(store
         .is_access_allowed("user-004", "matter-base", "es")
         .unwrap());
 
-    store.record_decision(
-        "user-004",
-        "base-terms-1.0.0-es",
-        ConsentDecision::Declined,
-        None,
-    ).unwrap();
+    store
+        .record_decision(
+            "user-004",
+            "base-terms-1.0.0-es",
+            ConsentDecision::Declined,
+            None,
+        )
+        .unwrap();
 
     assert!(!store
         .is_access_allowed("user-004", "matter-base", "es")
         .unwrap());
 
-    assert_eq!(
-        store.decision_history("user-004").unwrap().len(),
-        2
-    );
+    assert_eq!(store.decision_history("user-004").unwrap().len(), 2);
 }
 
 #[test]
@@ -144,9 +143,7 @@ fn missing_required_documents_block_access() {
         .is_access_allowed("user-005", "matter-base", "es")
         .unwrap());
 
-    assert!(!store
-        .has_required_documents("matter-base", "es")
-        .unwrap());
+    assert!(!store.has_required_documents("matter-base", "es").unwrap());
 }
 
 #[test]
@@ -205,12 +202,14 @@ fn invalid_decision_for_document_type_is_rejected() {
     store.register_user("user-006").unwrap();
     store.register_document(&create_terms()).unwrap();
 
-    assert!(store.record_decision(
-        "user-006",
-        "base-terms-1.0.0-es",
-        ConsentDecision::Granted,
-        None,
-    ).is_err());
+    assert!(store
+        .record_decision(
+            "user-006",
+            "base-terms-1.0.0-es",
+            ConsentDecision::Granted,
+            None,
+        )
+        .is_err());
 }
 
 #[test]
@@ -228,19 +227,23 @@ fn privacy_notice_requires_acknowledgement() {
 
     store.register_document(&privacy).unwrap();
 
-    assert!(store.record_decision(
-        "user-007",
-        "privacy-1.0.0-es",
-        ConsentDecision::Accepted,
-        None,
-    ).is_err());
+    assert!(store
+        .record_decision(
+            "user-007",
+            "privacy-1.0.0-es",
+            ConsentDecision::Accepted,
+            None,
+        )
+        .is_err());
 
-    store.record_decision(
-        "user-007",
-        "privacy-1.0.0-es",
-        ConsentDecision::Acknowledged,
-        None,
-    ).unwrap();
+    store
+        .record_decision(
+            "user-007",
+            "privacy-1.0.0-es",
+            ConsentDecision::Acknowledged,
+            None,
+        )
+        .unwrap();
 }
 
 #[test]
@@ -259,19 +262,23 @@ fn optional_consent_does_not_block_general_access() {
 
     store.register_document(&ai_consent).unwrap();
 
-    store.record_decision(
-        "user-008",
-        "base-terms-1.0.0-es",
-        ConsentDecision::Accepted,
-        None,
-    ).unwrap();
+    store
+        .record_decision(
+            "user-008",
+            "base-terms-1.0.0-es",
+            ConsentDecision::Accepted,
+            None,
+        )
+        .unwrap();
 
-    store.record_decision(
-        "user-008",
-        "ai-training-1.0.0-es",
-        ConsentDecision::Declined,
-        None,
-    ).unwrap();
+    store
+        .record_decision(
+            "user-008",
+            "ai-training-1.0.0-es",
+            ConsentDecision::Declined,
+            None,
+        )
+        .unwrap();
 
     assert!(store
         .is_access_allowed("user-008", "matter-base", "es")
@@ -293,31 +300,37 @@ fn consent_can_be_withdrawn_after_grant() {
 
     store.register_document(&consent).unwrap();
 
-    assert!(store.record_decision(
-        "user-009",
-        "ai-training-1.0.0-es",
-        ConsentDecision::Withdrawn,
-        None,
-    ).is_err());
+    assert!(store
+        .record_decision(
+            "user-009",
+            "ai-training-1.0.0-es",
+            ConsentDecision::Withdrawn,
+            None,
+        )
+        .is_err());
 
-    store.record_decision(
-        "user-009",
-        "ai-training-1.0.0-es",
-        ConsentDecision::Granted,
-        None,
-    ).unwrap();
+    store
+        .record_decision(
+            "user-009",
+            "ai-training-1.0.0-es",
+            ConsentDecision::Granted,
+            None,
+        )
+        .unwrap();
 
-    store.record_decision(
-        "user-009",
-        "ai-training-1.0.0-es",
-        ConsentDecision::Withdrawn,
-        None,
-    ).unwrap();
+    store
+        .record_decision(
+            "user-009",
+            "ai-training-1.0.0-es",
+            ConsentDecision::Withdrawn,
+            None,
+        )
+        .unwrap();
 
-    let latest = store.latest_decision(
-        "user-009",
-        "ai-training-1.0.0-es",
-    ).unwrap().unwrap();
+    let latest = store
+        .latest_decision("user-009", "ai-training-1.0.0-es")
+        .unwrap()
+        .unwrap();
 
     assert_eq!(latest.decision, "withdrawn");
     assert_eq!(store.decision_history("user-009").unwrap().len(), 2);
@@ -338,26 +351,32 @@ fn withdrawn_consent_cannot_be_withdrawn_twice() {
 
     store.register_document(&consent).unwrap();
 
-    store.record_decision(
-        "user-010",
-        "ai-training-2.0.0-es",
-        ConsentDecision::Granted,
-        None,
-    ).unwrap();
+    store
+        .record_decision(
+            "user-010",
+            "ai-training-2.0.0-es",
+            ConsentDecision::Granted,
+            None,
+        )
+        .unwrap();
 
-    store.record_decision(
-        "user-010",
-        "ai-training-2.0.0-es",
-        ConsentDecision::Withdrawn,
-        None,
-    ).unwrap();
+    store
+        .record_decision(
+            "user-010",
+            "ai-training-2.0.0-es",
+            ConsentDecision::Withdrawn,
+            None,
+        )
+        .unwrap();
 
-    assert!(store.record_decision(
-        "user-010",
-        "ai-training-2.0.0-es",
-        ConsentDecision::Withdrawn,
-        None,
-    ).is_err());
+    assert!(store
+        .record_decision(
+            "user-010",
+            "ai-training-2.0.0-es",
+            ConsentDecision::Withdrawn,
+            None,
+        )
+        .is_err());
 }
 
 #[test]
@@ -367,24 +386,28 @@ fn latest_decision_returns_last_record() {
     store.register_user("user-011").unwrap();
     store.register_document(&create_terms()).unwrap();
 
-    store.record_decision(
-        "user-011",
-        "base-terms-1.0.0-es",
-        ConsentDecision::Accepted,
-        Some("web"),
-    ).unwrap();
+    store
+        .record_decision(
+            "user-011",
+            "base-terms-1.0.0-es",
+            ConsentDecision::Accepted,
+            Some("web"),
+        )
+        .unwrap();
 
-    store.record_decision(
-        "user-011",
-        "base-terms-1.0.0-es",
-        ConsentDecision::Declined,
-        Some("mobile"),
-    ).unwrap();
+    store
+        .record_decision(
+            "user-011",
+            "base-terms-1.0.0-es",
+            ConsentDecision::Declined,
+            Some("mobile"),
+        )
+        .unwrap();
 
-    let latest = store.latest_decision(
-        "user-011",
-        "base-terms-1.0.0-es",
-    ).unwrap().unwrap();
+    let latest = store
+        .latest_decision("user-011", "base-terms-1.0.0-es")
+        .unwrap()
+        .unwrap();
 
     assert_eq!(latest.decision, "declined");
     assert_eq!(latest.platform.as_deref(), Some("mobile"));
@@ -396,12 +419,14 @@ fn unregistered_user_cannot_record_decisions() {
 
     store.register_document(&create_terms()).unwrap();
 
-    assert!(store.record_decision(
-        "unknown-user",
-        "base-terms-1.0.0-es",
-        ConsentDecision::Accepted,
-        None,
-    ).is_err());
+    assert!(store
+        .record_decision(
+            "unknown-user",
+            "base-terms-1.0.0-es",
+            ConsentDecision::Accepted,
+            None,
+        )
+        .is_err());
 }
 
 #[test]
@@ -411,21 +436,20 @@ fn document_can_be_deactivated() {
     store.register_user("user-012").unwrap();
     store.register_document(&create_terms()).unwrap();
 
-    store.set_document_active(
-        "base-terms-1.0.0-es",
-        false,
-    ).unwrap();
+    store
+        .set_document_active("base-terms-1.0.0-es", false)
+        .unwrap();
 
-    assert!(!store
-        .has_required_documents("matter-base", "es")
-        .unwrap());
+    assert!(!store.has_required_documents("matter-base", "es").unwrap());
 
-    assert!(store.record_decision(
-        "user-012",
-        "base-terms-1.0.0-es",
-        ConsentDecision::Accepted,
-        None,
-    ).is_err());
+    assert!(store
+        .record_decision(
+            "user-012",
+            "base-terms-1.0.0-es",
+            ConsentDecision::Accepted,
+            None,
+        )
+        .is_err());
 }
 
 #[test]
@@ -434,19 +458,15 @@ fn deactivated_document_can_be_reactivated() {
 
     store.register_document(&create_terms()).unwrap();
 
-    store.set_document_active(
-        "base-terms-1.0.0-es",
-        false,
-    ).unwrap();
+    store
+        .set_document_active("base-terms-1.0.0-es", false)
+        .unwrap();
 
-    store.set_document_active(
-        "base-terms-1.0.0-es",
-        true,
-    ).unwrap();
+    store
+        .set_document_active("base-terms-1.0.0-es", true)
+        .unwrap();
 
-    assert!(store
-        .has_required_documents("matter-base", "es")
-        .unwrap());
+    assert!(store.has_required_documents("matter-base", "es").unwrap());
 }
 
 #[test]
@@ -456,8 +476,8 @@ fn latest_decision_is_none_when_no_decision_exists() {
     store.register_user("user-014").unwrap();
     store.register_document(&create_terms()).unwrap();
 
-    assert!(store.latest_decision(
-        "user-014",
-        "base-terms-1.0.0-es",
-    ).unwrap().is_none());
+    assert!(store
+        .latest_decision("user-014", "base-terms-1.0.0-es",)
+        .unwrap()
+        .is_none());
 }

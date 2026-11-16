@@ -35,10 +35,7 @@ impl MatterRuntime {
     }
 
     /// Inicializa el Runtime usando una ruta legal personalizada.
-    pub fn open(
-        config: CoreConfig,
-        legal_database: impl AsRef<Path>,
-    ) -> Result<Self> {
+    pub fn open(config: CoreConfig, legal_database: impl AsRef<Path>) -> Result<Self> {
         let legal = LegalStore::open(legal_database)?;
 
         Ok(Self {
@@ -51,10 +48,7 @@ impl MatterRuntime {
     ///
     /// Útil para pruebas y para integraciones que administran
     /// explícitamente su almacenamiento.
-    pub fn with_legal_store(
-        config: CoreConfig,
-        legal: LegalStore,
-    ) -> Self {
+    pub fn with_legal_store(config: CoreConfig, legal: LegalStore) -> Self {
         Self {
             config,
             context: MatterContext::new(legal),
@@ -77,23 +71,11 @@ impl MatterRuntime {
         &self.config
     }
 
-    pub fn is_access_allowed(
-        &self,
-        user_id: &str,
-        scope: &str,
-        locale: &str,
-    ) -> Result<bool> {
-        self.context
-            .is_access_allowed(user_id, scope, locale)
+    pub fn is_access_allowed(&self, user_id: &str, scope: &str, locale: &str) -> Result<bool> {
+        self.context.is_access_allowed(user_id, scope, locale)
     }
 
-    pub fn ensure_access(
-        &self,
-        user_id: &str,
-        scope: &str,
-        locale: &str,
-    ) -> Result<()> {
-        self.context
-            .ensure_access(user_id, scope, locale)
+    pub fn ensure_access(&self, user_id: &str, scope: &str, locale: &str) -> Result<()> {
+        self.context.ensure_access(user_id, scope, locale)
     }
 }

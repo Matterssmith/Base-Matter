@@ -43,17 +43,11 @@ impl MatterContext {
         scope: &str,
         locale: &str,
     ) -> anyhow::Result<bool> {
-        self.legal
-            .is_access_allowed(user_id, scope, locale)
+        self.legal.is_access_allowed(user_id, scope, locale)
     }
 
     /// Rechaza el acceso cuando faltan requisitos legales.
-    pub fn ensure_access(
-        &self,
-        user_id: &str,
-        scope: &str,
-        locale: &str,
-    ) -> anyhow::Result<()> {
+    pub fn ensure_access(&self, user_id: &str, scope: &str, locale: &str) -> anyhow::Result<()> {
         if !self.is_access_allowed(user_id, scope, locale)? {
             anyhow::bail!("Legal requirements not satisfied");
         }

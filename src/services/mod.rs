@@ -30,10 +30,7 @@ impl ServiceRegistry {
     where
         T: Any + Send + Sync,
     {
-        let services = self
-            .services
-            .read()
-            .expect("ServiceRegistry lock poisoned");
+        let services = self.services.read().expect("ServiceRegistry lock poisoned");
 
         services
             .get(&TypeId::of::<T>())
@@ -45,10 +42,7 @@ impl ServiceRegistry {
     where
         T: Any + Send + Sync,
     {
-        let services = self
-            .services
-            .read()
-            .expect("ServiceRegistry lock poisoned");
+        let services = self.services.read().expect("ServiceRegistry lock poisoned");
 
         services.contains_key(&TypeId::of::<T>())
     }
@@ -75,10 +69,7 @@ impl ServiceRegistry {
     }
 
     pub fn len(&self) -> usize {
-        let services = self
-            .services
-            .read()
-            .expect("ServiceRegistry lock poisoned");
+        let services = self.services.read().expect("ServiceRegistry lock poisoned");
 
         services.len()
     }

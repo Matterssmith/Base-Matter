@@ -19,23 +19,15 @@ impl EventBus {
     where
         F: Fn(&str) + Send + Sync + 'static,
     {
-        let mut handlers = self
-            .handlers
-            .write()
-            .expect("EventBus lock poisoned");
+        let event = event.into();
+        let mut handlers = self.handlers.write().expect("EventBus lock poisoned");
 
-        handlers
-            .entry(event.into())
-            .or_default()
-            .push(Arc::new(handler));
+        handlers.entry(event).or_default().push(Arc::new(handler));
     }
 
     pub fn publish(&self, event: &str, payload: &str) {
         let handlers = {
-            let handlers = self
-                .handlers
-                .read()
-                .expect("EventBus lock poisoned");
+            let handlers = self.handlers.read().expect("EventBus lock poisoned");
 
             handlers.get(event).cloned().unwrap_or_default()
         };
@@ -46,28 +38,19 @@ impl EventBus {
     }
 
     pub fn listener_count(&self, event: &str) -> usize {
-        let handlers = self
-            .handlers
-            .read()
-            .expect("EventBus lock poisoned");
+        let handlers = self.handlers.read().expect("EventBus lock poisoned");
 
         handlers.get(event).map_or(0, Vec::len)
     }
 
     pub fn clear(&self, event: &str) {
-        let mut handlers = self
-            .handlers
-            .write()
-            .expect("EventBus lock poisoned");
+        let mut handlers = self.handlers.write().expect("EventBus lock poisoned");
 
         handlers.remove(event);
     }
 
     pub fn clear_all(&self) {
-        let mut handlers = self
-            .handlers
-            .write()
-            .expect("EventBus lock poisoned");
+        let mut handlers = self.handlers.write().expect("EventBus lock poisoned");
 
         handlers.clear();
     }

@@ -1,4 +1,3 @@
-
 /*!
  * Módulo: Legal & Consent Manager
  *
@@ -25,7 +24,7 @@
  */
 
 use anyhow::{anyhow, bail, Result};
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::Path;
@@ -154,7 +153,8 @@ impl LegalStore {
     /// Las tablas existentes se conservan. Los triggers se agregan
     /// mediante IF NOT EXISTS para permitir inicializaciones repetidas.
     fn initialize(&self) -> Result<()> {
-        let connection = self.connection
+        let connection = self
+            .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
 
@@ -258,7 +258,7 @@ impl LegalStore {
                     'Registered legal documents cannot be deleted'
                 );
             END;
-            "
+            ",
         )?;
 
         Ok(())
@@ -276,18 +276,9 @@ impl LegalStore {
                     LegalDocumentType::PrivacyNotice,
                     ConsentDecision::Acknowledged
                 )
-                | (
-                    LegalDocumentType::Consent,
-                    ConsentDecision::Granted
-                )
-                | (
-                    LegalDocumentType::Other,
-                    ConsentDecision::Accepted
-                )
-                | (
-                    LegalDocumentType::Other,
-                    ConsentDecision::Acknowledged
-                )
+                | (LegalDocumentType::Consent, ConsentDecision::Granted)
+                | (LegalDocumentType::Other, ConsentDecision::Accepted)
+                | (LegalDocumentType::Other, ConsentDecision::Acknowledged)
         );
 
         if !valid {
@@ -313,9 +304,7 @@ impl LegalStore {
             ),
             LegalDocumentType::Consent => matches!(
                 decision,
-                ConsentDecision::Granted
-                    | ConsentDecision::Declined
-                    | ConsentDecision::Withdrawn
+                ConsentDecision::Granted | ConsentDecision::Declined | ConsentDecision::Withdrawn
             ),
             LegalDocumentType::Other => matches!(
                 decision,
@@ -338,7 +327,8 @@ impl LegalStore {
             bail!("User ID cannot be empty");
         }
 
-        let connection = self.connection
+        let connection = self
+            .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
 
@@ -357,7 +347,8 @@ impl LegalStore {
 
     /// Comprueba si un usuario está registrado.
     pub fn user_exists(&self, user_id: &str) -> Result<bool> {
-        let connection = self.connection
+        let connection = self
+            .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
 
@@ -380,10 +371,7 @@ impl LegalStore {
     ///
     /// Un identificador existente no puede reutilizarse con
     /// contenido o metadatos diferentes.
-    pub fn register_document(
-        &self,
-        document: &LegalDocument,
-    ) -> Result<String> {
+    pub fn register_document(&self, document: &LegalDocument) -> Result<String> {
         if document.document_id.trim().is_empty()
             || document.scope.trim().is_empty()
             || document.version.trim().is_empty()
@@ -393,16 +381,15 @@ impl LegalStore {
             bail!("Document fields cannot be empty");
         }
 
-        Self::validate_required_decision(
-            &document.document_type,
-            &document.required_decision,
-        )?;
+        Self::validate_required_decision(&document.document_type, &document.required_decision)?;
 
         let hash = Self::hash_content(&document.content);
 
-        let connection = self.connection
+        let mut connection = self
+            .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
 
         let existing: Option<(
             String,
@@ -414,8 +401,9 @@ impl LegalStore {
             i64,
             String,
             i64,
-        )> = connection.query_row(
-            "
+        )> = transaction
+            .query_row(
+                "
             SELECT
                 scope,
                 document_type,
@@ -429,21 +417,22 @@ impl LegalStore {
             FROM legal_documents
             WHERE document_id = ?1
             ",
-            params![document.document_id],
-            |row| {
-                Ok((
-                    row.get(0)?,
-                    row.get(1)?,
-                    row.get(2)?,
-                    row.get(3)?,
-                    row.get(4)?,
-                    row.get(5)?,
-                    row.get(6)?,
-                    row.get(7)?,
-                    row.get(8)?,
-                ))
-            },
-        ).optional()?;
+                params![document.document_id],
+                |row| {
+                    Ok((
+                        row.get(0)?,
+                        row.get(1)?,
+                        row.get(2)?,
+                        row.get(3)?,
+                        row.get(4)?,
+                        row.get(5)?,
+                        row.get(6)?,
+                        row.get(7)?,
+                        row.get(8)?,
+                    ))
+                },
+            )
+            .optional()?;
 
         if let Some(existing) = existing {
             let expected_mandatory = document.mandatory as i64;
@@ -460,15 +449,14 @@ impl LegalStore {
                 && existing.8 == expected_active;
 
             if !matches {
-                bail!(
-                    "Document ID already exists with different metadata or content"
-                );
+                bail!("Document ID already exists with different metadata or content");
             }
 
+            transaction.commit()?;
             return Ok(hash);
         }
 
-        connection.execute(
+        transaction.execute(
             "
             INSERT INTO legal_documents (
                 document_id,
@@ -502,22 +490,21 @@ impl LegalStore {
             ],
         )?;
 
+        transaction.commit()?;
+
         Ok(hash)
     }
 
     /// Cambia únicamente el estado activo de un documento.
     ///
     /// El contenido, la versión y los metadatos permanecen inmutables.
-    pub fn set_document_active(
-        &self,
-        document_id: &str,
-        active: bool,
-    ) -> Result<()> {
+    pub fn set_document_active(&self, document_id: &str, active: bool) -> Result<()> {
         if document_id.trim().is_empty() {
             bail!("Document ID cannot be empty");
         }
 
-        let connection = self.connection
+        let connection = self
+            .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
 
@@ -553,11 +540,13 @@ impl LegalStore {
             bail!("Platform cannot be empty");
         }
 
-        let connection = self.connection
+        let mut connection = self
+            .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
 
-        let user_exists: bool = connection.query_row(
+        let user_exists: bool = transaction.query_row(
             "
             SELECT EXISTS(
                 SELECT 1
@@ -573,27 +562,30 @@ impl LegalStore {
             bail!("User is not registered");
         }
 
-        let document: Option<(String, String)> = connection.query_row(
-            "
+        let document: Option<(String, String)> = transaction
+            .query_row(
+                "
             SELECT content_hash, document_type
             FROM legal_documents
             WHERE document_id = ?1
               AND active = 1
             ",
-            params![document_id],
-            |row| Ok((row.get(0)?, row.get(1)?)),
-        ).optional()?;
+                params![document_id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()?;
 
-        let (document_hash, document_type) = document
-            .ok_or_else(|| anyhow!("Document not found or inactive"))?;
+        let (document_hash, document_type) =
+            document.ok_or_else(|| anyhow!("Document not found or inactive"))?;
 
         let document_type = LegalDocumentType::from_str(&document_type)?;
 
         Self::validate_decision(&document_type, &decision)?;
 
         if decision == ConsentDecision::Withdrawn {
-            let previous: Option<String> = connection.query_row(
-                "
+            let previous: Option<String> = transaction
+                .query_row(
+                    "
                 SELECT decision
                 FROM legal_decisions
                 WHERE user_id = ?1
@@ -601,18 +593,17 @@ impl LegalStore {
                 ORDER BY record_id DESC
                 LIMIT 1
                 ",
-                params![user_id, document_id],
-                |row| row.get(0),
-            ).optional()?;
+                    params![user_id, document_id],
+                    |row| row.get(0),
+                )
+                .optional()?;
 
             if previous.as_deref() != Some("granted") {
-                bail!(
-                    "Consent cannot be withdrawn without a previous grant"
-                );
+                bail!("Consent cannot be withdrawn without a previous grant");
             }
         }
 
-        connection.execute(
+        transaction.execute(
             "
             INSERT INTO legal_decisions (
                 user_id,
@@ -633,16 +624,15 @@ impl LegalStore {
             ],
         )?;
 
+        transaction.commit()?;
+
         Ok(())
     }
 
     /// Comprueba si existen documentos obligatorios activos.
-    pub fn has_required_documents(
-        &self,
-        scope: &str,
-        locale: &str,
-    ) -> Result<bool> {
-        let connection = self.connection
+    pub fn has_required_documents(&self, scope: &str, locale: &str) -> Result<bool> {
+        let connection = self
+            .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
 
@@ -664,78 +654,52 @@ impl LegalStore {
 
     /// Comprueba si se cumplen todos los documentos obligatorios.
     ///
+    /// El usuario y todos los requisitos se evalúan dentro de una única
+    /// sentencia SQLite para observar una instantánea coherente.
     /// Si no hay documentos obligatorios activos, devuelve false.
-    pub fn is_access_allowed(
-        &self,
-        user_id: &str,
-        scope: &str,
-        locale: &str,
-    ) -> Result<bool> {
-        let connection = self.connection
+    pub fn is_access_allowed(&self, user_id: &str, scope: &str, locale: &str) -> Result<bool> {
+        let connection = self
+            .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
 
-        let user_exists: bool = connection.query_row(
-            "
-            SELECT EXISTS(
-                SELECT 1
-                FROM legal_users
-                WHERE user_id = ?1
-            )
-            ",
-            params![user_id],
-            |row| row.get(0),
-        )?;
-
-        if !user_exists {
-            return Ok(false);
-        }
-
-        let required_count: i64 = connection.query_row(
-            "
-            SELECT COUNT(*)
-            FROM legal_documents
-            WHERE scope = ?1
-              AND locale = ?2
-              AND mandatory = 1
-              AND active = 1
-            ",
-            params![scope, locale],
-            |row| row.get(0),
-        )?;
-
-        if required_count == 0 {
-            return Ok(false);
-        }
-
-        let accepted_count: i64 = connection.query_row(
-            "
-            SELECT COUNT(*)
+        let (user_exists, required_count, accepted_count): (bool, i64, i64) = connection
+            .query_row(
+                "
+            SELECT
+                EXISTS(
+                    SELECT 1
+                    FROM legal_users
+                    WHERE user_id = ?3
+                ),
+                COUNT(*),
+                COALESCE(SUM(CASE WHEN
+                    EXISTS (
+                        SELECT 1
+                        FROM legal_decisions AS decisions
+                        WHERE decisions.user_id = ?3
+                          AND decisions.document_id = documents.document_id
+                          AND decisions.document_hash = documents.content_hash
+                          AND decisions.decision = documents.required_decision
+                          AND decisions.record_id = (
+                              SELECT MAX(latest.record_id)
+                              FROM legal_decisions AS latest
+                              WHERE latest.user_id = ?3
+                                AND latest.document_id = documents.document_id
+                          )
+                    )
+                THEN 1 ELSE 0 END), 0)
             FROM legal_documents AS documents
             WHERE documents.scope = ?1
               AND documents.locale = ?2
               AND documents.mandatory = 1
               AND documents.active = 1
-              AND EXISTS (
-                  SELECT 1
-                  FROM legal_decisions AS decisions
-                  WHERE decisions.user_id = ?3
-                    AND decisions.document_id = documents.document_id
-                    AND decisions.document_hash = documents.content_hash
-                    AND decisions.decision = documents.required_decision
-                    AND decisions.record_id = (
-                        SELECT MAX(latest.record_id)
-                        FROM legal_decisions AS latest
-                        WHERE latest.user_id = ?3
-                          AND latest.document_id = documents.document_id
-                    )
-              )
             ",
-            params![scope, locale, user_id],
-            |row| row.get(0),
-        )?;
+                params![scope, locale, user_id],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )?;
 
-        Ok(accepted_count == required_count)
+        Ok(user_exists && required_count > 0 && accepted_count == required_count)
     }
 
     /// Recupera la última decisión de un usuario sobre un documento.
@@ -744,12 +708,14 @@ impl LegalStore {
         user_id: &str,
         document_id: &str,
     ) -> Result<Option<ConsentRecord>> {
-        let connection = self.connection
+        let connection = self
+            .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
 
-        let record = connection.query_row(
-            "
+        let record = connection
+            .query_row(
+                "
             SELECT
                 record_id,
                 user_id,
@@ -764,29 +730,28 @@ impl LegalStore {
             ORDER BY record_id DESC
             LIMIT 1
             ",
-            params![user_id, document_id],
-            |row| {
-                Ok(ConsentRecord {
-                    record_id: row.get(0)?,
-                    user_id: row.get(1)?,
-                    document_id: row.get(2)?,
-                    document_hash: row.get(3)?,
-                    decision: row.get(4)?,
-                    platform: row.get(5)?,
-                    created_at: row.get(6)?,
-                })
-            },
-        ).optional()?;
+                params![user_id, document_id],
+                |row| {
+                    Ok(ConsentRecord {
+                        record_id: row.get(0)?,
+                        user_id: row.get(1)?,
+                        document_id: row.get(2)?,
+                        document_hash: row.get(3)?,
+                        decision: row.get(4)?,
+                        platform: row.get(5)?,
+                        created_at: row.get(6)?,
+                    })
+                },
+            )
+            .optional()?;
 
         Ok(record)
     }
 
     /// Recupera el historial completo de decisiones de un usuario.
-    pub fn decision_history(
-        &self,
-        user_id: &str,
-    ) -> Result<Vec<ConsentRecord>> {
-        let connection = self.connection
+    pub fn decision_history(&self, user_id: &str) -> Result<Vec<ConsentRecord>> {
+        let connection = self
+            .connection
             .lock()
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
 
@@ -803,23 +768,20 @@ impl LegalStore {
             FROM legal_decisions
             WHERE user_id = ?1
             ORDER BY record_id ASC
-            "
+            ",
         )?;
 
-        let rows = statement.query_map(
-            params![user_id],
-            |row| {
-                Ok(ConsentRecord {
-                    record_id: row.get(0)?,
-                    user_id: row.get(1)?,
-                    document_id: row.get(2)?,
-                    document_hash: row.get(3)?,
-                    decision: row.get(4)?,
-                    platform: row.get(5)?,
-                    created_at: row.get(6)?,
-                })
-            },
-        )?;
+        let rows = statement.query_map(params![user_id], |row| {
+            Ok(ConsentRecord {
+                record_id: row.get(0)?,
+                user_id: row.get(1)?,
+                document_id: row.get(2)?,
+                document_hash: row.get(3)?,
+                decision: row.get(4)?,
+                platform: row.get(5)?,
+                created_at: row.get(6)?,
+            })
+        })?;
 
         let mut records = Vec::new();
 

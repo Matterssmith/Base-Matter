@@ -1,4 +1,3 @@
-
 /*
  * Matter-Base — Provider Authenticator
  *
@@ -9,15 +8,11 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
-use crate::security::provider_identity::{
-    ProviderIdentity,
-    ProviderPermission,
-};
+use crate::security::provider_identity::{ProviderIdentity, ProviderPermission};
 use anyhow::{bail, Result};
 use chacha20poly1305::{
     aead::{Aead, KeyInit, Payload},
-    XChaCha20Poly1305,
-    XNonce,
+    XChaCha20Poly1305, XNonce,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -46,10 +41,7 @@ pub struct ProviderAuthenticator {
 }
 
 impl ProviderAuthenticator {
-    pub fn new(
-        expected_vault_id: String,
-        expected_audience: String,
-    ) -> Result<Self> {
+    pub fn new(expected_vault_id: String, expected_audience: String) -> Result<Self> {
         Self::validate_identifier(&expected_vault_id)?;
         Self::validate_identifier(&expected_audience)?;
 
@@ -74,10 +66,7 @@ impl ProviderAuthenticator {
         let cipher = XChaCha20Poly1305::new_from_slice(key)
             .map_err(|_| anyhow::anyhow!("Invalid authentication key"))?;
 
-        let aad = Self::associated_data(
-            &self.expected_vault_id,
-            &self.expected_audience,
-        );
+        let aad = Self::associated_data(&self.expected_vault_id, &self.expected_audience);
 
         let plaintext = cipher
             .decrypt(
@@ -87,12 +76,9 @@ impl ProviderAuthenticator {
                     aad: aad.as_bytes(),
                 },
             )
-            .map_err(|_| {
-                anyhow::anyhow!("Provider assertion authentication failed")
-            })?;
+            .map_err(|_| anyhow::anyhow!("Provider assertion authentication failed"))?;
 
-        let assertion: ProviderAssertion =
-            serde_json::from_slice(&plaintext)?;
+        let assertion: ProviderAssertion = serde_json::from_slice(&plaintext)?;
 
         self.validate_assertion(&assertion)?;
 
@@ -110,10 +96,7 @@ impl ProviderAuthenticator {
         Ok(identity)
     }
 
-    fn validate_assertion(
-        &mut self,
-        assertion: &ProviderAssertion,
-    ) -> Result<()> {
+    fn validate_assertion(&mut self, assertion: &ProviderAssertion) -> Result<()> {
         Self::validate_identifier(&assertion.provider_id)?;
         Self::validate_identifier(&assertion.vault_id)?;
         Self::validate_identifier(&assertion.audience)?;
@@ -128,9 +111,15 @@ impl ProviderAuthenticator {
         }
 
         let now = OffsetDateTime::now_utc().unix_timestamp();
+        let earliest_issued_at = now.saturating_sub(MAX_ASSERTION_LIFETIME + CLOCK_SKEW_SECONDS);
+        let latest_issued_at = now.saturating_add(CLOCK_SKEW_SECONDS);
 
-        if assertion.issued_at > now + CLOCK_SKEW_SECONDS {
+        if assertion.issued_at > latest_issued_at {
             bail!("Provider assertion issued in the future");
+        }
+
+        if assertion.issued_at < earliest_issued_at {
+            bail!("Provider assertion is too old");
         }
 
         if assertion.expires_at <= now {
@@ -141,16 +130,13 @@ impl ProviderAuthenticator {
             bail!("Invalid provider assertion lifetime");
         }
 
-        let lifetime = assertion.expires_at - assertion.issued_at;
+        let lifetime = assertion
+            .expires_at
+            .checked_sub(assertion.issued_at)
+            .ok_or_else(|| anyhow::anyhow!("Invalid provider assertion lifetime"))?;
 
         if lifetime > MAX_ASSERTION_LIFETIME {
             bail!("Provider assertion lifetime too long");
-        }
-
-        if now - assertion.issued_at
-            > MAX_ASSERTION_LIFETIME + CLOCK_SKEW_SECONDS
-        {
-            bail!("Provider assertion is too old");
         }
 
         self.used_assertions
@@ -206,10 +192,7 @@ impl ProviderAuthenticator {
 
         let plaintext = serde_json::to_vec(assertion)?;
 
-        let aad = Self::associated_data(
-            &assertion.vault_id,
-            &assertion.audience,
-        );
+        let aad = Self::associated_data(&assertion.vault_id, &assertion.audience);
 
         cipher
             .encrypt(
@@ -219,9 +202,7 @@ impl ProviderAuthenticator {
                     aad: aad.as_bytes(),
                 },
             )
-            .map_err(|_| {
-                anyhow::anyhow!("Provider assertion encryption failed")
-            })
+            .map_err(|_| anyhow::anyhow!("Provider assertion encryption failed"))
     }
 
     fn associated_data(vault_id: &str, audience: &str) -> String {
@@ -232,10 +213,7 @@ impl ProviderAuthenticator {
     }
 
     fn validate_identifier(value: &str) -> Result<()> {
-        if value.trim().is_empty()
-            || value.len() > 128
-            || value.chars().any(char::is_control)
-        {
+        if value.trim().is_empty() || value.len() > 128 || value.chars().any(char::is_control) {
             bail!("Invalid provider assertion identifier");
         }
 

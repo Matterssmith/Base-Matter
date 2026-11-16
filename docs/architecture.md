@@ -1,34 +1,85 @@
-# Matter Base Architecture
+# Matter-Base architecture
 
-## Purpose
+## Purpose and dependency direction
 
-Matter Base is the reusable foundation of the Matterssmith
-ecosystem.
+Matter-Base is intended to provide reusable, platform-independent Rust
+infrastructure to applications in the Matterssmith ecosystem. Applications may
+depend on Matter-Base; the core must not depend on Matter-Bot or a concrete
+messaging platform.
 
-It provides infrastructure consumed by other repositories.
+The intended full platform architecture is not yet present. This document
+separates the implemented crate from the planned capabilities so interfaces
+and diagrams do not imply that missing systems already work.
 
-## Dependency direction
+## Current crate structure
 
-Applications and services depend on Matter Base.
-
-Matter Base must never depend on individual applications.
-
+```text
+Public crate API (`src/lib.rs`)
+├── Core
+│   ├── CoreConfig
+│   ├── MatterRuntime
+│   └── MatterContext ── EventBus (in memory)
+│                     ├─ ServiceRegistry (in memory)
+│                     └─ LegalStore (SQLite)
+├── Translator (in memory)
+├── CoreModule trait (contract only)
+└── Security
+    ├── EncryptedEnvelope / KeyManager
+    ├── ProviderAuthenticator / ProviderAccessPolicy
+    └── KeyProvider / ProviderBindingStore contracts
 ```
-Matter Ecosystem
-       |
-       v
-  Applications
-       |
-       v
-   Matter Base
-       |
-       +-- Core
-       +-- Runtime
-       +-- Context
-       +-- Configuration
-       +-- Logger
-       +-- Services
-       +-- Events
-       +-- Modules
-       +-- i18n
-```
+
+`MatterRuntime::open` opens the SQLite legal store and constructs a context.
+`initialize` currently emits an informational log; it does not start managed
+modules or services. `CoreModule` defines initialize/start/stop methods, but
+there is no module registry or lifecycle coordinator. See the crate modules in
+[`src/`](../src/).
+
+The current event bus clones a listener list and releases its registry lock
+before invoking callbacks, so callbacks may subscribe or clear listeners
+reentrantly. Callbacks are synchronous; a panic propagates to the caller and
+prevents later callbacks in that publish operation from running.
+
+## Persistence and trust boundaries
+
+The legal subsystem persists legal documents and consent decisions in SQLite.
+Document registration and the read/validate/write path for consent decisions
+use immediate transactions, so concurrent independent database connections
+cannot both withdraw the same grant or observe a document-registration race
+between its duplicate check and insert. An access check uses one SQL statement
+to read the user and applicable document/decision state from one snapshot.
+The event bus, service registry, translation catalogs, and runtime config are
+in memory or caller supplied. There is no persistent bot, user, ownership,
+permission, socket, or plugin registry in this version.
+
+The security provider abstractions allow a caller to supply trusted key
+material and providers. They do not establish that an external Matter-Vault
+service is connected. There is no storage of WhatsApp sessions or external
+platform credentials in Matter-Base. Authenticated key loading checks that the
+Vault identity returned while staging keys still matches the authenticated
+identity before replacing the current key set.
+
+## Planned architecture (not implemented)
+
+The following systems are future work and must be designed behind stable
+contracts before applications consume them:
+
+- Bot family, release, and instance identity with durable registration.
+- Shared user identity with bot-scoped private data.
+- Ownership, roles, permissions, and audited authorization.
+- Platform-neutral router, command registry, middleware, and filters.
+- Control Plane, socket ownership, activation policy, and isolation.
+- Session/credential interfaces, services, connections, and messaging.
+- Plugin manifest validation, resource limits, and effective sandboxing.
+- Persistent recovery, migrations, and end-to-end integration tests.
+
+Matter-Bot and platform adapters remain separate consumers. No concrete
+WhatsApp, Telegram, or Discord implementation belongs in this crate.
+
+## Verification status
+
+The current automated suite exercises legal storage, encryption/key handling,
+provider-authentication contracts, and basic in-memory core components. It is
+not an end-to-end bot platform suite. Current stage classifications and exact
+verification results are maintained in
+[`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).
