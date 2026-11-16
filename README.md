@@ -27,7 +27,8 @@ contains a runtime/context foundation, in-memory event and service
 registries, translation lookup, a persistent bot identity registry, an
 optionally persistent shared-user registry with explicitly authorized external
 identity links and bot-scoped user data, a persistent legal-consent store, and
-cryptographic key/envelope and provider-authentication components. The bot
+cryptographic key/envelope and provider-authentication components, a command
+router, and persistent socket activation policies. The bot
 platform capabilities listed in the long-term architecture are not yet
 implemented. See [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
@@ -37,8 +38,8 @@ verified stage assessment.
 Matter-Base is intended to host reusable Rust capabilities consumed through
 public APIs. It must remain independent of Matter-Bot and platform adapters.
 This repository currently does **not** implement WhatsApp, Telegram, Discord,
-general authorization roles, command routing, socket control, plugin execution,
-or a sandbox.
+general authorization roles, network socket control, plugin execution,
+or a sandbox. Command routing and persistent activation policies are partial.
 
 Bot registration requires an owner ID. Consumers must derive actor IDs from
 authenticated requests before calling owner-management APIs. Owners can manage
@@ -66,6 +67,8 @@ service.
 | `core::context` | Shares event bus, typed service registry, legal store, bot registry, and user registry | Implemented at this scope |
 | `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; general roles remain pending |
 | `users` | Global application user IDs, explicit unique external identity links, and per-bot/user key-value data in memory or SQLite | Implemented with an injected `UserAuthorizer`; the application authenticates principals and enforces ownership and bot scope |
+| `commands` | Prefixes, canonical aliases, authorization, middleware and handlers | Partial; no durable command audit or socket dispatcher |
+| `activation` | SQLite owner-scoped power, group/socket policy overrides and atomic audit | Partial; trusted provisioning, no bot binding or network connections |
 | `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish`; `publish_checked` catches unwinding panics per listener, continues dispatch, and returns an error |
 | `services` | In-memory type-indexed service registration and retrieval | Basic; no lifecycle management |
 | `i18n` | In-memory translation catalogs and key fallback | Basic; no bundled catalogs or locale validation |
@@ -80,6 +83,8 @@ Matter-Base platform.
 
 ```text
 src/
+  activation.rs  Persistent socket activation policy and owner checks
+  commands.rs    Universal command routing
   bots/       Bot identity contracts and in-memory/SQLite registry
   users/      Shared users, explicit external identity links, scoped user data
   core/       Configuration, shared context, logging, runtime
@@ -154,13 +159,14 @@ platform credentials, and sessions out of the user data store.
   access checks require a `LegalPrincipal` backed by the consuming
   application's `LegalAuthorizer`. The application must authenticate the
   principal and authorize the requested action/resource; Matter-Base does not
-  authenticate platform identities or provide the shared user directory.
+  authenticate platform identities; the shared user directory is provided by `users`.
   Authorization failures are returned as a generic denial without forwarding
   policy-provider diagnostics.
 - The standard runtime persists only the legal store. Bot registrations and
   shared users have independent SQLite stores that must be explicitly injected
-  to survive restarts. Socket state, configuration, events, and service
-  metadata do not have persistence implementations here.
+  to survive restarts. Socket activation policies have a separate SQLite store in `activation`.
+  Network connections, configuration, events, and service metadata do not have
+  persistence implementations here.
 - Shared user data is a generic, bounded text value store. The consuming
   application must reject unauthorized owners and unknown bot instance IDs in
   its `UserAuthorizer`; the user store does not itself query the bot registry.
@@ -254,6 +260,16 @@ fn make_router() -> Result<CommandRouter> {
     Ok(router)
 }
 ```
+
+## Socket activation policies
+
+`activation::SocketActivationStore` persists socket ownership, operational power,
+and group/socket overrides with atomic audit writes. New sockets start powered
+off. When powered on, resolution uses Group > Socket > trusted global default >
+deny. Only the stored owner can change policies or read its audit history.
+The application must authenticate provisioning and actors; this store does not
+bind sockets to bot instances or platform sessions, and it is not yet wired into
+command dispatch. See [activation contracts](docs/activation.md).
 
 ## Roadmap boundary
 

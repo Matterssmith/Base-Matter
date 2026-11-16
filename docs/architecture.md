@@ -24,6 +24,7 @@ Public crate API (`src/lib.rs`)
 │                     ├─ ServiceRegistry (in memory)
 │                     ├─ UserRegistry (injected; memory or SQLite)
 │                     └─ LegalStore (SQLite)
+├── SocketActivationStore (SQLite policy/ownership/audit; no network connections)
 ├── CommandRouter (prefixes, aliases, injected authorization and middleware)
 ├── Translator (in memory)
 ├── CoreModule + runtime-owned ModuleManager
@@ -84,10 +85,10 @@ configure that store; this does not provide a distributed replay service.
 The following systems are future work and must be designed behind stable
 contracts before applications consume them:
 
-- Ownership, authorization, and audited registration control for bots.
+- General role and resource authorization beyond the existing bot owner/co-owner checks.
 - Ownership, roles, permissions, and audited authorization.
-- Platform-neutral router, command registry, middleware, and filters.
-- Control Plane, socket ownership, activation policy, and isolation.
+- Durable command audit and socket-aware dispatch beyond the existing command router.
+- Full Control Plane, socket/bot binding and networking; activation policy storage is implemented separately in `activation`.
 - Session/credential interfaces, services, connections, and messaging.
 - Plugin manifest validation, resource limits, and effective sandboxing.
 - Persistent recovery, migrations, and end-to-end integration tests.
@@ -102,3 +103,7 @@ provider-authentication contracts, and basic in-memory core components. It is
 not an end-to-end bot platform suite. Current stage classifications and exact
 verification results are maintained in
 [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).
+
+Socket activation policy storage is described in [activation contracts](activation.md).
+It provides durable ownership/power/overrides and atomic audits, but does not
+manage connection ownership or enforce activation in the command router yet.

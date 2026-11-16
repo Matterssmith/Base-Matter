@@ -12,6 +12,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
+pub mod activation;
 pub mod bots;
 pub mod commands;
 pub mod core;

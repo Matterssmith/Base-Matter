@@ -41,11 +41,11 @@ not ready for Matter-Bot.
 | Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates IDs, persists validated identities, and allocates unique names; owner-only transfer/removal, owner/co-owner-scoped identity reads and lists, co-owner operations bounded to 256, legacy recovery authorization, and audit history work. General role/resource authorization remains absent. |
 | Shared application users and bot data isolation | PARTIAL | `src/users` provides in-memory/SQLite global IDs, explicit unique external links, and bot/user/key-scoped text data with authorization hooks. A consuming application's `UserAuthorizer` must authenticate principals and verify bot existence/ownership; user storage does not consult the bot registry or implement general roles. |
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
-| Persistence and recovery | PARTIAL | SQLite persists bot identities, shared users/identity links/bot-scoped data, and legal documents/decisions. No config/socket/service persistence or ecosystem-wide migration coordinator; each persistent component has its own versioned schema. |
+| Persistence and recovery | PARTIAL | SQLite persists bot identities, shared users/identity links/bot-scoped data, and legal documents/decisions. No config/network-connection/service persistence or ecosystem-wide migration coordinator; each persistent component has its own versioned schema. |
 | Events and messaging | PARTIAL | Named synchronous in-memory event callbacks exist; no durable events or messaging contract. |
 | Router and command registry | PARTIAL | `CommandRouter` supports bounded prefixes/names/aliases/arguments, mandatory injected authorization, middleware, and synchronous handlers; no durable audit integration, Control Plane activation, or platform-specific parsing exists. |
 | Middleware, roles, permissions, authorization | PARTIAL | Bot owner/co-owner checks and injectable user/legal action/resource authorization contracts exist; no general role inheritance or socket/resource policy engine. |
-| Control Plane, sockets, activation | ABSENT | No implementation; socket ownership/policies cannot be verified. |
+| Control Plane, sockets, activation | PARTIAL | SQLite socket activation store provides owner checks, power, group/socket overrides, recovery and atomic audit. Bot binding, network lifecycle, control-prefix interception and router gating remain absent. |
 | Services and connections | PARTIAL | Typed in-memory service registry only; no connection manager or lifecycle. |
 | Plugins, extensions, sandbox | ABSENT | No manifest validation, isolation, or resource limits. |
 | Application audit log | ABSENT | Legal decisions are append-only; no general administrative audit system. |
@@ -732,3 +732,38 @@ links resolve.
 Owner/co-owner checkpoint `1a4750ca90572701192451d9cd635d6c3e9eb495` was pushed to
 `origin/matter-beta`; a subsequent fetch confirmed the same SHA. No promotion
 to `matter` occurred.
+
+## 2026-11-16 — Persistent activation prerequisite for WhatsApp
+
+- Branch: `matter-beta`; synchronized base: `77648da3658fed79cd6a18e7de10f4cadae70a13`.
+- Stage H corrections and prerequisite implementation remain in progress; H–L
+  and Matter-Base readiness are NOT complete.
+- Added `src/activation.rs`, `tests/activation.rs`, and `docs/activation.md`;
+  updated `src/lib.rs`, README, architecture and this ledger; no files deleted.
+- Implemented SQLite activation ownership, default power-off, group/socket
+  overrides, trusted global fallback, versioned transactional schema and atomic
+  policy/audit writes. Audit failure rolls back the state mutation. Corrupt
+  persisted policy values fail closed rather than interpreting any nonzero
+  integer as enabled.
+- Trusted application provisioning and actor authentication remain required.
+  There is no network connection, session storage, bot/socket binding, ownership
+  transfer, interchangeable backend or integrated command gate yet.
+- Executed `cargo fmt --all`, `cargo check --all-targets`, focused activation
+  tests (4 passed), full `cargo test` (218 passed, zero failed) and
+  `git diff --check` successfully after synchronization.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged. Corrected stale
+  claims that command routing and shared users were absent; added actual module
+  paths and activation limitations. Internal links were checked. Credits preserved.
+- Read-only GitHub inspection: Matterssmith/Matter-Baileys has only branch
+  `matter`, at `57226de377c1dfeecd9de49415fb593c8ac01936`, with only README.md
+  in its root. No runnable adapter is available there. No session was opened.
+- Exact next task: add authenticated bot/socket binding and a dispatch boundary
+  that intercepts control prefixes before normal routing and rejects normal
+  commands while powered off. Test owner denial, concurrent changes, persistence
+  and handler side effects before declaring that flow verified.
+- Continue with session/credential contracts, connections/messaging, persistent
+  command audit and remaining readiness criteria; real WhatsApp testing also
+  requires implementing the external adapter and linking a secondary test account.
+- To resume: read this ledger, inspect actual Git and instructions, preserve local
+  changes and ignored data, fetch/synchronize matter-beta, then continue the exact
+  next task. Existing legacy bot-registry stash is retained.
