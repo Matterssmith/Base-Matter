@@ -12,6 +12,7 @@ pub mod key_provider;
 pub mod provider_authenticator;
 pub mod provider_binding_store;
 pub mod provider_identity;
+pub mod provider_replay_store;
 
 pub use authenticated_provider::AuthenticatedProvider;
 
@@ -29,3 +30,8 @@ pub use provider_authenticator::{ProviderAssertion, ProviderAuthenticator};
 pub use provider_binding_store::{ProviderBindingResolver, ProviderBindingStore};
 
 pub use provider_identity::{ProviderAccessPolicy, ProviderIdentity, ProviderPermission};
+
+pub use provider_replay_store::{
+    InMemoryProviderAssertionReplayStore, ProviderAssertionReplayStore,
+    SqliteProviderAssertionReplayStore,
+};

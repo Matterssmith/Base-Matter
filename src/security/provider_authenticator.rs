@@ -9,13 +9,16 @@
  */
 
 use crate::security::provider_identity::{ProviderIdentity, ProviderPermission};
+use crate::security::provider_replay_store::{
+    InMemoryProviderAssertionReplayStore, ProviderAssertionReplayStore,
+};
 use anyhow::{bail, Result};
 use chacha20poly1305::{
     aead::{Aead, KeyInit, Payload},
     XChaCha20Poly1305, XNonce,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::sync::Arc;
 use time::OffsetDateTime;
 
 const MAX_ASSERTION_LIFETIME: i64 = 300;
@@ -39,18 +42,35 @@ pub struct ProviderAssertion {
 pub struct ProviderAuthenticator {
     expected_vault_id: String,
     expected_audience: String,
-    used_assertions: HashMap<String, i64>,
+    replay_store: Arc<dyn ProviderAssertionReplayStore>,
 }
 
 impl ProviderAuthenticator {
     pub fn new(expected_vault_id: String, expected_audience: String) -> Result<Self> {
+        Self::new_with_replay_store(
+            expected_vault_id,
+            expected_audience,
+            Arc::new(InMemoryProviderAssertionReplayStore::default()),
+        )
+    }
+
+    /// Creates an authenticator with an injected atomic replay store.
+    ///
+    /// Use a shared store when multiple verifier instances must reject the
+    /// same assertion IDs, or a SQLite store to retain replay records across
+    /// process restarts.
+    pub fn new_with_replay_store(
+        expected_vault_id: String,
+        expected_audience: String,
+        replay_store: Arc<dyn ProviderAssertionReplayStore>,
+    ) -> Result<Self> {
         Self::validate_identifier(&expected_vault_id)?;
         Self::validate_identifier(&expected_audience)?;
 
         Ok(Self {
             expected_vault_id,
             expected_audience,
-            used_assertions: HashMap::new(),
+            replay_store,
         })
     }
 
@@ -60,7 +80,7 @@ impl ProviderAuthenticator {
     /// El nonce debe ser único para cada cifrado realizado
     /// con la misma clave.
     pub fn authenticate(
-        &mut self,
+        &self,
         nonce: &[u8; 24],
         ciphertext: &[u8],
         key: &[u8; 32],
@@ -86,9 +106,18 @@ impl ProviderAuthenticator {
 
         let assertion: ProviderAssertion = serde_json::from_slice(&plaintext)?;
 
-        self.validate_assertion(&assertion)?;
+        let now = self.validate_assertion(&assertion)?;
 
         let permissions = Self::parse_permissions(&assertion.permissions)?;
+
+        self.replay_store.record_once(
+            &assertion.vault_id,
+            &assertion.audience,
+            &assertion.assertion_id,
+            assertion.expires_at,
+            now,
+            MAX_REPLAY_ENTRIES,
+        )?;
 
         let identity = ProviderIdentity::from_verified_assertion(
             assertion.provider_id,
@@ -96,13 +125,10 @@ impl ProviderAuthenticator {
             permissions,
         )?;
 
-        self.used_assertions
-            .insert(assertion.assertion_id, assertion.expires_at);
-
         Ok(identity)
     }
 
-    fn validate_assertion(&mut self, assertion: &ProviderAssertion) -> Result<()> {
+    fn validate_assertion(&self, assertion: &ProviderAssertion) -> Result<i64> {
         Self::validate_identifier(&assertion.provider_id)?;
         Self::validate_identifier(&assertion.vault_id)?;
         Self::validate_identifier(&assertion.audience)?;
@@ -145,18 +171,7 @@ impl ProviderAuthenticator {
             bail!("Provider assertion lifetime too long");
         }
 
-        self.used_assertions
-            .retain(|_, expires_at| *expires_at > now);
-
-        if self.used_assertions.contains_key(&assertion.assertion_id) {
-            bail!("Provider assertion replay detected");
-        }
-
-        if self.used_assertions.len() >= MAX_REPLAY_ENTRIES {
-            bail!("Provider replay cache is full");
-        }
-
-        Ok(())
+        Ok(now)
     }
 
     fn parse_permissions(

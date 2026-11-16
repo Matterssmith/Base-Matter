@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `0cc310f5f3483fc4ba3edd58175d8121f008e72c`
+- Latest confirmed checkpoint commit: `66252c1fddf79c96193a8528468d8ce7d5a2a90b`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `0cc310f5f3483fc4ba3edd58175d8121f008e72c`.
+  `66252c1fddf79c96193a8528468d8ce7d5a2a90b` before this work.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -49,7 +49,7 @@ not ready for Matter-Bot.
 | Plugins, extensions, sandbox | ABSENT | No manifest validation, isolation, or resource limits. |
 | Application audit log | ABSENT | Legal decisions are append-only; no general administrative audit system. |
 | Encryption/key/provider contracts | PARTIAL | Primitives and injection contracts have tests; no production key service integration or independent security audit. |
-| Provider assertion replay protection | PARTIAL | Replay IDs are bounded and tracked only in one in-memory authenticator; no restart or multi-process replay store. |
+| Provider assertion replay protection | PARTIAL | Default is in memory; an injectable SQLite store persists IDs and rejects duplicates across restarts/connections, but no distributed store exists. |
 | Provider input resource limits | PARTIAL | Assertions are capped at 16 KiB and provider key loads at 4,096 IDs; no general service/plugin resource limits exist. |
 | Matter-Vault | BLOCKED | Interfaces exist, but there is no live service integration or external verification. |
 | Public API stability / multi-language contracts | PARTIAL | Rust public exports exist; no compatibility policy, versioned external protocol, or SDK contracts. |
@@ -91,6 +91,11 @@ not ready for Matter-Bot.
 - Added fail-closed limits of 16 KiB for authenticated assertion ciphertexts
   and 4,096 key IDs per provider load. Oversized inputs are rejected before
   decryption or key material loading; regression tests pass.
+- Added an atomic `ProviderAssertionReplayStore` contract, bounded in-memory
+  implementation, and SQLite implementation. `ProviderAuthenticator` can
+  receive a shared store; SQLite replay rejection survives verifier and
+  process restarts. Added persistence, expiry, capacity, and cross-connection
+  tests.
 - Added this continuity record.
 - Preserved the exact project credit in the root README.
 
@@ -111,6 +116,9 @@ not ready for Matter-Bot.
   one SQL statement in `src/legal/mod.rs`; caller conversion handling changed
   in `src/events/mod.rs` and `src/i18n/mod.rs`; callback behavior is documented
   in `README.md` and `docs/architecture.md`.
+- Added for persistent replay protection: `src/security/provider_replay_store.rs`
+  and `tests/provider_replay_store.rs`; exported the contract and both stores
+  from `src/security/mod.rs`.
 - Modified by `cargo fmt --all` (formatting only):
   `src/core/config.rs`, `src/core/context.rs`, `src/core/logger.rs`,
   `src/core/mod.rs`, `src/core/runtime.rs`, `src/lib.rs`, `src/modules/mod.rs`,
@@ -119,7 +127,8 @@ not ready for Matter-Bot.
   `src/security/provider_identity.rs`,
   `src/services/mod.rs`, and test Rust files other than
   `tests/core.rs`, `tests/authenticated_key_provider.rs`, and
-  `tests/provider_authenticator.rs`.
+  `tests/provider_authenticator.rs`, `src/security/provider_replay_store.rs`,
+  and `tests/provider_replay_store.rs`.
 - Deleted: none.
 
 ## Verification results
@@ -136,8 +145,12 @@ After formatting, the following commands completed successfully:
 - EventBus/Translator panicking-conversion regression test — passed.
 - EventBus callback reentrant-subscription test — passed.
 - Oversized assertion and provider key-list tests — passed.
+- Provider replay-store integration tests — 4 passed, 0 failed.
 - Full `cargo test` after resource-limit changes — **151 passed, 0 failed**;
   doc tests: 0 passed, 0 failed.
+- Full `cargo test` with SQLite replay-store implementation — **155 passed, 0 failed**;
+  doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed;
+  `git diff --check` passed.
 - `git diff --check`
 - Local Markdown-link scan — 7 Markdown files scanned, all relative links
   resolved.
@@ -160,9 +173,9 @@ platform capabilities or a live external integration.
 - Problems corrected: documented current Rust crate, actual commands and APIs,
   implemented/pending boundaries, security persistence limitations, exact
   required credits, authenticated Vault revalidation, timestamp validation,
-  process-local replay tracking, synchronous event callback behavior, and
-  provider input size limits. The Matterssmith banner/heading identity has
-  been retained.
+  replay-store configuration and its SQLite persistence boundary, synchronous
+  event callback behavior, and provider input size limits. The Matterssmith
+  banner/heading identity has been retained.
 - Problems pending: component-by-component README examples cannot cover the
   absent subsystems; comprehensive release documentation waits for their
   implementation. No README was skipped.
@@ -175,14 +188,16 @@ platform capabilities or a live external integration.
   transactions, access checks use one snapshot, and the independent-connection
   withdrawal race is covered.
   Provider assertion time arithmetic now rejects malformed extremes without
-  overflow; replay tracking remains process-local and volatile. Caller string
+  overflow; replay tracking now supports SQLite persistence when configured.
+  The default constructor remains process-local. Caller string
   conversions now run outside EventBus/Translator write locks, and reentrant
   callback behavior is tested. Provider inputs have bounded size/count.
   These subsystems still need broader concurrency review. Callback panics
   propagate; no fallible callback contract exists.
   The first source/test pass found no `todo!`, `unimplemented!`, or production
   `panic!`, but did find lock `.expect` calls. The rest of the module audit
-  remains.
+  remains. SQLite replay storage now rejects duplicate assertions across
+  independent connections and verifier restarts; four focused tests pass.
 - I: **Not complete.** Added runtime legal-store close/reopen recovery and
   changing-provider-identity tests. Broad bot/authorization/socket/service
   integration and resilience tests cannot pass until those subsystems exist.
@@ -196,12 +211,12 @@ platform capabilities or a live external integration.
   remain outstanding.
 - Matter-Bot: **Blocked by unmet Matter-Base criteria. Do not start.**
 
-Checkpoint `0cc310f5f3483fc4ba3edd58175d8121f008e72c` was pushed to
-`origin/matter-beta` over authenticated SSH and then confirmed by `git fetch`.
-The next H/J audit corrections are being prepared for a separate checkpoint.
-No promotion to `matter` was made. Matter-Vault live verification is the only
-specifically identified external dependency; most remaining blockers are
-missing code and contracts in this repository, not external services.
+Checkpoint `66252c1fddf79c96193a8528468d8ce7d5a2a90b` was pushed to
+`origin/matter-beta` over authenticated SSH. Its head was fetched and confirmed
+before this replay-store work began. The persistent replay-store checkpoint is the current local change set and has not yet been committed or pushed. No promotion to `matter` was made. Matter-Vault live
+verification is the only specifically identified external dependency; most
+remaining blockers are missing code and contracts in this repository, not
+external services.
 
 ## Exact next task to resume
 
@@ -213,7 +228,7 @@ missing code and contracts in this repository, not external services.
    transaction/recovery behavior, and security-provider boundaries. Make
    targeted compatible corrections with behavior tests.
 4. Run the complete verification sequence after the above targeted tests, then
-   update the recorded results here. (Completed for this snapshot: 151 tests
+   update the recorded results here. (Completed for this snapshot: 155 tests
    passed.) Continue auditing SQLite operation error paths, then
    events/services/i18n lock and callback behavior. Add tests and make
    compatible fixes where defects are confirmed.

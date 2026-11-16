@@ -131,9 +131,10 @@ applications that manage storage separately can provide a `LegalStore` with
 - Authenticated key loading rechecks the Vault identity when the key set is
   staged; a mismatch is rejected before replacing the current key manager
   contents.
-- Provider assertion replay tracking is bounded and held in memory by one
-  `ProviderAuthenticator`; it is not shared across processes or retained over
-  restarts, so it is not sufficient as a distributed replay store.
+- `ProviderAuthenticator::new` uses a bounded in-memory replay store.
+  Applications can inject `SqliteProviderAssertionReplayStore` through
+  `new_with_replay_store` to reject assertion replays across verifier restarts
+  and independent database connections. It is not a distributed store.
 - Authenticated provider assertions are limited to 16 KiB, and a key provider
   may return at most 4,096 key IDs per load. Oversized inputs fail closed.
 - Never add platform credentials, WhatsApp sessions, master keys, or private
