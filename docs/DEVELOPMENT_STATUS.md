@@ -665,18 +665,23 @@ external services.
 - Added unit coverage for alias authorization, middleware order/rejection,
   unauthorized dispatch, duplicate names, size limits, and callback panics, as
   well as an integration test exercising the documented root API.
+- Added a cross-module flow test wiring `CommandRouter` authorization directly
+  to the real bot registry: one owner executes against its instance, another
+  owner's request is rejected before handler effects, and that owner can use
+  its own separate instance.
 - Command routing remains PARTIAL: durable audit records, platform-specific
   argument parsing, and Control Plane/socket activation are not integrated.
   The authorizer must verify authenticated actor, bot ownership, permissions,
   and operational activation.
 - After syncing with `origin/matter-beta` at
-  `d9f980cddcf2dda52555ebd178d89c1fef82a297`, format, all-target check, full
-  suite (213 passed, 0 failed; 0 doc tests), and `git diff --check` passed.
-- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged. The public example
-  is also compiled and exercised by `tests/commands.rs`.
-- Commit `1c3225ba3e8ac93bd669203c914421c571dc3705` was pushed to
+  `9eb8943b281f7e8a35a981068d08406fcf7859ce`, format, all-target check, full
+  suite (214 passed, 0 failed; 0 doc tests), and `git diff --check` passed.
+- README audit: 1 found, 1 reviewed, 0 updated, 1 unchanged. The public example
+  is compiled and exercised by `tests/commands.rs`.
+- Prior router implementation commit `1c3225ba3e8ac93bd669203c914421c571dc3705` was pushed to
   `origin/matter-beta`; a subsequent fetch confirmed the exact SHA. H and I
-  remain in progress; no stable branch promotion was made.
+  remain in progress; this integration-flow checkpoint is ready to publish and
+  no stable branch promotion was made.
 
 ## Additional requested ecosystem scope
 

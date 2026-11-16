@@ -10,9 +10,9 @@
 
 use anyhow::Result;
 use matter_base::{
-    BotRegistry, ConsentDecision, CoreConfig, CoreModule, LegalDocument, LegalDocumentType,
-    MatterContext, MatterRuntime, UserAction, UserAuthorizationRequest, UserAuthorizer,
-    UserPrincipal, UserRegistry,
+    BotAction, BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter, ConsentDecision,
+    CoreConfig, CoreModule, LegalDocument, LegalDocumentType, MatterContext, MatterRuntime,
+    UserAction, UserAuthorizationRequest, UserAuthorizer, UserPrincipal, UserRegistry,
 };
 mod common;
 use common::{legal_admin, legal_user};
@@ -92,6 +92,18 @@ struct BotOwnerDataPolicy {
     user_id: String,
 }
 
+struct BotRegistryCommandPolicy(BotRegistry);
+
+impl CommandAuthorizer for BotRegistryCommandPolicy {
+    fn authorize(&self, invocation: &CommandInvocation) -> Result<()> {
+        self.0.authorize(
+            &invocation.bot_instance_id,
+            &invocation.actor_id,
+            BotAction::Manage,
+        )
+    }
+}
+
 impl UserAuthorizer for BotOwnerDataPolicy {
     fn authorize(&self, request: &UserAuthorizationRequest<'_>) -> Result<()> {
         if !matches!(
@@ -108,6 +120,44 @@ impl UserAuthorizer for BotOwnerDataPolicy {
         self.bots
             .authorize(bot_id, request.principal_id, matter_base::BotAction::Manage)
     }
+}
+
+#[test]
+fn command_router_enforces_bot_registry_ownership_before_handler_effects() {
+    let bots = BotRegistry::in_memory();
+    let first_bot = bots.register("family", "v1", "first", "owner-a").unwrap();
+    let second_bot = bots.register("family", "v1", "second", "owner-b").unwrap();
+    let router = CommandRouter::new(
+        vec!["#".to_owned()],
+        Arc::new(BotRegistryCommandPolicy(bots)),
+    )
+    .unwrap();
+    let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let handler_calls = Arc::clone(&calls);
+    router
+        .register("menu", &[], move |invocation| {
+            handler_calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            Ok(invocation.bot_instance_id.clone())
+        })
+        .unwrap();
+
+    assert_eq!(
+        router
+            .route(first_bot.instance_id(), "owner-a", "room-1", "#menu")
+            .unwrap(),
+        Some(first_bot.instance_id().to_owned())
+    );
+    assert!(router
+        .route(first_bot.instance_id(), "owner-b", "room-1", "#menu")
+        .is_err());
+    assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    assert_eq!(
+        router
+            .route(second_bot.instance_id(), "owner-b", "room-1", "#menu")
+            .unwrap(),
+        Some(second_bot.instance_id().to_owned())
+    );
+    assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 2);
 }
 
 #[test]
