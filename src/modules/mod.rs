@@ -1,5 +1,11 @@
 use crate::core::context::MatterContext;
 use anyhow::{anyhow, bail, Context, Result};
+use std::panic::{catch_unwind, AssertUnwindSafe};
+
+fn invoke_lifecycle_callback(callback: impl FnOnce() -> Result<()>) -> Result<()> {
+    catch_unwind(AssertUnwindSafe(callback))
+        .unwrap_or_else(|_| Err(anyhow!("Module lifecycle callback panicked")))
+}
 
 /// Contract for a runtime module.
 pub trait CoreModule: Send + Sync {
@@ -84,9 +90,9 @@ impl ModuleManager {
                 bail!("Module cleanup must succeed before initialization");
             }
 
-            if let Err(error) = entry.module.initialize(context) {
+            if let Err(error) = invoke_lifecycle_callback(|| entry.module.initialize(context)) {
                 let name = entry.module.name().to_owned();
-                return match entry.module.stop(context) {
+                return match invoke_lifecycle_callback(|| entry.module.stop(context)) {
                     Ok(()) => Err(error).with_context(|| format!("Initializing module {name}")),
                     Err(cleanup) => {
                         entry.cleanup_required = true;
@@ -117,10 +123,14 @@ impl ModuleManager {
                 continue;
             }
 
-            if let Err(error) = self.modules[index].module.start(context) {
+            if let Err(error) =
+                invoke_lifecycle_callback(|| self.modules[index].module.start(context))
+            {
                 let name = self.modules[index].module.name().to_owned();
                 let mut cleanup_errors = Vec::new();
-                if let Err(cleanup) = self.modules[index].module.stop(context) {
+                if let Err(cleanup) =
+                    invoke_lifecycle_callback(|| self.modules[index].module.stop(context))
+                {
                     self.modules[index].cleanup_required = true;
                     cleanup_errors.push(format!("{name}: {cleanup:#}"));
                 } else {
@@ -128,7 +138,7 @@ impl ModuleManager {
                 }
                 for started_index in started_this_call.into_iter().rev() {
                     let entry = &mut self.modules[started_index];
-                    if let Err(cleanup) = entry.module.stop(context) {
+                    if let Err(cleanup) = invoke_lifecycle_callback(|| entry.module.stop(context)) {
                         cleanup_errors.push(format!("{}: {cleanup:#}", entry.module.name()));
                     } else {
                         entry.initialized = false;
@@ -162,7 +172,7 @@ impl ModuleManager {
             if !entry.initialized && !entry.started && !entry.cleanup_required {
                 continue;
             }
-            match entry.module.stop(context) {
+            match invoke_lifecycle_callback(|| entry.module.stop(context)) {
                 Ok(()) => {
                     entry.initialized = false;
                     entry.started = false;
@@ -281,6 +291,43 @@ mod tests {
 
     fn context() -> MatterContext {
         MatterContext::new(LegalStore::open_in_memory().unwrap())
+    }
+
+    struct PanickingInitializeModule {
+        calls: Arc<Mutex<Vec<&'static str>>>,
+    }
+
+    impl CoreModule for PanickingInitializeModule {
+        fn name(&self) -> &str {
+            "panicking-initialize"
+        }
+
+        fn initialize(&self, _context: &MatterContext) -> Result<()> {
+            self.calls.lock().unwrap().push("initialize");
+            panic!("simulated module panic");
+        }
+
+        fn stop(&self, _context: &MatterContext) -> Result<()> {
+            self.calls.lock().unwrap().push("stop");
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn initialization_panic_is_converted_and_partial_module_is_cleaned_up() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let mut manager = ModuleManager::new();
+        manager
+            .register(Box::new(PanickingInitializeModule {
+                calls: Arc::clone(&calls),
+            }))
+            .unwrap();
+
+        let error = manager.initialize_all(&context()).unwrap_err();
+        assert!(format!("{error:#}").contains("panicked"));
+        assert_eq!(*calls.lock().unwrap(), ["initialize", "stop"]);
+        assert!(!manager.is_initialized("panicking-initialize"));
+        manager.stop_all(&context()).unwrap();
     }
 
     #[test]

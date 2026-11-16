@@ -11,7 +11,7 @@
 use anyhow::Result;
 use matter_base::{
     BotRegistry, ConsentDecision, CoreConfig, CoreModule, LegalDocument, LegalDocumentType,
-    MatterContext, MatterRuntime, ModuleManager,
+    MatterContext, MatterRuntime,
 };
 mod common;
 use common::{legal_admin, legal_user};
@@ -45,6 +45,7 @@ struct RuntimeService(&'static str);
 
 struct RuntimeModule {
     callbacks: Arc<Mutex<Vec<&'static str>>>,
+    fail_start: bool,
 }
 
 impl CoreModule for RuntimeModule {
@@ -60,6 +61,9 @@ impl CoreModule for RuntimeModule {
 
     fn start(&self, context: &MatterContext) -> Result<()> {
         self.callbacks.lock().unwrap().push("started");
+        if self.fail_start {
+            anyhow::bail!("simulated module start failure");
+        }
         context.events.publish_checked("runtime.started", "ok")?;
         Ok(())
     }
@@ -178,14 +182,14 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
             observed_event.lock().unwrap().push(payload.to_owned());
         });
 
-    let mut modules = ModuleManager::new();
-    modules
-        .register(Box::new(RuntimeModule {
+    runtime
+        .register_module(Box::new(RuntimeModule {
             callbacks: Arc::clone(&callbacks),
+            fail_start: false,
         }))
         .unwrap();
-    modules.initialize_all(runtime.context()).unwrap();
-    modules.start_all(runtime.context()).unwrap();
+    runtime.initialize().unwrap();
+    runtime.start().unwrap();
 
     let service = runtime.context.services.get::<RuntimeService>().unwrap();
     assert_eq!(service.0, "initialized");
@@ -196,7 +200,7 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
         .user_exists("flow-user", &legal_user("flow-user"))
         .unwrap());
 
-    modules.stop_all(runtime.context()).unwrap();
+    runtime.shutdown().unwrap();
     assert_eq!(
         *callbacks.lock().unwrap(),
         ["initialized", "started", "stopped"]
@@ -240,4 +244,26 @@ fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together
             &legal_user("flow-user")
         )
         .is_err());
+}
+
+#[test]
+fn runtime_propagates_start_failure_and_cleans_module_state() {
+    let runtime = MatterRuntime::with_legal_store(
+        CoreConfig::default(),
+        matter_base::LegalStore::open_in_memory().unwrap(),
+    );
+    let callbacks = Arc::new(Mutex::new(Vec::new()));
+    runtime
+        .register_module(Box::new(RuntimeModule {
+            callbacks: Arc::clone(&callbacks),
+            fail_start: true,
+        }))
+        .unwrap();
+
+    assert!(runtime.start().is_err());
+    assert_eq!(
+        *callbacks.lock().unwrap(),
+        ["initialized", "started", "stopped"]
+    );
+    runtime.shutdown().unwrap();
 }

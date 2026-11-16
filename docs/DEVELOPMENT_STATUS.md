@@ -8,15 +8,14 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Previous synchronized base commit: `9be89897b7db5a39cfd15f259f020e7e4ffed419`
+- Previous synchronized base commit: `83daa87bf9df2f97656b2e1506f486ec2955766d`
 - Latest confirmed checkpoint before the current local work:
-  `9be89897b7db5a39cfd15f259f020e7e4ffed419`
+  `83daa87bf9df2f97656b2e1506f486ec2955766d`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `9be89897b7db5a39cfd15f259f020e7e4ffed419` before the local legal principal
-  authorization work. The current authorization change is not yet committed;
-  verify the published tip after its checkpoint push.
+  `83daa87bf9df2f97656b2e1506f486ec2955766d` before runtime lifecycle
+  integration. Verify the published tip after its checkpoint push.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -39,7 +38,7 @@ not ready for Matter-Bot.
 
 | Capability | Status | Evidence / limitation |
 | --- | --- | --- |
-| Runtime and lifecycle | PARTIAL | Context shares a bot registry and caller-owned `ModuleManager` coordinates ordered lifecycle callbacks; `MatterRuntime` still does not own/start modules and services have no lifecycle. |
+| Runtime and lifecycle | PARTIAL | `MatterRuntime` owns a shared `ModuleManager` and propagates initialize/start/shutdown errors; no built-in modules are registered and services have no lifecycle. |
 | Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates IDs, persists validated identities, and allocates unique names; owner-only transfer/removal, limited co-owner scope, legacy recovery authorization, and audit history work. Shared-user validation and general role/resource authorization remain absent. |
 | Shared application users and bot data isolation | ABSENT | `legal_users` are legal-consent subjects, not a shared application user system. |
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
@@ -137,6 +136,15 @@ not ready for Matter-Bot.
   `tests/common/mod.rs` (created), `tests/core.rs`, `tests/legal.rs`, and
   `tests/platform_flow.rs`; docs: `README.md`, `docs/architecture.md`, and
   this ledger. No files were deleted.
+- Wired `ModuleManager` into `MatterRuntime` through shared synchronized state.
+  Consumers register modules before initialization and invoke runtime
+  initialize/start/shutdown. Errors propagate; lifecycle callback panics are
+  converted to errors and failed initialization attempts cleanup. The
+  cross-module flow exercises success, and a second integration test verifies
+  start-error propagation plus cleanup.
+- Files changed for runtime lifecycle integration: `src/core/runtime.rs`,
+  `src/modules/mod.rs`, `tests/platform_flow.rs`, `README.md`,
+  `docs/architecture.md`, and this ledger. No files were deleted.
 - Modified public API files `src/legal/mod.rs`, `src/core/context.rs`,
   `src/core/runtime.rs`, and `src/lib.rs` to require a principal policy for
   sensitive legal operations. Updated `tests/core.rs`, `tests/legal.rs`, and
@@ -257,6 +265,10 @@ After formatting, the following commands completed successfully:
   `cargo fmt --all`, `cargo check --all-targets`, full `cargo test` —
   **187 passed, 0 failed**; doc tests: 0 passed, 0 failed;
   `git diff --check` passed.
+- Current runtime-owned lifecycle verification: focused callback-panic cleanup
+  and cross-module runtime success/start-failure tests passed; `cargo fmt --all`,
+  `cargo check --all-targets`, full `cargo test` — **189 passed, 0 failed**;
+  doc tests: 0 passed, 0 failed; `git diff --check` passed.
 
 These results verify only the code that exists. They do not verify absent bot
 platform capabilities or a live external integration.
@@ -336,6 +348,9 @@ platform capabilities or a live external integration.
 - README files reviewed for legal principal enforcement across runtime/store APIs: **1**.
 - README files updated for legal principal enforcement across runtime/store APIs: **1**.
 - README files with no changes for that API enforcement checkpoint: **0**.
+- README files reviewed for runtime-owned module lifecycle: **1**.
+- README files updated for runtime initialize/start/shutdown: **1**.
+- README files with no changes for runtime lifecycle integration: **0**.
 - README files reviewed for transactional/versioned legal-store initialization: **1**.
 - README files updated for transactional/versioned legal-store initialization: **1**.
 - README files with no changes for transactional/versioned legal-store initialization: **0**.
@@ -429,15 +444,18 @@ external services.
 1. Re-read this file and the root README.
 2. Confirm the current branch, status, and remote tip. Preserve local work;
    do not discard `Cargo.lock` or `target/` without inspecting ownership.
-3. Continue H by auditing every legal authorization entry point, including
+3. Continue H by auditing runtime lifecycle edge cases: start failure/panic
+   cleanup, stop retries, concurrent calls through cloned runtimes, and module
+   registration boundaries. Then audit every legal authorization entry point, including
    policy denial/error paths and role/resource ownership behavior. The new
    contract delegates identity verification to the caller; it is not a user
    directory or an authentication provider. Then continue remaining provider,
    key, and bot-registry corruption cases. Add tests for every confirmed
    defect. Do not invent a shared-user identity system until a trustworthy
    authenticated-principal contract is available.
-4. Continue I by adding cross-module resilience cases around bot ownership,
-   provider failure, and legal-store errors. The current suite passes 187 tests;
+4. Continue I by adding cross-module resilience cases around runtime startup,
+   bot ownership, provider failure, and legal-store errors. The current suite
+   passes 189 tests;
    this does not cover absent router, sockets, plugins, general authorization,
    or live external services. Keep Matter-Bot blocked.
 5. After each coherent checkpoint, audit every README, update this ledger,

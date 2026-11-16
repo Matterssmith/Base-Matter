@@ -23,19 +23,14 @@ Public crate API (`src/lib.rs`)
 │                     ├─ ServiceRegistry (in memory)
 │                     └─ LegalStore (SQLite)
 ├── Translator (in memory)
-├── CoreModule + caller-owned ModuleManager
+├── CoreModule + runtime-owned ModuleManager
 └── Security
     ├── EncryptedEnvelope / KeyManager
     ├── ProviderAuthenticator / ProviderAccessPolicy
     └── KeyProvider / ProviderBindingStore contracts
 ```
 
-`MatterRuntime::open` opens the SQLite legal store and constructs a context with an in-memory bot registry. `open_with_bot_registry` accepts an explicitly configured registry, including SQLite persistence.
-`initialize` currently emits an informational log; it does not start managed
-modules or services. `ModuleManager` registers and coordinates modules when an
-application explicitly owns and calls it; `MatterRuntime` does not yet own or
-invoke that manager. See the crate modules in
-[`src/`](../src/).
+`MatterRuntime::open` opens the SQLite legal store and constructs a context with an in-memory bot registry. `open_with_bot_registry` accepts an explicitly configured registry, including SQLite persistence. The runtime owns a shared `ModuleManager`; callers register modules before initialization, then call `initialize`, `start`, and `shutdown`. Lifecycle errors propagate to the application. Callback unwinding panics become errors; failed initialization attempts cleanup. No modules are registered automatically. See the crate modules in [`src/`](../src/).
 
 The current event bus clones a listener list and releases its registry lock
 before invoking callbacks, so callbacks may subscribe or clear listeners

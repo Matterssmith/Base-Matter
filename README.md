@@ -59,7 +59,7 @@ service.
 | Component | Current behavior | State |
 | --- | --- | --- |
 | `core::config` | Default application name, environment, debug flag, and locale | Partial; no validation/loading |
-| `core::runtime` | Opens legal storage and builds a context; can inject a bot registry | Partial; default bot registry is in memory and `initialize` logs only |
+| `core::runtime` | Opens legal storage, builds a context, owns module initialize/start/shutdown lifecycle; can inject a bot registry | Partial; default bot registry is in memory, no built-in modules are registered |
 | `core::context` | Shares event bus, typed service registry, legal store, and bot registry | Implemented at this scope |
 | `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; general roles and shared user validation remain pending |
 | `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish`; `publish_checked` catches unwinding panics per listener, continues dispatch, and returns an error |
@@ -67,7 +67,7 @@ service.
 | `i18n` | In-memory translation catalogs and key fallback | Basic; no bundled catalogs or locale validation |
 | `legal` | SQLite documents, user IDs, immutable decision history, and access checks | Implemented at this scope |
 | `security` | Authenticated encryption envelopes, key management, provider identity/policy, replay-aware assertions, binding contracts | Implemented contracts/primitives; external integration unverified |
-| `modules` | `CoreModule` plus caller-owned `ModuleManager` for ordered initialize/start and reverse stop with failure cleanup | Implemented lifecycle coordinator; not wired into `MatterRuntime` |
+| `modules` | `CoreModule` plus ordered initialize/start and reverse stop with failure cleanup; unwinding callback panics become errors | Implemented and coordinated by `MatterRuntime`; consumers register their own modules |
 
 These states describe this repository's present behavior, not the full planned
 Matter-Base platform.
@@ -118,7 +118,9 @@ fn main() -> anyhow::Result<()> {
         CoreConfig::default(),
         "data/legal/registry.db",
     )?;
-    runtime.initialize();
+    runtime.initialize()?;
+    runtime.start()?;
+    runtime.shutdown()?;
     Ok(())
 }
 ```

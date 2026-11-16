@@ -18,13 +18,16 @@ use crate::bots::BotRegistry;
 use crate::core::config::CoreConfig;
 use crate::core::context::MatterContext;
 use crate::legal::{LegalPrincipal, LegalStore};
+use crate::modules::{CoreModule, ModuleManager};
 use anyhow::Result;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct MatterRuntime {
     pub config: CoreConfig,
     pub context: MatterContext,
+    modules: Arc<Mutex<ModuleManager>>,
 }
 
 impl MatterRuntime {
@@ -41,6 +44,7 @@ impl MatterRuntime {
         Ok(Self {
             config,
             context: MatterContext::new(legal),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
         })
     }
 
@@ -56,6 +60,7 @@ impl MatterRuntime {
         Ok(Self {
             config,
             context: MatterContext::with_bot_registry(legal, bots),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
         })
     }
 
@@ -67,6 +72,7 @@ impl MatterRuntime {
         Self {
             config,
             context: MatterContext::new(legal),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
         }
     }
 
@@ -75,15 +81,48 @@ impl MatterRuntime {
         Self {
             config,
             context: MatterContext::with_bot_registry(legal, bots),
+            modules: Arc::new(Mutex::new(ModuleManager::new())),
         }
     }
 
-    pub fn initialize(&self) {
+    /// Registers a runtime module before initialization starts.
+    pub fn register_module(&self, module: Box<dyn CoreModule>) -> Result<()> {
+        self.modules
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Runtime module manager lock poisoned"))?
+            .register(module)
+    }
+
+    /// Initializes registered modules and the runtime context.
+    pub fn initialize(&self) -> Result<()> {
+        self.modules
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Runtime module manager lock poisoned"))?
+            .initialize_all(&self.context)?;
         tracing::info!(
             application = %self.config.name,
             environment = %self.config.environment,
             "Matter runtime initialized"
         );
+        Ok(())
+    }
+
+    /// Initializes modules if needed, then starts them in registration order.
+    pub fn start(&self) -> Result<()> {
+        let mut modules = self
+            .modules
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Runtime module manager lock poisoned"))?;
+        modules.initialize_all(&self.context)?;
+        modules.start_all(&self.context)
+    }
+
+    /// Stops runtime modules in reverse registration order.
+    pub fn shutdown(&self) -> Result<()> {
+        self.modules
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Runtime module manager lock poisoned"))?
+            .stop_all(&self.context)
     }
 
     pub fn context(&self) -> &MatterContext {
