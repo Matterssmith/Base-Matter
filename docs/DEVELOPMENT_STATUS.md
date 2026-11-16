@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `38777f93edd9187010240747b69cdef8cd93213e`
+- Latest confirmed checkpoint commit: `c0400d48dde6828bcc3784d8078d17242dcc88d5`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `38777f93edd9187010240747b69cdef8cd93213e` before this work.
+  `c0400d48dde6828bcc3784d8078d17242dcc88d5` before this status update.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -166,8 +166,9 @@ platform capabilities or a live external integration.
 
 - README files found: **1** (`README.md` at repository root).
 - README files reviewed: **1**.
-- README files updated for this checkpoint: **1**.
-- README files with no changes: **0**.
+- README files updated for the prior replay-store checkpoint: **1**.
+- README files reviewed for the lock-recovery checkpoint: **1**.
+- README files with no changes for the lock-recovery checkpoint: **1**.
 - Problems found: documented JavaScript/Node project structure and `npm`
   commands did not match the Rust Cargo crate; future bot/provider and other
   systems were presented as available; repository links and component claims
@@ -215,9 +216,10 @@ platform capabilities or a live external integration.
   remain outstanding.
 - Matter-Bot: **Blocked by unmet Matter-Base criteria. Do not start.**
 
-Checkpoint `38777f93edd9187010240747b69cdef8cd93213e` was pushed to
-`origin/matter-beta` over authenticated SSH and confirmed by fetch. Lock-poison
-recovery changes are local and not yet committed. No promotion to `matter` was made. Matter-Vault live
+Checkpoint `38777f93edd9187010240747b69cdef8cd93213e` added persistent replay
+storage. Checkpoint `c0400d48dde6828bcc3784d8078d17242dcc88d5` added core lock-poison
+recovery; both were pushed to `origin/matter-beta` over authenticated SSH and
+confirmed by fetch. No promotion to `matter` was made. Matter-Vault live
 verification is the only specifically identified external dependency; most
 remaining blockers are missing code and contracts in this repository, not
 external services.
