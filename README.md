@@ -45,6 +45,9 @@ co-owners and transfer/delete bots; co-owners can manage bot-scoped operations
 but cannot change ownership or delete. Legacy unowned records require an
 injected `OwnerRecoveryAuthorizer` before ownership can be claimed. Ownership
 changes are written to the registry audit history.
+Reading a bot's audit history requires the current owner ID and is checked by
+the identity store when records are read. Access to the retained audit history
+of a deleted bot is not exposed through the current registry API.
 
 The security module defines provider and key-provider contracts. It does not
 ship a production Matter-Vault integration or store platform sessions or
@@ -168,6 +171,7 @@ use matter_base::{BotAction, BotRegistry};
 fn register_bot(bots: &BotRegistry, authenticated_owner_id: &str) -> anyhow::Result<()> {
     let bot = bots.register("family-key", "release-key", "matter", authenticated_owner_id)?;
     bots.authorize(bot.instance_id(), authenticated_owner_id, BotAction::Manage)?;
+    let _audit = bots.audit_history(bot.instance_id(), authenticated_owner_id)?;
     Ok(())
 }
 ```

@@ -50,6 +50,16 @@ fn in_memory_registry_keeps_identity_independent_and_names_unique() {
     assert_ne!(first.instance_id(), second.instance_id());
     assert_eq!(first.display_name(), "matter");
     assert_eq!(second.display_name(), "matter (2)");
+    assert!(registry
+        .audit_history(first.instance_id(), "intruder")
+        .is_err());
+    assert_eq!(
+        registry
+            .audit_history(first.instance_id(), "owner-1")
+            .unwrap()
+            .len(),
+        1
+    );
     assert_eq!(registry.get(first.instance_id()).unwrap(), Some(first));
     assert_eq!(registry.list().unwrap().len(), 2);
 }
@@ -276,7 +286,12 @@ fn owner_operations_are_checked_persisted_and_audited() {
             .owner_id(),
         Some("owner-2")
     );
-    let audit = reopened.audit_history(identity.instance_id()).unwrap();
+    assert!(reopened
+        .audit_history(identity.instance_id(), "intruder")
+        .is_err());
+    let audit = reopened
+        .audit_history(identity.instance_id(), "owner-2")
+        .unwrap();
     assert_eq!(audit.len(), 2);
     assert_eq!(audit[0].action, "register");
     assert_eq!(audit[0].actor_id, "owner-1");
@@ -290,13 +305,18 @@ fn owner_operations_are_checked_persisted_and_audited() {
         .remove_owned(identity.instance_id(), "owner-2")
         .is_ok());
     assert!(reopened.get(identity.instance_id()).unwrap().is_none());
-    assert_eq!(
-        reopened
-            .audit_history(identity.instance_id())
-            .unwrap()
-            .len(),
-        3
-    );
+    assert!(reopened
+        .audit_history(identity.instance_id(), "owner-2")
+        .is_err());
+    let connection = rusqlite::Connection::open(database).unwrap();
+    let audit_count: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM bot_registry_audit WHERE instance_id = ?1",
+            [identity.instance_id()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(audit_count, 3);
 }
 
 #[test]
@@ -337,7 +357,10 @@ fn legacy_unowned_identity_requires_external_recovery_authorization() {
         Some("recovered-owner")
     );
     assert_eq!(
-        registry.audit_history("inst_existing").unwrap()[0].action,
+        registry
+            .audit_history("inst_existing", "recovered-owner")
+            .unwrap()[0]
+            .action,
         "claim_unowned"
     );
 }
@@ -382,7 +405,12 @@ fn co_owner_scope_cannot_transfer_or_delete_and_is_audited() {
     assert!(recovered
         .authorize(identity.instance_id(), "co-1", BotAction::Manage)
         .is_err());
-    let audit = recovered.audit_history(identity.instance_id()).unwrap();
+    assert!(recovered
+        .audit_history(identity.instance_id(), "co-1")
+        .is_err());
+    let audit = recovered
+        .audit_history(identity.instance_id(), "owner-1")
+        .unwrap();
     assert_eq!(
         audit
             .iter()
@@ -429,7 +457,9 @@ fn concurrent_owner_transfers_from_separate_connections_have_one_winner() {
     let recovered = BotRegistry::open_sqlite(&database).unwrap();
     let persisted = recovered.get(bot.instance_id()).unwrap().unwrap();
     assert!(matches!(persisted.owner_id(), Some("owner-2" | "owner-3")));
-    let audit = recovered.audit_history(bot.instance_id()).unwrap();
+    let audit = recovered
+        .audit_history(bot.instance_id(), persisted.owner_id().unwrap())
+        .unwrap();
     assert_eq!(
         audit
             .iter()

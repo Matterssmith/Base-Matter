@@ -8,14 +8,14 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Previous synchronized base commit: `f6ad9dca1e58275832d992b72802645ad46775ca`
+- Previous synchronized base commit: `60adf425ad9e9c8b7a62df760bd2260a0e8f6794`
 - Latest confirmed checkpoint before the current local work:
-  `f6ad9dca1e58275832d992b72802645ad46775ca`
+  `60adf425ad9e9c8b7a62df760bd2260a0e8f6794`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `f6ad9dca1e58275832d992b72802645ad46775ca` before the current integrated-flow
-  extension. The current change is not yet committed or published.
+  `60adf425ad9e9c8b7a62df760bd2260a0e8f6794` before the current audit fix.
+  Verify the current published tip from Git after pushing this checkpoint.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -105,6 +105,11 @@ not ready for Matter-Bot.
   recovery of both bot identity and legal history after closing and reopening
   the SQLite stores. The test uses a unique temporary directory and removes
   only that test-owned directory.
+- Fixed unauthorized access to bot ownership audit history. Reads now require
+  the current owner and check ownership inside the same store lock/read
+  transaction as retrieving records. Co-owners and unrelated actors are
+  denied. Records remain stored after bot deletion but are inaccessible through
+  the current registry API after the identity is removed.
 
 ### Files created, modified, and deleted
 
@@ -189,6 +194,10 @@ After formatting, the following commands completed successfully:
   `cargo fmt --all`, `cargo check --all-targets`, and full `cargo test`:
   **182 passed, 0 failed**; doc tests: 0 passed, 0 failed. `git diff --check`
   passed.
+- Current audit-fix verification: focused `cargo test --test bot_registry` —
+  **12 passed**; `cargo fmt --all`, `cargo check --all-targets`, full
+  `cargo test` — **182 passed, 0 failed**; doc tests: 0 passed, 0 failed;
+  `git diff --check` passed.
 
 These results verify only the code that exists. They do not verify absent bot
 platform capabilities or a live external integration.
@@ -253,6 +262,9 @@ platform capabilities or a live external integration.
 - README files reviewed for legal-consent and dual-store recovery flow: **1**.
 - README files updated for legal-consent and dual-store recovery flow: **0**.
 - README files with no changes for legal-consent and dual-store recovery flow: **1**.
+- README files reviewed for owner-only audit-history reads: **1**.
+- README files updated for owner-only audit-history reads and API example: **1**.
+- README files with no changes for owner-only audit-history reads: **0**.
 - README files with no changes for runtime registry injection: **0**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
@@ -301,7 +313,8 @@ platform capabilities or a live external integration.
   tests pass. Legal store tests cover concurrent idempotent document
   registration and rollback after a simulated SQLite write failure. Bot identity
   registration persists family/release/instance identity and atomically resolves
-  display-name collisions; ownership controls remain absent. Envelope payloads
+  display-name collisions; owner/co-owner controls are scoped and audited.
+  Audit-history reads now require the current owner. Envelope payloads
   are capped at 16 MiB before encryption or Base64 decoding. Errors
   from key, binding, and proof providers are sanitized at module boundaries; a
   regression test confirms an upstream secret-like diagnostic is not returned.
@@ -339,9 +352,9 @@ external services.
 2. Confirm the current branch, status, and remote tip. Preserve local work;
    do not discard `Cargo.lock` or `target/` without inspecting ownership.
 3. Continue H with a module-by-module audit of `src/bots`, `src/legal`, and
-   `src/security`, including migration rollback/corrupt-store behavior, owner
-   audit/error semantics, legal transaction failure paths, replay-store bounds,
-   and key/provider boundary validation. Add behavior tests for every confirmed
+   `src/security`, beginning with migration rollback/corrupt-store behavior,
+   owner audit/error semantics, legal transaction failure paths, replay-store
+   bounds, and key/provider boundary validation. Add behavior tests for every confirmed
    defect. Do not invent a shared-user identity system until a trustworthy
    authenticated-principal contract is available.
 4. Continue I by adding cross-module resilience cases around bot ownership,

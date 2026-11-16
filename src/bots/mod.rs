@@ -113,7 +113,7 @@ pub trait BotIdentityStore: Send + Sync {
 
     fn remove_owned(&self, instance_id: &str, actor_id: &str) -> Result<()>;
 
-    fn audit_history(&self, instance_id: &str) -> Result<Vec<BotAuditRecord>>;
+    fn audit_history(&self, instance_id: &str, actor_id: &str) -> Result<Vec<BotAuditRecord>>;
 
     fn get(&self, instance_id: &str) -> Result<Option<BotIdentity>>;
 
@@ -263,9 +263,11 @@ impl BotRegistry {
         self.store.remove_owned(instance_id, actor_id)
     }
 
-    pub fn audit_history(&self, instance_id: &str) -> Result<Vec<BotAuditRecord>> {
+    /// Returns ownership audit records only to the bot's current owner.
+    pub fn audit_history(&self, instance_id: &str, actor_id: &str) -> Result<Vec<BotAuditRecord>> {
         validate_identifier(instance_id, "instance_id")?;
-        self.store.audit_history(instance_id)
+        validate_identifier(actor_id, "actor_id")?;
+        self.store.audit_history(instance_id, actor_id)
     }
 
     pub fn get(&self, instance_id: &str) -> Result<Option<BotIdentity>> {
@@ -551,12 +553,20 @@ impl BotIdentityStore for InMemoryBotIdentityStore {
         Ok(())
     }
 
-    fn audit_history(&self, instance_id: &str) -> Result<Vec<BotAuditRecord>> {
+    fn audit_history(&self, instance_id: &str, actor_id: &str) -> Result<Vec<BotAuditRecord>> {
         validate_identifier(instance_id, "instance_id")?;
+        validate_identifier(actor_id, "actor_id")?;
         let state = self
             .state
             .lock()
             .map_err(|_| anyhow!("Bot identity store lock poisoned"))?;
+        let identity = state
+            .identities
+            .get(instance_id)
+            .ok_or_else(|| anyhow!("Bot instance not found"))?;
+        if identity.owner_id.as_deref() != Some(actor_id) {
+            bail!("Bot owner authorization denied");
+        }
         Ok(state
             .audit
             .iter()
@@ -1008,13 +1018,26 @@ impl BotIdentityStore for SqliteBotIdentityStore {
         Ok(())
     }
 
-    fn audit_history(&self, instance_id: &str) -> Result<Vec<BotAuditRecord>> {
+    fn audit_history(&self, instance_id: &str, actor_id: &str) -> Result<Vec<BotAuditRecord>> {
         validate_identifier(instance_id, "instance_id")?;
-        let connection = self
+        validate_identifier(actor_id, "actor_id")?;
+        let mut connection = self
             .connection
             .lock()
             .map_err(|_| anyhow!("Bot identity store lock poisoned"))?;
-        let mut statement = connection.prepare(
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Deferred)?;
+        let owner: Option<String> = transaction
+            .query_row(
+                "SELECT owner_id FROM bot_identities WHERE instance_id = ?1",
+                params![instance_id],
+                |row| row.get(0),
+            )
+            .optional()?
+            .ok_or_else(|| anyhow!("Bot instance not found"))?;
+        if owner.as_deref() != Some(actor_id) {
+            bail!("Bot owner authorization denied");
+        }
+        let mut statement = transaction.prepare(
             "SELECT record_id, instance_id, actor_id, action, target_owner_id, created_at
              FROM bot_registry_audit WHERE instance_id = ?1 ORDER BY record_id",
         )?;
@@ -1028,7 +1051,9 @@ impl BotIdentityStore for SqliteBotIdentityStore {
                 created_at: row.get(5)?,
             })
         })?;
-        rows.collect::<rusqlite::Result<Vec<_>>>()
-            .map_err(Into::into)
+        let records = rows.collect::<rusqlite::Result<Vec<_>>>()?;
+        drop(statement);
+        transaction.commit()?;
+        Ok(records)
     }
 }
