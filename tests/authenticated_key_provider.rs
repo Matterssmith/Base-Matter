@@ -1,17 +1,19 @@
-
 /*
  * Matter-Base — Authenticated Key Provider Tests
  *
- * Verifica que la carga desde KeyProvider exija permisos
- * y corresponda al Vault autenticado.
+ * Verifica permisos, vinculación criptográfica,
+ * aislamiento de Vault y carga atómica de claves.
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
 use anyhow::{bail, Result};
+
 use matter_base::security::{
+    create_provider_binding_proof,
     AuthenticatedProvider,
+    BoundKeyProvider,
     KeyManager,
     KeyProvider,
     ProviderAccessPolicy,
@@ -19,6 +21,7 @@ use matter_base::security::{
     ProviderAuthenticator,
     ProviderPermission,
 };
+
 use std::collections::{HashMap, HashSet};
 use time::OffsetDateTime;
 use zeroize::Zeroizing;
@@ -31,10 +34,11 @@ struct MockKeyProvider {
     vault_id: String,
     keys: HashMap<String, [u8; 32]>,
     active_key_id: Option<String>,
+    authentication_key: [u8; 32],
 }
 
 impl MockKeyProvider {
-    fn new(vault_id: &str) -> Self {
+    fn new(vault_id: &str, authentication_key: [u8; 32]) -> Self {
         let mut keys = HashMap::new();
 
         keys.insert("vault-key-1".to_owned(), [11u8; 32]);
@@ -44,6 +48,7 @@ impl MockKeyProvider {
             vault_id: vault_id.to_owned(),
             keys,
             active_key_id: Some("vault-key-1".to_owned()),
+            authentication_key,
         }
     }
 }
@@ -66,6 +71,15 @@ impl KeyProvider for MockKeyProvider {
             Some(key) => Ok(Zeroizing::new(*key)),
             None => bail!("Unknown key"),
         }
+    }
+}
+
+impl BoundKeyProvider for MockKeyProvider {
+    fn binding_proof(&self, message: &[u8]) -> Result<[u8; 32]> {
+        create_provider_binding_proof(
+            &self.authentication_key,
+            message,
+        )
     }
 }
 
@@ -134,21 +148,21 @@ fn all_permissions() -> Vec<String> {
 }
 
 #[test]
-fn loads_keys_from_authenticated_provider() {
+fn loads_keys_from_cryptographically_bound_provider() {
     let key = [7u8; 32];
     let nonce = [1u8; 24];
 
-    let provider = authenticated_provider(
+    let session = authenticated_provider(
         all_permissions(),
         ProviderPermission::ReadKeyIds,
         &nonce,
         &key,
     );
 
-    let source = MockKeyProvider::new(VAULT);
+    let source = MockKeyProvider::new(VAULT, key);
     let mut manager = KeyManager::new();
 
-    provider
+    session
         .load_key_manager(&mut manager, &source)
         .unwrap();
 
@@ -163,7 +177,7 @@ fn rejects_loading_without_key_ids_permission() {
     let key = [7u8; 32];
     let nonce = [2u8; 24];
 
-    let provider = authenticated_provider(
+    let session = authenticated_provider(
         vec![
             "read_active_key".to_owned(),
             "read_key_material".to_owned(),
@@ -173,15 +187,10 @@ fn rejects_loading_without_key_ids_permission() {
         &key,
     );
 
-    let source = MockKeyProvider::new(VAULT);
+    let source = MockKeyProvider::new(VAULT, key);
     let mut manager = KeyManager::new();
 
-    assert!(
-        provider
-            .load_key_manager(&mut manager, &source)
-            .is_err()
-    );
-
+    assert!(session.load_key_manager(&mut manager, &source).is_err());
     assert!(manager.is_empty());
 }
 
@@ -190,7 +199,7 @@ fn rejects_loading_without_active_key_permission() {
     let key = [7u8; 32];
     let nonce = [3u8; 24];
 
-    let provider = authenticated_provider(
+    let session = authenticated_provider(
         vec![
             "read_key_ids".to_owned(),
             "read_key_material".to_owned(),
@@ -200,15 +209,10 @@ fn rejects_loading_without_active_key_permission() {
         &key,
     );
 
-    let source = MockKeyProvider::new(VAULT);
+    let source = MockKeyProvider::new(VAULT, key);
     let mut manager = KeyManager::new();
 
-    assert!(
-        provider
-            .load_key_manager(&mut manager, &source)
-            .is_err()
-    );
-
+    assert!(session.load_key_manager(&mut manager, &source).is_err());
     assert!(manager.is_empty());
 }
 
@@ -217,7 +221,7 @@ fn rejects_loading_without_key_material_permission() {
     let key = [7u8; 32];
     let nonce = [4u8; 24];
 
-    let provider = authenticated_provider(
+    let session = authenticated_provider(
         vec![
             "read_key_ids".to_owned(),
             "read_active_key".to_owned(),
@@ -227,15 +231,10 @@ fn rejects_loading_without_key_material_permission() {
         &key,
     );
 
-    let source = MockKeyProvider::new(VAULT);
+    let source = MockKeyProvider::new(VAULT, key);
     let mut manager = KeyManager::new();
 
-    assert!(
-        provider
-            .load_key_manager(&mut manager, &source)
-            .is_err()
-    );
-
+    assert!(session.load_key_manager(&mut manager, &source).is_err());
     assert!(manager.is_empty());
 }
 
@@ -244,38 +243,54 @@ fn rejects_provider_from_different_vault() {
     let key = [7u8; 32];
     let nonce = [5u8; 24];
 
-    let provider = authenticated_provider(
+    let session = authenticated_provider(
         all_permissions(),
         ProviderPermission::ReadKeyIds,
         &nonce,
         &key,
     );
 
-    let source = MockKeyProvider::new("another-vault");
+    let source = MockKeyProvider::new("another-vault", key);
     let mut manager = KeyManager::new();
 
-    assert!(
-        provider
-            .load_key_manager(&mut manager, &source)
-            .is_err()
-    );
-
+    assert!(session.load_key_manager(&mut manager, &source).is_err());
     assert!(manager.is_empty());
 }
 
 #[test]
-fn preserves_existing_keys_when_vault_does_not_match() {
+fn rejects_provider_without_matching_secret() {
     let key = [7u8; 32];
+    let wrong_key = [8u8; 32];
     let nonce = [6u8; 24];
 
-    let provider = authenticated_provider(
+    let session = authenticated_provider(
         all_permissions(),
         ProviderPermission::ReadKeyIds,
         &nonce,
         &key,
     );
 
-    let source = MockKeyProvider::new("another-vault");
+    let source = MockKeyProvider::new(VAULT, wrong_key);
+    let mut manager = KeyManager::new();
+
+    assert!(session.load_key_manager(&mut manager, &source).is_err());
+    assert!(manager.is_empty());
+}
+
+#[test]
+fn preserves_existing_keys_when_provider_binding_fails() {
+    let key = [7u8; 32];
+    let wrong_key = [8u8; 32];
+    let nonce = [7u8; 24];
+
+    let session = authenticated_provider(
+        all_permissions(),
+        ProviderPermission::ReadKeyIds,
+        &nonce,
+        &key,
+    );
+
+    let source = MockKeyProvider::new(VAULT, wrong_key);
     let mut manager = KeyManager::new();
 
     manager
@@ -284,11 +299,7 @@ fn preserves_existing_keys_when_vault_does_not_match() {
 
     manager.set_active("existing-key").unwrap();
 
-    assert!(
-        provider
-            .load_key_manager(&mut manager, &source)
-            .is_err()
-    );
+    assert!(session.load_key_manager(&mut manager, &source).is_err());
 
     assert_eq!(manager.len(), 1);
     assert_eq!(manager.active_key_id(), Some("existing-key"));
