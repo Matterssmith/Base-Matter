@@ -118,6 +118,9 @@ impl KeyManager {
         if key_ids.len() > MAX_PROVIDER_KEYS {
             bail!("Provider returned too many keys");
         }
+        if key_ids.is_empty() {
+            bail!("Provider returned no keys");
+        }
 
         let active_key_id = provider
             .active_key_id()

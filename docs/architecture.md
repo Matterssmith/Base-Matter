@@ -58,7 +58,9 @@ material and providers. Envelope plaintext and ciphertext are limited to
 service is connected. There is no storage of WhatsApp sessions or external
 platform credentials in Matter-Base. Authenticated key loading checks that the
 Vault identity returned while staging keys still matches the authenticated
-identity before replacing the current key set.
+identity before replacing the current key set. Provider key lists must contain
+between 1 and 4,096 entries; an empty or oversized list is rejected without
+replacing the current keys.
 
 Assertion replay tracking defaults to an in-memory store. An injectable SQLite
 store persists replay IDs, globally removes expired records, and enforces

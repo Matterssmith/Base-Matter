@@ -536,9 +536,22 @@ external services.
   `origin/matter-beta`; a subsequent fetch confirmed the same SHA. No stable
   branch promotion was made.
 
+## Current local work — reject empty provider key sets
+
+- Confirmed that a provider returning a successful but empty key list caused
+  `KeyManager` to replace and erase its current keys. Empty results now fail
+  closed, preserving the current key set and active key.
+- Added a regression test. Updated README and architecture documentation.
+- Verified after syncing with `origin/matter-beta` at
+  `b1f286c982e580608d2f37be6610fc8b5ea479a4`: `cargo fmt --all`,
+  `cargo check --all-targets`, focused key-provider tests (7 passed), full
+  `cargo test` (202 passed, 0 failed; 0 doc tests), and `git diff --check`.
+- README audit: 1 found, 1 reviewed, 1 updated, 0 unchanged; relative links
+  resolve. This checkpoint is ready to publish.
+
 ## Exact next task to resume
 
-1. Publish the bot resource-bound checkpoint to `matter-beta`, fetch, and
+1. Publish the empty-provider-key checkpoint to `matter-beta`, fetch, and
    verify the published SHA.
 2. Continue H by auditing remaining provider and key corruption cases; add
    tests for confirmed defects.
