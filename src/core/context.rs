@@ -13,6 +13,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
+use crate::bots::BotRegistry;
 use crate::events::EventBus;
 use crate::legal::LegalStore;
 use crate::services::ServiceRegistry;
@@ -24,15 +25,22 @@ pub struct MatterContext {
     pub events: Arc<EventBus>,
     pub services: Arc<ServiceRegistry>,
     pub legal: Arc<LegalStore>,
+    pub bots: Arc<BotRegistry>,
 }
 
 impl MatterContext {
     /// Crea el contexto con un almacén legal proporcionado.
     pub fn new(legal: LegalStore) -> Self {
+        Self::with_bot_registry(legal, BotRegistry::in_memory())
+    }
+
+    /// Creates a context with an explicitly configured bot identity registry.
+    pub fn with_bot_registry(legal: LegalStore, bots: BotRegistry) -> Self {
         Self {
             events: Arc::new(EventBus::new()),
             services: Arc::new(ServiceRegistry::new()),
             legal: Arc::new(legal),
+            bots: Arc::new(bots),
         }
     }
 

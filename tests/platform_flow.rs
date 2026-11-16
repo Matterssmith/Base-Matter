@@ -71,19 +71,21 @@ impl CoreModule for RuntimeModule {
 fn persistent_identity_runtime_service_events_and_module_lifecycle_work_together() {
     let directory = TemporaryDirectory::new();
     let registry_path = directory.0.join("bots.db");
-    let identity = {
-        let registry = BotRegistry::open_sqlite(&registry_path).unwrap();
-        registry
-            .register("shared-family", "release-1", "matter")
-            .unwrap()
-    };
     let registry = BotRegistry::open_sqlite(&registry_path).unwrap();
+    let identity = registry
+        .register("shared-family", "release-1", "matter")
+        .unwrap();
+    let runtime = MatterRuntime::open_with_bot_registry(
+        CoreConfig::default(),
+        directory.0.join("legal.db"),
+        registry,
+    )
+    .unwrap();
     assert_eq!(
-        registry.get(identity.instance_id()).unwrap(),
+        runtime.context.bots.get(identity.instance_id()).unwrap(),
         Some(identity)
     );
 
-    let runtime = MatterRuntime::open(CoreConfig::default(), directory.0.join("legal.db")).unwrap();
     runtime.context.legal.register_user("flow-user").unwrap();
     let callbacks = Arc::new(Mutex::new(Vec::new()));
     let observed = Arc::new(Mutex::new(Vec::new()));

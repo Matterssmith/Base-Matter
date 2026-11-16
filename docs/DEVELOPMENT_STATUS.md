@@ -36,7 +36,7 @@ not ready for Matter-Bot.
 
 | Capability | Status | Evidence / limitation |
 | --- | --- | --- |
-| Runtime and lifecycle | PARTIAL | Caller-owned `ModuleManager` coordinates registration-order initialization/start and reverse shutdown with cleanup on start failures; `MatterRuntime` does not own it and service lifecycle remains separate. |
+| Runtime and lifecycle | PARTIAL | Context shares a bot registry and caller-owned `ModuleManager` coordinates ordered lifecycle callbacks; `MatterRuntime` still does not own/start modules and services have no lifecycle. |
 | Bot identity, family/release/instance IDs, registration | PARTIAL | `src/bots` generates independent instance IDs, persists identities through an injectable store/SQLite, validates recovered fields, and allocates unique display names; ownership, authorization, and controlled removal are absent. |
 | Shared application users and bot data isolation | ABSENT | `legal_users` are legal-consent subjects, not a shared application user system. |
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
@@ -220,6 +220,9 @@ platform capabilities or a live external integration.
 - README files reviewed for persisted identity validation: **1**.
 - README files updated for persisted identity validation: **0**.
 - README files with no changes for persisted identity validation: **1**.
+- README files reviewed for runtime registry injection: **1**.
+- README files updated for runtime registry injection: **1**.
+- README files with no changes for runtime registry injection: **0**.
 - README files reviewed for lifecycle cleanup refinement: **1**; unchanged.
 - README files reviewed for replay expiry cleanup: **1**, updated **1**, unchanged **0**.
 - Problems found: documented JavaScript/Node project structure and `npm`

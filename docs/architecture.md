@@ -30,7 +30,7 @@ Public crate API (`src/lib.rs`)
     └── KeyProvider / ProviderBindingStore contracts
 ```
 
-`MatterRuntime::open` opens the SQLite legal store and constructs a context.
+`MatterRuntime::open` opens the SQLite legal store and constructs a context with an in-memory bot registry. `open_with_bot_registry` accepts an explicitly configured registry, including SQLite persistence.
 `initialize` currently emits an informational log; it does not start managed
 modules or services. `ModuleManager` registers and coordinates modules when an
 application explicitly owns and calls it; `MatterRuntime` does not yet own or
@@ -45,7 +45,7 @@ with remaining listeners, and returns an error summary.
 
 ## Persistence and trust boundaries
 
-The bot registry persists family/release/instance identity in SQLite when configured; initialization and schema version registration are transactional. Ownership and authorization are not implemented. The legal subsystem persists legal documents and consent decisions in SQLite.
+The bot registry is shared through `MatterContext` and persists family/release/instance identity in SQLite when injected; initialization and schema version registration are transactional. Ownership and authorization are not implemented. The legal subsystem persists legal documents and consent decisions in SQLite.
 Document registration and the read/validate/write path for consent decisions
 use immediate transactions, so concurrent independent database connections
 cannot both withdraw the same grant or observe a document-registration race

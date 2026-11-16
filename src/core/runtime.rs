@@ -14,6 +14,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
+use crate::bots::BotRegistry;
 use crate::core::config::CoreConfig;
 use crate::core::context::MatterContext;
 use crate::legal::LegalStore;
@@ -37,10 +38,24 @@ impl MatterRuntime {
     /// Inicializa el Runtime usando una ruta legal personalizada.
     pub fn open(config: CoreConfig, legal_database: impl AsRef<Path>) -> Result<Self> {
         let legal = LegalStore::open(legal_database)?;
-
         Ok(Self {
             config,
             context: MatterContext::new(legal),
+        })
+    }
+
+    /// Opens the runtime with a caller-configured bot identity registry.
+    ///
+    /// Use `BotRegistry::open_sqlite` when identities must survive restarts.
+    pub fn open_with_bot_registry(
+        config: CoreConfig,
+        legal_database: impl AsRef<Path>,
+        bots: BotRegistry,
+    ) -> Result<Self> {
+        let legal = LegalStore::open(legal_database)?;
+        Ok(Self {
+            config,
+            context: MatterContext::with_bot_registry(legal, bots),
         })
     }
 
@@ -52,6 +67,14 @@ impl MatterRuntime {
         Self {
             config,
             context: MatterContext::new(legal),
+        }
+    }
+
+    /// Builds the runtime with explicit legal and bot identity stores.
+    pub fn with_stores(config: CoreConfig, legal: LegalStore, bots: BotRegistry) -> Self {
+        Self {
+            config,
+            context: MatterContext::with_bot_registry(legal, bots),
         }
     }
 
