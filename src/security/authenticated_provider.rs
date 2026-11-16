@@ -3,7 +3,7 @@
  * Matter-Base — Authenticated Provider
  *
  * Integra autenticación, autorización y acceso protegido
- * al administrador de claves.
+ * al administrador de claves y sus proveedores.
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
@@ -11,6 +11,7 @@
 
 use crate::security::{
     KeyManager,
+    KeyProvider,
     ProviderAccessPolicy,
     ProviderAuthenticator,
     ProviderIdentity,
@@ -62,7 +63,7 @@ impl AuthenticatedProvider {
         Ok(())
     }
 
-    /// Comprueba permisos adicionales de la identidad.
+    /// Comprueba un permiso declarado por la identidad autenticada.
     fn require_identity_permission(
         &self,
         permission: ProviderPermission,
@@ -125,8 +126,8 @@ impl AuthenticatedProvider {
 
     /// Recupera la clave activa.
     ///
-    /// Exige autorización para leer el material criptográfico
-    /// y permiso de identidad para consultar la clave activa.
+    /// Exige permiso de material criptográfico y permiso
+    /// de lectura de la clave activa.
     pub fn read_active_key<'a>(
         &self,
         manager: &'a KeyManager,
@@ -135,5 +136,29 @@ impl AuthenticatedProvider {
         self.require_identity_permission(ProviderPermission::ReadActiveKey)?;
 
         manager.get_active()
+    }
+
+    /// Carga las claves desde un proveedor después de autenticarlo.
+    ///
+    /// Exige los tres permisos de lectura y comprueba que el
+    /// identificador del Vault coincida con la identidad autenticada.
+    pub fn load_key_manager(
+        &self,
+        manager: &mut KeyManager,
+        provider: &dyn KeyProvider,
+    ) -> Result<()> {
+        self.require_identity_permission(ProviderPermission::ReadKeyIds)?;
+        self.require_identity_permission(ProviderPermission::ReadActiveKey)?;
+        self.require_identity_permission(ProviderPermission::ReadKeyMaterial)?;
+
+        let provider_vault_id = provider.vault_id()?;
+
+        if provider_vault_id != self.identity.vault_id() {
+            bail!("Provider Vault does not match authenticated Vault");
+        }
+
+        manager.load_from_provider(provider)?;
+
+        Ok(())
     }
 }
