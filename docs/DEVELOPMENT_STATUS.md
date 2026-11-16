@@ -9,11 +9,11 @@ verify the branch log for the current published commit.
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
 - Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
-- Latest confirmed checkpoint commit: `c0400d48dde6828bcc3784d8078d17242dcc88d5`
+- Latest confirmed checkpoint commit: `e48ce509add1e08eaed63dfda3917b3f5d14accd`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `c0400d48dde6828bcc3784d8078d17242dcc88d5` before this status update.
+  `e48ce509add1e08eaed63dfda3917b3f5d14accd` before this legal-store test pass.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -155,6 +155,8 @@ After formatting, the following commands completed successfully:
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
 - Full `cargo test` after checked event dispatch — **159 passed, 0 failed**;
   doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
+- Full `cargo test` after legal-store concurrency and rollback tests — **161 passed, 0 failed**;
+  doc tests: 0 passed, 0 failed. `cargo check --all-targets` passed.
 - `git diff --check`
 - Root README link audit — 1 README reviewed; all relative links resolve. — 7 Markdown files scanned, all relative links
   resolved.
@@ -174,6 +176,9 @@ platform capabilities or a live external integration.
 - README files reviewed for checked event dispatch: **1**.
 - README files updated for checked event dispatch: **1**.
 - README files with no changes for checked event dispatch: **0**.
+- README files reviewed for legal-store resilience tests: **1**.
+- README files updated for legal-store resilience tests: **0**.
+- README files with no changes for legal-store resilience tests: **1**.
 - Problems found: documented JavaScript/Node project structure and `npm`
   commands did not match the Rust Cargo crate; future bot/provider and other
   systems were presented as available; repository links and component claims
@@ -210,7 +215,8 @@ platform capabilities or a live external integration.
   remains. `EventBus::publish_checked` was added to continue notifying listeners
   after an individual unwinding panic and return an error summary; default
   `publish` behavior remains backward compatible. SQLite replay storage now rejects duplicate assertions across
-  independent connections and verifier restarts; four focused tests pass.
+  independent connections and verifier restarts; four focused tests pass. Legal store tests now cover concurrent idempotent
+document registration and rollback after a simulated SQLite write failure.
 - I: **Not complete.** Added runtime legal-store close/reopen recovery and
   changing-provider-identity tests. Broad bot/authorization/socket/service
   integration and resilience tests cannot pass until those subsystems exist.
@@ -224,8 +230,8 @@ platform capabilities or a live external integration.
   remain outstanding.
 - Matter-Bot: **Blocked by unmet Matter-Base criteria. Do not start.**
 
-Checkpoint `9e3cb4b0ca90b667096ecb4e0bf94e1c6ed3901a` recorded the lock-recovery
-checkpoint. Earlier checkpoint `38777f93edd9187010240747b69cdef8cd93213e` added persistent replay
+Checkpoint `e48ce509add1e08eaed63dfda3917b3f5d14accd` added panic-isolated
+event dispatch. Earlier checkpoint `9e3cb4b0ca90b667096ecb4e0bf94e1c6ed3901a` recorded lock recovery. Earlier checkpoint `38777f93edd9187010240747b69cdef8cd93213e` added persistent replay
 storage. Checkpoint `c0400d48dde6828bcc3784d8078d17242dcc88d5` added core lock-poison
 recovery; both were pushed to `origin/matter-beta` over authenticated SSH and
 confirmed by fetch. No promotion to `matter` was made. Matter-Vault live
@@ -240,10 +246,11 @@ external services.
    do not discard `Cargo.lock` or `target/` without inspecting ownership.
 3. Continue H by auditing and testing the existing implementations, beginning
    with legal-store transaction/recovery behavior and security-provider
-   boundaries; the event/service/i18n lock and callback pass has been audited. Make
+   boundaries; the event/service/i18n lock and callback pass has been audited,
+   and legal-store concurrency/rollback tests now pass. Make
    targeted compatible corrections with behavior tests.
 4. Run the complete verification sequence after the above targeted tests, then
-   update the recorded results here. (Latest full suite for this snapshot: 159 tests passed.) Continue auditing
+   update the recorded results here. (Latest full suite for this snapshot: 161 tests passed.) Continue auditing
    SQLite operation error paths, then provider authentication and key-store
    failure behavior. Add tests and make
    compatible fixes where defects are confirmed.

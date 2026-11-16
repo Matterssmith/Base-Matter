@@ -481,3 +481,82 @@ fn latest_decision_is_none_when_no_decision_exists() {
         .unwrap()
         .is_none());
 }
+
+#[test]
+fn concurrent_registration_of_same_document_is_idempotent_across_connections() {
+    use std::sync::{Arc, Barrier};
+    use std::thread;
+
+    let directory = std::env::temp_dir().join(format!(
+        "matter-base-legal-race-{}-{}",
+        std::process::id(),
+        time::OffsetDateTime::now_utc().unix_timestamp_nanos()
+    ));
+    std::fs::create_dir_all(&directory).unwrap();
+    let database = directory.join("legal.db");
+    let first = LegalStore::open(&database).unwrap();
+    let second = LegalStore::open(&database).unwrap();
+    let barrier = Arc::new(Barrier::new(3));
+    let document_a = create_terms();
+    let document_b = create_terms();
+
+    let first_barrier = Arc::clone(&barrier);
+    let first_thread = thread::spawn(move || {
+        first_barrier.wait();
+        first.register_document(&document_a)
+    });
+    let second_barrier = Arc::clone(&barrier);
+    let second_thread = thread::spawn(move || {
+        second_barrier.wait();
+        second.register_document(&document_b)
+    });
+
+    barrier.wait();
+    assert!(first_thread.join().unwrap().is_ok());
+    assert!(second_thread.join().unwrap().is_ok());
+    let verification = LegalStore::open(&database).unwrap();
+    assert!(verification.register_document(&create_terms()).is_ok());
+    drop(verification);
+    std::fs::remove_dir_all(directory).unwrap();
+}
+
+#[test]
+fn interrupted_decision_write_rolls_back_without_partial_history() {
+    let directory = std::env::temp_dir().join(format!(
+        "matter-base-legal-interruption-{}-{}",
+        std::process::id(),
+        time::OffsetDateTime::now_utc().unix_timestamp_nanos()
+    ));
+    std::fs::create_dir_all(&directory).unwrap();
+    let database = directory.join("legal.db");
+    let store = LegalStore::open(&database).unwrap();
+    store.register_user("interrupted-user").unwrap();
+    store.register_document(&create_terms()).unwrap();
+
+    let external_connection = rusqlite::Connection::open(&database).unwrap();
+    external_connection
+        .execute_batch(
+            "CREATE TRIGGER fail_legal_decision_insert
+             BEFORE INSERT ON legal_decisions
+             BEGIN
+                 SELECT RAISE(ABORT, 'simulated storage interruption');
+             END;",
+        )
+        .unwrap();
+
+    assert!(store
+        .record_decision(
+            "interrupted-user",
+            "base-terms-1.0.0-es",
+            ConsentDecision::Accepted,
+            None,
+        )
+        .is_err());
+    assert!(store
+        .decision_history("interrupted-user")
+        .unwrap()
+        .is_empty());
+    drop(external_connection);
+    drop(store);
+    std::fs::remove_dir_all(directory).unwrap();
+}
