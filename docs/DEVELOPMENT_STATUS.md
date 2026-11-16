@@ -8,14 +8,14 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Previous synchronized base commit: `2c3f4250a97dc9bfb304aed89b16f27d6a85913a`
+- Previous synchronized base commit: `2030512e552b9d0ebf69feba547649012d1a8c62`
 - Latest confirmed checkpoint before the current local work:
-  `2c3f4250a97dc9bfb304aed89b16f27d6a85913a`
+  `2030512e552b9d0ebf69feba547649012d1a8c62`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
 - Synchronization: `git fetch origin` succeeded before and after the checkpoint
   push; local `HEAD` matched `origin/matter-beta` at
-  `2c3f4250a97dc9bfb304aed89b16f27d6a85913a` after the owner-only audit-history
-  fix and its tests. Verify the current published tip from Git after each push.
+  `2030512e552b9d0ebf69feba547649012d1a8c62` before the registry migration
+  rollback test. Verify the current published tip from Git after each push.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -110,6 +110,10 @@ not ready for Matter-Bot.
   transaction as retrieving records. Co-owners and unrelated actors are
   denied. Records remain stored after bot deletion but are inaccessible through
   the current registry API after the identity is removed.
+- Added a migration-failure regression for the SQLite bot registry. An injected
+  conflicting schema object forces migration to fail; the test verifies the
+  schema version and identity columns remain at version 1, legacy rows remain
+  present, and a clean retry completes to version 3.
 
 ### Files created, modified, and deleted
 
@@ -198,6 +202,10 @@ After formatting, the following commands completed successfully:
   **12 passed**; `cargo fmt --all`, `cargo check --all-targets`, full
   `cargo test` — **182 passed, 0 failed**; doc tests: 0 passed, 0 failed;
   `git diff --check` passed.
+- Current bot migration rollback verification: focused test passed;
+  `cargo fmt --all`, `cargo check --all-targets`, and full `cargo test` —
+  **183 passed, 0 failed**; doc tests: 0 passed, 0 failed; `git diff --check`
+  passed.
 
 These results verify only the code that exists. They do not verify absent bot
 platform capabilities or a live external integration.
@@ -265,6 +273,9 @@ platform capabilities or a live external integration.
 - README files reviewed for owner-only audit-history reads: **1**.
 - README files updated for owner-only audit-history reads and API example: **1**.
 - README files with no changes for owner-only audit-history reads: **0**.
+- README files reviewed for bot-registry migration rollback coverage: **1**.
+- README files updated for bot-registry migration rollback coverage: **0**.
+- README files with no changes for bot-registry migration rollback coverage: **1**.
 - README files reviewed for the added Vault and WhatsApp/Telegram/Discord
   integration scope: **1**.
 - README files updated for that scope: **0**.
@@ -355,10 +366,12 @@ external services.
 1. Re-read this file and the root README.
 2. Confirm the current branch, status, and remote tip. Preserve local work;
    do not discard `Cargo.lock` or `target/` without inspecting ownership.
-3. Continue H with a module-by-module audit of `src/bots`, `src/legal`, and
-   `src/security`, beginning with migration rollback/corrupt-store behavior,
-   owner audit/error semantics, legal transaction failure paths, replay-store
-   bounds, and key/provider boundary validation. Add behavior tests for every confirmed
+3. Continue H with schema durability and failure paths in the legal store:
+   add transactional component-versioned initialization/migration coverage for
+   existing legal databases, interrupted schema writes, and unsupported future
+   versions. Preserve current legal data and test retry after migration failure.
+   Then continue auditing legal authorization boundaries and the remaining
+   provider/key and bot-registry corruption cases. Add behavior tests for every confirmed
    defect. Do not invent a shared-user identity system until a trustworthy
    authenticated-principal contract is available.
 4. Continue I by adding cross-module resilience cases around bot ownership,

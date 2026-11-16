@@ -164,6 +164,85 @@ fn sqlite_registry_migration_preserves_existing_rows_and_records_version() {
 }
 
 #[test]
+fn sqlite_registry_migration_failure_rolls_back_schema_version_and_columns() {
+    let directory = TemporaryDirectory::new();
+    let database = directory.0.join("migration-rollback.db");
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    connection
+        .execute_batch(
+            "CREATE TABLE matter_schema_versions (
+                 component TEXT PRIMARY KEY NOT NULL,
+                 version INTEGER NOT NULL
+             );
+             INSERT INTO matter_schema_versions VALUES ('bot_registry', 1);
+             CREATE TABLE bot_identities (
+                 instance_id TEXT PRIMARY KEY NOT NULL,
+                 family_id TEXT NOT NULL,
+                 release_key TEXT NOT NULL,
+                 display_name TEXT NOT NULL UNIQUE,
+                 created_at INTEGER NOT NULL
+             );
+             INSERT INTO bot_identities VALUES (
+                 'inst_existing', 'family-a', 'release-1', 'legacy-bot', 1
+             );
+             CREATE TABLE bot_registry_audit (conflicting_column TEXT);",
+        )
+        .unwrap();
+    drop(connection);
+
+    assert!(BotRegistry::open_sqlite(&database).is_err());
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    let version: i64 = connection
+        .query_row(
+            "SELECT version FROM matter_schema_versions WHERE component = 'bot_registry'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(version, 1);
+    let column_count: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('bot_identities')
+             WHERE name IN ('owner_id', 'co_owner_ids')",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(column_count, 0);
+    let conflict_column_count: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('bot_registry_audit')
+             WHERE name = 'conflicting_column'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(conflict_column_count, 1);
+    drop(connection);
+
+    let connection = rusqlite::Connection::open(&database).unwrap();
+    connection
+        .execute_batch("DROP TABLE bot_registry_audit;")
+        .unwrap();
+    drop(connection);
+
+    let recovered = BotRegistry::open_sqlite(&database).unwrap();
+    assert_eq!(
+        recovered.get("inst_existing").unwrap().unwrap().family_id(),
+        "family-a"
+    );
+    let connection = rusqlite::Connection::open(database).unwrap();
+    let version: i64 = connection
+        .query_row(
+            "SELECT version FROM matter_schema_versions WHERE component = 'bot_registry'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(version, 3);
+}
+
+#[test]
 fn sqlite_registry_rejects_newer_schema_without_rewriting_it() {
     let directory = TemporaryDirectory::new();
     let database = directory.0.join("future-schema.db");
