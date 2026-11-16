@@ -6,10 +6,13 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
+pub mod authenticated_key_manager;
+pub mod authenticated_key_provider;
 pub mod authenticated_provider;
 pub mod encryption;
 pub mod key_manager;
 pub mod key_provider;
+pub mod key_rotation;
 pub mod provider_authenticator;
 pub mod provider_binding_store;
 pub mod provider_identity;
@@ -26,7 +29,12 @@ pub use encryption::{
 };
 
 pub use key_manager::KeyManager;
-pub use key_provider::KeyProvider;
+
+pub use key_provider::{
+    create_provider_binding_proof,
+    BoundKeyProvider,
+    KeyProvider,
+};
 
 pub use provider_authenticator::{
     ProviderAssertion,
