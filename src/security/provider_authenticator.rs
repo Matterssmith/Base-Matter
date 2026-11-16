@@ -21,6 +21,8 @@ use time::OffsetDateTime;
 const MAX_ASSERTION_LIFETIME: i64 = 300;
 const CLOCK_SKEW_SECONDS: i64 = 30;
 const MAX_REPLAY_ENTRIES: usize = 4096;
+const MAX_ASSERTION_CIPHERTEXT_BYTES: usize = 16 * 1024;
+const AUTHENTICATION_TAG_BYTES: usize = 16;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -63,6 +65,10 @@ impl ProviderAuthenticator {
         ciphertext: &[u8],
         key: &[u8; 32],
     ) -> Result<ProviderIdentity> {
+        if ciphertext.len() > MAX_ASSERTION_CIPHERTEXT_BYTES {
+            bail!("Provider assertion exceeds the size limit");
+        }
+
         let cipher = XChaCha20Poly1305::new_from_slice(key)
             .map_err(|_| anyhow::anyhow!("Invalid authentication key"))?;
 
@@ -191,6 +197,10 @@ impl ProviderAuthenticator {
             .map_err(|_| anyhow::anyhow!("Invalid authentication key"))?;
 
         let plaintext = serde_json::to_vec(assertion)?;
+
+        if plaintext.len() > MAX_ASSERTION_CIPHERTEXT_BYTES - AUTHENTICATION_TAG_BYTES {
+            bail!("Provider assertion exceeds the size limit");
+        }
 
         let aad = Self::associated_data(&assertion.vault_id, &assertion.audience);
 

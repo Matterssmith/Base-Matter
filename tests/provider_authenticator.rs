@@ -123,6 +123,17 @@ fn rejects_extreme_timestamps_without_overflowing() {
 }
 
 #[test]
+fn rejects_oversized_assertions_before_decryption() {
+    let nonce = [31u8; 24];
+    let ciphertext = vec![0u8; 16 * 1024 + 1];
+    let mut verifier = authenticator();
+
+    assert!(verifier
+        .authenticate(&nonce, &ciphertext, &[7u8; 32])
+        .is_err());
+}
+
+#[test]
 fn rejects_wrong_vault() {
     let key = [7u8; 32];
     let nonce = [5u8; 24];

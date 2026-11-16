@@ -8,10 +8,12 @@ verify the branch log for the current published commit.
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
-- Last synchronized commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
+- Previous synchronized base commit: `530efb81c645bd7c31e70abd7066048d947bfa73`
+- Latest confirmed checkpoint commit: `0cc310f5f3483fc4ba3edd58175d8121f008e72c`
 - Remote: `origin` (`https://github.com/Matterssmith/Matter-Base.git`)
-- Synchronization: `git fetch origin` succeeded; `HEAD` matched
-  `origin/matter-beta` before local work.
+- Synchronization: `git fetch origin` succeeded before and after the checkpoint
+  push; local `HEAD` matched `origin/matter-beta` at
+  `0cc310f5f3483fc4ba3edd58175d8121f008e72c`.
 - Initial tracked/untracked state: clean. `target/` was present as ignored
   build output and was preserved.
 - Applicable repository `AGENTS.md`: none found in the repository or its
@@ -48,6 +50,7 @@ not ready for Matter-Bot.
 | Application audit log | ABSENT | Legal decisions are append-only; no general administrative audit system. |
 | Encryption/key/provider contracts | PARTIAL | Primitives and injection contracts have tests; no production key service integration or independent security audit. |
 | Provider assertion replay protection | PARTIAL | Replay IDs are bounded and tracked only in one in-memory authenticator; no restart or multi-process replay store. |
+| Provider input resource limits | PARTIAL | Assertions are capped at 16 KiB and provider key loads at 4,096 IDs; no general service/plugin resource limits exist. |
 | Matter-Vault | BLOCKED | Interfaces exist, but there is no live service integration or external verification. |
 | Public API stability / multi-language contracts | PARTIAL | Rust public exports exist; no compatibility policy, versioned external protocol, or SDK contracts. |
 | Documentation | PARTIAL | Core README and architecture claims were stale and have been corrected locally; remaining release/documentation audit is pending. |
@@ -85,6 +88,9 @@ not ready for Matter-Bot.
   added a reentrant-subscription test. Documented that callback panics
   propagate and stop the current publish call; callback error isolation is
   not implemented.
+- Added fail-closed limits of 16 KiB for authenticated assertion ciphertexts
+  and 4,096 key IDs per provider load. Oversized inputs are rejected before
+  decryption or key material loading; regression tests pass.
 - Added this continuity record.
 - Preserved the exact project credit in the root README.
 
@@ -100,7 +106,8 @@ not ready for Matter-Bot.
   immediate transactions for registration and decision writes; provider
   assertion timestamp validation changed in
   `src/security/provider_authenticator.rs` and
-  `tests/provider_authenticator.rs`; legal access checks were consolidated in
+  `tests/provider_authenticator.rs`; provider list limits changed in
+  `src/security/key_manager.rs` and `tests/key_provider.rs`; legal access checks were consolidated in
   one SQL statement in `src/legal/mod.rs`; caller conversion handling changed
   in `src/events/mod.rs` and `src/i18n/mod.rs`; callback behavior is documented
   in `README.md` and `docs/architecture.md`.
@@ -128,8 +135,9 @@ After formatting, the following commands completed successfully:
 - Provider assertion extreme-timestamp regression test — passed.
 - EventBus/Translator panicking-conversion regression test — passed.
 - EventBus callback reentrant-subscription test — passed.
-- Full `cargo test` after all changes — **149 passed, 0 failed**; doc tests:
-  0 passed, 0 failed.
+- Oversized assertion and provider key-list tests — passed.
+- Full `cargo test` after resource-limit changes — **151 passed, 0 failed**;
+  doc tests: 0 passed, 0 failed.
 - `git diff --check`
 - Local Markdown-link scan — 7 Markdown files scanned, all relative links
   resolved.
@@ -143,7 +151,7 @@ platform capabilities or a live external integration.
 
 - README files found: **1** (`README.md` at repository root).
 - README files reviewed: **1**.
-- README files updated: **1**.
+- README files updated for this checkpoint: **1**.
 - README files with no changes: **0**.
 - Problems found: documented JavaScript/Node project structure and `npm`
   commands did not match the Rust Cargo crate; future bot/provider and other
@@ -152,8 +160,9 @@ platform capabilities or a live external integration.
 - Problems corrected: documented current Rust crate, actual commands and APIs,
   implemented/pending boundaries, security persistence limitations, exact
   required credits, authenticated Vault revalidation, timestamp validation,
-  process-local replay tracking, and synchronous event callback behavior. The
-  Matterssmith banner/heading identity has been retained.
+  process-local replay tracking, synchronous event callback behavior, and
+  provider input size limits. The Matterssmith banner/heading identity has
+  been retained.
 - Problems pending: component-by-component README examples cannot cover the
   absent subsystems; comprehensive release documentation waits for their
   implementation. No README was skipped.
@@ -168,8 +177,9 @@ platform capabilities or a live external integration.
   Provider assertion time arithmetic now rejects malformed extremes without
   overflow; replay tracking remains process-local and volatile. Caller string
   conversions now run outside EventBus/Translator write locks, and reentrant
-  callback behavior is tested. These subsystems still need broader concurrency
-  review. Callback panics propagate; no fallible callback contract exists.
+  callback behavior is tested. Provider inputs have bounded size/count.
+  These subsystems still need broader concurrency review. Callback panics
+  propagate; no fallible callback contract exists.
   The first source/test pass found no `todo!`, `unimplemented!`, or production
   `panic!`, but did find lock `.expect` calls. The rest of the module audit
   remains.
@@ -186,11 +196,12 @@ platform capabilities or a live external integration.
   remain outstanding.
 - Matter-Bot: **Blocked by unmet Matter-Base criteria. Do not start.**
 
-No promotion to `matter` was made. This checkpoint is prepared for the
-authorized commit/push to `matter-beta`; remote publication must be confirmed
-from Git output. Matter-Vault live verification is the only specifically
-identified external dependency; most remaining blockers are missing code and
-contracts in this repository, not external services.
+Checkpoint `0cc310f5f3483fc4ba3edd58175d8121f008e72c` was pushed to
+`origin/matter-beta` over authenticated SSH and then confirmed by `git fetch`.
+The next H/J audit corrections are being prepared for a separate checkpoint.
+No promotion to `matter` was made. Matter-Vault live verification is the only
+specifically identified external dependency; most remaining blockers are
+missing code and contracts in this repository, not external services.
 
 ## Exact next task to resume
 
@@ -202,7 +213,7 @@ contracts in this repository, not external services.
    transaction/recovery behavior, and security-provider boundaries. Make
    targeted compatible corrections with behavior tests.
 4. Run the complete verification sequence after the above targeted tests, then
-   update the recorded results here. (Completed for this snapshot: 149 tests
+   update the recorded results here. (Completed for this snapshot: 151 tests
    passed.) Continue auditing SQLite operation error paths, then
    events/services/i18n lock and callback behavior. Add tests and make
    compatible fixes where defects are confirmed.

@@ -13,6 +13,8 @@ use anyhow::{bail, Result};
 use std::collections::HashMap;
 use zeroize::Zeroizing;
 
+const MAX_PROVIDER_KEYS: usize = 4096;
+
 pub struct KeyManager {
     keys: HashMap<String, Zeroizing<[u8; 32]>>,
     active_key_id: Option<String>,
@@ -108,6 +110,11 @@ impl KeyManager {
         }
 
         let key_ids = provider.key_ids()?;
+
+        if key_ids.len() > MAX_PROVIDER_KEYS {
+            bail!("Provider returned too many keys");
+        }
+
         let active_key_id = provider.active_key_id()?;
 
         if let Some(active_id) = active_key_id.as_deref() {
