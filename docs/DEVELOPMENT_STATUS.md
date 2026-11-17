@@ -1,5 +1,22 @@
 # Matter-Base development status
 
+## 2026-11-17 — Plugin trust and sandbox contracts (pending CI)
+
+- Previous encrypted control-outbox checkpoint passed GitHub Actions run
+  44101946067.
+- Added plugin manifests with bounded parsing, traversal rejection,
+  deterministic directory loading and duplicate-name protection.
+- Added mandatory PluginTrust hooks for publisher and invocation checks,
+  plus PluginSandbox contract. Default DenyPluginSandbox never executes
+  untrusted code. Four deterministic tests cover manifest/path checks,
+  policy rejection, canonical commands and invalid batches.
+- README audit: one root README reviewed and updated; new docs/plugins.md
+  and architecture map the actual boundary. No platform executable imported.
+- CI for this checkpoint is pending. No production process isolation,
+  external signature verification or runtime sandbox has been verified.
+  H–L remain open; stable matter and Matter-Bot unchanged.
+
+
 ## 2026-11-17 — Encrypted control outbox (pending CI)
 
 - Previous reserved role-control checkpoint passed GitHub Actions run

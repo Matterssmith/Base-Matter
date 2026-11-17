@@ -173,6 +173,22 @@ multiple simultaneous publishers, recovery/import and actual authenticated
 GitHub commits remain integration requirements. See
 [Vault integration](docs/vault-integration.md).
 
+## Trusted plugin manifests and sandbox contracts
+
+The [plugin host](src/plugins.rs) accepts bounded JSON manifests for
+Rust/C++/Go/Python/Node workers. It rejects path traversal, unsupported
+runtimes, duplicate IDs/commands and oversized input. Installation requires
+an explicit PluginTrust provider to authenticate publishers; execution checks
+the policy again and goes through an injected PluginSandbox. Without an
+external sandbox, DenyPluginSandbox refuses all plugin execution. The host
+does **not** execute an entrypoint directly or expose system credentials.
+
+Loading manifests from a directory prevalidates the batch, but registration
+into the command router is not atomic against concurrent installations.
+No OS-level sandbox backend, signed artifact verification service or live
+cross-language process is supplied. No in-process mock should be treated as
+real isolation. See [plugin security contract](docs/plugins.md).
+
 ## Continuous verification
 
 GitHub Actions workflow [Rust verification](.github/workflows/rust-ci.yml)

@@ -24,6 +24,7 @@ pub mod events;
 pub mod i18n;
 pub mod legal;
 pub mod modules;
+pub mod plugins;
 pub mod security;
 pub mod services;
 pub mod sessions;

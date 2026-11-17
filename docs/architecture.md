@@ -31,6 +31,7 @@ Public crate API (`src/lib.rs`)
 ├── ControlDispatcher (control interception and socket activation gate)
 ├── CommandRouter (prefixes, aliases, injected authorization and middleware)
 │   └── Optional CommandAuditStore (SQLite attempts/outcomes, owner-scoped history)
+├── PluginHost (trusted manifest + injected sandbox contract)
 ├── Translator (in memory)
 ├── CoreModule + runtime-owned ModuleManager
 └── Security
