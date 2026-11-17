@@ -103,6 +103,17 @@ docs/         Architecture and continuity documentation
 
 There is one README in this repository: this root `README.md`.
 
+## Continuous verification
+
+GitHub Actions workflow [Rust verification](.github/workflows/rust-ci.yml)
+is configured for pushes and pull requests targeting `matter-beta`, and can
+also be dispatched manually. It runs formatting, all-target compilation,
+unit/integration and documentation tests, Clippy with warnings denied, and a
+commit whitespace check. Workflow presence does **not** establish that a run
+has passed; inspect the latest run and its logs before treating any commit
+as verified. The opt-in external Matter-Vault repository test is not run by
+default and still requires a separately available checkout.
+
 ## Requirements and build
 
 Install a Rust toolchain with Cargo, then run from the repository root:
