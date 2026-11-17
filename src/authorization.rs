@@ -326,9 +326,8 @@ impl RoleStore {
         validate_rule_key(action)?;
         let mut connection = self.lock()?;
         let tx = connection.transaction_with_behavior(TransactionBehavior::Deferred)?;
-        let mut statement = tx.prepare(
-            "SELECT role_id FROM role_grants WHERE scope_id=?1 AND user_id=?2",
-        )?;
+        let mut statement =
+            tx.prepare("SELECT role_id FROM role_grants WHERE scope_id=?1 AND user_id=?2")?;
         let roles = statement.query_map(params![scope, subject], |row| row.get::<_, String>(0))?;
         let assigned = roles.collect::<rusqlite::Result<Vec<_>>>()?;
         drop(statement);

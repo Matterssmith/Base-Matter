@@ -16,10 +16,7 @@ impl TestDatabase {
     fn new() -> Self {
         let mut random = [0_u8; 16];
         getrandom::fill(&mut random).unwrap();
-        Self(std::env::temp_dir().join(format!(
-            "matter-base-roles-{}.db",
-            hex::encode(random)
-        )))
+        Self(std::env::temp_dir().join(format!("matter-base-roles-{}.db", hex::encode(random))))
     }
 
     fn store(&self) -> RoleStore {
@@ -81,17 +78,35 @@ fn scope_isolation_owner_permissions_and_bounded_audit() {
     store.provision_scope("bot-1", "owner-1").unwrap();
     store.provision_scope("bot-2", "owner-2").unwrap();
     assert!(store.provision_scope("bot-1", "owner-2").is_err());
-    assert!(store.create_role("bot-1", "owner-2", "staff", None).is_err());
-    store.create_role("bot-1", "owner-1", "staff", None).unwrap();
+    assert!(store
+        .create_role("bot-1", "owner-2", "staff", None)
+        .is_err());
     store
-        .set_rule("bot-1", "owner-1", "staff", "*", "execute", RuleEffect::Allow)
+        .create_role("bot-1", "owner-1", "staff", None)
+        .unwrap();
+    store
+        .set_rule(
+            "bot-1",
+            "owner-1",
+            "staff",
+            "*",
+            "execute",
+            RuleEffect::Allow,
+        )
         .unwrap();
     store.grant("bot-1", "owner-1", "member", "staff").unwrap();
-    assert!(store.allowed("bot-1", "member", "anything", "execute").unwrap());
-    assert!(!store.allowed("bot-2", "member", "anything", "execute").unwrap());
+    assert!(store
+        .allowed("bot-1", "member", "anything", "execute")
+        .unwrap());
+    assert!(!store
+        .allowed("bot-2", "member", "anything", "execute")
+        .unwrap());
     assert!(store.audit_history("bot-1", "owner-2", 10, 0).is_err());
     assert!(store.audit_history("bot-1", "owner-1", 101, 0).is_err());
-    assert_eq!(store.audit_history("bot-1", "owner-1", 1, 0).unwrap().len(), 1);
+    assert_eq!(
+        store.audit_history("bot-1", "owner-1", 1, 0).unwrap().len(),
+        1
+    );
 }
 
 #[test]
@@ -100,7 +115,9 @@ fn durable_revoke_and_single_owner_control() {
     let store = db.store();
     store.provision_scope("bot", "owner").unwrap();
     store.create_role("bot", "owner", "staff", None).unwrap();
-    store.set_rule("bot", "owner", "staff", "*", "*", RuleEffect::Allow).unwrap();
+    store
+        .set_rule("bot", "owner", "staff", "*", "*", RuleEffect::Allow)
+        .unwrap();
     assert!(store.grant("bot", "owner", "member", "staff").unwrap());
     assert!(!store.grant("bot", "owner", "member", "staff").unwrap());
     drop(store);
@@ -119,7 +136,14 @@ fn failed_audit_rolls_back_policy_mutation() {
     store.create_role("bot", "owner", "staff", None).unwrap();
     store.grant("bot", "owner", "member", "staff").unwrap();
     store
-        .set_rule("bot", "owner", "staff", "command:ping", "execute", RuleEffect::Allow)
+        .set_rule(
+            "bot",
+            "owner",
+            "staff",
+            "command:ping",
+            "execute",
+            RuleEffect::Allow,
+        )
         .unwrap();
     let raw = Connection::open(&db.0).unwrap();
     raw.execute_batch(
@@ -128,13 +152,22 @@ fn failed_audit_rolls_back_policy_mutation() {
     )
     .unwrap();
     assert!(store
-        .set_rule("bot", "owner", "staff", "command:ping", "execute", RuleEffect::Deny)
+        .set_rule(
+            "bot",
+            "owner",
+            "staff",
+            "command:ping",
+            "execute",
+            RuleEffect::Deny
+        )
         .is_err());
     assert!(store
         .allowed("bot", "member", "command:ping", "execute")
         .unwrap());
     assert!(store.revoke("bot", "owner", "member", "staff").is_err());
-    assert!(store.allowed("bot", "member", "command:ping", "execute").unwrap());
+    assert!(store
+        .allowed("bot", "member", "command:ping", "execute")
+        .unwrap());
 }
 
 #[test]
@@ -143,7 +176,14 @@ fn router_authorizes_canonical_aliases_without_owner_bypass() {
     store.provision_scope("bot", "owner").unwrap();
     store.create_role("bot", "owner", "staff", None).unwrap();
     store
-        .set_rule("bot", "owner", "staff", "command:status", "execute", RuleEffect::Allow)
+        .set_rule(
+            "bot",
+            "owner",
+            "staff",
+            "command:status",
+            "execute",
+            RuleEffect::Allow,
+        )
         .unwrap();
     store.grant("bot", "owner", "member", "staff").unwrap();
     let router = CommandRouter::new(
