@@ -398,7 +398,7 @@ impl SqliteUserStore {
                 |r| r.get(0),
             )
             .optional()?;
-        if version.is_some_and(|v| v > USER_SCHEMA_VERSION || v < 0) {
+        if version.is_some_and(|v| !(0..=USER_SCHEMA_VERSION).contains(&v)) {
             bail!("Unsupported user store schema version");
         }
         if version.unwrap_or(0) < 1 {
