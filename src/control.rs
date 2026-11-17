@@ -4,7 +4,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use crate::{
-    activation::{GlobalPolicy, SocketActivationStore},
+    activation::{ActivationSource, GlobalPolicy, SocketActivationStore},
     BotRegistry, CommandRouter, RoleStore,
 };
 use anyhow::{anyhow, bail, Result};
@@ -15,6 +15,12 @@ pub enum DispatchResult {
     Control {
         socket_id: String,
         powered: bool,
+    },
+    Status {
+        socket_id: String,
+        enabled: bool,
+        source: ActivationSource,
+        bot_instance_id: Option<String>,
     },
     RoleChanged {
         bot_instance_id: String,
@@ -113,8 +119,9 @@ impl ControlDispatcher {
         })
     }
 
-    /// Control grammar: `=on [SOCKET_ID]`, `=off [SOCKET_ID]`; `/>` and
-    /// `=/>` are also accepted prefixes. Unknown control verbs never reach the
+    /// Control grammar: `=/>on [SOCKET_ID]`, `=/>off [SOCKET_ID]`,
+    /// `=/>status [SOCKET_ID]`; `=` and `/>` remain compatibility aliases.
+    /// Unknown control verbs never reach the
     /// normal router. Explicit target IDs still require that socket's owner.
     /// Admission is snapshot-based: powering off blocks subsequent admissions,
     /// but does not cancel a handler already admitted before the change.
@@ -143,6 +150,23 @@ impl ControlDispatcher {
                     return Ok(DispatchResult::Control {
                         socket_id: socket.to_owned(),
                         powered,
+                    });
+                }
+                ["status"] | ["status", _] => {
+                    let socket = tokens.get(1).copied().unwrap_or(receiving_socket);
+                    // One consistent snapshot: owner, binding, and effective
+                    // activation policy. No role or bot binding is required.
+                    let admission = self
+                        .activation
+                        .admission(socket, None, self.global_policy)?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    return Ok(DispatchResult::Status {
+                        socket_id: socket.to_owned(),
+                        enabled: admission.decision.enabled,
+                        source: admission.decision.source,
+                        bot_instance_id: admission.bot_instance_id,
                     });
                 }
                 ["set", "role", user, role] => {

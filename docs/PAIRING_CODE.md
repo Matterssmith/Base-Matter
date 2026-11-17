@@ -38,3 +38,7 @@ integrarán como consumidores cuando termine Base-Matter.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+La consulta de estado del socket se hace mediante `=/>status`, con
+identidad del dueño. No solicita ni muestra el código temporal de
+vinculación, y no expone un método QR.

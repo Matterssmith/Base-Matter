@@ -493,6 +493,17 @@ ocho tests offline pasaron en la
 No existe vinculación de número real ni puente autenticado a Base-Matter,
 por lo que Matter-Bot sigue bloqueado.
 
+## Global socket status without Bot-Matter
+
+The reserved `=/>status [SOCKET_ID]` control now returns the
+authenticated socket owner's current policy decision and bound bot identifier
+from one consistent database snapshot, even while the bot is powered off.
+The response is an application-level `DispatchResult::Status`:
+integrations must render it only to the authenticated requesting owner.
+It is not a network connection-health probe. It never starts Bot-Matter,
+invokes the ordinary command router, or creates a WhatsApp ping handler.
+Other users and owners of different sockets are denied.
+
 ## Roadmap boundary
 
 Scoped roles, persistent session metadata, guarded messaging contracts and

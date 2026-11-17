@@ -138,3 +138,15 @@ role must exist. Commands work while the socket is off and never invoke the
 normal router. Without a role store they fail closed. The host must serialize
 owner transfers with independent role/sockets stores; no cross-store atomicity
 is claimed.
+
+## Global owner-authorized socket inspection
+
+`=/>status [SOCKET_ID]` returns the effective socket activation decision,
+policy source and optional bot binding (`DispatchResult::Status`). This is
+a consistent snapshot of the stored socket/binding/policy, not network
+connection liveness. It works with the bot powered off or unbound, and
+never forwards to the bot router. The authenticated socket owner alone can
+read it, including when a target ID is provided. A global policy owner
+cannot inspect another owner's socket. `=` and `/>` remain compatibility
+aliases; `=/>` is the canonical global prefix. The caller must send the
+response only to the verified owner; no secret or pairing code is returned.

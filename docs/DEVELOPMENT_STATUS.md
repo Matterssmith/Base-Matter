@@ -1,5 +1,21 @@
 # Matter-Base development status
 
+## 2026-11-17 — Reserved socket status control (pending CI)
+
+- Built `=/>status [SOCKET_ID]` as a socket-owner-only introspection
+  operation independent of Bot-Matter and available when bot is off/unbound.
+- Reads policy, source and optional bot binding in a single stored admission
+  snapshot. Never treats activated power as proof of network connectivity.
+- Added three regressions covering power on/off, unauthorized actors,
+  cross-socket targets, bot bindings and rejection of `=/>ping`.
+- README audit: 1 root README reviewed and updated; activation, pairing
+  contracts and stage status reviewed/updated. No actual WhatsApp
+  credentials, session files or QR flow introduced.
+- Stage I remains in progress; external pairing/connection and Vault
+  integration are not complete. This checkpoint awaits CI validation.
+  `matter` stable and Bot-Matter untouched.
+
+
 ## 2026-11-17 — Owner correction: pairing-code-only and global control boundary (pending CI)
 
 - Owner clarifies the 22+ \`Matter\` repos form one ecosystem, but Bot-Matter
