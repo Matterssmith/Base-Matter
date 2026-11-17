@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Render de menu/help/h por comunidad (alpha, CI pendiente)
+
+- Nuevo `src/control_style.rs`: renderer reutilizable para `menu`, `help`, `h`, con título, bot ID, créditos y temas por comunidad; 2 tests comprueban aislamiento de temas y rechazo de entradas malformadas.
+- Es una API visual sin autoridad sobre roles ni sesiones. No se afirmó que se haya duplicado el diseño de un bot externo sin tener su código.
+- Ambos README auditados íntegros 2/2; actualizado solo README raíz. La entrega real de menús en WhatsApp sigue pendiente.
+
+
 ## 2026-11-17 — Ajustes de rustfmt para REGISTER (alpha; CI pendiente)
 
 - Aplicados los tres ajustes de formato exactos solicitados por las dos lanes de CI (controlador, test de alcance y escaneo de proveedor).

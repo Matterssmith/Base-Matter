@@ -716,3 +716,14 @@ subgrupos vinculados y compare la primera línea exacta de la descripción
 con `MATTER:OFFICIAL:register:<community-id>`. Responde únicamente al
 chat propio con el resultado o un fallo de lectura. Los cambios de nombre,
 imagen, permisos, links y creación permanecen bloqueados.
+
+## Estética reutilizable de menú y ayuda
+
+El módulo Rust `control_style` renderiza `menu`, `help` y `h`
+mediante una plantilla compartida con título, bot ID, encabezado,
+comandos globales y créditos. `ControlThemes` aísla overrides
+por identificador de comunidad y utiliza un diseño por defecto.
+Es solo presentación y no atribuye roles ni permisos. La persistencia,
+la entrega al chat y los estilos de bots externos se integrarán
+por el contrato público; no hay una copia exacta de una estética
+ajena sin su diseño fuente.
