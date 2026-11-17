@@ -209,6 +209,16 @@ online. Network operations across processes need provider-side generation
 fencing and revocation. See [connections and sessions](docs/sessions.md).
 
 
+## Readiness gates, licensing and tracked-file hygiene
+
+Matter-Base is not yet a production-ready release. The exact remaining
+requirements are maintained in [release readiness](docs/RELEASE_READINESS.md).
+The [MIT license](LICENSE) is included for this repository's own code;
+third-party provider imports must retain their original notices and licenses.
+The beta CI also verifies all tracked README links/credits and rejects
+sensitive private-key/session filenames.
+
+
 ## Continuous verification
 
 GitHub Actions workflow [Rust verification](.github/workflows/rust-ci.yml)

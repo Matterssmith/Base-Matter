@@ -1,5 +1,23 @@
 # Matter-Base development status
 
+## 2026-11-17 — Release hygiene and evidence gates (pending CI)
+
+- Previous encrypted lost-ack reconciliation passed GitHub Actions run
+  44123443517.
+- Added MIT LICENSE matching Cargo.toml's declared license, without altering
+  upstream provider licensing or incorporating external provider code.
+- Added scripts/verify_repository.py to check all tracked README credits,
+  relative links, tracked LICENSE presence and sensitive tracked filenames.
+- CI now runs the tracked-file/document audit alongside Rust checks; new
+  docs/RELEASE_READINESS.md lists independently verifiable release blockers
+  instead of treating interfaces/mocks as completed integrations.
+- README audit: one root README reviewed and updated; its relative links
+  are intended to be checked in CI. Full release readiness is NOT declared.
+- Test results for this commit await GitHub Actions. Stable matter and
+  Matter-Bot unchanged.
+
+
+
 ## 2026-11-17 — Remote encrypted acknowledgment reconciliation (pending CI)
 
 - Prior connection lifecycle checkpoint passed GitHub Actions run 44122884865.

@@ -54,5 +54,8 @@ jobs:
       - name: Verify Clippy
         run: cargo clippy --all-targets --locked -- -D warnings
 
+      - name: Audit tracked README links, credits and secrets
+        run: python3 scripts/verify_repository.py
+
       - name: Verify whitespace
         run: git diff --check HEAD^ HEAD
