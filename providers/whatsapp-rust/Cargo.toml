@@ -7,7 +7,7 @@ license = "MIT"
 description = "Independent Rust pairing-code WhatsApp provider for Base-Matter"
 
 [dependencies]
-whatsapp-rust = "=0.7.0"
+whatsapp-rust = { version = "=0.7.0", default-features = false, features = ["tokio-runtime", "tokio-native", "tokio-transport", "ureq-client", "sqlite-storage"] }
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "net", "io-util"] }
 anyhow = "1.0"
 hex = "0.4"

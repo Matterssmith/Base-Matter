@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Blocker fixes, linked Rust processes (CI pending)
+
+- Fixed control_ipc.rs E0034 (ambiguous Read/Write by_ref), explicitly using the bounded Read::take on the TCP stream.
+- Whatsapp-rust provider 0.7.0 transitive wacore-binary failed E0554 on stable from default SIMD feature; disabled default whatsapp-rust features and explicitly selected stable Tokio/transport/HTTP/SQLite features. CI must confirm transitive SIMD is also disabled.
+- Read both root README and provider README, unchanged this commit. Rust only, no Bot-Matter or QR UI; live phone test still outstanding.
+
+
 ## 2026-11-17 — Rust local HMAC control IPC server (pending CI)
 
 - Added WhatsAppControlIpc with strict 127.0.0.1 listener and <=16KiB signed frame admission; response contains only sanitized outcome. Reuses existing Rust WhatsAppControlBridge and persistent replay store.
