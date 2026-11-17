@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Prueba real de path traversal en CLI y rustfmt (alpha, CI pendiente)
+
+- Se corrigió test `--recovery-verify` para probar realmente el nombre `../unsafe` en lugar de un argumento extra, evitando una falsa cobertura de seguridad. Se aplicó el formato requerido por rustfmt.
+- Revisados ambos README de forma íntegra (2/2), sin cambios. Mantener las pruebas del SHA exacto antes de fusionar a beta.
+
+
 ## 2026-11-17 — E2E offline del CLI recovery (alpha; CI pendiente)
 
 - Test Rust ejecuta el binario real con `--recovery-verify`, clave y snapshot propios en directorio 0700, verifica lectura sin crear SQLite, sin exponer JIDs, y rechaza clave errónea y nombre de archivo inválido.
