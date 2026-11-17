@@ -132,7 +132,8 @@ fn independent_connections_cannot_override_a_newer_revision() {
     start.wait();
     let successes = threads
         .into_iter()
-        .filter(|thread| thread.join().unwrap().is_ok())
+        .map(|thread| thread.join().unwrap().is_ok())
+        .filter(|success| *success)
         .count();
     assert_eq!(successes, 1);
     assert_eq!(
