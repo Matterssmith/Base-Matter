@@ -214,19 +214,27 @@ fn main() -> Result<()> {
         Ok("Community REGISTER read-only inventory authorized".to_owned())
     })?;
     extensions.register("add++", &[], |_, args| {
-        match args {
-            [] => Ok("Recuperación comunitaria: vista previa autorizada. Sin incorporar participantes.".to_owned()),
-            ["snapshot", community_id]
-                if community_id.len() <= 128
-                    && community_id.ends_with("@g.us")
-                    && community_id.bytes().all(|byte| {
-                        byte.is_ascii_alphanumeric() || b"@._:-".contains(&byte)
-                    }) =>
-            {
-                Ok("Instantánea privada solicitada; requiere sesión, rol admin y cifrado local.".to_owned())
-            }
-            _ => bail!("Recovery only supports a read-only preview or explicit snapshot"),
+        if args.is_empty() {
+            return Ok(
+                "Recuperación comunitaria: vista previa autorizada. Sin incorporar participantes."
+                    .to_owned(),
+            );
         }
+        if args.len() == 2 && args[0] == "snapshot" {
+            let id = &args[1];
+            if id.len() <= 128
+                && id.ends_with("@g.us")
+                && id
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || b"@._:-".contains(&byte))
+            {
+                return Ok(
+                    "Instantánea privada solicitada; requiere sesión, rol admin y cifrado local."
+                        .to_owned(),
+                );
+            }
+        }
+        bail!("Recovery only supports a read-only preview or explicit snapshot")
     })?;
     let style = Arc::new(ControlThemes::new(ControlTheme::new(
         "Base-Matter",

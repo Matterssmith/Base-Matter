@@ -103,7 +103,9 @@ fn reserved_names_and_alias_collisions_fail_closed() {
         assert!(registry.register(name, &[], |_, _| Ok("x".into())).is_err());
     }
     for invalid in ["add+", "add+++", "+add", "add+test"] {
-        assert!(registry.register(invalid, &[], |_, _| Ok("bad".into())).is_err());
+        assert!(registry
+            .register(invalid, &[], |_, _| Ok("bad".into()))
+            .is_err());
     }
     registry
         .register("add++", &[], |_, args| {
@@ -227,7 +229,9 @@ fn recovery_add_plus_plus_is_owner_only_and_cannot_mutate_by_spelling() {
         ("socket-a", "alice", "=add++"),
         ("socket-a", "alice", "/>add++"),
     ] {
-        assert!(control.dispatch(socket, actor, "private", None, command).is_err());
+        assert!(control
+            .dispatch(socket, actor, "private", None, command)
+            .is_err());
     }
     assert!(
         !activation

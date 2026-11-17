@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Corrección de tipo del subcomando add++ (alpha; CI pendiente)
+
+- Se resolvió E0308 en Windows: el matcher de `&[String]` no permite comparar `"snapshot"` como patrón `&str`. Ahora se valida la longitud y el texto directamente antes de autorizar la instantánea.
+- Corregidos 2 detalles de rustfmt en `tests/control_extensions.rs`. README raíz y proveedor revisados íntegros (2/2) sin cambios de contenido. No se han incorporado usuarios ni alterado comunidades.
+
+
 ## 2026-11-17 — =/>add++ lee miembros de comunidades autorizadas (alpha; CI pendiente)
 
 - El proveedor Rust ahora consulta `get_linked_groups_participants` después del acuse HMAC de Base para comunidades con admin PN/LID verificado. Excluye las suspendidas, deduplica identificadores disponibles y envía solo conteos aproximados al self-chat.
