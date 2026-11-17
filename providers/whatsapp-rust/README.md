@@ -142,3 +142,7 @@ privado propio el formato autorizado por Base-Matter. El texto se valida
 y se limita a 760 bytes; los mensajes duplicados o no autorizados no
 generan respuesta. El proveedor no interpreta comandos externos
 `#matter` ni importa sesiones de bots ajenos.
+
+## Menú simple para pruebas beta
+
+El menú de control de Base-Matter es intencionalmente plano. `=/>menu`, `=/>help` y `=/>h` no incluyen una estética atribuida a otro bot sin una muestra observada y aprobada. Todas las respuestas siguen exigiendo validación del dueño del socket.

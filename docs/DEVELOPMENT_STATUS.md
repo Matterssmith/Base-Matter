@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Menú universal plano para WhatsApp (alpha; CI pendiente)
+
+- Corregida la interpretación: el propietario no pidió que Base inventase un menú decorativo; solo pide tomar estética de un menú real de otro bot. El menú universal ahora se presenta sin marcos, con comandos que realmente puede ejecutar el controlador.
+- Los dos README se revisaron íntegros (2/2) y actualizaron. La futura importación de estética requiere observar una respuesta real de un bot autorizado, sin copiar comandos ni credenciales.
+- No cambian seguridad, sesiones o permisos. Verificar CI antes de promover a beta.
+
+
 ## 2026-11-17 — Prueba del mensaje IPC autorizado (alpha; CI pendiente)
 
 - El test TCP de lazo local verifica que `applied` para control `on/off` incluye una respuesta informativa, mientras que el replay `duplicate` no contiene el campo `message`.

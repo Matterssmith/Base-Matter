@@ -745,3 +745,7 @@ El receptor devuelve texto limitado por el IPC y el proveedor lo responde
 bot ID y créditos. El diseño puede variar por comunidad a través de
 `ControlThemes`; todavía no hay almacenamiento ni administración de temas
 desde WhatsApp. En paralelo `=/>start` mantiene el informe de lectura.
+
+## Menú universal sin diseño inventado
+
+Los comandos `=/>menu`, `=/>help` y `=/>h` muestran exclusivamente los comandos globales existentes, con texto plano y sin un marco decorativo inventado. La estética de otro bot solo puede reutilizarse tras observar un menú real autorizado y extraer sus componentes visuales, nunca sus comandos o identidad. No se afirma que el proveedor pueda leer automáticamente menús de terceros.

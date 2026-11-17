@@ -33,10 +33,10 @@ impl ControlTheme {
         if !matches!(section, "menu" | "help" | "h") {
             bail!("Unsupported control help section");
         }
-        let heading = if section == "menu" { "MENÚ" } else { "AYUDA" };
+        let heading = if section == "menu" { "Comandos" } else { "Ayuda" };
         Ok(format!(
-            "╭〔 {} · {} · {} 〕\n┃ BOT ID: {}\n┃ =/>start  Comunidad REGISTER (inspección)\n┃ =/>status Estado del socket\n┃ =/>on / =/>off  Control del dueño\n┃ =/>menu / =/>help / =/>h\n╰━━━━━━━━━━\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].",
-            self.accent, self.title, heading, self.bot_id
+            "{} - {}\nBot ID: {}\n=/>status - Consultar política del socket\n=/>on - Encender socket (no concede permisos)\n=/>off - Apagar socket\n=/>start - Revisar comunidades REGISTER (solo lectura)\n=/>menu - Comandos universales\n=/>help - Ayuda universal\n=/>h - Alias de ayuda\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].",
+            self.title, heading, self.bot_id
         ))
     }
 }
