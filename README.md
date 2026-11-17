@@ -451,6 +451,22 @@ same transaction as their audit; the new binding and power-on must be explicit.
 Normal admission reads owner, binding and policy together to preserve isolation.
 See [activation contracts](docs/activation.md).
 
+## Promoción estable y pruebas WhatsApp — 17 nov 2026
+
+La rama \`matter\` ya recibió el PR #3 con **solo** endurecimiento verificado
+de seguridad, compilación y pruebas SQLite/Windows. Su commit
+\`e509cc4f8c53eafbb1233359bc2ae63e0dde7f48\` pasó la
+[CI estable](https://github.com/Matterssmith/Matter-Base/actions/runs/44139981479)
+en Ubuntu y Windows. No se trasladaron los módulos de integración incompletos.
+
+La prueba de WhatsApp con Baileys vive en
+[Matter-Baileys/matter-beta](https://github.com/Matterssmith/Matter-Baileys/tree/matter-beta)
+(nombre futuro WhatsApp-Matter). Su comprobación de dependencias y sus
+ocho tests offline pasaron en la
+[CI de WhatsApp](https://github.com/Matterssmith/Matter-Baileys/actions/runs/44139262152).
+No existe vinculación de número real ni puente autenticado a Base-Matter,
+por lo que Matter-Bot sigue bloqueado.
+
 ## Roadmap boundary
 
 Scoped roles, persistent session metadata, guarded messaging contracts and

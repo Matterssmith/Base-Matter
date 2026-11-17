@@ -1,5 +1,27 @@
 # Matter-Base development status
 
+## 2026-11-17 — Verified stable promotion, naming and WhatsApp beta
+
+- Promoted only standalone Rust lint/security/test hardening, MIT LICENSE,
+  Cargo.lock and Linux/Windows CI from stable candidate through PR #3 into
+  \`matter\`, merge SHA \`e509cc4f8c53eafbb1233359bc2ae63e0dde7f48\`.
+  The post-merge stable run 44139981479 passed on Ubuntu and Windows.
+- \`matter-beta\` retains incomplete integrations and diverged feature work;
+  it was not mass-merged into stable. Last named beta CI run 44138531259
+  passed; no older local server files were touched.
+- Matter-Baileys has a separate matter-beta branch for the future
+  WhatsApp-Matter adapter. Node dependency resolution, 8 offline test cases
+  and upstream import check passed run 44139262152. This cannot establish a
+  live WhatsApp connection or authorize production credentials/groups.
+- Repo naming: 22 remotes require GitHub administrative rename; no repository
+  rename was executed through this connector. Safe gh CLI rename plan and
+  docs/ECOSYSTEM_RENAME.md are committed in beta.
+- README audit: one root README inspected and updated. This checkpoint is
+  documentation-only, with CI validation to follow.
+- Stage I integration/resilience remains active. H audit closure and J–L
+  release gates remain open. Do not start Matter-Bot until Base is ready.
+
+
 ## 2026-11-17 — Reversed ecosystem names and WhatsApp provider smoke
 
 - User requested '<Component>-Matter' names across the Matterssmith

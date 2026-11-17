@@ -72,3 +72,13 @@ GitHub Actions run `44125657053` on `matter-beta` SHA
 `d4dcc7791fdf1641de74e755a2edef81f87531b8` passed both Linux
 and Windows Rust lanes on November 17, 2026. This does not waive any of
 the external integration blockers above. No release promotion was performed.
+
+## Verified stable promotion and WhatsApp smoke
+
+Stable branch `matter` merged PR #3 at `e509cc4f8c53eafbb1233359bc2ae63e0dde7f48`.
+GitHub Actions 44139981479 passed Linux/Windows. The beta naming and
+administrative rename plan passed CI 44138531259. WhatsApp platform repo
+`Matter-Baileys`, beta, passed eight offline tests and pinned dependency
+installation in 44139262152. These are not evidence of live WhatsApp pairing
+or production Vault, OS sandbox or account connection. Keep these as hard
+release blockers.
