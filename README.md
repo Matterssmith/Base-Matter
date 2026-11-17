@@ -727,3 +727,11 @@ Es solo presentación y no atribuye roles ni permisos. La persistencia,
 la entrega al chat y los estilos de bots externos se integrarán
 por el contrato público; no hay una copia exacta de una estética
 ajena sin su diseño fuente.
+
+## Respuestas de estado y extensiones del control
+
+El receptor `whatsapp-matter-control` puede adjuntar texto informativo
+limitado a 760 bytes al resultado `applied`, para `status`,
+encendido/apagado y extensiones autorizadas. Nunca devuelve estos datos
+en un rechazo ni un replay. El proveedor verificará ese campo antes de
+enviarlo al chat; el cambio no altera la firma HMAC de entrada.

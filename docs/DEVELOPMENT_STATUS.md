@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Respuesta de texto validada del puente IPC (alpha; CI pendiente)
+
+- El receptor Rust puede incluir `message` únicamente al acuse `applied` para status, encendido/apagado y extensiones; límite 760 bytes y sanitización. La API `dispatch()` conserva el retorno anterior.
+- El transporte conserva el HMAC de entrada y el replay; las denegaciones/duplicados no filtran contenido. Falta que el proveedor reconozca el nuevo campo.
+- 2 README revisados íntegros (2/2), actualizado solo raíz. Documentación IPC ampliada. CI pendiente.
+
+
 ## 2026-11-17 — Rechazo temprano de caracteres de control en #matter (alpha; CI pendiente)
 
 - Se corrigió el fallo reproducido en Linux/Windows: un NUL tras `#matter` se ignoraba como un prefijo inválido antes de validarse. Ahora se rechaza toda entrada con caracteres de control antes de analizar el separador.
