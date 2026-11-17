@@ -36,7 +36,17 @@ use std::time::{SystemTime, UNIX_EPOCH};
 const LEGAL_STORE_SCHEMA_VERSION: i64 = 1;
 
 // Internal SQLite row layout for immutable legal-document comparisons.
-type LegalDocumentRow = (String, String, String, String, String, String, i64, String, i64);
+type LegalDocumentRow = (
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    i64,
+    String,
+    i64,
+);
 
 /// Sensitive legal-store operation delegated to the consuming application's
 /// authenticated identity and authorization layer.
