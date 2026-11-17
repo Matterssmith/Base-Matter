@@ -134,3 +134,11 @@ El proveedor admite el acuse opcional `message` de una operación
 de 761 bytes, texto UTF-8 válido, sin NUL ni controles salvo saltos de
 línea. Los `duplicate`, `denied` y campos inesperados no contienen
 respuestas. La verificación no equivale a privilegio de administración.
+
+## Ayuda y menú del controlador Base (alpha)
+
+Los comandos `=/>menu`, `=/>help` y `=/>h` devuelven en el chat
+privado propio el formato autorizado por Base-Matter. El texto se valida
+y se limita a 760 bytes; los mensajes duplicados o no autorizados no
+generan respuesta. El proveedor no interpreta comandos externos
+`#matter` ni importa sesiones de bots ajenos.

@@ -5,6 +5,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use anyhow::{anyhow, bail, Result};
+use matter_base::control_style::{ControlTheme, ControlThemes};
 use matter_base::{
     activation::SocketActivationStore, control::ControlDispatcher, BotRegistry, CommandAuthorizer,
     CommandInvocation, CommandRouter, ControlExtensionRegistry, InboundReplayStore,
@@ -211,6 +212,23 @@ fn main() -> Result<()> {
             bail!("Community changes require an approved plan");
         }
         Ok("Community REGISTER read-only inventory authorized".to_owned())
+    })?;
+    let style = Arc::new(ControlThemes::new(ControlTheme::new(
+        "Base-Matter", "base-matter", "✦",
+    )?));
+    let menu_theme = Arc::clone(&style);
+    extensions.register("menu", &[], move |_, args| {
+        if !args.is_empty() {
+            bail!("Unexpected menu arguments");
+        }
+        menu_theme.render(None, "menu")
+    })?;
+    let help_theme = Arc::clone(&style);
+    extensions.register("help", &["h"], move |_, args| {
+        if !args.is_empty() {
+            bail!("Unexpected help arguments");
+        }
+        help_theme.render(None, "help")
     })?;
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)

@@ -227,13 +227,12 @@ async fn main() -> Result<()> {
                 };
                 match config.signed_control(&data) {
                     Ok(Some(frame)) => match deliver(config.bridge_addr, &frame).await {
-                        Ok(ControlAck::Applied) => {
+                        Ok(ack @ (ControlAck::Applied | ControlAck::AppliedWithMessage(_))) => {
                             println!("Base-Matter owner control applied");
-                            // Only the authenticated owner's private self-chat
-                            // reaches this point. A plain response has no
-                            // global prefix, so it cannot trigger control.
-                            if frame.text == "=/>start" {
-                                let summary = match timeout(
+                            // Only an authenticated private self-chat may receive
+                            // an authorized response. Text has no control prefix.
+                            let response = if frame.text == "=/>start" {
+                                match timeout(
                                     Duration::from_secs(20),
                                     discover_register(&ctx, &config.owner_jid),
                                 )
@@ -241,11 +240,14 @@ async fn main() -> Result<()> {
                                 {
                                     Ok(Ok(report)) => report,
                                     _ => "Base-Matter REGISTER: inspección no disponible o incompleta; no se hicieron cambios.".to_owned(),
-                                };
-                                if ctx.reply(summary).await.is_err() {
-                                    eprintln!("Community scan report delivery unavailable");
                                 }
-                            } else if ctx.reply("Base-Matter: solicitud procesada.").await.is_err() {
+                            } else {
+                                match ack {
+                                    ControlAck::AppliedWithMessage(text) => text,
+                                    _ => "Base-Matter: solicitud procesada.".to_owned(),
+                                }
+                            };
+                            if ctx.reply(response).await.is_err() {
                                 eprintln!("Base-Matter control applied; chat acknowledgment unavailable");
                             }
                         }

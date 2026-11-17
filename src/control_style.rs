@@ -38,8 +38,8 @@ impl ControlTheme {
         }
         let heading = if section == "menu" { "MENÚ" } else { "AYUDA" };
         Ok(format!(
-            "╭〔 {} · {} 〕\n┃ BOT ID: {}\n┃ =/>start  Comunidad REGISTER (inspección)\n┃ =/>status Estado del socket\n┃ =/>on / =/>off  Control del dueño\n┃ =/>menu / =/>help / =/>h\n╰━━━━━━━━━━\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].",
-            self.accent, heading, self.bot_id
+            "╭〔 {} · {} · {} 〕\n┃ BOT ID: {}\n┃ =/>start  Comunidad REGISTER (inspección)\n┃ =/>status Estado del socket\n┃ =/>on / =/>off  Control del dueño\n┃ =/>menu / =/>help / =/>h\n╰━━━━━━━━━━\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].",
+            self.accent, self.title, heading, self.bot_id
         ))
     }
 }

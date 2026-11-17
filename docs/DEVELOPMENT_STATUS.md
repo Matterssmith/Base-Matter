@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Render de menu/help/h hasta self-chat WhatsApp (alpha; CI pendiente)
+
+- Conectado el renderer `ControlTheme` con tres órdenes globales del ControlDispatcher: `=/>menu`, `=/>help`, `=/>h` (alias); todas requieren dueño del socket. El título de la plantilla ahora se muestra en la cabecera.
+- El proveedor Rust maneja `ControlAck::AppliedWithMessage` para entregar el texto validado al chat propio; el inventario `=/>start` conserva su informe especializado. Se ignoran duplicados/rechazos.
+- README raíz y del proveedor auditados íntegramente (2/2) y actualizados. Sin acceso a sesiones externas, sin cambios administrativos y sin pruebas de teléfono aún.
+- CI del SHA exacto pendiente.
+
+
 ## 2026-11-17 — Acuse opcional con texto validado en proveedor Rust (alpha; CI pendiente)
 
 - El proveedor interpreta `applied` con un campo opcional `message` acotado a 760 bytes y sin controles, compatible con respuestas antiguas sin ese campo. No admite mensajes en `duplicate` o `denied`; tests ampliados.
