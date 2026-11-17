@@ -60,6 +60,9 @@ jobs:
       - name: Verify ecosystem rename plan
         run: python3 -m unittest discover -s test -p "test_naming.py" -v
 
+      - name: Check WhatsApp operator setup script syntax
+        run: bash -n scripts/whatsapp-test-setup.sh
+
       - name: Verify whitespace
         run: git diff --check HEAD^ HEAD
 

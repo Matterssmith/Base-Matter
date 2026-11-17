@@ -600,3 +600,7 @@ La prueba local del puente TCP Rust comprueba una sesión de lazo local: on, rep
 ## Prueba de configuración del puente Rust
 
 Los dos ejecutables Rust incorporan `--check` para revisar variables de entorno, secretos diferentes, acceso a directorios privados y dirección TCP local antes de abrir una sesión. No crean bases SQLite ni inician WhatsApp en este modo. Las instrucciones de emparejamiento deben seguir siendo exclusivamente por pairing code. No utilizar el antiguo ping ni desarrollar Bot-Matter.
+
+## Prueba real de WhatsApp — dos procesos Rust
+
+Para probar el emparejamiento exclusivamente por código en `matter-beta`, sigue la [guía paso a paso](docs/WHATSAPP_TRIAL.md). Incluye creación de un entorno privado y comandos separados del receptor Base-Matter y del proveedor `whatsapp-rust`. Sin sesión real verificada, no declarar estabilidad ni promover el proveedor a `matter`.

@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Reproducible operator pairing-code test setup (pending CI)
+
+- Added Bash-only operator setup helper for two Rust processes; generates two random 256-bit secrets in a private local file with directory mode 0700 and file mode 0600; refuses to overwrite settings or sessions.
+- Added docs/WHATSAPP_TRIAL.md with exact source/checkout, build, preflight, init, serve and provider pairing instructions for the real phone operator. No secrets, phone numbers or credentials written to the repository.
+- Reviewed both project READMEs (2/2), updated both with the operator guide. Production promotion still requires live pairing and reconnect/revocation tests, plus Vault and broader readiness gates.
+
+
 ## 2026-11-17 — WhatsApp provider preflight, without touching sessions (pending CI)
 
 - Added `--check` to both existing Rust executables, checking all required environment settings, loopback and private paths. Neither command opens a live connection nor SQLite in preflight.
