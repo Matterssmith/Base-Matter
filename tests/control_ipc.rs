@@ -8,7 +8,7 @@ use anyhow::Result;
 use hmac::{Hmac, Mac};
 use matter_base::{
     activation::SocketActivationStore,
-    control::{ControlDispatcher, DispatchResult},
+    control::ControlDispatcher,
     BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter, ControlIpcOutcome,
     InboundReplayStore, WhatsAppBridgeConfig, WhatsAppControlBridge, WhatsAppControlIpc,
 };
