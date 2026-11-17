@@ -87,7 +87,13 @@ fn only_authenticated_socket_owner_can_inspect_status_or_target_another_socket()
         .dispatch("socket-a", "alice", "room", None, "=/>status socket-b")
         .is_err());
     assert!(dispatcher
-        .dispatch("socket-a", "alice", "room", None, "=/>status socket-b extra")
+        .dispatch(
+            "socket-a",
+            "alice",
+            "room",
+            None,
+            "=/>status socket-b extra"
+        )
         .is_err());
     assert_eq!(
         dispatcher
