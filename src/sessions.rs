@@ -176,7 +176,15 @@ impl SessionRegistry {
              ) VALUES(?1,?2,?3,'disconnected',0)",
             params![socket, actor, platform],
         )?;
-        insert_audit(&tx, socket, actor, "register", None, ConnectionState::Disconnected, 0)?;
+        insert_audit(
+            &tx,
+            socket,
+            actor,
+            "register",
+            None,
+            ConnectionState::Disconnected,
+            0,
+        )?;
         tx.commit()?;
         Ok(SessionRecord {
             socket_id: socket.to_owned(),

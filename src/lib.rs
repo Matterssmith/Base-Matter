@@ -24,8 +24,8 @@ pub mod i18n;
 pub mod legal;
 pub mod modules;
 pub mod security;
-pub mod sessions;
 pub mod services;
+pub mod sessions;
 pub mod users;
 
 pub use authorization::{RoleAuditRecord, RoleCommandAuthorizer, RoleStore, RuleEffect};
