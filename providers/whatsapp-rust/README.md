@@ -99,3 +99,12 @@ generan respuestas. No se envía a grupos, terceros ni mensajes que no tengan
 el prefijo `=/>` desde el JID autenticado. Es un aviso genérico: no implica
 que `status` ya tenga salida detallada, ni sustituye las pruebas de entrega
 con un teléfono autorizado.
+
+## Comunidad REGISTER (alpha)
+
+`=/>start` se reserva para inventario y verificación de comunidades
+gestionadas por la sesión de WhatsApp. El diseño en
+[`docs/COMMUNITY_REGISTER.md`](../../docs/COMMUNITY_REGISTER.md)
+requiere verificar el rol admin y los identificadores exactos de subgrupo,
+y distingue vista previa de operaciones con cambios. Ninguna actualización
+administrativa se debe asumir completa por aprobar CI offline.

@@ -3,6 +3,9 @@ name: Matter-Base Rust verification
 on:
   push:
     branches:
+      - alpha
+      - beta
+      - stable
       - matter-beta
   pull_request:
     branches:

@@ -1,5 +1,14 @@
 # Matter-Base development status
 
+## 2026-11-17 — Ramas stable/beta/alpha y contrato REGISTER (alpha)
+
+- Se crearon nuevas ramas GitHub `stable` desde `matter`, `beta` y `alpha` desde `matter-beta`; las anteriores se preservan. GitHub continúa con default `matter` hasta una actualización de la configuración.
+- Documentados `=/>start` (descubrimiento/planificación y fases de aplicación) y `#matter` para bots externos con IPC autenticado; nada de compartir o copiar sesiones activas.
+- Se habilita CI en `alpha`, `beta`, `stable` y ramas legadas sin modificar la estabilidad de WhatsApp.
+- Auditoría README: 2/2 revisados íntegramente; ambos actualizados. Documentos nuevos: BRANCH_STRATEGY, COMMUNITY_REGISTER y EXTERNAL_BOT_COMPAT. Esta fase es especificación, no prueba de ejecución de mutaciones WhatsApp.
+- Bot-Matter sigue bloqueado. Fase siguiente: servicio de detección seguro y tests, más adelante adaptación de WhatsApp Rust con cuenta de prueba.
+
+
 ## 2026-11-17 — Auditoría de afirmaciones de integración (pendiente CI)
 
 - Root README and provider README reviewed in full (2/2). Corrected root statements that were true before, but became false after the Rust provider and loopback listener landed. Provider README reviewed unchanged.

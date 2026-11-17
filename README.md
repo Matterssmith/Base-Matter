@@ -681,3 +681,20 @@ con el texto fijo «Base-Matter: solicitud procesada.». Un replay
 La respuesta no empieza por ningún prefijo de comando y, por tanto, no se
 auto-ejecuta. La función no devuelve todavía información detallada del estado,
 y requiere prueba con teléfono y recepción real antes de declararse estable.
+
+## Rama de desarrollo y la comunidad REGISTER
+
+La estrategia de ramas canónicas es [`stable` / `beta` / `alpha`](docs/BRANCH_STRATEGY.md).
+Las ramas anteriores `matter` y `matter-beta` se conservan sin forzar
+fusiones mientras se migran las referencias, la rama por defecto y la CI.
+
+La especificación de [`=/>start` y grupos oficiales REGISTER](docs/COMMUNITY_REGISTER.md)
+separa **detección y auditoría** de los cambios reales (imagen, nombre,
+descripción, ajustes, creación y administración). Los subgrupos requieren
+coincidencia exacta del identificador al inicio de la descripción, pertenencia
+verificada a la comunidad y autorización del dueño. No hay creación masiva
+ni cambio de permisos sin revisión del plan.
+
+El [contrato externo `#matter`](docs/EXTERNAL_BOT_COMPAT.md) permite que
+bots ajenos actúen como clientes autorizados del control `=/>`, sin copiar
+sesiones WhatsApp ni conceder privilegios por compartir un prefijo.

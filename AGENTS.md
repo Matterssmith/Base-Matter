@@ -16,10 +16,10 @@ Preserve upstream copyright/license notices when importing provider code.
 
 ## Git and verification
 
-Work on `matter-beta`; `matter` is stable. GitHub is the source of truth.
+Default development: `alpha` (experimental), `beta` (integration), `stable` (releases). GitHub is the source of truth. Legacy refs `matter` (current default) and `matter-beta` are preserved; never force-reset or delete them. Until a verified migration is completed, they remain separate histories.
 Inspect all local differences first. When dirty, protect tracked and new
 nonignored files with `git stash push -u`. Fetch origin, switch to matter-beta,
-reset to origin/matter-beta, restore the stash and inspect conflicts. If fetch
+reset ONLY to the verified remote head of the explicitly selected working branch, restore the stash and inspect conflicts. Do not mix `alpha`, `beta` and legacy `matter-beta` during recovery. If fetch
 or stash restoration fails, stop dependent modifications/verification, retain
 recovery data and report the failure. Never use git clean or remove ignored
 sessions, databases or credentials. Preserve unrelated stashes and user changes.
@@ -29,14 +29,14 @@ for implementation checkpoints. Report actual results. Do not change global
 linker/toolchain configuration without demonstrated need.
 
 The user has authorized committing and pushing verified development checkpoints
-to matter-beta. Review EVERY repository README before EACH commit, report total,
+to alpha for experimental checkpoints. Promote reviewed, independently verified subsets by PR to beta, then stable. Review EVERY repository README before EACH commit, report total,
 reviewed, updated, unchanged, findings, fixes and pending issues. Update affected
 README/code/contracts together; preserve correct content and design. Check new
 files, full diff, examples, internal links, credits and accidental secrets.
 Confirm the pushed SHA against origin. The owner has authorized promoting independently verified stable subsets to
-`matter`, not a bulk merge of incomplete beta. Require green CI on the exact
+`stable`, not a bulk merge of incomplete alpha/beta. Require green CI on the exact
 candidate SHA and preserve divergent stable commits (including Cargo.lock
-history). Leave all unverified work in matter-beta.
+history). Leave all unverified work in alpha.
 
 ## Scope and continuity
 
@@ -111,3 +111,29 @@ Preserve socket isolation and persist/audit administrative changes atomically.
 ## Proveedor Rust verificable
 
 El proveedor de WhatsApp seleccionado es whatsapp-rust, ejecutado desde providers/whatsapp-rust con biblioteca fijada, sesión SQLite privada y pairing code. No utilizar Node/Baileys en sustitución. No afirmar estabilidad hasta comprobar compilación y una sesión real autorizada. Revisar su README y el README raíz antes de cada commit.
+
+## Estado de ramas (instrucción del propietario 2026-11-17)
+
+- Nuevas ramas canónicas: `stable` (release; creada desde `matter`), `beta` (integración; creada desde `matter-beta`) y `alpha` (experimental; creada desde `matter-beta`).
+- `matter` y `matter-beta` se conservan temporalmente sin borrar ni reescribir su historial; el predeterminado sigue siendo `matter` hasta cambio separado en GitHub.
+- Flujo: cambios en `alpha` -> CI -> revisión por PR a `beta` -> comprobación real externa -> PR a `stable`. No hacer merge global de ramas divergentes. Ver `docs/BRANCH_STRATEGY.md`.
+- En cada commit leer los DOS README (raíz y `providers/whatsapp-rust/README.md`), actualizar los afectados y reportar revisión, resultados y problemas.
+
+## Comunidad oficial REGISTER y =/>start
+
+- La orden canónica `=/>start` pertenece a Base-Matter. El controlador autentica el socket y su propietario; el adaptador `whatsapp-rust` verifica el contexto privado del dueño y consulta las comunidades de la sesión autorizada.
+- Fase primera (segura): inventario de comunidades, prueba de rol admin del dueño y búsqueda de subgrupos oficiales mediante el encabezado EXACTO `MATTER:OFFICIAL:register:<community-id>` situado en la primera línea de la descripción. El título por sí solo no identifica un grupo oficial.
+- La relación comunidad/subgrupo debe venir del proveedor autenticado; un texto o ID de WhatsApp enviado por terceros jamás confiere autoridad. Resolver PN/LID sin adivinar identidades.
+- Fase de plan: comparar identidad oficial, nombre, descripción, foto, permisos y enlaces; preparar acciones idempotentes. No crear grupos ni cambiar administradores por la mera ejecución de `start`.
+- Fase de aplicación separada: verificar admin de comunidad Y admin del grupo, consentimiento/autorización para cada mutación, aprobación específica del plan vigente, revisión de conflictos, auditoría transaccional, límites de tasa y recuperación. Permitir crear el grupo REGISTER si no existe; vincularlo a la comunidad con autorización explícita y sin duplicados.
+- Las DOS cuentas de confianza se deben configurar mediante identidad validada y participación aprobada; nunca inventar números, agregar ni promover usuarios sin verificar consentimientos y permisos de WhatsApp.
+- Los administradores existentes solo recibirán una solicitud moderada de enlaces de invitación, evitando menciones masivas, y solamente si la política del grupo lo autoriza. Esos enlaces se guardan cifrados, con caducidad, revocación y uso explícito para búsqueda de asistencia Matter. No publicar enlaces privados sin consentimiento.
+- Menú/help/h y diseño comunitario: separar componentes visuales reutilizables (encabezado, módulos, pie y créditos) de la lógica de autorización. Configurar tema por comunidad; mantener identidad y crédito Matterssmith.
+- NO anunciar que hay un escaneo o mutación real si el proveedor no confirma su resultado. Conservar pruebas y diferencias respecto a la biblioteca `whatsapp-rust`.
+
+## Interoperabilidad con otros bots: #matter
+
+- `#matter` es comando voluntario de ENTRADA de bots ajenos; NO sustituye `=/>`, que sigue como control canónico en Base-Matter. Los bots externos deben integrarse por contrato versionado de adaptador/IPC autenticado y permisos de mínimo privilegio.
+- Identidad de actor, socket, bot externo, canal, alcance, expiración y nonce deben venir de enlace autentificado. No confiar en nombres, números o texto como prueba de identidad, ni permitir acceso a sockets ajenos.
+- Sin compartir tokens, claves maestras ni archivos de sesión por defecto. Si un proveedor incompatible requiere migración, crear un EXPORT LOCAL ENCRIPTADO, voluntario y autorizado por dueño, con bloqueo de proceso y controles de origen/destino; jamás duplicar sesiones activas o publicar credenciales en Git/Vault.
+- Solo mapear capacidades compatibles; Telegram, Discord y plataformas externas pueden carecer de algunas operaciones y deben reportarlo.
