@@ -69,7 +69,7 @@ separately and does not establish a live integration.
 | `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; general roles remain pending |
 | `users` | Global application user IDs, explicit unique external identity links, and per-bot/user key-value data in memory or SQLite | Implemented with an injected `UserAuthorizer`; the application authenticates principals and enforces ownership and bot scope |
 | `commands` | Prefixes, canonical aliases, authorization, middleware and handlers | Optional SQLite attempt/outcome audit; socket gating via ControlDispatcher; no platform parsing |
-| `activation` | SQLite owner-scoped power, group/socket overrides, persisted global fallback and atomic audit | Partial; trusted provisioning, durable bot binding; no network connections |
+| `activation` | SQLite owner-scoped power, group/socket overrides, persisted global fallback and atomic audit | Trusted provisioning, durable bot binding, owner transfer/recovery; no network connections |
 | `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish`; `publish_checked` catches unwinding panics per listener, continues dispatch, and returns an error |
 | `services` | In-memory type-indexed service registration and retrieval | Basic; no lifecycle management |
 | `i18n` | In-memory translation catalogs and key fallback | Basic; no bundled catalogs or locale validation |
@@ -299,6 +299,11 @@ the authenticated administrator calls `set_global_policy(actor, Some(true))`,
 on subsequent admissions. Global administration grants no socket power rights;
 group/socket overrides still take precedence and power-off always denies.
 The existing `new(..., global_default)` constructor retains a static fallback.
+Socket owners can call `transfer_owner(socket, actor, new_owner)` or
+`release_binding(socket, actor)` to hand over a socket or recover a stale bot
+association. Both reset power/local overrides and release the binding in the
+same transaction as their audit; the new binding and power-on must be explicit.
+Normal admission reads owner, binding and policy together to preserve isolation.
 See [activation contracts](docs/activation.md).
 
 ## Roadmap boundary

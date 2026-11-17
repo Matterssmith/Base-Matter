@@ -249,7 +249,7 @@ fn schema_v1_upgrade_keeps_existing_power_and_requires_explicit_binding() {
             |r| r.get(0),
         )
         .unwrap();
-    assert_eq!(version, 3);
+    assert_eq!(version, 4);
     let count: i64 = c
         .query_row("SELECT COUNT(*) FROM activation_bindings", [], |r| r.get(0))
         .unwrap();
@@ -329,4 +329,180 @@ fn persistent_global_changes_affect_admission_but_never_grant_power_authority() 
         DispatchResult::Inactive
     );
     assert_eq!(calls.load(Ordering::SeqCst), 2);
+}
+
+#[test]
+fn socket_handover_and_revoked_bot_binding_recovery_require_explicit_reactivation() {
+    let dir = Temp::new();
+    let bots = Arc::new(BotRegistry::open_sqlite(dir.0.join("bots.db")).unwrap());
+    let a = bots.register("f", "r", "a", "alice").unwrap();
+    let b = bots.register("f", "r", "b", "bob").unwrap();
+    let c = bots.register("f", "r", "c", "bob").unwrap();
+    let path = dir.0.join("activation.db");
+    let activation = Arc::new(SocketActivationStore::open(&path).unwrap());
+    for (socket, owner, bot) in [("a", "alice", &a), ("b", "bob", &b)] {
+        activation.provision(socket, owner).unwrap();
+        activation
+            .bind_bot(socket, owner, bot.instance_id(), &bots)
+            .unwrap();
+        activation.set_power(socket, owner, true).unwrap();
+        activation
+            .set_socket_policy(socket, owner, Some(true))
+            .unwrap();
+    }
+    activation
+        .set_group_policy("a", "alice", "room", Some(true))
+        .unwrap();
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(TestPolicy)).unwrap());
+    router
+        .register("who", &[], |inv| Ok(inv.bot_instance_id.clone()))
+        .unwrap();
+    let dispatcher = ControlDispatcher::new(activation.clone(), bots.clone(), router, None);
+    activation.transfer_owner("a", "alice", "bob").unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("a", "member", "room", Some("room"), "#who")
+            .unwrap(),
+        DispatchResult::Inactive
+    );
+    assert!(dispatcher
+        .dispatch("a", "alice", "room", None, "=on")
+        .is_err());
+    assert!(activation
+        .bind_bot("a", "bob", a.instance_id(), &bots)
+        .is_err());
+    activation
+        .bind_bot("a", "bob", b.instance_id(), &bots)
+        .unwrap();
+    dispatcher
+        .dispatch("a", "bob", "room", None, "=on")
+        .unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("a", "member", "room", Some("room"), "#who")
+            .unwrap(),
+        DispatchResult::Inactive
+    );
+    activation
+        .set_socket_policy("a", "bob", Some(true))
+        .unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("a", "member", "room", None, "#who")
+            .unwrap(),
+        DispatchResult::Message(Some(b.instance_id().into()))
+    );
+    assert_eq!(
+        dispatcher
+            .dispatch("b", "member", "room", None, "#who")
+            .unwrap(),
+        DispatchResult::Message(Some(b.instance_id().into()))
+    );
+    bots.transfer_owner(b.instance_id(), "bob", "carol")
+        .unwrap();
+    assert!(dispatcher
+        .dispatch("a", "member", "room", None, "#who")
+        .is_err());
+    assert!(activation.release_binding("a", "carol").is_err());
+    activation.release_binding("a", "bob").unwrap();
+    activation
+        .bind_bot("a", "bob", c.instance_id(), &bots)
+        .unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("a", "member", "room", None, "#who")
+            .unwrap(),
+        DispatchResult::Inactive
+    );
+    activation
+        .set_socket_policy("a", "bob", Some(true))
+        .unwrap();
+    dispatcher
+        .dispatch("a", "bob", "room", None, "=on")
+        .unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("a", "member", "room", None, "#who")
+            .unwrap(),
+        DispatchResult::Message(Some(c.instance_id().into()))
+    );
+    let recovered = SocketActivationStore::open(&path).unwrap();
+    let rows = recovered.audit_history("a", "bob").unwrap();
+    let released = rows
+        .iter()
+        .find(|row| row.action == "release_binding")
+        .unwrap();
+    assert_eq!(released.target_id.as_deref(), Some(b.instance_id()));
+    assert_eq!(released.actor_id, "bob");
+}
+
+#[test]
+fn transfer_does_not_cancel_admitted_handler_or_admit_new_binding_while_off() {
+    let dir = Temp::new();
+    let bots = Arc::new(BotRegistry::in_memory());
+    let a = bots.register("f", "r", "a", "alice").unwrap();
+    let b = bots.register("f", "r", "b", "bob").unwrap();
+    let activation = Arc::new(SocketActivationStore::open(dir.0.join("state.db")).unwrap());
+    activation.provision("socket", "alice").unwrap();
+    activation
+        .bind_bot("socket", "alice", a.instance_id(), &bots)
+        .unwrap();
+    activation.set_power("socket", "alice", true).unwrap();
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(TestPolicy)).unwrap());
+    let (started_tx, started_rx) = std::sync::mpsc::channel();
+    let (release_tx, release_rx) = std::sync::mpsc::channel();
+    let release_rx = std::sync::Mutex::new(release_rx);
+    let original = a.instance_id().to_owned();
+    router
+        .register("who", &[], move |inv| {
+            if inv.bot_instance_id == original {
+                started_tx.send(()).unwrap();
+                release_rx
+                    .lock()
+                    .unwrap()
+                    .recv_timeout(std::time::Duration::from_secs(5))
+                    .unwrap();
+            }
+            Ok(inv.bot_instance_id.clone())
+        })
+        .unwrap();
+    let dispatcher = Arc::new(ControlDispatcher::new(
+        activation.clone(),
+        bots.clone(),
+        router,
+        Some(true),
+    ));
+    let first = dispatcher.clone();
+    let handler = std::thread::spawn(move || {
+        first
+            .dispatch("socket", "member", "room", None, "#who")
+            .unwrap()
+    });
+    started_rx
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .unwrap();
+    activation.transfer_owner("socket", "alice", "bob").unwrap();
+    activation
+        .bind_bot("socket", "bob", b.instance_id(), &bots)
+        .unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("socket", "member", "room", None, "#who")
+            .unwrap(),
+        DispatchResult::Inactive
+    );
+    release_tx.send(()).unwrap();
+    assert_eq!(
+        handler.join().unwrap(),
+        DispatchResult::Message(Some(a.instance_id().into()))
+    );
+    dispatcher
+        .dispatch("socket", "bob", "room", None, "=on")
+        .unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("socket", "member", "room", None, "#who")
+            .unwrap(),
+        DispatchResult::Message(Some(b.instance_id().into()))
+    );
 }

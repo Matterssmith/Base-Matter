@@ -370,3 +370,128 @@ fn version_two_global_migration_is_atomic_and_preserves_existing_binding() {
         ActivationSource::Socket
     );
 }
+
+#[test]
+fn ownership_and_binding_release_roll_back_all_state_on_audit_failure() {
+    let dir = TestDirectory::new();
+    let path = dir.0.join("transfer.db");
+    let store = SocketActivationStore::open(&path).unwrap();
+    let bots = matter_base::BotRegistry::in_memory();
+    let bot = bots.register("f", "r", "a", "alice").unwrap();
+    store.provision("a", "alice").unwrap();
+    store
+        .bind_bot("a", "alice", bot.instance_id(), &bots)
+        .unwrap();
+    store.set_power("a", "alice", true).unwrap();
+    store.set_socket_policy("a", "alice", Some(false)).unwrap();
+    store
+        .set_group_policy("a", "alice", "room", Some(true))
+        .unwrap();
+    let c = rusqlite::Connection::open(&path).unwrap();
+    c.execute_batch("CREATE TRIGGER reject_transfer_audit BEFORE INSERT ON activation_audit
+        WHEN NEW.action IN ('transfer_owner','release_binding') BEGIN SELECT RAISE(ABORT,'injected'); END;").unwrap();
+    assert!(store.transfer_owner("a", "alice", "bob").is_err());
+    assert!(store.release_binding("a", "alice").is_err());
+    assert!(store.resolve("a", Some("room"), None).unwrap().enabled);
+    assert_eq!(
+        store.resolve("a", None, Some(true)).unwrap().source,
+        ActivationSource::Socket
+    );
+    let binding: String = c
+        .query_row(
+            "SELECT bot_instance_id FROM activation_bindings WHERE socket_id='a'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(binding, bot.instance_id());
+    assert!(store.audit_history("a", "bob").is_err());
+    assert_eq!(store.audit_history("a", "alice").unwrap().len(), 5);
+    assert!(store.transfer_owner("a", "global-owner", "bob").is_err());
+    assert!(store.release_binding("a", "global-owner").is_err());
+    c.execute_batch("DROP TRIGGER reject_transfer_audit;")
+        .unwrap();
+    store.transfer_owner("a", "alice", "alice").unwrap();
+    assert_eq!(store.audit_history("a", "alice").unwrap().len(), 5);
+    assert!(store.resolve("a", Some("room"), None).unwrap().enabled);
+    store.release_binding("a", "alice").unwrap();
+    store.release_binding("a", "alice").unwrap();
+    assert_eq!(store.audit_history("a", "alice").unwrap().len(), 6);
+    assert!(
+        !store
+            .resolve("a", Some("room"), Some(true))
+            .unwrap()
+            .enabled
+    );
+    store.set_power("a", "alice", true).unwrap();
+    assert_eq!(
+        store.resolve("a", Some("room"), None).unwrap().source,
+        ActivationSource::None
+    );
+}
+
+#[test]
+fn competing_socket_transfers_have_one_winner_and_survive_reopening() {
+    let dir = TestDirectory::new();
+    let path = dir.0.join("transfer.db");
+    let first = SocketActivationStore::open(&path).unwrap();
+    first.provision("a", "alice").unwrap();
+    first.set_power("a", "alice", true).unwrap();
+    let second = SocketActivationStore::open(&path).unwrap();
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+    let joins: Vec<_> = [(first, "bob"), (second, "carol")]
+        .into_iter()
+        .map(|(store, target)| {
+            let barrier = barrier.clone();
+            std::thread::spawn(move || {
+                barrier.wait();
+                (target, store.transfer_owner("a", "alice", target).is_ok())
+            })
+        })
+        .collect();
+    let results: Vec<_> = joins.into_iter().map(|join| join.join().unwrap()).collect();
+    assert_eq!(results.iter().filter(|(_, success)| *success).count(), 1);
+    let owner = results.iter().find(|(_, success)| *success).unwrap().0;
+    let store = SocketActivationStore::open(&path).unwrap();
+    assert!(store.set_power("a", "alice", true).is_err());
+    assert!(store.audit_history("a", "alice").is_err());
+    assert!(!store.resolve("a", None, Some(true)).unwrap().enabled);
+    let audit = store.audit_history("a", owner).unwrap();
+    assert_eq!(audit.len(), 3);
+    assert_eq!(audit[2].actor_id, "alice");
+    assert_eq!(audit[2].target_id.as_deref(), Some(owner));
+    assert_eq!(audit[2].action, "transfer_owner");
+    store.set_power("a", owner, true).unwrap();
+}
+
+#[test]
+fn version_three_audit_upgrade_preserves_legacy_rows_without_inventing_targets() {
+    let dir = TestDirectory::new();
+    let path = dir.0.join("legacy.db");
+    let c = rusqlite::Connection::open(&path).unwrap();
+    c.execute_batch("CREATE TABLE matter_schema_versions(component TEXT PRIMARY KEY,version INTEGER NOT NULL);
+        INSERT INTO matter_schema_versions VALUES('socket_activation',3);
+        CREATE TABLE activation_sockets(socket_id TEXT PRIMARY KEY,owner_id TEXT NOT NULL,powered INTEGER NOT NULL,policy INTEGER);
+        INSERT INTO activation_sockets VALUES('legacy','alice',1,1);
+        CREATE TABLE activation_audit(id INTEGER PRIMARY KEY AUTOINCREMENT,socket_id TEXT NOT NULL,
+        actor_id TEXT NOT NULL,action TEXT NOT NULL,group_id TEXT,value INTEGER,created_at INTEGER NOT NULL);
+        INSERT INTO activation_audit(socket_id,actor_id,action,created_at) VALUES('legacy','alice','bind_bot',123);").unwrap();
+    let store = SocketActivationStore::open(&path).unwrap();
+    let rows = store.audit_history("legacy", "alice").unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].actor_id, "alice");
+    assert_eq!(rows[0].created_at, 123);
+    assert_eq!(rows[0].target_id, None);
+    store.transfer_owner("legacy", "alice", "bob").unwrap();
+    let rows = store.audit_history("legacy", "bob").unwrap();
+    assert_eq!(rows[1].target_id.as_deref(), Some("bob"));
+    assert_eq!(rows[1].value, Some(false));
+    let version: i64 = c
+        .query_row(
+            "SELECT version FROM matter_schema_versions WHERE component='socket_activation'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(version, 4);
+}

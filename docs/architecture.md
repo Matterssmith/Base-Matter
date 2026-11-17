@@ -94,7 +94,9 @@ contracts before applications consume them:
 - Ownership, roles, permissions, and audited authorization.
 - Broader ingress audit (including invalid/unregistered messages); recognized
   command auditing and socket gating are implemented when configured.
-- Full Control Plane/network lifecycle and ownership transfer; binding, activation storage and control dispatch are implemented in `activation`/`control`.
+- Full Control Plane/network lifecycle; owner-authorized socket handover and
+  binding recovery, activation storage and control dispatch are implemented in
+  `activation`/`control`. Lost-owner recovery needs a separate trusted policy.
 - Session/credential interfaces, services, connections, and messaging.
 - Plugin manifest validation, resource limits, and effective sandboxing.
 - Persistent recovery, migrations, and end-to-end integration tests.
@@ -120,5 +122,7 @@ but cannot prevent the socket owner from switching operational power off.
 Persistent command audit is described in [command audit contracts](command-audit.md).
 
 The optional persistent global-policy dispatcher reads all activation scopes in
-one SQLite snapshot. Global policy administrators have no implicit authority
+one SQLite snapshot together with socket ownership and bot binding. Owner
+transfer/release atomically clears binding/local overrides and powers off, so
+new admissions cannot combine state from before and after a handover. Global policy administrators have no implicit authority
 over socket power or local overrides; static configuration remains supported.

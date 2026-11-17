@@ -22,8 +22,10 @@ deny. Removing an override with `None` restores fallback. This does not change
 the network connection. The read uses one SQL statement for a coherent snapshot.
 Missing sockets and storage failures return errors; callers must fail closed.
 
-Schema initialization is transactional and versioned as `socket_activation=3`.
-Version 1/2 upgrades preserve existing policies, audit and bindings. Version 1
+Schema initialization is transactional and versioned as `socket_activation=4`.
+Version 1/2/3 upgrades preserve existing policies, audit and bindings. Audit
+rows gain an optional target ID; existing rows keep NULL, without inventing
+historical targets. Version 1
 sockets remain unbound until explicitly associated with a bot. No global
 administrator or policy is inferred during migration.
 Unknown versions are rejected. Audit records omit message bodies and credentials.
@@ -34,10 +36,12 @@ isolated temporary DBs. Control tests verify unbound and ownership-revoked
 sockets can still be powered off without executing normal handlers.
 
 `bind_bot(socket, actor, bot_id, bots)` requires both socket and bot ownership.
-Bindings are durable and immutable; a conflicting rebinding fails. The dispatcher
+Bindings are durable; a conflicting direct rebinding fails. Only the socket
+owner can explicitly release a binding before establishing another one. The dispatcher
 rechecks the stored socket owner's bot authority before normal command admission.
-A later bot ownership transfer blocks normal commands until a dedicated
-recovery/transfer flow is implemented. Socket owners retain power control even
+A later bot ownership transfer blocks normal commands until the socket owner
+releases the old binding and binds an authorized bot, or transfers the socket
+to a new owner who binds it explicitly. Socket owners retain power control even
 without a bot binding or after bot ownership changes. Powering on alone does
 not authorize normal execution; powering off always closes normal admission.
 Ownership checks across these two stores are not a distributed transaction; revocation does not cancel requests already admitted.
@@ -53,6 +57,8 @@ access. Otherwise the normal router still applies its command authorizer.
 The application authenticates actors and establishes socket/source/group context;
 message text must never determine those trusted identifiers.
 
+Admission reads socket owner, bot binding, power and policy scopes together in
+one SQL snapshot. It cannot combine old power with a newly transferred binding.
 Admission uses snapshots. Power-off prevents subsequent admissions; it does not
 cancel callbacks already admitted or undo their effects. Use the dispatcher for
 all inbound messages; calling the lower-level router directly skips socket gating.
@@ -85,7 +91,38 @@ policy. Choose one mode deliberately in trusted application setup. No inbound
 message may choose the policy source. Global updates use the administrative
 API; the reserved message grammar remains exclusively power on/off.
 
-Pending: interchangeable storage, ownership transfer, network connection lifecycle,
+## Socket handover and binding recovery
+
+`transfer_owner(socket, actor, new_owner)` requires the current socket owner
+inside an immediate transaction. The application validates the intended
+recipient identity. Transfer changes ownership, powers off, clears socket/group
+overrides and releases the bot binding atomically with its audit row. Other
+sockets, global policy and bot ownership are unaffected. The previous owner
+immediately loses administrative and audit access; the new owner must bind an
+owned bot, choose local policy if needed, and explicitly power on. Transfer to
+the same owner is an authorized no-op. Concurrent transfers from the same owner
+have one winner. A global administrator has no transfer bypass.
+
+`release_binding(socket, actor)` requires only current socket ownership, so it
+works even after bot ownership was revoked. It clears binding and local
+overrides, powers off and records the released bot ID in one transaction.
+No existing binding is an authorized no-op. This allows recovery without
+claiming rights over the previous bot. Audit failure rolls back every affected
+row for both operations.
+
+Audit records expose `actor_id` and optional `target_id`: the bound/released bot
+for binding operations, or new owner for transfer. Read targets together with
+the action. Legacy rows retain absent targets. Adding public record fields may
+require callers constructing struct literals to update; the 0.1 development
+API is not yet declared stable. Earlier readers reject schema 4; do not downgrade
+by rewriting its version. Keep a backup before deploying a schema upgrade.
+
+Neither operation cancels already admitted callbacks, transfers platform
+credentials, disconnects a network connection or proves control of a platform
+account. Lost-owner recovery still requires an external authenticated recovery
+policy; there is no global-owner or administrator shortcut.
+
+Pending: interchangeable storage, network connection lifecycle,
 authenticated adapter ingress and production integration.
 These remain prerequisites for the real WhatsApp activation test.
 

@@ -3,8 +3,11 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
-use crate::{activation::SocketActivationStore, BotRegistry, CommandRouter};
-use anyhow::{bail, Result};
+use crate::{
+    activation::{GlobalPolicy, SocketActivationStore},
+    BotRegistry, CommandRouter,
+};
+use anyhow::{anyhow, bail, Result};
 use std::sync::Arc;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -23,11 +26,6 @@ pub struct ControlDispatcher {
     bots: Arc<BotRegistry>,
     router: Arc<CommandRouter>,
     global_policy: GlobalPolicy,
-}
-
-enum GlobalPolicy {
-    Configured(Option<bool>),
-    Persisted,
 }
 
 impl ControlDispatcher {
@@ -97,19 +95,16 @@ impl ControlDispatcher {
                 powered,
             });
         }
-        let decision = match self.global_policy {
-            GlobalPolicy::Configured(default) => {
-                self.activation.resolve(receiving_socket, group, default)?
-            }
-            GlobalPolicy::Persisted => {
-                self.activation.resolve_persisted(receiving_socket, group)?
-            }
-        };
-        if !decision.enabled {
+        let admission = self
+            .activation
+            .admission(receiving_socket, group, self.global_policy)?;
+        if !admission.decision.enabled {
             return Ok(DispatchResult::Inactive);
         }
-        let (bot, owner) = self.activation.binding(receiving_socket)?;
-        self.bots.authorize_owner(&bot, &owner)?;
+        let bot = admission
+            .bot_instance_id
+            .ok_or_else(|| anyhow!("Socket has no bot binding"))?;
+        self.bots.authorize_owner(&bot, &admission.owner_id)?;
         self.router
             .route(&bot, actor, source, message)
             .map(DispatchResult::Message)
