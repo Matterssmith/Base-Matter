@@ -84,11 +84,9 @@ impl WhatsAppControlIpc {
             bail!("WhatsApp control must bind explicitly to local loopback");
         }
         let listener = TcpListener::bind(addr)?;
-        for stream in listener.incoming() {
-            if let Ok(stream) = stream {
-                // Refusals never expose frame contents or secret material.
-                let _ = self.accept(stream);
-            }
+        for stream in listener.incoming().flatten() {
+            // Refusals never expose frame contents or secret material.
+            let _ = self.accept(stream);
         }
         Ok(())
     }
