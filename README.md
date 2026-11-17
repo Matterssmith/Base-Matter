@@ -753,3 +753,7 @@ Los comandos `=/>menu`, `=/>help` y `=/>h` muestran exclusivamente los comandos 
 ## Ramas definitivas y estética del menú
 
 La rama predeterminada GitHub ya es `stable`; el desarrollo continúa en `alpha` y la integración validada se prepara en `beta`. Se retirarán referencias heredadas sin descartar commits exclusivos. La salida de `=/>menu` y `=/>help` es deliberadamente un listado sencillo. [La estética real de otros bots](docs/MENU_STYLE_IMPORT.md) se extraerá únicamente de un mensaje fuente autenticado, sin copiar sus comandos ni contenido.
+
+## Respaldo de recuperación comunitaria `=/>add++`
+
+El controlador Rust reconoce la orden global exacta `=/>add++` del dueño del socket, con independencia de que el bot esté encendido. Por defecto solo admite una previsualización; `=/>add++ snapshot <community-jid>` reserva una operación explícita de inventario privado cifrado. No existe modo `apply` de incorporación masiva y ningún comando agrega personas sin autorización o consentimiento. El objetivo es preparar una copia protegida de la lista accesible **antes** de una eventual suspensión; no garantiza acceso posterior ni eludir restricciones de WhatsApp. [Plan de recuperación](docs/COMMUNITY_RECOVERY.md).

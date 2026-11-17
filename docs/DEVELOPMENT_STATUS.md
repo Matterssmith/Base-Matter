@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Control =/>add++ para recuperación (alpha; CI pendiente)
+
+- Se añadió la sintaxis exacta `add++` al registro global y al controlador Rust con permiso de dueño de socket, independientemente del encendido del bot. El modo inicial ofrece un inventario y reserva el comando explícito `snapshot <community-jid>`.
+- Cualquier mutación `apply` y otras variantes no aprobadas son rechazadas; no se intenta incorporar a usuarios automáticamente, dado que WhatsApp impone privacidad, permisos y límites.
+- Se añadieron pruebas de aislamiento entre sockets, spoofing del prefijo y rechazo de variantes, y el contrato `docs/COMMUNITY_RECOVERY.md`.
+- Auditoría íntegra de los dos README (2/2); ambos actualizados. AGENTS complementado. Pendiente CI y lectura real del proveedor. No se tocó `beta` ni `stable`.
+
+
 ## 2026-11-17 — Reparación de regresión de formato neutro (alpha; CI pendiente)
 
 - GitHub Actions detectó una aserción obsoleta en `tests/control_style.rs`: el texto plano `Bot ID` ya no coincide con la cadena decorativa anterior `BOT ID`. Ajustada la aserción sin cambiar la funcionalidad.
