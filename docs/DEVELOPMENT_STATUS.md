@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Ajustes de rustfmt para REGISTER (alpha; CI pendiente)
+
+- Aplicados los tres ajustes de formato exactos solicitados por las dos lanes de CI (controlador, test de alcance y escaneo de proveedor).
+- Revisados íntegros los 2 README (2/2), sin cambios necesarios; sesiones y permisos intactos.
+- Pendiente el resultado de las pruebas de compilación reales del adaptador y del controlador.
+
+
 ## 2026-11-17 — Descubrimiento REGISTER mediante API WhatsApp Rust (alpha, CI pendiente)
 
 - El proveedor Rust consulta comunidades reales con `get_participating`, `get_subgroups` y `query_linked_group` después de que Base autoriza `=/>start`. Verifica admin del JID propio PN/LID, subgrupo vinculado e identificador exacto en primera línea.

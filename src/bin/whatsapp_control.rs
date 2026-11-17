@@ -213,13 +213,8 @@ fn main() -> Result<()> {
         Ok("Community REGISTER read-only inventory authorized".to_owned())
     })?;
     let dispatcher = Arc::new(
-        ControlDispatcher::new(
-            activation,
-            Arc::new(BotRegistry::in_memory()),
-            router,
-            None,
-        )
-        .with_control_extensions(extensions),
+        ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
+            .with_control_extensions(extensions),
     );
     let bridge = Arc::new(WhatsAppControlBridge::new(
         WhatsAppBridgeConfig {

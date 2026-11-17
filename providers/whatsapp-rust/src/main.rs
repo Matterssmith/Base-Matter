@@ -46,7 +46,6 @@ async fn require_local_controller(address: std::net::SocketAddrV4) -> Result<()>
     Ok(())
 }
 
-
 async fn discover_register(
     ctx: &whatsapp_rust::bot::MessageContext,
     owner_jid: &str,

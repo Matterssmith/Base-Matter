@@ -60,5 +60,10 @@ fn start_is_read_only_owner_only_and_independent_of_bot_power() {
             .dispatch(socket, actor, "private", None, command)
             .is_err());
     }
-    assert!(!activation.resolve_persisted("socket-a", None).unwrap().enabled);
+    assert!(
+        !activation
+            .resolve_persisted("socket-a", None)
+            .unwrap()
+            .enabled
+    );
 }
