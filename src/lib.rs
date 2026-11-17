@@ -48,7 +48,7 @@ pub use connections::{
     ConnectionAdmission, ConnectionDriver, ConnectionService, SessionCredentialSource,
 };
 pub use control_extensions::{ControlExtensionContext, ControlExtensionRegistry};
-pub use control_ipc::{ControlIpcOutcome,WhatsAppControlIpc};
+pub use control_ipc::{ControlIpcOutcome, WhatsAppControlIpc};
 pub use control_sync::{
     EncryptedControlOutbox, EncryptedEnvelopeReader, EncryptedEnvelopeSink, OutboxStatus,
 };
