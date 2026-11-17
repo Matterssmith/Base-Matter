@@ -46,15 +46,13 @@ fn roundtrip_is_ciphertext_only_and_bound_to_owner() {
     let db = dir.join("session.db");
     let path = save_encrypted(&db, &key, &snapshot).unwrap();
     let saved = fs::read(&path).unwrap();
-    assert!(!saved.windows(b"5215598765432".len()).any(|w| w == b"5215598765432"));
-    assert!(!saved.windows(b"Mi comunidad".len()).any(|w| w == b"Mi comunidad"));
-    let recovered = read_encrypted(
-        &path,
-        &key,
-        &snapshot.socket_id,
-        &snapshot.owner_jid,
-    )
-    .unwrap();
+    assert!(!saved
+        .windows(b"5215598765432".len())
+        .any(|w| w == b"5215598765432"));
+    assert!(!saved
+        .windows(b"Mi comunidad".len())
+        .any(|w| w == b"Mi comunidad"));
+    let recovered = read_encrypted(&path, &key, &snapshot.socket_id, &snapshot.owner_jid).unwrap();
     assert_eq!(recovered, snapshot);
     assert!(read_encrypted(&path, &[0x13; 32], &snapshot.socket_id, &snapshot.owner_jid).is_err());
     assert!(read_encrypted(&path, &key, "wrong-socket", &snapshot.owner_jid).is_err());

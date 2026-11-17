@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Rustfmt de snapshot cifrada (alpha, CI pendiente)
+
+- Aplicados ajustes exactos de rustfmt de GitHub Actions al nuevo módulo criptográfico y sus tests. README raíz y proveedor revisados completos (2/2) sin cambios de contenido.
+- Aún faltan pruebas de compilación y la integración real por pairing code; no se modifican sesiones ni grupos.
+
+
 ## 2026-11-17 — Callback =/>add++ snapshot con backup cifrado (alpha; CI pendiente)
 
 - Conectado el comando `=/>add++ snapshot <community-jid>` al provider: verifica admin PN/LID de la comunidad activa, obtiene miembros vinculados, deduplica alias conocidos y cifra datos localmente con clave separada.

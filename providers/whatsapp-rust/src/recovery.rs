@@ -58,7 +58,9 @@ fn valid_id(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 128
         && !value.chars().any(char::is_control)
-        && value.bytes().all(|b| b.is_ascii_alphanumeric() || b"@._:-".contains(&b))
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"@._:-".contains(&b))
 }
 
 fn validate(snapshot: &RecoverySnapshot) -> Result<()> {
@@ -214,8 +216,8 @@ pub fn read_encrypted(
     }
     let ciphertext =
         hex::decode(&envelope.ciphertext).map_err(|_| anyhow!("Invalid recovery ciphertext"))?;
-    let cipher = XChaCha20Poly1305::new_from_slice(secret)
-        .map_err(|_| anyhow!("Recovery key invalid"))?;
+    let cipher =
+        XChaCha20Poly1305::new_from_slice(secret).map_err(|_| anyhow!("Recovery key invalid"))?;
     let cleartext = Zeroizing::new(
         cipher
             .decrypt(
