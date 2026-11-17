@@ -33,8 +33,7 @@ async fn deliver(
         }
         parse_control_ack(&response)
     };
-    timeout(Duration::from_secs(4), transport).await??;
-    Ok(())
+    timeout(Duration::from_secs(4), transport).await?
 }
 
 #[tokio::main]

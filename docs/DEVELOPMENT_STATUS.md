@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Corrección de tipo del acuse del proveedor (CI pendiente)
+
+- Se corrigió el error E0308 reportado por GitHub Actions: `deliver` devuelve el `ControlAck` validado (Applied/Duplicate), no `()`.
+- Los dos README fueron revisados completos (2/2), sin cambios necesarios. Sin modificación de HMAC, sesiones ni claves.
+- Pendiente CI del SHA corregido y posterior verificación real con WhatsApp.
+
+
 ## 2026-11-17 — Normalización de rustfmt del resultado IPC (CI pendiente)
 
 - Ajustados en el proveedor dos detalles exactos de rustfmt identificados en GitHub Actions: separación de tipos y anidamiento de callback `match`.
