@@ -115,3 +115,36 @@ fn cannot_bind_public_network_address() {
     assert!(service.serve("0.0.0.0:12345".parse().unwrap()).is_err());
     assert!(service.serve("127.0.0.1:0".parse().unwrap()).is_err());
 }
+
+#[test]
+fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
+    use std::io::{Read, Write};
+    use std::net::{Shutdown, TcpListener, TcpStream};
+    let (service, activation) = make();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let server = std::thread::spawn(move || {
+        for _ in 0..3 {
+            let (stream, _) = listener.accept().unwrap();
+            service.accept(stream).unwrap();
+        }
+    });
+    let frames = [
+        (signed("network-a", "=/>on"), "applied"),
+        (signed("network-a", "=/>on"), "duplicate"),
+        (signed("network-b", "=/>off"), "applied"),
+    ];
+    for (frame, outcome) in frames {
+        let mut client = TcpStream::connect(addr).unwrap();
+        client.write_all(&frame).unwrap();
+        client.shutdown(Shutdown::Write).unwrap();
+        let mut bytes = Vec::new();
+        client.read_to_end(&mut bytes).unwrap();
+        let response: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(response["ok"], true);
+        assert_eq!(response["outcome"], outcome);
+        assert!(!bytes.windows(7).any(|window| window == b"socket-"));
+    }
+    server.join().unwrap();
+    assert!(!activation.resolve_persisted("socket-a", None).unwrap().enabled);
+}

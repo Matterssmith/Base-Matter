@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Rust loopback TCP end-to-end regression (pending CI)
+
+- Added a socket-level integration test that opens 127.0.0.1, exchanges real signed JSON frames, and verifies applied/duplicate/applied acknowledgment sequence while keeping WhatsApp offline.
+- Reviewed both root and provider README files (2/2), updated root README and WhatsApp IPC docs. Full pairing with a real phone and external security assessment remain release gates.
+- Stable matter contains separately verified socket owner-power correction via PR #4; no unverified WhatsApp provider promoted.
+
+
 ## 2026-11-17 — Blocker fixes, linked Rust processes (CI pending)
 
 - Fixed control_ipc.rs E0034 (ambiguous Read/Write by_ref), explicitly using the bounded Read::take on the TCP stream.

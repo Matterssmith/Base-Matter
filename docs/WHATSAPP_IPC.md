@@ -39,3 +39,7 @@ siguen siendo requisitos antes de declarar el servicio de produccion.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Prueba real de la conexión local
+
+`tests/control_ipc.rs` abre un socket en 127.0.0.1 de puerto efímero, envía tramas HMAC válidas y comprueba el resultado, el bloqueo de replays y que no se devuelvan datos de identidad al cliente. No accede a WhatsApp ni a sesiones de producción.
