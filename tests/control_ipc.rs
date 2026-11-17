@@ -153,3 +153,43 @@ fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
             .enabled
     );
 }
+
+#[test]
+fn incomplete_or_oversized_tcp_frames_fail_closed() {
+    use std::io::{Read, Write};
+    use std::net::{TcpListener, TcpStream};
+    use std::time::{Duration, Instant};
+
+    let (service, activation) = make();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let worker = std::thread::spawn(move || {
+        for _ in 0..2 {
+            let (stream, _) = listener.accept().unwrap();
+            service.accept(stream).unwrap();
+        }
+    });
+
+    let mut partial = TcpStream::connect(address).unwrap();
+    partial.write_all(b"{").unwrap();
+    partial.set_read_timeout(Some(Duration::from_secs(6))).unwrap();
+    let since = Instant::now();
+    let mut response = Vec::new();
+    partial.read_to_end(&mut response).unwrap();
+    assert!(since.elapsed() < Duration::from_secs(6));
+    let response: serde_json::Value = serde_json::from_slice(&response).unwrap();
+    assert_eq!(response["ok"], false);
+    assert_eq!(response["outcome"], "denied");
+    drop(partial);
+
+    let mut oversized = TcpStream::connect(address).unwrap();
+    oversized.write_all(&vec![b'x'; 16 * 1024 + 1]).unwrap();
+    oversized.shutdown(std::net::Shutdown::Write).unwrap();
+    let mut response = Vec::new();
+    oversized.read_to_end(&mut response).unwrap();
+    let response: serde_json::Value = serde_json::from_slice(&response).unwrap();
+    assert_eq!(response["ok"], false);
+    assert_eq!(response["outcome"], "denied");
+    worker.join().unwrap();
+    assert!(!activation.resolve_persisted("socket-a", None).unwrap().enabled);
+}

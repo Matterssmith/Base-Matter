@@ -43,3 +43,13 @@ Hecho por Lournyx Matterssmith [Lou-Nyx].
 ## Prueba real de la conexión local
 
 `tests/control_ipc.rs` abre un socket en 127.0.0.1 de puerto efímero, envía tramas HMAC válidas y comprueba el resultado, el bloqueo de replays y que no se devuelvan datos de identidad al cliente. No accede a WhatsApp ni a sesiones de producción.
+
+## Tiempo total y tamaño de los frames (hardening)
+
+La implementación TCP mantiene un límite estricto de 16 KiB por frame y un
+plazo total de 4 segundos desde que acepta una conexión, incluso si el
+cliente transmite bytes lentamente. Un frame parcial, excesivo o que no
+cierra su mitad de escritura se deniega; no ejecuta comandos y no expone
+identificadores en la respuesta. El protocolo HMAC no cambia. El receptor
+usa una cola secuencial local, por lo que sigue pendiente una auditoría de
+resistencia a saturación con procesos no confiables en el mismo host.

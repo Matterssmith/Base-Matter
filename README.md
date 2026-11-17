@@ -612,3 +612,7 @@ La infraestructura de conexiones y mensajes conserva los controles de Base-Matte
 ## Protección de archivos de bloqueo en Rust
 
 Los dos procesos de WhatsApp crean sus archivos de bloqueo de propiedad de sesión con permisos privados `0600` desde la apertura en Unix. Conservan la exclusión por `create_new`, no sustituyen bases SQLite ni recuperan automáticamente locks obsoletos. Requiere CI y evaluación de la sesión real; no cambia el control global `=/>` ni habilita Bot-Matter.
+
+## Límite de recepción del puente WhatsApp
+
+El receptor TCP de controles `=/>` corta los frames de más de 16 KiB y los envíos incompletos o demasiado lentos. El plazo máximo de lectura es 4 segundos por conexión, no un temporizador reiniciado por cada fragmento. Esta es una protección local; no sustituye la verificación de sesión WhatsApp, HMAC ni las pruebas con un teléfono.

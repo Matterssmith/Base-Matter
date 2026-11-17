@@ -10,7 +10,7 @@ use std::{
     io::{Read, Write},
     net::{Ipv4Addr, SocketAddrV4, TcpListener, TcpStream},
     sync::Arc,
-    time::Duration,
+    time::{Duration, Instant},
 };
 const MAX_FRAME_BYTES: usize = 16 * 1024;
 
@@ -60,15 +60,27 @@ impl WhatsAppControlIpc {
     /// The provider must close its write half after sending one JSON frame.
     /// No HTTP server or public network listener is ever created.
     pub fn accept(&self, mut stream: TcpStream) -> Result<()> {
-        stream.set_read_timeout(Some(Duration::from_secs(3)))?;
         stream.set_write_timeout(Some(Duration::from_secs(3)))?;
+        let deadline = Instant::now() + Duration::from_secs(4);
         let mut request = Vec::new();
-        let result = match std::io::Read::by_ref(&mut stream)
-            .take((MAX_FRAME_BYTES + 1) as u64)
-            .read_to_end(&mut request)
-        {
-            Ok(_) => self.dispatch(&request),
-            Err(_) => ControlIpcOutcome::Denied,
+        let result = loop {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                break ControlIpcOutcome::Denied;
+            }
+            stream.set_read_timeout(Some(remaining.min(Duration::from_secs(1))))?;
+            let mut chunk = [0_u8; 2048];
+            match stream.read(&mut chunk) {
+                Ok(0) => break self.dispatch(&request),
+                Ok(n) => {
+                    if request.len() + n > MAX_FRAME_BYTES {
+                        break ControlIpcOutcome::Denied;
+                    }
+                    request.extend_from_slice(&chunk[..n]);
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(_) => break ControlIpcOutcome::Denied,
+            }
         };
         let response = serde_json::json!({
             "ok":result.permitted(),"outcome":result.as_str(),

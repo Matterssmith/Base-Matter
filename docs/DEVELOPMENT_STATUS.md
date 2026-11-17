@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Plazo total para la recepción IPC (CI pendiente)
+
+- El receptor local de WhatsApp aplica 16 KiB y un límite global de 4 segundos por frame, en lugar de reiniciar un plazo por cada lectura. Las conexiones parciales o excesivas devuelven un rechazo sin ejecutar efectos.
+- Se añadió un test de TCP real para frames parciales y excesivos. No se cambian HMAC, mensajes del usuario ni sesiones reales.
+- Revisados los dos README íntegros (2/2); README raíz actualizado y README del proveedor revisado sin cambios. Documentación IPC ampliada y créditos existentes intactos.
+- Quedan pendientes CI, una prueba real con teléfono, reconexión y evaluación de saturación del mismo host.
+
+
 ## 2026-11-17 — Bloqueos privados desde creación (CI pendiente)
 
 - Hardening de los dos procesos Rust de WhatsApp: los locks exclusivos de controlador y proveedor se crean en modo Unix 0600 sin ventana intermedia; se conserva create_new, no se borran sesiones ni se activan reintentos inseguros.
