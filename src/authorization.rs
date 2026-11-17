@@ -199,7 +199,14 @@ impl RoleStore {
             "UPDATE role_scopes SET owner_id=?1 WHERE scope_id=?2 AND owner_id=?3",
             params![new_owner, scope, actor],
         )?;
-        audit(&tx, scope, actor, "transfer_scope_owner", Some(new_owner), None)?;
+        audit(
+            &tx,
+            scope,
+            actor,
+            "transfer_scope_owner",
+            Some(new_owner),
+            None,
+        )?;
         tx.commit()?;
         Ok(true)
     }
