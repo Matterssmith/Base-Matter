@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Prevención de eco en respuesta privada (CI pendiente)
+
+- Añadido caso de regresión al proveedor Rust para demostrar que el mensaje de acuse «Base-Matter: solicitud procesada.» no se interpreta como un nuevo comando `=/>`; evita ciclos de autorespuesta.
+- Auditoría íntegra de los 2 README (2/2), sin cambios necesarios. No se modificaron sesiones, claves o la rama estable.
+
+
 ## 2026-11-17 — Coherencia de documentación del acuse en WhatsApp (CI pendiente)
 
 - Corregidas descripciones históricas en los dos README que afirmaban que el proveedor nunca respondía por WhatsApp. Ahora distinguen el acuse genérico de `applied` de una respuesta completa de `status`.

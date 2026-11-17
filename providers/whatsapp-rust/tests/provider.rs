@@ -77,6 +77,11 @@ fn creates_valid_signed_owner_control_only_for_private_self_chat() {
     bad.chat_jid = "other@s.whatsapp.net";
     assert!(c.signed_control(&bad).unwrap().is_none());
     assert!(c.signed_control(&event("#ping")).unwrap().is_none());
+    // The outbound owner-chat acknowledgment must not be re-interpreted as a control.
+    assert!(c
+        .signed_control(&event("Base-Matter: solicitud procesada."))
+        .unwrap()
+        .is_none());
     fs::remove_dir_all(root).unwrap();
 }
 
