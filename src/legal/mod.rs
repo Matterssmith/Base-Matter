@@ -35,6 +35,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 const LEGAL_STORE_SCHEMA_VERSION: i64 = 1;
 
+// Internal SQLite row layout for immutable legal-document comparisons.
+type LegalDocumentRow = (String, String, String, String, String, String, i64, String, i64);
+
 /// Sensitive legal-store operation delegated to the consuming application's
 /// authenticated identity and authorization layer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -505,17 +508,7 @@ impl LegalStore {
             .map_err(|_| anyhow!("LegalStore lock poisoned"))?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
 
-        let existing: Option<(
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-            i64,
-            String,
-            i64,
-        )> = transaction
+        let existing: Option<LegalDocumentRow> = transaction
             .query_row(
                 "
             SELECT
