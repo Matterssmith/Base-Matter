@@ -18,6 +18,7 @@ pub mod bots;
 pub mod command_audit;
 pub mod commands;
 pub mod control;
+pub mod control_sync;
 pub mod core;
 pub mod events;
 pub mod i18n;
@@ -34,6 +35,7 @@ pub use bots::{
     InMemoryBotIdentityStore, OwnerRecoveryAuthorizer, SqliteBotIdentityStore,
 };
 pub use command_audit::{CommandAuditOutcome, CommandAuditRecord, CommandAuditStore};
+pub use control_sync::{EncryptedControlOutbox, EncryptedEnvelopeSink, OutboxStatus};
 pub use commands::{CommandAuthorizer, CommandInvocation, CommandRouter};
 pub use core::config::CoreConfig;
 pub use core::context::MatterContext;

@@ -37,3 +37,17 @@ inspection grants Vault permissions or authenticates platform users.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Encrypted outbox contract
+
+`EncryptedControlOutbox` queues already encrypted roles/configuration/
+permissions/audit payloads and exposes only `EncryptedEnvelope` to an external
+`EncryptedEnvelopeSink`. Role snapshots are owner-scoped and serialized from
+one database snapshot. Fingerprints use HMAC with the active key and bind the
+scope and record type; they are not public raw hashes. Repeating identical
+content under the same key skips publishing, and rotation triggers new
+ciphertext. The sink must implement authenticated remote compare-and-swap,
+idempotency by envelope ID and access isolation. This repository does not ship
+a GitHub App transport, a production Vault key source or encrypted recovery.
+Lost acknowledgements or concurrent publishers may require remote reconciliation;
+no exactly-once claim is made.

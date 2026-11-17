@@ -156,6 +156,23 @@ intercept them. Missing role configuration and foreign owners are denied.
 The host must serialize bot transfer with cross-store role administration.
 
 
+## Encrypted control-plane synchronization
+
+EncryptedControlOutbox holds only authenticated encrypted envelopes and a keyed
+change fingerprint. It can export a consistent, authorized RoleStore snapshot,
+encrypt it with the active KeyManager key and queue it durably. An application
+must install a trusted EncryptedEnvelopeSink (for example a correctly scoped
+GitHub App writing to the private Matter-Vault repository). It MUST use
+compare-and-swap revisions, deduplicate envelope IDs and never write plaintext.
+The same content under the same key is not queued again; key rotation queues
+fresh ciphertext. Failed publication keeps the encrypted record pending.
+
+This is **not** a live GitHub/Matter-Vault adapter. No GitHub credential,
+private key, master key or external session is stored here. Remote conflicts,
+multiple simultaneous publishers, recovery/import and actual authenticated
+GitHub commits remain integration requirements. See
+[Vault integration](docs/vault-integration.md).
+
 ## Continuous verification
 
 GitHub Actions workflow [Rust verification](.github/workflows/rust-ci.yml)

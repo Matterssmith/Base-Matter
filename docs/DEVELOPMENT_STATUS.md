@@ -1,5 +1,24 @@
 # Matter-Base development status
 
+## 2026-11-17 — Encrypted control outbox (pending CI)
+
+- Previous reserved role-control checkpoint passed GitHub Actions run
+  44100755985.
+- Added EncryptedControlOutbox with authenticated XChaCha20-Poly1305 envelopes,
+  key-bound HMAC change fingerprints, SQLite pending ciphertext, immutable
+  audit, compare-and-swap sink revision and restart-safe pending status.
+- Added RoleStore::export_snapshot with one SQL snapshot, stable ordering
+  and owner authorization; transient plaintext is zeroized after encryption.
+- Regression tests cover encrypted-only persistence, retry on sink failure,
+  role scope authorization and key-rotation resubmission.
+- README audit: one README fully reviewed and updated; Vault docs clearly
+  distinguish the contract from absent real GitHub and authenticated key
+  service adapters. No key material, secret tokens or platform sessions added.
+- CI validation for this checkpoint is pending. Cross-process conflicts,
+  acknowledgement loss and remote recovery still need explicit reconciliation.
+  H–L are not complete, stable matter unchanged, Matter-Bot blocked.
+
+
 ## 2026-11-17 — Reserved role control (pending CI)
 
 - Previous outbound message-control integration passed GitHub Actions run

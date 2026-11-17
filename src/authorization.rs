@@ -392,6 +392,60 @@ impl RoleStore {
         Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
+
+    /// Stable owner-scoped policy snapshot for authenticated encrypted export.
+    /// Do not send the returned plaintext to a repository or external logger.
+    pub fn export_snapshot(&self, scope: &str, actor: &str) -> Result<Vec<u8>> {
+        let mut connection = self.lock()?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Deferred)?;
+        require_owner(&tx, scope, actor)?;
+        let mut roles_query = tx.prepare(
+            "SELECT role_id,parent_role FROM role_definitions
+             WHERE scope_id=?1 ORDER BY role_id",
+        )?;
+        let roles = roles_query
+            .query_map(params![scope], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        drop(roles_query);
+        let mut grants_query = tx.prepare(
+            "SELECT user_id,role_id FROM role_grants
+             WHERE scope_id=?1 ORDER BY user_id,role_id",
+        )?;
+        let grants = grants_query
+            .query_map(params![scope], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        drop(grants_query);
+        let mut rules_query = tx.prepare(
+            "SELECT role_id,resource,action,effect FROM role_rules
+             WHERE scope_id=?1 ORDER BY role_id,resource,action",
+        )?;
+        let rules = rules_query
+            .query_map(params![scope], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, i64>(3)?,
+                ))
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        drop(rules_query);
+        let encoded = serde_json::to_vec(&serde_json::json!({
+            "format_version": 1,
+            "scope": scope,
+            "owner_id": actor,
+            "roles": roles,
+            "grants": grants,
+            "rules": rules,
+        }))?;
+        tx.commit()?;
+        Ok(encoded)
+    }
+
     fn lock(&self) -> Result<std::sync::MutexGuard<'_, Connection>> {
         self.connection
             .lock()
