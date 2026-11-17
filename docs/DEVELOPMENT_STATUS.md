@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Formato de menú comunitario (alpha; CI pendiente)
+
+- Aplicadas cinco modificaciones exactas de rustfmt reportadas por GitHub Actions en `src/lib.rs`, `src/control_style.rs` y controlador WhatsApp.
+- Ambos README verificados íntegros (2/2) sin cambios. No se alteró la lógica, sesiones ni permisos.
+
+
 ## 2026-11-17 — Render de menu/help/h hasta self-chat WhatsApp (alpha; CI pendiente)
 
 - Conectado el renderer `ControlTheme` con tres órdenes globales del ControlDispatcher: `=/>menu`, `=/>help`, `=/>h` (alias); todas requieren dueño del socket. El título de la plantilla ahora se muestra en la cabecera.

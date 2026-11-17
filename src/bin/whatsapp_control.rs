@@ -214,7 +214,9 @@ fn main() -> Result<()> {
         Ok("Community REGISTER read-only inventory authorized".to_owned())
     })?;
     let style = Arc::new(ControlThemes::new(ControlTheme::new(
-        "Base-Matter", "base-matter", "✦",
+        "Base-Matter",
+        "base-matter",
+        "✦",
     )?));
     let menu_theme = Arc::clone(&style);
     extensions.register("menu", &[], move |_, args| {

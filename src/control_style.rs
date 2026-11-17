@@ -18,10 +18,7 @@ pub struct ControlTheme {
 impl ControlTheme {
     pub fn new(title: &str, bot_id: &str, accent: &str) -> Result<Self> {
         for value in [title, bot_id, accent] {
-            if value.is_empty()
-                || value.len() > 80
-                || value.chars().any(char::is_control)
-            {
+            if value.is_empty() || value.len() > 80 || value.chars().any(char::is_control) {
                 bail!("Invalid control theme");
             }
         }
@@ -79,14 +76,18 @@ impl ControlThemes {
         } else {
             None
         };
-        selected.unwrap_or_else(|| self.fallback.clone()).render(section)
+        selected
+            .unwrap_or_else(|| self.fallback.clone())
+            .render(section)
     }
 }
 
 fn validate_community_id(value: &str) -> Result<()> {
     if value.is_empty()
         || value.len() > 128
-        || !value.bytes().all(|b| b.is_ascii_alphanumeric() || b"@._:-".contains(&b))
+        || !value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"@._:-".contains(&b))
     {
         bail!("Invalid community identifier");
     }
