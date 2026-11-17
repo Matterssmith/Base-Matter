@@ -1,5 +1,18 @@
 # Matter-Base development status
 
+## 2026-11-17 — Windows SQLite file-handle regression (pending CI)
+
+- Run 44124073091: Linux checks passed, Windows compilation passed, but two
+  tests in tests/users.rs failed with Windows OS code 32 because test-owned
+  UserRegistry SQLite connections remained open during remove_file.
+- Corrected both tests by explicitly dropping registries before deleting
+  temporary database files, preserving production behavior and assertions.
+- README audit: 1 root README found/reviewed/updated, with cross-platform
+  verification limitations retained. Re-run both CI jobs before accepting.
+- Real Vault/provider/sandbox/Termux tests remain open; matter and Matter-Bot
+  unchanged.
+
+
 ## 2026-11-17 — Windows Rust CI lane (pending CI)
 
 - Prior release and tracked-file hygiene passed GitHub Actions run 44123810438.

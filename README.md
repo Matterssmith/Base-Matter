@@ -217,7 +217,8 @@ The [MIT license](LICENSE) is included for this repository's own code;
 third-party provider imports must retain their original notices and licenses.
 The beta CI also verifies all tracked README links/credits, rejects
 sensitive private-key/session filenames and runs a second Rust job on
-Windows. Passing Linux and Windows CI is not a Termux or provider test.
+Windows. Passing Linux and Windows CI is not a Termux or provider test. Windows
+also checks that SQLite-backed test files are closed before cleanup.
 
 
 ## Continuous verification

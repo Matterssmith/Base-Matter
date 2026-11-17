@@ -190,6 +190,7 @@ fn concurrent_identity_claims_across_connections_have_one_owner() {
     assert_eq!(successes, 1);
     let registry = UserRegistry::open_sqlite(&path).unwrap();
     assert!(registry.resolve_identity(&identity, &p).unwrap().is_some());
+    drop(registry);
     std::fs::remove_file(path).unwrap();
 }
 
@@ -279,6 +280,7 @@ fn sqlite_user_schema_migration_rolls_back_on_conflict_and_retries() {
         deny: AtomicBool::new(false),
     };
     assert!(users.create_user(&principal("app", &policy)).is_ok());
+    drop(users);
     std::fs::remove_file(path).unwrap();
 }
 
