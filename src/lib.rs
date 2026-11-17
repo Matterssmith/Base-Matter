@@ -76,9 +76,11 @@ pub use sessions::{
     OutboundMessage, SessionAuditRecord, SessionRecord, SessionRegistry, TransportAcceptance,
     TransportDriver,
 };
-pub use whatsapp_native::{WhatsAppNativeConfig,WhatsAppNativeIngress,WhatsAppNativeMessage,WhatsAppNativeOutcome};
 pub use whatsapp_bridge::{
     WhatsAppBridgeConfig, WhatsAppBridgeOutcome, WhatsAppControlBridge, WhatsAppControlFrame,
+};
+pub use whatsapp_native::{
+    WhatsAppNativeConfig, WhatsAppNativeIngress, WhatsAppNativeMessage, WhatsAppNativeOutcome,
 };
 
 pub use users::{
