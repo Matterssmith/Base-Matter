@@ -88,8 +88,8 @@ impl WhatsAppControlBridge {
         if incoming.len() > MAX_FRAME_BYTES {
             bail!("WhatsApp control frame exceeds limit");
         }
-        let frame: WhatsAppControlFrame =
-            serde_json::from_str(incoming).map_err(|_| anyhow!("Invalid WhatsApp control frame"))?;
+        let frame: WhatsAppControlFrame = serde_json::from_str(incoming)
+            .map_err(|_| anyhow!("Invalid WhatsApp control frame"))?;
         self.ingest(&frame)
     }
 
@@ -146,11 +146,10 @@ impl WhatsAppControlBridge {
         if !frame.text.starts_with("=/>") {
             return Ok(WhatsAppBridgeOutcome::Ignored);
         }
-        if !self.replay.claim(
-            "whatsapp",
-            &self.config.socket_id,
-            &frame.message_id,
-        )? {
+        if !self
+            .replay
+            .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
+        {
             return Ok(WhatsAppBridgeOutcome::Duplicate);
         }
         let outcome = self.control.dispatch(
@@ -167,9 +166,9 @@ impl WhatsAppControlBridge {
 fn validate_identifier(value: &str) -> Result<()> {
     if value.is_empty()
         || value.len() > 128
-        || !value.bytes().all(|byte| {
-            byte.is_ascii_alphanumeric() || b"._:-".contains(&byte)
-        })
+        || !value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"._:-".contains(&byte))
     {
         bail!("Invalid bridge identifier");
     }

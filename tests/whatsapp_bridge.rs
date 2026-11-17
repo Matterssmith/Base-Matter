@@ -10,9 +10,8 @@ use hmac::{Hmac, Mac};
 use matter_base::{
     activation::SocketActivationStore,
     control::{ControlDispatcher, DispatchResult},
-    BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter,
-    InboundReplayStore, WhatsAppBridgeConfig, WhatsAppBridgeOutcome,
-    WhatsAppControlBridge, WhatsAppControlFrame,
+    BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter, InboundReplayStore,
+    WhatsAppBridgeConfig, WhatsAppBridgeOutcome, WhatsAppControlBridge, WhatsAppControlFrame,
 };
 use sha2::Sha256;
 use std::sync::Arc;
@@ -31,9 +30,7 @@ impl CommandAuthorizer for DenyBot {
 fn fixture() -> (WhatsAppControlBridge, Arc<SocketActivationStore>) {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket-1", "owner").unwrap();
-    let router = Arc::new(
-        CommandRouter::new(vec!["#".to_owned()], Arc::new(DenyBot)).unwrap(),
-    );
+    let router = Arc::new(CommandRouter::new(vec!["#".to_owned()], Arc::new(DenyBot)).unwrap());
     let control = Arc::new(ControlDispatcher::new(
         Arc::clone(&activation),
         Arc::new(BotRegistry::in_memory()),
@@ -120,7 +117,12 @@ fn owner_can_control_unbound_socket_without_starting_bot() {
             powered: false,
         })
     );
-    assert!(!activation.resolve_persisted("socket-1", None).unwrap().enabled);
+    assert!(
+        !activation
+            .resolve_persisted("socket-1", None)
+            .unwrap()
+            .enabled
+    );
 }
 
 #[test]
@@ -159,7 +161,12 @@ fn rejects_forged_signatures_cross_socket_and_sender() {
     value.from_me = false;
     sign(&mut value, &SECRET);
     assert!(bridge.ingest(&value).is_err());
-    assert!(!activation.resolve_persisted("socket-1", None).unwrap().enabled);
+    assert!(
+        !activation
+            .resolve_persisted("socket-1", None)
+            .unwrap()
+            .enabled
+    );
 }
 
 #[test]
@@ -170,12 +177,20 @@ fn replay_and_timeout_fail_before_mutating_socket() {
         bridge.ingest(&value).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(_)
     ));
-    assert_eq!(bridge.ingest(&value).unwrap(), WhatsAppBridgeOutcome::Duplicate);
+    assert_eq!(
+        bridge.ingest(&value).unwrap(),
+        WhatsAppBridgeOutcome::Duplicate
+    );
     let mut old = frame("id2", "=/>off");
     old.timestamp -= 600;
     sign(&mut old, &SECRET);
     assert!(bridge.ingest(&old).is_err());
-    assert!(activation.resolve_persisted("socket-1", None).unwrap().enabled);
+    assert!(
+        activation
+            .resolve_persisted("socket-1", None)
+            .unwrap()
+            .enabled
+    );
 }
 
 #[test]

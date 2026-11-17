@@ -27,12 +27,12 @@ pub mod ingress;
 pub mod legal;
 pub mod modules;
 pub mod pairing;
-pub mod whatsapp_bridge;
 pub mod plugins;
 pub mod security;
 pub mod services;
 pub mod sessions;
 pub mod users;
+pub mod whatsapp_bridge;
 
 pub use authorization::{RoleAuditRecord, RoleCommandAuthorizer, RoleStore, RuleEffect};
 pub use bots::{
@@ -66,15 +66,15 @@ pub use legal::{
 
 pub use modules::{CoreModule, ModuleManager};
 pub use pairing::{PairingCode, PairingCodeProvider, PairingCodeService};
-pub use whatsapp_bridge::{
-    WhatsAppBridgeConfig, WhatsAppBridgeOutcome, WhatsAppControlBridge, WhatsAppControlFrame,
-};
 pub use security::encryption;
 pub use services::ServiceRegistry;
 pub use sessions::{
     ConnectionState, ControlPlaneMessageAdmission, MessageAdmission, MessageService,
     OutboundMessage, SessionAuditRecord, SessionRecord, SessionRegistry, TransportAcceptance,
     TransportDriver,
+};
+pub use whatsapp_bridge::{
+    WhatsAppBridgeConfig, WhatsAppBridgeOutcome, WhatsAppControlBridge, WhatsAppControlFrame,
 };
 
 pub use users::{
