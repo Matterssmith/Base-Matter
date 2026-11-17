@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Rust local HMAC control IPC server (pending CI)
+
+- Added WhatsAppControlIpc with strict 127.0.0.1 listener and <=16KiB signed frame admission; response contains only sanitized outcome. Reuses existing Rust WhatsAppControlBridge and persistent replay store.
+- Added standalone Base Rust binary whatsapp-matter-control with explicit --init/--serve, owner verification, private SQLite directories, independent 256-bit transport and replay keys, and single-process control-plane lease. No Node process or QR.
+- Added three integration tests for HMAC/replay/power, malformed and ping rejection, and public bind refusal. Provider remains a separate Rust executable to resolve incompatible sqlite3 native links.
+- README audited/updated (1/2 affected README files; provider README reviewed unchanged), docs/WHATSAPP_IPC.md added and release gates updated. CI pending; no live phone test.
+
+
 ## 2026-11-17 — Separate Rust processes to resolve SQLite native linking conflict (pending CI)
 
 - Provider compilation revealed libsqlite3-sys native links collision: current Base rusqlite 0.32 and whatsapp-rust 0.7 SQLite use incompatible versions. Rather than upgrading Base blindly or replacing Rust with Node, decoupled the whatsapp-rust process from Base's direct Cargo dependency.

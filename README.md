@@ -590,3 +590,7 @@ El directorio providers/whatsapp-rust contiene un binario Rust real que integra 
 ## Separación de procesos Rust para WhatsApp
 
 El proveedor whatsapp-rust 0.7.0 y el núcleo actual utilizan versiones de SQLite nativas incompatibles. Para evitar alterar la persistencia estable del núcleo, el proveedor corre como proceso Rust independiente y entrega controles firmados HMAC por TCP local (127.0.0.1). El verificador Rust ya implementado en src/whatsapp_bridge.rs autentica esos eventos. No interviene Node. Ver providers/whatsapp-rust/README.md. El receptor TCP aún debe probarse e integrarse antes de su uso estable.
+
+## Receptor Rust de comandos de WhatsApp
+
+El binario de Base-Matter whatsapp-matter-control abre exclusivamente un socket TCP de loopback para eventos WhatsApp firmados por el proceso Rust whatsapp-rust independiente. Primero se ejecuta --init una sola vez para provisionar la identidad del socket; --serve exige dueño existente y claves de transporte/replay diferentes, y rechaza datos no autenticados. No ejecuta Bot-Matter, no admite QR ni ping. Los comandos de prueba on/off/status pasan por el mismo ControlDispatcher con persistencia y auditoria. Ver docs/WHATSAPP_IPC.md. La comunicacion entre procesos necesita pruebas reales con telefono antes de denominarse estable.

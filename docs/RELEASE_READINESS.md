@@ -119,3 +119,7 @@ An isolated Rust provider crate was added at providers/whatsapp-rust, with pairi
 ## Native SQLite version conflict resolved by process separation (architecture)
 
 whatsapp-rust 0.7 requires a different libsqlite3-sys major version from Base. They must not link into a single executable. Two Rust processes communicating over authenticated loopback remove the link collision, but do not themselves establish production readiness. Pairing code with an authorized phone, security checks, and receiver runtime tests are mandatory.
+
+## Rust loopback command server
+
+The new Base-Matter whatsapp-matter-control receiver requires CI, replay persistence and real linked-session tests, with distinct transport and replay secrets. It never enables Bot-Matter. Until actual phone linkage is verified, provider integration is not production-ready.

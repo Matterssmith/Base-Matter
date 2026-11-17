@@ -20,6 +20,7 @@ pub mod commands;
 pub mod connections;
 pub mod control;
 pub mod control_extensions;
+pub mod control_ipc;
 pub mod control_sync;
 pub mod core;
 pub mod events;
@@ -47,6 +48,7 @@ pub use connections::{
     ConnectionAdmission, ConnectionDriver, ConnectionService, SessionCredentialSource,
 };
 pub use control_extensions::{ControlExtensionContext, ControlExtensionRegistry};
+pub use control_ipc::{ControlIpcOutcome,WhatsAppControlIpc};
 pub use control_sync::{
     EncryptedControlOutbox, EncryptedEnvelopeReader, EncryptedEnvelopeSink, OutboxStatus,
 };
