@@ -392,7 +392,6 @@ impl RoleStore {
         Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
-
     /// Stable owner-scoped policy snapshot for authenticated encrypted export.
     /// Do not send the returned plaintext to a repository or external logger.
     pub fn export_snapshot(&self, scope: &str, actor: &str) -> Result<Vec<u8>> {

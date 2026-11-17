@@ -82,16 +82,31 @@ fn encrypts_before_storage_and_only_publishes_changed_content() {
     assert!(!outbox.enqueue(&keys, "bot-1", "roles", secret).unwrap());
     let raw = Connection::open(&db.0).unwrap();
     let stored: String = raw
-        .query_row("SELECT envelope_json FROM encrypted_control_outbox", [], |r| r.get(0))
+        .query_row(
+            "SELECT envelope_json FROM encrypted_control_outbox",
+            [],
+            |r| r.get(0),
+        )
         .unwrap();
     assert!(!stored.contains("private-role-membership"));
     let sink = Sink::new(false);
     assert!(outbox.flush(&sink, "bot-1", "roles").unwrap());
     assert!(!outbox.flush(&sink, "bot-1", "roles").unwrap());
-    assert!(outbox.status("bot-1", "roles").unwrap().unwrap().synchronized);
+    assert!(
+        outbox
+            .status("bot-1", "roles")
+            .unwrap()
+            .unwrap()
+            .synchronized
+    );
     let envelope = sink.latest.lock().unwrap().clone().unwrap();
-    assert_eq!(encryption::decrypt_with_manager(&envelope, &keys).unwrap(), secret);
-    assert!(outbox.enqueue(&keys, "bot-1", "roles", b"new-policy").unwrap());
+    assert_eq!(
+        encryption::decrypt_with_manager(&envelope, &keys).unwrap(),
+        secret
+    );
+    assert!(outbox
+        .enqueue(&keys, "bot-1", "roles", b"new-policy")
+        .unwrap());
     assert!(outbox.flush(&sink, "bot-1", "roles").unwrap());
 }
 
@@ -100,15 +115,28 @@ fn failed_sink_preserves_pending_ciphertext_for_retry_after_restart() {
     let db = Db::new();
     let keys = manager();
     let outbox = EncryptedControlOutbox::open(&db.0).unwrap();
-    assert!(outbox.enqueue(&keys, "bot", "configuration", b"powered=off").unwrap());
+    assert!(outbox
+        .enqueue(&keys, "bot", "configuration", b"powered=off")
+        .unwrap());
     assert_eq!(
-        outbox.flush(&Sink::new(true), "bot", "configuration").unwrap_err().to_string(),
+        outbox
+            .flush(&Sink::new(true), "bot", "configuration")
+            .unwrap_err()
+            .to_string(),
         "Encrypted envelope publication failed"
     );
     drop(outbox);
     let restored = EncryptedControlOutbox::open(&db.0).unwrap();
-    assert!(!restored.status("bot", "configuration").unwrap().unwrap().synchronized);
-    assert!(restored.flush(&Sink::new(false), "bot", "configuration").unwrap());
+    assert!(
+        !restored
+            .status("bot", "configuration")
+            .unwrap()
+            .unwrap()
+            .synchronized
+    );
+    assert!(restored
+        .flush(&Sink::new(false), "bot", "configuration")
+        .unwrap());
 }
 
 #[test]
@@ -117,14 +145,27 @@ fn role_snapshot_is_owner_scoped_canonical_and_encrypted() {
     roles.provision_scope("bot", "owner").unwrap();
     roles.create_role("bot", "owner", "staff", None).unwrap();
     roles
-        .set_rule("bot", "owner", "staff", "command:ping", "execute", RuleEffect::Allow)
+        .set_rule(
+            "bot",
+            "owner",
+            "staff",
+            "command:ping",
+            "execute",
+            RuleEffect::Allow,
+        )
         .unwrap();
     roles.grant("bot", "owner", "member", "staff").unwrap();
     let keys = manager();
     let outbox = EncryptedControlOutbox::in_memory().unwrap();
-    assert!(outbox.enqueue_role_snapshot(&roles, "owner", &keys, "bot").unwrap());
-    assert!(!outbox.enqueue_role_snapshot(&roles, "owner", &keys, "bot").unwrap());
-    assert!(outbox.enqueue_role_snapshot(&roles, "member", &keys, "bot").is_err());
+    assert!(outbox
+        .enqueue_role_snapshot(&roles, "owner", &keys, "bot")
+        .unwrap());
+    assert!(!outbox
+        .enqueue_role_snapshot(&roles, "owner", &keys, "bot")
+        .unwrap());
+    assert!(outbox
+        .enqueue_role_snapshot(&roles, "member", &keys, "bot")
+        .is_err());
     let sink = Sink::new(false);
     outbox.flush(&sink, "bot", "roles").unwrap();
     let envelope = sink.latest.lock().unwrap().clone().unwrap();
@@ -147,5 +188,8 @@ fn key_rotation_requeues_unchanged_plaintext_under_new_key() {
     outbox.flush(&sink, "bot", "roles").unwrap();
     let envelope = sink.latest.lock().unwrap().clone().unwrap();
     assert_eq!(envelope.key_id, "key-2");
-    assert_eq!(encryption::decrypt_with_manager(&envelope, &keys).unwrap(), b"same");
+    assert_eq!(
+        encryption::decrypt_with_manager(&envelope, &keys).unwrap(),
+        b"same"
+    );
 }

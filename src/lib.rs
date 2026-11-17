@@ -35,8 +35,8 @@ pub use bots::{
     InMemoryBotIdentityStore, OwnerRecoveryAuthorizer, SqliteBotIdentityStore,
 };
 pub use command_audit::{CommandAuditOutcome, CommandAuditRecord, CommandAuditStore};
-pub use control_sync::{EncryptedControlOutbox, EncryptedEnvelopeSink, OutboxStatus};
 pub use commands::{CommandAuthorizer, CommandInvocation, CommandRouter};
+pub use control_sync::{EncryptedControlOutbox, EncryptedEnvelopeSink, OutboxStatus};
 pub use core::config::CoreConfig;
 pub use core::context::MatterContext;
 pub use core::logger::init_logger;

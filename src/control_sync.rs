@@ -158,7 +158,10 @@ impl EncryptedControlOutbox {
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .optional()?;
-        if previous.as_ref().is_some_and(|(old, _)| old == &fingerprint) {
+        if previous
+            .as_ref()
+            .is_some_and(|(old, _)| old == &fingerprint)
+        {
             return Ok(false);
         }
         let sequence = match previous {
@@ -314,7 +317,10 @@ fn validate_scope(value: &str) -> Result<()> {
 }
 
 fn validate_type(record_type: &str) -> Result<()> {
-    if !matches!(record_type, "roles" | "permissions" | "configuration" | "audit") {
+    if !matches!(
+        record_type,
+        "roles" | "permissions" | "configuration" | "audit"
+    ) {
         bail!("Unsupported control record type");
     }
     Ok(())
