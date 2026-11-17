@@ -88,3 +88,12 @@ receptor Base-Matter escucha en la dirección 127.0.0.1 configurada; si no,
 aborta antes de abrir la sesión SQLite o solicitar un código. La comprobación
 solo establece disponibilidad TCP, **no autentica el controlador**: el HMAC
 protege los comandos. El modo `--check` sigue sin red ni escrituras.
+
+## Confirmación en el chat privado
+
+Tras un acuse `applied` autenticado, el proveedor intenta enviar al
+chat propio «Base-Matter: solicitud procesada.». Los duplicados y errores no
+generan respuestas. No se envía a grupos, terceros ni mensajes que no tengan
+el prefijo `=/>` desde el JID autenticado. Es un aviso genérico: no implica
+que `status` ya tenga salida detallada, ni sustituye las pruebas de entrega
+con un teléfono autorizado.

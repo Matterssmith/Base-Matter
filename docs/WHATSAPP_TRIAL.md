@@ -93,8 +93,10 @@ cuenta vinculada, al chat privado propio:
 =/>off
 ```
 
-La aplicación **no responde por WhatsApp**: el proveedor muestra
-aceptación o rechazo en su terminal. No existe comando `ping` de
+La aplicación intenta responder en el chat privado propio con
+«Base-Matter: solicitud procesada.» solo cuando el control es aplicado.
+También muestra aceptación, duplicación o rechazo en la terminal. El estado
+exacto de las políticas aún no se devuelve como texto desde `status`. No existe comando `ping` de
 producción ni ejecución de comandos del futuro Bot-Matter.
 
 `=/>on` enciende el estado operativo del socket, pero no concede
@@ -146,3 +148,12 @@ sesión y solicitar pairing code. Si el receptor está caído, el proveedor
 falla sin modificar el SQLite ni solicitar un código a WhatsApp. Esto
 no demuestra por sí solo que la clave HMAC coincida, ni que el teléfono
 esté conectado.
+
+## Confirmación de control en el chat
+
+Si el dispositivo realmente entrega al proveedor un `=/>on` válido desde
+la cuenta vinculada, se espera una respuesta corta de confirmación en el
+mismo chat propio. No aparece por duplicados, comandos inválidos, grupos o
+otros remitentes. Una respuesta fallida después de `applied` no deshace el
+efecto; la terminal indica ese fallo. No usar la respuesta como prueba
+absoluta de entrega a otros dispositivos.

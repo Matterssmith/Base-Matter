@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Confirmación mínima en WhatsApp del control del dueño (CI pendiente)
+
+- El callback de `whatsapp-rust` intenta responder en el self-chat privado del propietario con un texto fijo sin prefijo, exclusivamente después del acuse `applied`; no responde a `duplicate`, `denied`, `ignored`, grupos ni otros chats.
+- Se conserva el control HMAC y replay antes del efecto, sin respuestas de estado falsas; un fallo en el envío del acuse se registra sin intentar repetir el comando.
+- 2 README revisados íntegramente (2/2), ambos actualizados; guía WhatsApp actualizada. No se inicia Bot-Matter, no se cambia SQLite ni las claves.
+- CI en Rust y prueba real de recepción/respuesta en dispositivo son obligatorios para estabilidad.
+
+
 ## 2026-11-17 — Formato del sondeo local del controlador (CI pendiente)
 
 - Se eliminó una línea de separación adicional entre funciones en `providers/whatsapp-rust/src/main.rs`, según rustfmt CI; sin cambios lógicos.

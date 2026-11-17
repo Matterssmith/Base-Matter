@@ -131,6 +131,12 @@ async fn main() -> Result<()> {
                     Ok(Some(frame)) => match deliver(config.bridge_addr, &frame).await {
                         Ok(ControlAck::Applied) => {
                             println!("Base-Matter owner control applied");
+                            // Only the authenticated owner's private self-chat
+                            // reaches this point. A plain response has no
+                            // global prefix, so it cannot trigger control.
+                            if ctx.reply("Base-Matter: solicitud procesada.").await.is_err() {
+                                eprintln!("Base-Matter control applied; chat acknowledgment unavailable");
+                            }
                         }
                         Ok(ControlAck::Duplicate) => {
                             println!("Base-Matter duplicate control ignored (no new effect)");

@@ -654,3 +654,13 @@ pairing code. Si no hay conexión TCP, el proveedor cancela el arranque con
 un error genérico, sin modificar la sesión. Esta comprobación no autentica
 el receptor ni sustituye HMAC: la firma se verifica en cada orden posterior.
 `--check` continúa sin conexiones ni cambios de archivos.
+
+## Confirmación privada del control global en WhatsApp
+
+Después de verificar un comando `=/>` del dueño en su propio chat privado,
+el proveedor Rust responde únicamente si Base-Matter devuelve `applied`,
+con el texto fijo «Base-Matter: solicitud procesada.». Un replay
+`duplicate`, un comando no autorizado o un fallo de IPC no generan respuesta.
+La respuesta no empieza por ningún prefijo de comando y, por tanto, no se
+auto-ejecuta. La función no devuelve todavía información detallada del estado,
+y requiere prueba con teléfono y recepción real antes de declararse estable.
