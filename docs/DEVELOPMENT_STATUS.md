@@ -1,5 +1,118 @@
 # Matter-Base development status
 
+## 2026-11-17 — Reparación de regresión de formato neutro (alpha; CI pendiente)
+
+- GitHub Actions detectó una aserción obsoleta en `tests/control_style.rs`: el texto plano `Bot ID` ya no coincide con la cadena decorativa anterior `BOT ID`. Ajustada la aserción sin cambiar la funcionalidad.
+- Los dos README (raíz y proveedor) fueron revisados en su totalidad, sin cambios adicionales; seguridad y sesiones intactas.
+- Repetir CI completa antes de promover `beta`.
+
+
+## 2026-11-17 — Corrección de formato e instrucciones para beta WhatsApp (CI pendiente)
+
+- Corregido rustfmt del menú plano. Actualizadas las instrucciones: `stable` ya es rama predeterminada; solo deben permanecer `stable`, `beta`, `alpha`, retirando refs heredadas sin perder commits únicos.
+- Revisados enteros ambos README (2/2) y actualizados. Guía de prueba con `beta` y comandos `status/menu/help/h/start/on/off` corregida.
+- Documentada la intención exacta de importar SOLO decoración de un menú real de otro bot; el observador externo y la importación automática NO están implementados.
+- No se han eliminado ramas con herramientas que carecen de esa capacidad. No se copiaron sesiones ni se modifica `stable`.
+- Se requiere CI verde antes de promover alpha a beta y pairing code real para promover a stable.
+
+
+## 2026-11-17 — Menú universal plano para WhatsApp (alpha; CI pendiente)
+
+- Corregida la interpretación: el propietario no pidió que Base inventase un menú decorativo; solo pide tomar estética de un menú real de otro bot. El menú universal ahora se presenta sin marcos, con comandos que realmente puede ejecutar el controlador.
+- Los dos README se revisaron íntegros (2/2) y actualizaron. La futura importación de estética requiere observar una respuesta real de un bot autorizado, sin copiar comandos ni credenciales.
+- No cambian seguridad, sesiones o permisos. Verificar CI antes de promover a beta.
+
+
+## 2026-11-17 — Prueba del mensaje IPC autorizado (alpha; CI pendiente)
+
+- El test TCP de lazo local verifica que `applied` para control `on/off` incluye una respuesta informativa, mientras que el replay `duplicate` no contiene el campo `message`.
+- El test visual comprueba que el título de tema se muestra junto al bot ID.
+- READMEs raíz/proveedor inspeccionados completos (2/2), ambos preservados. Sin mutación del proveedor ni sesiones.
+
+
+## 2026-11-17 — Formato de menú comunitario (alpha; CI pendiente)
+
+- Aplicadas cinco modificaciones exactas de rustfmt reportadas por GitHub Actions en `src/lib.rs`, `src/control_style.rs` y controlador WhatsApp.
+- Ambos README verificados íntegros (2/2) sin cambios. No se alteró la lógica, sesiones ni permisos.
+
+
+## 2026-11-17 — Render de menu/help/h hasta self-chat WhatsApp (alpha; CI pendiente)
+
+- Conectado el renderer `ControlTheme` con tres órdenes globales del ControlDispatcher: `=/>menu`, `=/>help`, `=/>h` (alias); todas requieren dueño del socket. El título de la plantilla ahora se muestra en la cabecera.
+- El proveedor Rust maneja `ControlAck::AppliedWithMessage` para entregar el texto validado al chat propio; el inventario `=/>start` conserva su informe especializado. Se ignoran duplicados/rechazos.
+- README raíz y del proveedor auditados íntegramente (2/2) y actualizados. Sin acceso a sesiones externas, sin cambios administrativos y sin pruebas de teléfono aún.
+- CI del SHA exacto pendiente.
+
+
+## 2026-11-17 — Acuse opcional con texto validado en proveedor Rust (alpha; CI pendiente)
+
+- El proveedor interpreta `applied` con un campo opcional `message` acotado a 760 bytes y sin controles, compatible con respuestas antiguas sin ese campo. No admite mensajes en `duplicate` o `denied`; tests ampliados.
+- Los 2 README fueron leídos íntegros (2/2), actualizado el README del proveedor. No se enviará el campo hasta enlazar el callback.
+
+
+## 2026-11-17 — Respuesta de texto validada del puente IPC (alpha; CI pendiente)
+
+- El receptor Rust puede incluir `message` únicamente al acuse `applied` para status, encendido/apagado y extensiones; límite 760 bytes y sanitización. La API `dispatch()` conserva el retorno anterior.
+- El transporte conserva el HMAC de entrada y el replay; las denegaciones/duplicados no filtran contenido. Falta que el proveedor reconozca el nuevo campo.
+- 2 README revisados íntegros (2/2), actualizado solo raíz. Documentación IPC ampliada. CI pendiente.
+
+
+## 2026-11-17 — Rechazo temprano de caracteres de control en #matter (alpha; CI pendiente)
+
+- Se corrigió el fallo reproducido en Linux/Windows: un NUL tras `#matter` se ignoraba como un prefijo inválido antes de validarse. Ahora se rechaza toda entrada con caracteres de control antes de analizar el separador.
+- 2 README inspeccionados íntegros (2/2), sin cambios necesarios. Sin cambios en sesiones, autorizaciones ni ramas estables.
+
+
+## 2026-11-17 — Render de menu/help/h por comunidad (alpha, CI pendiente)
+
+- Nuevo `src/control_style.rs`: renderer reutilizable para `menu`, `help`, `h`, con título, bot ID, créditos y temas por comunidad; 2 tests comprueban aislamiento de temas y rechazo de entradas malformadas.
+- Es una API visual sin autoridad sobre roles ni sesiones. No se afirmó que se haya duplicado el diseño de un bot externo sin tener su código.
+- Ambos README auditados íntegros 2/2; actualizado solo README raíz. La entrega real de menús en WhatsApp sigue pendiente.
+
+
+## 2026-11-17 — Ajustes de rustfmt para REGISTER (alpha; CI pendiente)
+
+- Aplicados los tres ajustes de formato exactos solicitados por las dos lanes de CI (controlador, test de alcance y escaneo de proveedor).
+- Revisados íntegros los 2 README (2/2), sin cambios necesarios; sesiones y permisos intactos.
+- Pendiente el resultado de las pruebas de compilación reales del adaptador y del controlador.
+
+
+## 2026-11-17 — Descubrimiento REGISTER mediante API WhatsApp Rust (alpha, CI pendiente)
+
+- El proveedor Rust consulta comunidades reales con `get_participating`, `get_subgroups` y `query_linked_group` después de que Base autoriza `=/>start`. Verifica admin del JID propio PN/LID, subgrupo vinculado e identificador exacto en primera línea.
+- Devuelve un resumen de solo lectura en self-chat, con límites de alcance/tiempo. Errores dan aviso de inspección incompleta y ninguna mutación; no crea ni configura grupos.
+- READMEs íntegros auditados 2/2; ambos actualizados. Contrato de comunidad actualizado; CI y la sesión real siguen pendientes para este commit.
+
+
+## 2026-11-17 — Identificador REGISTER exacto en WhatsApp Rust (alpha; CI pendiente)
+
+- Añadida función pura `official_register_description` en el proveedor Rust, con validación del JID y primera línea exacta del ID comunitario; incorpora pruebas para coincidencias, inyección y prefijos parciales.
+- README raíz y proveedor revisados íntegros (2/2); solo README del proveedor actualizado. La descripción no concede autorización; falta lectura real de comunidades.
+
+
+## 2026-11-17 — Extensión =/>start protegida en Base (alpha, CI pendiente)
+
+- Registrada `=/>start` en el proceso controlador Rust mediante la autorización del ControlDispatcher; funciona con bot apagado sin conceder autorización a otros sockets.
+- `=/>start apply` y argumentos no admitidos fallan cerrados hasta completar planes de mutación; agregado test de alcance/rol por socket.
+- README raíz y proveedor revisados íntegros (2/2); actualizado solo raíz. Sin sesión WhatsApp real en esta fase; queda por conectar el descubrimiento del proveedor.
+
+
+## 2026-11-17 — Parser externo #matter en alpha (CI pendiente)
+
+- Agregado `src/external_compat.rs` como normalizador sintáctico no autenticador de `#matter` a `=/>`, con 2 tests de regresión para prefijos y caracteres de control.
+- Ambos README leídos íntegros (2/2) y conservados sin cambios; no se copiaron sesiones ni se integraron bots externos reales.
+- Falta aprobación CI del commit. El adaptador externo aún debe autenticar actor/socket y pasar por InboundGateway.
+
+
+## 2026-11-17 — Ramas stable/beta/alpha y contrato REGISTER (alpha)
+
+- Se crearon nuevas ramas GitHub `stable` desde `matter`, `beta` y `alpha` desde `matter-beta`; las anteriores se preservan. GitHub continúa con default `matter` hasta una actualización de la configuración.
+- Documentados `=/>start` (descubrimiento/planificación y fases de aplicación) y `#matter` para bots externos con IPC autenticado; nada de compartir o copiar sesiones activas.
+- Se habilita CI en `alpha`, `beta`, `stable` y ramas legadas sin modificar la estabilidad de WhatsApp.
+- Auditoría README: 2/2 revisados íntegramente; ambos actualizados. Documentos nuevos: BRANCH_STRATEGY, COMMUNITY_REGISTER y EXTERNAL_BOT_COMPAT. Esta fase es especificación, no prueba de ejecución de mutaciones WhatsApp.
+- Bot-Matter sigue bloqueado. Fase siguiente: servicio de detección seguro y tests, más adelante adaptación de WhatsApp Rust con cuenta de prueba.
+
+
 ## 2026-11-17 — Auditoría de afirmaciones de integración (pendiente CI)
 
 - Root README and provider README reviewed in full (2/2). Corrected root statements that were true before, but became false after the Rust provider and loopback listener landed. Provider README reviewed unchanged.

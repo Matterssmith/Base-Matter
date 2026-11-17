@@ -53,3 +53,17 @@ cierra su mitad de escritura se deniega; no ejecuta comandos y no expone
 identificadores en la respuesta. El protocolo HMAC no cambia. El receptor
 usa una cola secuencial local, por lo que sigue pendiente una auditoría de
 resistencia a saturación con procesos no confiables en el mismo host.
+
+## Respuestas legibles a controles (alpha)
+
+El IPC puede adjuntar un campo JSON opcional `message` a un
+`applied` autorizado. Se devuelve texto para `status`, encendido/
+apagado y extensiones visuales; nunca para denegaciones ni duplicados.
+Máximo 760 bytes UTF-8 y sin caracteres de control salvo saltos de línea.
+El campo no contiene secretos ni JIDs y el protocolo HMAC de entrada
+permanece intacto. El cliente debe rechazar campos desconocidos
+y no interpretar el texto como un nuevo comando.
+
+Esta capacidad no autentica por sí sola el canal de respuesta TCP.
+Solo debe utilizarse en el puente local protegido del host, con un
+remitente/sesión ya autenticado y reglas de salida estrictas.

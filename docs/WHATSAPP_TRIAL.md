@@ -1,6 +1,6 @@
 # Prueba WhatsApp Rust de Base-Matter — pairing code
 
-Este procedimiento se puede ejecutar desde la rama `matter-beta` con
+Este procedimiento se puede ejecutar desde la rama `beta` con
 una cuenta secundaria propia autorizada. Es una prueba, **no una
 certificación de estabilidad**. Solo se usa Rust y vinculación por código.
 No se muestra QR, no se usa Node/Baileys y no se inicia Bot-Matter.
@@ -17,8 +17,8 @@ Comprueba antes tus cambios locales. Nunca sobrescribas una sesión activa:
 cd /home/Sakura/Matter-Base
 git status --short --branch
 git fetch origin
-git switch matter-beta
-git pull --ff-only origin matter-beta
+git switch beta
+git pull --ff-only origin beta
 cargo check --all-targets --locked
 cargo test --all-targets --locked
 cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --all-targets
@@ -88,22 +88,28 @@ cuenta vinculada, al chat privado propio:
 
 ```text
 =/>status
+=/>menu
+=/>help
+=/>h
+=/>start
 =/>on
 =/>status
 =/>off
 ```
 
-La aplicación intenta responder en el chat privado propio con
-«Base-Matter: solicitud procesada.» solo cuando el control es aplicado.
-También muestra aceptación, duplicación o rechazo en la terminal. El estado
-exacto de las políticas aún no se devuelve como texto desde `status`. No existe comando `ping` de
-producción ni ejecución de comandos del futuro Bot-Matter.
+La aplicación responde en el chat propio con una lista textual sencilla
+para `menu/help/h`, resultados informativos de `status/on/off`, y un
+informe de comunidades para `start` cuando el control sea autorizado.
+El resultado de `start` depende de metadatos reales de WhatsApp y
+solo realiza lecturas; nunca crea, promueve ni modifica grupos.
+También registra aceptación, duplicación o rechazo en la terminal.
+No existe comando `ping` de producción ni se inicia Bot-Matter.
 
 `=/>on` enciende el estado operativo del socket, pero no concede
 una política para ejecutar comandos normales. Los grupos y terceros
 no tienen autoridad para controlar ese socket.
 
-## Bloqueos para promoción a matter
+## Bloqueos para promoción a stable
 
 Validar emparejamiento real, JID/LID de la cuenta, comandos recibidos,
 persistencia de SQLite, reinicio controlado, bloqueo por proceso, replay,
@@ -157,3 +163,11 @@ mismo chat propio. No aparece por duplicados, comandos inválidos, grupos o
 otros remitentes. Una respuesta fallida después de `applied` no deshace el
 efecto; la terminal indica ese fallo. No usar la respuesta como prueba
 absoluta de entrega a otros dispositivos.
+
+## Estética de otros bots
+
+Durante esta beta `=/>menu` permanece en texto plano. No lee por
+sí solo la respuesta de otros bots: para reproducir un estilo es
+necesario observar un mensaje real del bot fuente y autorizar la
+extracción de su marco decorativo. No se importarán comandos ajenos,
+enlaces, identidades ni sesiones. Ver `docs/MENU_STYLE_IMPORT.md`.

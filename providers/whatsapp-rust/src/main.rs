@@ -46,6 +46,104 @@ async fn require_local_controller(address: std::net::SocketAddrV4) -> Result<()>
     Ok(())
 }
 
+async fn discover_register(
+    ctx: &whatsapp_rust::bot::MessageContext,
+    owner_jid: &str,
+) -> Result<String> {
+    let participating = ctx
+        .client
+        .community()
+        .get_participating()
+        .await
+        .map_err(|_| anyhow::anyhow!("Community inventory unavailable"))?;
+    if participating.len() > 12 {
+        bail!("Too many communities to inspect safely");
+    }
+    let mut parents: Vec<_> = participating.into_iter().collect();
+    parents.sort_by_key(|(jid, _)| jid.to_string());
+    let mut managed = 0_usize;
+    let mut summaries = Vec::new();
+    for (parent_id, metadata) in parents {
+        if !metadata.is_parent_group {
+            continue;
+        }
+        let is_admin = metadata.participants.iter().any(|participant| {
+            participant.is_admin()
+                && (participant.jid.to_string() == owner_jid
+                    || participant
+                        .phone_number
+                        .as_ref()
+                        .is_some_and(|jid| jid.to_string() == owner_jid)
+                    || participant
+                        .lid
+                        .as_ref()
+                        .is_some_and(|jid| jid.to_string() == owner_jid))
+        });
+        if !is_admin {
+            continue;
+        }
+        managed += 1;
+        let subgroups = ctx
+            .client
+            .community()
+            .get_subgroups(&parent_id)
+            .await
+            .map_err(|_| anyhow::anyhow!("Subgroup inventory unavailable"))?;
+        if subgroups.len() > 64 {
+            bail!("Community has too many subgroups for one scan");
+        }
+        let mut matches = Vec::new();
+        let mut examined = 0_usize;
+        for subgroup in subgroups {
+            if subgroup.is_default_sub_group || subgroup.is_general_chat {
+                continue;
+            }
+            let group = ctx
+                .client
+                .community()
+                .query_linked_group(parent_id.clone(), subgroup.id)
+                .await
+                .map_err(|_| anyhow::anyhow!("Linked group metadata unavailable"))?;
+            if group.parent_group_jid.as_ref() != Some(&parent_id) {
+                continue;
+            }
+            examined += 1;
+            if group.description.as_deref().is_some_and(|description| {
+                whatsapp_matter_rust_provider::official_register_description(
+                    description,
+                    &parent_id.to_string(),
+                )
+            }) {
+                matches.push(group.subject);
+            }
+        }
+        let register = if matches.len() > 1 {
+            "COLISION: multiples grupos oficiales".to_owned()
+        } else if let Some(name) = matches.first() {
+            format!("Encontrado: {}", name.chars().take(60).collect::<String>())
+        } else {
+            "No existe: se requiere plan de creación autorizado".to_owned()
+        };
+        let community_name: String = metadata.subject.chars().take(60).collect();
+        summaries.push(format!(
+            "{} | grupos: {} | REGISTER: {}",
+            community_name, examined, register
+        ));
+    }
+    if managed == 0 {
+        return Ok(
+            "Base-Matter REGISTER: ninguna comunidad con admin verificado para esta identidad PN/LID. No se hicieron cambios."
+                .to_owned(),
+        );
+    }
+    let report = format!(
+        "Base-Matter REGISTER - Solo lectura\nComunidades admin: {}\n{}\nSin cambios administrativos.",
+        managed,
+        summaries.join("\n")
+    );
+    Ok(report.chars().take(3000).collect())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     match std::env::args().nth(1).as_deref() {
@@ -129,12 +227,27 @@ async fn main() -> Result<()> {
                 };
                 match config.signed_control(&data) {
                     Ok(Some(frame)) => match deliver(config.bridge_addr, &frame).await {
-                        Ok(ControlAck::Applied) => {
+                        Ok(ack @ (ControlAck::Applied | ControlAck::AppliedWithMessage(_))) => {
                             println!("Base-Matter owner control applied");
-                            // Only the authenticated owner's private self-chat
-                            // reaches this point. A plain response has no
-                            // global prefix, so it cannot trigger control.
-                            if ctx.reply("Base-Matter: solicitud procesada.").await.is_err() {
+                            // Only an authenticated private self-chat may receive
+                            // an authorized response. Text has no control prefix.
+                            let response = if frame.text == "=/>start" {
+                                match timeout(
+                                    Duration::from_secs(20),
+                                    discover_register(&ctx, &config.owner_jid),
+                                )
+                                .await
+                                {
+                                    Ok(Ok(report)) => report,
+                                    _ => "Base-Matter REGISTER: inspección no disponible o incompleta; no se hicieron cambios.".to_owned(),
+                                }
+                            } else {
+                                match ack {
+                                    ControlAck::AppliedWithMessage(text) => text,
+                                    _ => "Base-Matter: solicitud procesada.".to_owned(),
+                                }
+                            };
+                            if ctx.reply(response).await.is_err() {
                                 eprintln!("Base-Matter control applied; chat acknowledgment unavailable");
                             }
                         }

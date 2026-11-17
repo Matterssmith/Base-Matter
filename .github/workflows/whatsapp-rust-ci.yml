@@ -2,7 +2,7 @@ name: whatsapp-rust provider offline verification
 
 on:
   push:
-    branches: [matter-beta]
+    branches: [alpha, beta, stable, matter-beta]
     paths:
       - "providers/whatsapp-rust/**"
       - "src/**"
@@ -10,7 +10,7 @@ on:
       - "Cargo.lock"
       - ".github/workflows/whatsapp-rust-ci.yml"
   pull_request:
-    branches: [matter-beta, matter]
+    branches: [alpha, beta, stable, matter-beta, matter]
 
 permissions:
   contents: read

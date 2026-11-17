@@ -207,11 +207,18 @@ fn controller_ack_distinguishes_applied_and_duplicate_without_false_success() {
         parse_control_ack(br#"{"ok":true,"outcome":"duplicate"}"#).unwrap(),
         ControlAck::Duplicate
     );
+    assert_eq!(
+        parse_control_ack(br#"{"ok":true,"outcome":"applied","message":"Estado"}"#).unwrap(),
+        ControlAck::AppliedWithMessage("Estado".to_owned())
+    );
     for invalid in [
         br#"{"ok":false,"outcome":"denied"}"#.as_slice(),
         br#"{"ok":true,"outcome":"ignored"}"#,
         br#"{"ok":true,"outcome":"denied"}"#,
         br#"{"ok":false,"outcome":"applied"}"#,
+        br#"{"ok":true,"outcome":"duplicate","message":"bad"}"#,
+        br#"{"ok":true,"outcome":"applied","message":""}"#,
+        br#"{"ok":true,"outcome":"applied","message":"hi\ncontrol\u0000"}"#,
         br#"{"ok":true}"#,
         br#"{"ok":"true","outcome":"applied"}"#,
         br#"{"ok":true,"outcome":"applied","unexpected":1}"#,

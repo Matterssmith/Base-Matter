@@ -681,3 +681,75 @@ con el texto fijo «Base-Matter: solicitud procesada.». Un replay
 La respuesta no empieza por ningún prefijo de comando y, por tanto, no se
 auto-ejecuta. La función no devuelve todavía información detallada del estado,
 y requiere prueba con teléfono y recepción real antes de declararse estable.
+
+## Rama de desarrollo y la comunidad REGISTER
+
+La estrategia de ramas canónicas es [`stable` / `beta` / `alpha`](docs/BRANCH_STRATEGY.md).
+Las ramas anteriores `matter` y `matter-beta` se conservan sin forzar
+fusiones mientras se migran las referencias, la rama por defecto y la CI.
+
+La especificación de [`=/>start` y grupos oficiales REGISTER](docs/COMMUNITY_REGISTER.md)
+separa **detección y auditoría** de los cambios reales (imagen, nombre,
+descripción, ajustes, creación y administración). Los subgrupos requieren
+coincidencia exacta del identificador al inicio de la descripción, pertenencia
+verificada a la comunidad y autorización del dueño. No hay creación masiva
+ni cambio de permisos sin revisión del plan.
+
+El [contrato externo `#matter`](docs/EXTERNAL_BOT_COMPAT.md) permite que
+bots ajenos actúen como clientes autorizados del control `=/>`, sin copiar
+sesiones WhatsApp ni conceder privilegios por compartir un prefijo.
+
+## Comando alpha =/>start
+
+El proceso de control Base-Matter registra la orden `=/>start` y comprueba
+autorización del dueño del socket antes de admitir el inventario de
+comunidades. Funciona aunque el socket esté apagado. Las operaciones
+`=/>start apply` se rechazan mientras no exista un plan de cambios
+verificado; no se modifica ninguna comunidad por autorizar la lectura.
+
+## =/>start — inventario comunitario de solo lectura
+
+Desde `alpha`, la confirmación del controlador Base-Matter permite que el
+proveedor Rust consulte las comunidades de la sesión WhatsApp, compruebe
+qué comunidades tienen admin verificado para el propio JID PN/LID, enumere
+subgrupos vinculados y compare la primera línea exacta de la descripción
+con `MATTER:OFFICIAL:register:<community-id>`. Responde únicamente al
+chat propio con el resultado o un fallo de lectura. Los cambios de nombre,
+imagen, permisos, links y creación permanecen bloqueados.
+
+## Estética reutilizable de menú y ayuda
+
+El módulo Rust `control_style` renderiza `menu`, `help` y `h`
+mediante una plantilla compartida con título, bot ID, encabezado,
+comandos globales y créditos. `ControlThemes` aísla overrides
+por identificador de comunidad y utiliza un diseño por defecto.
+Es solo presentación y no atribuye roles ni permisos. La persistencia,
+la entrega al chat y los estilos de bots externos se integrarán
+por el contrato público; no hay una copia exacta de una estética
+ajena sin su diseño fuente.
+
+## Respuestas de estado y extensiones del control
+
+El receptor `whatsapp-matter-control` puede adjuntar texto informativo
+limitado a 760 bytes al resultado `applied`, para `status`,
+encendido/apagado y extensiones autorizadas. Nunca devuelve estos datos
+en un rechazo ni un replay. El proveedor verificará ese campo antes de
+enviarlo al chat; el cambio no altera la firma HMAC de entrada.
+
+## Menús globales visibles desde WhatsApp (alpha)
+
+Las extensiones `=/>menu`, `=/>help` y `=/>h` usan el renderizador
+Rust de `ControlTheme`, tras validar el propietario del socket por HMAC.
+El receptor devuelve texto limitado por el IPC y el proveedor lo responde
+únicamente al chat privado propio. La plantilla incorpora nombre,
+bot ID y créditos. El diseño puede variar por comunidad a través de
+`ControlThemes`; todavía no hay almacenamiento ni administración de temas
+desde WhatsApp. En paralelo `=/>start` mantiene el informe de lectura.
+
+## Menú universal sin diseño inventado
+
+Los comandos `=/>menu`, `=/>help` y `=/>h` muestran exclusivamente los comandos globales existentes, con texto plano y sin un marco decorativo inventado. La estética de otro bot solo puede reutilizarse tras observar un menú real autorizado y extraer sus componentes visuales, nunca sus comandos o identidad. No se afirma que el proveedor pueda leer automáticamente menús de terceros.
+
+## Ramas definitivas y estética del menú
+
+La rama predeterminada GitHub ya es `stable`; el desarrollo continúa en `alpha` y la integración validada se prepara en `beta`. Se retirarán referencias heredadas sin descartar commits exclusivos. La salida de `=/>menu` y `=/>help` es deliberadamente un listado sencillo. [La estética real de otros bots](docs/MENU_STYLE_IMPORT.md) se extraerá únicamente de un mensaje fuente autenticado, sin copiar sus comandos ni contenido.

@@ -99,3 +99,54 @@ generan respuestas. No se envía a grupos, terceros ni mensajes que no tengan
 el prefijo `=/>` desde el JID autenticado. Es un aviso genérico: no implica
 que `status` ya tenga salida detallada, ni sustituye las pruebas de entrega
 con un teléfono autorizado.
+
+## Comunidad REGISTER (alpha)
+
+`=/>start` se reserva para inventario y verificación de comunidades
+gestionadas por la sesión de WhatsApp. El diseño en
+[`docs/COMMUNITY_REGISTER.md`](../../docs/COMMUNITY_REGISTER.md)
+requiere verificar el rol admin y los identificadores exactos de subgrupo,
+y distingue vista previa de operaciones con cambios. Ninguna actualización
+administrativa se debe asumir completa por aprobar CI offline.
+
+## Encabezado oficial REGISTER
+
+La función de detección solo reconoce la primera línea exacta
+`MATTER:OFFICIAL:register:<community-jid>`, validando formato de JID
+comunitario. Las coincidencias parciales, colocadas en otra línea o con
+ID de otra comunidad se rechazan. La descripción **no es autenticación**;
+además se deben verificar metadatos de pertenencia y rol de administrador.
+
+## Escaneo de comunidades reales con =/>start (alpha)
+
+Tras pasar HMAC y permisos en Base, el callback de `whatsapp-rust` utiliza
+`Community::get_participating`, `get_subgroups` y
+`query_linked_group`. El escaneo verifica el admin del propio JID PN/LID,
+pertenencia del subgrupo a la comunidad y encabezado REGISTER exacto.
+Responde en el chat propio y no modifica grupos ni roles. Limita a 12
+comunidades, 64 subgrupos por comunidad y 20 segundos por solicitud.
+No se puede declarar probado en red sin un teléfono vinculado.
+
+## Respuesta de comandos globales desde Base
+
+El proveedor admite el acuse opcional `message` de una operación
+`applied` para mostrar menús o estados en el self-chat. Exige menos
+de 761 bytes, texto UTF-8 válido, sin NUL ni controles salvo saltos de
+línea. Los `duplicate`, `denied` y campos inesperados no contienen
+respuestas. La verificación no equivale a privilegio de administración.
+
+## Ayuda y menú del controlador Base (alpha)
+
+Los comandos `=/>menu`, `=/>help` y `=/>h` devuelven en el chat
+privado propio el formato autorizado por Base-Matter. El texto se valida
+y se limita a 760 bytes; los mensajes duplicados o no autorizados no
+generan respuesta. El proveedor no interpreta comandos externos
+`#matter` ni importa sesiones de bots ajenos.
+
+## Menú simple para pruebas beta
+
+El menú de control de Base-Matter es intencionalmente plano. `=/>menu`, `=/>help` y `=/>h` no incluyen una estética atribuida a otro bot sin una muestra observada y aprobada. Todas las respuestas siguen exigiendo validación del dueño del socket.
+
+## Prueba desde la nueva rama beta
+
+La guía `docs/WHATSAPP_TRIAL.md` corresponde ahora a `beta`. `=/>menu`, `=/>help` y `=/>h` muestran comandos del núcleo sin diseño preestablecido, y `=/>start` solo consulta comunidades. No copiar menús de otras cuentas sin una fuente verificable.

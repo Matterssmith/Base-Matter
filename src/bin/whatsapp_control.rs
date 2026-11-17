@@ -5,10 +5,11 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use anyhow::{anyhow, bail, Result};
+use matter_base::control_style::{ControlTheme, ControlThemes};
 use matter_base::{
     activation::SocketActivationStore, control::ControlDispatcher, BotRegistry, CommandAuthorizer,
-    CommandInvocation, CommandRouter, InboundReplayStore, WhatsAppBridgeConfig,
-    WhatsAppControlBridge, WhatsAppControlIpc,
+    CommandInvocation, CommandRouter, ControlExtensionRegistry, InboundReplayStore,
+    WhatsAppBridgeConfig, WhatsAppControlBridge, WhatsAppControlIpc,
 };
 use std::{
     env,
@@ -203,12 +204,38 @@ fn main() -> Result<()> {
     let _lease = ExclusiveLock::acquire(lock)?;
     let replay = Arc::new(InboundReplayStore::open(&replay_path, replay_key)?);
     let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot))?);
-    let dispatcher = Arc::new(ControlDispatcher::new(
-        activation,
-        Arc::new(BotRegistry::in_memory()),
-        router,
-        None,
-    ));
+    let extensions = Arc::new(ControlExtensionRegistry::new());
+    // A signed, socket-owner-authorized request for live provider discovery.
+    // Mutations are intentionally unsupported in this alpha checkpoint.
+    extensions.register("start", &[], |_, arguments| {
+        if !arguments.is_empty() {
+            bail!("Community changes require an approved plan");
+        }
+        Ok("Community REGISTER read-only inventory authorized".to_owned())
+    })?;
+    let style = Arc::new(ControlThemes::new(ControlTheme::new(
+        "Base-Matter",
+        "base-matter",
+        "✦",
+    )?));
+    let menu_theme = Arc::clone(&style);
+    extensions.register("menu", &[], move |_, args| {
+        if !args.is_empty() {
+            bail!("Unexpected menu arguments");
+        }
+        menu_theme.render(None, "menu")
+    })?;
+    let help_theme = Arc::clone(&style);
+    extensions.register("help", &["h"], move |_, args| {
+        if !args.is_empty() {
+            bail!("Unexpected help arguments");
+        }
+        help_theme.render(None, "help")
+    })?;
+    let dispatcher = Arc::new(
+        ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
+            .with_control_extensions(extensions),
+    );
     let bridge = Arc::new(WhatsAppControlBridge::new(
         WhatsAppBridgeConfig {
             socket_id: socket,

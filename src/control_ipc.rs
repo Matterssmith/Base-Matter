@@ -4,6 +4,7 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
+use crate::control::DispatchResult;
 use crate::whatsapp_bridge::{WhatsAppBridgeOutcome, WhatsAppControlBridge};
 use anyhow::{bail, Result};
 use std::{
@@ -43,18 +44,50 @@ impl WhatsAppControlIpc {
     }
 
     pub fn dispatch(&self, input: &[u8]) -> ControlIpcOutcome {
+        self.dispatch_with_message(input).0
+    }
+
+    fn dispatch_with_message(&self, input: &[u8]) -> (ControlIpcOutcome, Option<String>) {
         if input.is_empty() || input.len() > MAX_FRAME_BYTES {
-            return ControlIpcOutcome::Denied;
+            return (ControlIpcOutcome::Denied, None);
         }
         let Ok(text) = std::str::from_utf8(input) else {
-            return ControlIpcOutcome::Denied;
+            return (ControlIpcOutcome::Denied, None);
         };
-        match self.bridge.ingest_json(text) {
-            Ok(WhatsAppBridgeOutcome::Dispatched(_)) => ControlIpcOutcome::Applied,
-            Ok(WhatsAppBridgeOutcome::Ignored) => ControlIpcOutcome::Ignored,
-            Ok(WhatsAppBridgeOutcome::Duplicate) => ControlIpcOutcome::Duplicate,
-            Err(_) => ControlIpcOutcome::Denied,
-        }
+        let result = match self.bridge.ingest_json(text) {
+            Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
+                output, ..
+            })) => (ControlIpcOutcome::Applied, Some(output)),
+            Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Status {
+                enabled, source, ..
+            })) => (
+                ControlIpcOutcome::Applied,
+                Some(format!(
+                    "Base-Matter: política de comandos: {} (origen: {source:?}). El encendido del socket es independiente.",
+                    if enabled { "permitida" } else { "denegada" }
+                )),
+            ),
+            Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Control {
+                powered, ..
+            })) => (
+                ControlIpcOutcome::Applied,
+                Some(format!(
+                    "Base-Matter: socket {}. La política de comandos es independiente.",
+                    if powered { "encendido" } else { "apagado" }
+                )),
+            ),
+            Ok(WhatsAppBridgeOutcome::Dispatched(_)) => (ControlIpcOutcome::Applied, None),
+            Ok(WhatsAppBridgeOutcome::Ignored) => (ControlIpcOutcome::Ignored, None),
+            Ok(WhatsAppBridgeOutcome::Duplicate) => (ControlIpcOutcome::Duplicate, None),
+            Err(_) => (ControlIpcOutcome::Denied, None),
+        };
+        let (outcome, message) = result;
+        let validated = message.filter(|text| {
+            !text.is_empty()
+                && text.len() <= 760
+                && !text.chars().any(|c| c.is_control() && c != '\n')
+        });
+        (outcome, validated)
     }
 
     /// The provider must close its write half after sending one JSON frame.
@@ -63,28 +96,34 @@ impl WhatsAppControlIpc {
         stream.set_write_timeout(Some(Duration::from_secs(3)))?;
         let deadline = Instant::now() + Duration::from_secs(4);
         let mut request = Vec::new();
-        let result = loop {
+        let (result, message) = loop {
             let remaining = deadline.saturating_duration_since(Instant::now());
             if remaining.is_zero() {
-                break ControlIpcOutcome::Denied;
+                break (ControlIpcOutcome::Denied, None);
             }
             stream.set_read_timeout(Some(remaining.min(Duration::from_secs(1))))?;
             let mut chunk = [0_u8; 2048];
             match stream.read(&mut chunk) {
-                Ok(0) => break self.dispatch(&request),
+                Ok(0) => break self.dispatch_with_message(&request),
                 Ok(n) => {
                     if request.len() + n > MAX_FRAME_BYTES {
-                        break ControlIpcOutcome::Denied;
+                        break (ControlIpcOutcome::Denied, None);
                     }
                     request.extend_from_slice(&chunk[..n]);
                 }
                 Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
-                Err(_) => break ControlIpcOutcome::Denied,
+                Err(_) => break (ControlIpcOutcome::Denied, None),
             }
         };
-        let response = serde_json::json!({
-            "ok":result.permitted(),"outcome":result.as_str(),
-        });
+        let response = if let Some(message) = message {
+            serde_json::json!({
+                "ok":result.permitted(),"outcome":result.as_str(),"message":message,
+            })
+        } else {
+            serde_json::json!({
+                "ok":result.permitted(),"outcome":result.as_str(),
+            })
+        };
         let encoded = serde_json::to_vec(&response)?;
         stream.write_all(&encoded)?;
         Ok(())
