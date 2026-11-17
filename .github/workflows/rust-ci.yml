@@ -59,3 +59,32 @@ jobs:
 
       - name: Verify whitespace
         run: git diff --check HEAD^ HEAD
+
+  windows:
+    name: Windows stable Rust
+    runs-on: windows-latest
+    timeout-minutes: 40
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install stable Rust and Clippy
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache Cargo dependencies and build output
+        uses: Swatinem/rust-cache@v2
+
+      - name: Verify all targets on Windows
+        run: cargo check --all-targets --locked
+
+      - name: Run default Windows tests
+        run: cargo test --all-targets --locked
+
+      - name: Verify strict Clippy on Windows
+        run: cargo clippy --all-targets --locked -- -D warnings

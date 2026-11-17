@@ -59,3 +59,6 @@ persist session secrets in Base or Vault.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+The matter-beta workflow includes Linux and Windows Rust lanes. Termux and
+real platform/provider compatibility remain separate release gates.

@@ -1,5 +1,16 @@
 # Matter-Base development status
 
+## 2026-11-17 — Windows Rust CI lane (pending CI)
+
+- Prior release and tracked-file hygiene passed GitHub Actions run 44123810438.
+- Expanded matter-beta workflow with a Windows stable Rust lane running
+  locked all-target compilation, unit/integration tests and strict Clippy.
+- README audit: one root README reviewed and updated; release-readiness
+  notes updated to distinguish Windows CI from missing Termux/platform tests.
+- A passing result on Windows is pending. No production readiness claim,
+  stable branch merge, Matter-Bot work or local session modifications.
+
+
 ## 2026-11-17 — Release hygiene and evidence gates (pending CI)
 
 - Previous encrypted lost-ack reconciliation passed GitHub Actions run
