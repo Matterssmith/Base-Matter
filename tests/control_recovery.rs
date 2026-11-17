@@ -5,11 +5,11 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use anyhow::{bail, Result};
+use matter_base::security::key_manager::KeyManager;
 use matter_base::{
     encryption::{self, EncryptedEnvelope},
     EncryptedControlOutbox, EncryptedEnvelopeReader, EncryptedEnvelopeSink,
 };
-use matter_base::security::key_manager::KeyManager;
 use std::sync::Mutex;
 
 fn manager() -> KeyManager {
@@ -52,20 +52,32 @@ impl EncryptedEnvelopeReader for Remote {
 fn lost_acknowledgment_reconciles_exact_ciphertext_without_resending() {
     let outbox = EncryptedControlOutbox::in_memory().unwrap();
     let keys = manager();
-    assert!(outbox.enqueue(&keys, "bot", "roles", b"sensitive-role-members").unwrap());
+    assert!(outbox
+        .enqueue(&keys, "bot", "roles", b"sensitive-role-members")
+        .unwrap());
     let remote = Remote {
         record: Mutex::new(None),
         lost_ack: true,
     };
     assert_eq!(
-        outbox.flush(&remote, "bot", "roles").unwrap_err().to_string(),
+        outbox
+            .flush(&remote, "bot", "roles")
+            .unwrap_err()
+            .to_string(),
         "Encrypted envelope publication failed"
     );
     assert!(!outbox.status("bot", "roles").unwrap().unwrap().synchronized);
     assert!(outbox.reconcile(&remote, "bot", "roles").unwrap());
     assert!(!outbox.reconcile(&remote, "bot", "roles").unwrap());
     assert!(!outbox.flush(&remote, "bot", "roles").unwrap());
-    assert_eq!(outbox.status("bot", "roles").unwrap().unwrap().remote_revision, Some("rev-1".into()));
+    assert_eq!(
+        outbox
+            .status("bot", "roles")
+            .unwrap()
+            .unwrap()
+            .remote_revision,
+        Some("rev-1".into())
+    );
     let stored = remote.record.lock().unwrap().clone().unwrap().0;
     assert_eq!(
         encryption::decrypt_with_manager(&stored, &keys).unwrap(),
@@ -77,7 +89,9 @@ fn lost_acknowledgment_reconciles_exact_ciphertext_without_resending() {
 fn divergence_never_marks_unsent_record_published() {
     let outbox = EncryptedControlOutbox::in_memory().unwrap();
     let keys = manager();
-    outbox.enqueue(&keys, "bot", "roles", b"expected-payload").unwrap();
+    outbox
+        .enqueue(&keys, "bot", "roles", b"expected-payload")
+        .unwrap();
     let replacement = encryption::encrypt(
         b"foreign-payload",
         keys.get_active().unwrap().1,
@@ -93,11 +107,16 @@ fn divergence_never_marks_unsent_record_published() {
         lost_ack: false,
     };
     assert_eq!(
-        outbox.reconcile(&remote, "bot", "roles").unwrap_err().to_string(),
+        outbox
+            .reconcile(&remote, "bot", "roles")
+            .unwrap_err()
+            .to_string(),
         "Remote encrypted record diverged"
     );
     assert!(!outbox.status("bot", "roles").unwrap().unwrap().synchronized);
-    assert!(!outbox.reconcile(&Remote::default(), "bot", "roles").unwrap());
+    assert!(!outbox
+        .reconcile(&Remote::default(), "bot", "roles")
+        .unwrap());
     assert!(outbox.reconcile(&remote, "bot", "configuration").is_err());
 }
 
@@ -105,7 +124,9 @@ fn divergence_never_marks_unsent_record_published() {
 fn remote_envelope_tampering_does_not_acknowledge_local_record() {
     let outbox = EncryptedControlOutbox::in_memory().unwrap();
     let keys = manager();
-    outbox.enqueue(&keys, "bot", "audit", b"audit-private").unwrap();
+    outbox
+        .enqueue(&keys, "bot", "audit", b"audit-private")
+        .unwrap();
     let remote = Remote {
         record: Mutex::new(None),
         lost_ack: true,
