@@ -63,7 +63,7 @@ impl WhatsAppControlIpc {
         stream.set_read_timeout(Some(Duration::from_secs(3)))?;
         stream.set_write_timeout(Some(Duration::from_secs(3)))?;
         let mut request = Vec::new();
-        let result = match stream
+        let result = match std::io::Read::by_ref(&mut stream)
             .take((MAX_FRAME_BYTES + 1) as u64)
             .read_to_end(&mut request)
         {
