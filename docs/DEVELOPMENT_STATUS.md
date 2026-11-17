@@ -1,5 +1,31 @@
 # Matter-Base development status
 
+## 2026-11-17 — Remote CI groundwork (ChatGPT checkpoint)
+
+- Continued from the actual remote `matter-beta` commit
+  `665ae8c1aa2e1858993ac8e2ba29de3ced0bce7f`, without modifying
+  `matter`, Matter-Bot, local worktrees, ignored sessions or Vault.
+- Added `.github/workflows/rust-ci.yml` on `matter-beta`. It runs
+  formatting, `cargo check --all-targets --locked`,
+  `cargo test --all-targets --locked`, `cargo test --doc --locked`,
+  `cargo clippy --all-targets --locked -- -D warnings`, and a parent-commit
+  whitespace diff on push/PR or manual dispatch. Checkout uses depth two.
+- The GitHub connector confirmed the file commits were published. **No
+  successful CI run has yet been verified.** Combined commit statuses returned
+  no status entries. GitHub API tools in this session cannot retrieve the
+  Actions run list; do not interpret that as a passing build. These changes
+  are CI groundwork, not a completed H/I/J/K/L phase.
+- README audit: 1 README found and reviewed, 1 updated, 0 unchanged.
+  Documented the new workflow and the unverified external Vault test.
+  No source or crypto contracts were modified. Tests and Clippy were not run
+  in this environment, so no test result is claimed.
+- Next: confirm a successful GitHub Actions run, correct any workflow/build
+  issues, then implement persistent general role/resource authorization with
+  scoped owner administration, explicit deny precedence and command integration.
+  Preserve prior work and audit the complete README before each commit.
+  H–L remain open; Matter-Bot remains blocked.
+
+
 This is a development ledger. GitHub remains the source of truth. Its
 synchronization entry records the published base of each working checkpoint;
 verify the branch log for the current published commit.
