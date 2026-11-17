@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Bloqueos nativos recuperables v2 (CI pendiente)
+
+- Migrados los locks exclusivos de controlador y proveedor Rust a marcadores v2 persistentes + `File::try_lock` de Rust 1.89+, sin dependencias nuevas ni cambio de formato SQLite.
+- Un crash libera automáticamente el bloqueo a nivel de OS y permite la siguiente ejecución sobre el mismo lock v2; intentos concurrentes se rechazan. Los locks v1 con PID y los archivos inválidos fallan cerrados hasta revisión manual, evitando coexistencia con procesos legados.
+- Los modos `--check` verifican el estado v2 sin crear ni borrar archivos de sesión. Tests de exclusión, reanudación y rechazo legacy ampliados.
+- README raíz y proveedor inspeccionados íntegros (2/2), ambos actualizados. Guía de prueba actualizada, crédito intacto. No se promueve a estable sin CI y prueba real de WhatsApp.
+
+
 ## 2026-11-17 — Corrección de tipo del acuse del proveedor (CI pendiente)
 
 - Se corrigió el error E0308 reportado por GitHub Actions: `deliver` devuelve el `ControlAck` validado (Applied/Duplicate), no `()`.

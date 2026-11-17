@@ -141,7 +141,13 @@ fn exclusive_session_lock_never_removes_sqlite_file() {
         assert_eq!(mode & 0o077, 0, "Session lock must be private at creation");
     }
     assert!(SessionLease::acquire(&c.session_db).is_err());
+    assert!(SessionLease::check_available(&c.session_db).is_err());
     drop(lease);
+    assert!(c.session_db.with_extension("owner.lock").exists());
+    SessionLease::check_available(&c.session_db).unwrap();
+    let resumed = SessionLease::acquire(&c.session_db).unwrap();
+    assert!(SessionLease::acquire(&c.session_db).is_err());
+    drop(resumed);
     assert_eq!(fs::read(&c.session_db).unwrap(), b"existing session");
     fs::remove_dir_all(root).unwrap();
 }
@@ -210,4 +216,16 @@ fn controller_ack_distinguishes_applied_and_duplicate_without_false_success() {
         assert!(parse_control_ack(invalid).is_err());
     }
     assert!(parse_control_ack(&vec![b'a'; 1025]).is_err());
+}
+
+#[test]
+fn legacy_session_lock_is_not_silently_stolen() {
+    let (vars, root) = fixture();
+    let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
+    let lock = c.session_db.with_extension("owner.lock");
+    fs::write(&lock, b"12345\n").unwrap();
+    assert!(SessionLease::check_available(&c.session_db).is_err());
+    assert!(SessionLease::acquire(&c.session_db).is_err());
+    assert_eq!(fs::read(&lock).unwrap(), b"12345\n");
+    fs::remove_dir_all(root).unwrap();
 }

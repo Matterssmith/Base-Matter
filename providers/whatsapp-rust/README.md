@@ -70,3 +70,13 @@ replay `duplicate` y los rechazos. Un resultado `duplicate` nunca se anuncia
 como ejecución nueva; los acuses malformados o desconocidos se rechazan.
 El control continúa sin respuesta automática por WhatsApp y requiere prueba
 real autorizada antes de promoverlo a estable.
+
+## Reinicio seguro tras una caída
+
+En Rust 1.89 o posterior, la exclusión del archivo `owner.lock` utiliza un
+bloqueo de sistema operativo y un marcador v2 permanente. Tras un cierre o
+caída del proceso, el bloqueo se libera y el mismo archivo puede utilizarse
+de nuevo sin tocar `session.db`. Si hay otro proceso activo, se deniega
+el acceso. Los antiguos locks con PID (v1) se rechazan por seguridad hasta
+la revisión manual del operador: la migración nunca borra locks ni sesiones.
+`--check` verifica la disponibilidad del archivo de modo de solo inspección.

@@ -13,7 +13,7 @@ use matter_base::{
 use std::{
     env,
     fs::{self, File, OpenOptions},
-    io::Write,
+    io::{Read, Write},
     net::{Ipv4Addr, SocketAddrV4},
     path::{Component, PathBuf},
     sync::Arc,
@@ -26,30 +26,69 @@ impl CommandAuthorizer for DenyBot {
         bail!("Bot-Matter cannot run from the global controller")
     }
 }
+const CONTROL_LEASE_MARKER: &[u8] = b"Base-Matter:WhatsApp-Control-Lease:v2\n";
+
 struct ExclusiveLock {
-    path: PathBuf,
     _file: File,
 }
 impl ExclusiveLock {
+    fn existing(path: &PathBuf) -> Result<File> {
+        let metadata = fs::symlink_metadata(path)?;
+        if !metadata.file_type().is_file()
+            || metadata.len() != CONTROL_LEASE_MARKER.len() as u64
+        {
+            bail!("Legacy or unsafe control lock requires verified recovery");
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if metadata.permissions().mode() & 0o077 != 0 {
+                bail!("Control lock must be private");
+            }
+        }
+        let mut file = OpenOptions::new().read(true).write(true).open(path)?;
+        let mut marker = Vec::new();
+        file.read_to_end(&mut marker)?;
+        if marker != CONTROL_LEASE_MARKER {
+            bail!("Legacy or unsafe control lock requires verified recovery");
+        }
+        Ok(file)
+    }
+
+    fn check_available(path: &PathBuf) -> Result<()> {
+        match fs::symlink_metadata(path) {
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(_) => bail!("Control lock cannot be inspected"),
+            Ok(_) => {}
+        };
+        let file = Self::existing(path)?;
+        file.try_lock()
+            .map_err(|_| anyhow!("Control plane already owned by another process"))?;
+        Ok(())
+    }
+
     fn acquire(path: PathBuf) -> Result<Self> {
         let mut options = OpenOptions::new();
-        options.create_new(true).write(true);
+        options.read(true).write(true).create_new(true);
         #[cfg(unix)]
         {
             use std::os::unix::fs::OpenOptionsExt;
             options.mode(0o600);
         }
-        let mut file = options
-            .open(&path)
-            .map_err(|_| anyhow!("Control plane already owned or recovery required"))?;
-        writeln!(file, "{}", std::process::id())?;
-        file.sync_all()?;
-        Ok(Self { path, _file: file })
-    }
-}
-impl Drop for ExclusiveLock {
-    fn drop(&mut self) {
-        let _ = fs::remove_file(&self.path);
+        let (mut file, fresh) = match options.open(&path) {
+            Ok(file) => (file, true),
+            Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {
+                (Self::existing(&path)?, false)
+            }
+            Err(_) => bail!("Control lock could not be opened"),
+        };
+        file.try_lock()
+            .map_err(|_| anyhow!("Control plane already owned by another process"))?;
+        if fresh {
+            file.write_all(CONTROL_LEASE_MARKER)?;
+            file.sync_all()?;
+        }
+        Ok(Self { _file: file })
     }
 }
 fn required(name: &str) -> Result<Zeroizing<String>> {
@@ -150,6 +189,7 @@ fn main() -> Result<()> {
         {
             bail!("Invalid owner or socket configuration");
         }
+        ExclusiveLock::check_available(&activation_path.with_extension("controller.lock"))?;
         println!("Base-Matter control settings checked; no session was opened.");
         return Ok(());
     }
@@ -209,7 +249,13 @@ mod lock_tests {
             let mode = fs::metadata(&path).unwrap().permissions().mode();
             assert_eq!(mode & 0o077, 0, "Control lock must be private at creation");
         }
+        assert!(ExclusiveLock::check_available(&path).is_err());
         drop(lease);
-        assert!(!path.exists());
+        assert!(path.exists());
+        ExclusiveLock::check_available(&path).unwrap();
+        let resumed = ExclusiveLock::acquire(path.clone()).unwrap();
+        assert!(ExclusiveLock::acquire(path.clone()).is_err());
+        drop(resumed);
+        fs::remove_file(path).unwrap();
     }
 }

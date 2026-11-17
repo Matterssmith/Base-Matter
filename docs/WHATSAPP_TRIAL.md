@@ -123,3 +123,17 @@ autorizada, `duplicate` cuando no se repite ningún efecto por replay, o un
 rechazo genérico si el mensaje fue denegado o el controlador no respondió.
 No representa estos tres estados como una misma ejecución aceptada. Tampoco
 responde a WhatsApp; los resultados solo se observan en la terminal.
+
+## Recuperación y archivos de bloqueo v2
+
+Con la revisión v2, los procesos nuevos mantienen archivos lock permanentes
+que incorporan un marcador de formato y usan el bloqueo nativo de archivos
+del sistema operativo (Rust 1.89+). Si un proceso termina, otro puede
+recuperar el mismo lock v2 después de comprobar que está libre, sin borrar
+el SQLite y sin tener que borrar manualmente el lock. Si el lock está en
+uso, se rechaza la segunda instancia.
+
+Un archivo antiguo con PID o con contenido desconocido no se migra
+automáticamente. Si aparece un error de lock v1, se debe confirmar que
+el proceso anterior terminó antes de una migración controlada; no borrar
+archivos a ciegas ni perder sesiones existentes.

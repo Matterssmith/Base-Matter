@@ -45,9 +45,7 @@ async fn main() -> Result<()> {
         }
         Some("--check") => {
             let config = Config::from_env()?;
-            if config.session_db.with_extension("owner.lock").exists() {
-                bail!("Session already owned or lock recovery required");
-            }
+            SessionLease::check_available(&config.session_db)?;
             println!("whatsapp-rust pairing settings checked; no session was opened.");
             return Ok(());
         }

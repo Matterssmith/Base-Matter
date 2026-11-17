@@ -11,7 +11,7 @@ use sha2::Sha256;
 use std::{
     env,
     fs::{self, File, OpenOptions},
-    io::Write,
+    io::{Read, Write},
     net::{Ipv4Addr, SocketAddrV4},
     path::{Component, Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
@@ -248,30 +248,74 @@ pub fn private_path(raw: &str) -> Result<PathBuf> {
     Ok(path)
 }
 
+const SESSION_LEASE_MARKER: &[u8] = b"Base-Matter:WhatsApp-Session-Lease:v2\n";
+
+/// A stable, version-marked lock file. The OS lock is released on process
+/// termination, including a crash, without unlinking/replacing its inode.
 pub struct SessionLease {
-    path: PathBuf,
     _file: File,
 }
+
 impl SessionLease {
+    fn existing(path: &Path) -> Result<File> {
+        let metadata = fs::symlink_metadata(path)?;
+        if !metadata.file_type().is_file()
+            || metadata.len() != SESSION_LEASE_MARKER.len() as u64
+        {
+            bail!("Legacy or unsafe session lock requires verified recovery");
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if metadata.permissions().mode() & 0o077 != 0 {
+                bail!("Session lock must be private");
+            }
+        }
+        let mut file = OpenOptions::new().read(true).write(true).open(path)?;
+        let mut marker = Vec::new();
+        file.read_to_end(&mut marker)?;
+        if marker != SESSION_LEASE_MARKER {
+            bail!("Legacy or unsafe session lock requires verified recovery");
+        }
+        Ok(file)
+    }
+
+    /// No writes or file creation during preflight.
+    pub fn check_available(database: &Path) -> Result<()> {
+        let path = database.with_extension("owner.lock");
+        match fs::symlink_metadata(&path) {
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(_) => bail!("Session lock cannot be inspected"),
+            Ok(_) => {}
+        };
+        let file = Self::existing(&path)?;
+        file.try_lock()
+            .map_err(|_| anyhow!("Session already owned by another process"))?;
+        Ok(())
+    }
+
     pub fn acquire(database: &Path) -> Result<Self> {
         let path = database.with_extension("owner.lock");
         let mut options = OpenOptions::new();
-        options.write(true).create_new(true);
+        options.read(true).write(true).create_new(true);
         #[cfg(unix)]
         {
             use std::os::unix::fs::OpenOptionsExt;
             options.mode(0o600);
         }
-        let mut file = options
-            .open(&path)
-            .map_err(|_| anyhow!("Session already owned or a lock requires recovery"))?;
-        writeln!(file, "{}", std::process::id())?;
-        file.sync_all()?;
-        Ok(Self { path, _file: file })
-    }
-}
-impl Drop for SessionLease {
-    fn drop(&mut self) {
-        let _ = fs::remove_file(&self.path);
+        let (mut file, fresh) = match options.open(&path) {
+            Ok(file) => (file, true),
+            Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {
+                (Self::existing(&path)?, false)
+            }
+            Err(_) => bail!("Session lock could not be opened"),
+        };
+        file.try_lock()
+            .map_err(|_| anyhow!("Session already owned by another process"))?;
+        if fresh {
+            file.write_all(SESSION_LEASE_MARKER)?;
+            file.sync_all()?;
+        }
+        Ok(Self { _file: file })
     }
 }

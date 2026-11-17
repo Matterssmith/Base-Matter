@@ -625,3 +625,14 @@ El proveedor Rust ahora distingue el acuse de control `applied` del resultado
 fallan cerrados. Esto mejora la observabilidad de las pruebas y no añade
 respuesta en el chat WhatsApp ni modifica el protocolo HMAC. La conexión real
 y la identidad del JID siguen pendientes de prueba.
+
+## Recuperación de procesos WhatsApp
+
+Los archivos de bloqueo de sesión y del controlador usan a partir de este
+checkpoint un marcador de formato v2 y el bloqueo exclusivo nativo de archivos
+de Rust 1.89 o posterior. El lock no se elimina al apagar; al terminar un
+proceso se libera automáticamente el bloqueo del sistema operativo, permitiendo
+reiniciar sin borrar la sesión SQLite. Los locks v1 con PID, sin formato v2,
+se rechazan hasta que el operador confirme que el proceso anterior se detuvo:
+**nunca se retiran ni se sobrescriben automáticamente**. La validación
+`--check` verifica un lock v2 sin modificar sesiones ni archivos.
