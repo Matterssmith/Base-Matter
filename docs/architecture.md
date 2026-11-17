@@ -110,14 +110,19 @@ contracts before applications consume them:
 - Plugin manifest validation, resource limits, and effective sandboxing.
 - Persistent recovery, migrations, and end-to-end integration tests.
 
-Matter-Bot and platform adapters remain separate consumers. No concrete
-WhatsApp, Telegram, or Discord implementation belongs in this crate.
+Matter-Bot remains a separate future consumer. The core crate avoids direct
+dependencies on external platform libraries. The repository contains an
+isolated Rust `providers/whatsapp-rust` executable, communicating with the
+core's loopback-only control process; it is not yet phone-qualified. Telegram
+and Discord are future independent adapters behind the same Rust contracts.
 
 ## Verification status
 
-The current automated suite exercises legal storage, encryption/key handling,
-provider-authentication contracts, and basic in-memory core components. It is
-not an end-to-end bot platform suite. Current stage classifications and exact
+The automated suite exercises legal storage, encryption/key handling,
+provider-authentication, roles, session/control admission, cross-platform
+driver routing and a genuine two-process Rust HMAC/TCP/restart scenario.
+It does not exercise a real phone or platform end-to-end delivery, nor does
+it establish a production Vault or sandbox. Current stage classifications and exact
 verification results are maintained in
 [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).
 

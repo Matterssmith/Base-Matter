@@ -123,3 +123,18 @@ whatsapp-rust 0.7 requires a different libsqlite3-sys major version from Base. T
 ## Rust loopback command server
 
 The new Base-Matter whatsapp-matter-control receiver requires CI, replay persistence and real linked-session tests, with distinct transport and replay secrets. It never enables Bot-Matter. Until actual phone linkage is verified, provider integration is not production-ready.
+
+## Recent local Rust connection checkpoints (not a phone release)
+
+- `fd2fb26363b622549185527274e36b43f2ddc4c9` passed the full
+  GitHub Actions Rust/Linux and Windows verification on 2026-11-17, including
+  a true subprocess TCP restart/replay integration test.
+- `1c10f44e2ab3aef129c9964f8b64a5239e97bffe` passed the same
+  base CI and a separate `whatsapp-rust` provider CI. The provider
+  verifies the local controller listener before opening a session.
+- Later self-chat confirmation code is an unverified development checkpoint
+  until its exact SHA passes provider CI and an authorized real phone test.
+  Self-chat delivery, pairing code, LID matching, revocation and recovery
+  under real WhatsApp traffic are still unresolved release gates.
+- Rust 1.89+ OS file leases allow crash recovery of v2 lockfiles. Legacy
+  PID-only locks remain blocked until verified operator migration.

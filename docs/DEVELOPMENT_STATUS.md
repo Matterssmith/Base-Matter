@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Auditoría de afirmaciones de integración (pendiente CI)
+
+- Root README and provider README reviewed in full (2/2). Corrected root statements that were true before, but became false after the Rust provider and loopback listener landed. Provider README reviewed unchanged.
+- Updated architecture, WhatsApp bridge and release-gate documents to separate offline two-process success from an unverified live WhatsApp phone link and self-chat reply.
+- No runtime code, Cargo.lock, credentials or SQLite sessions changed. No stable `matter` promotion; release requires real pairing, revoked-session and reconnection testing.
+
+
 ## 2026-11-17 — Prevención de eco en respuesta privada (CI pendiente)
 
 - Añadido caso de regresión al proveedor Rust para demostrar que el mensaje de acuse «Base-Matter: solicitud procesada.» no se interpreta como un nuevo comando `=/>`; evita ciclos de autorespuesta.

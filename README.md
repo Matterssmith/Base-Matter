@@ -29,17 +29,23 @@ optionally persistent shared-user registry with explicitly authorized external
 identity links and bot-scoped user data, a persistent legal-consent store, and
 cryptographic key/envelope and provider-authentication components, a command
 router, and persistent socket activation policies. The bot
-platform capabilities listed in the long-term architecture are not yet
-implemented. See [the development status](docs/DEVELOPMENT_STATUS.md) for the
+capabilities are only partially implemented: a separate Rust WhatsApp
+provider and a loopback HMAC control process exist in beta with offline tests,
+but actual phone pairing, live revocation, production Vault, plugin isolation,
+Telegram and Discord adapters are not release-qualified. See
+[the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
 
 ## Responsibilities and boundaries
 
 Matter-Base is intended to host reusable Rust capabilities consumed through
 public APIs. It must remain independent of Matter-Bot and platform adapters.
-This repository currently does **not** implement WhatsApp, Telegram, Discord,
-network socket control, plugin execution, or a sandbox. General scoped role
-authorization is opt-in and is not wired into platform adapters. Command routing and persistent activation policies are partial.
+This repository includes a separate `whatsapp-rust` provider executable and
+a loopback-only Rust control receiver (both development/beta, not live verified).
+The core remains independent of provider-specific libraries. Telegram and
+Discord connection drivers are not implemented. Plugin contracts are present,
+but the real execution sandbox is not. Scoped role authorization is opt-in;
+full provider admission and audited cross-store lifecycle are not yet complete.
 
 Bot registration requires an owner ID. Consumers must derive actor IDs from
 authenticated requests before calling owner-management APIs. Owners can manage
@@ -88,6 +94,9 @@ src/
   command_audit.rs  Persistent command attempts/outcomes and owner-scoped history
   commands.rs    Universal command routing
   control.rs     Control-prefix interception and socket-gated dispatch
+  control_ipc.rs Loopback-only authenticated control service
+  whatsapp_bridge.rs Signed WhatsApp owner-control bridge
+  platforms.rs   Shared platform driver/transport registries
   bots/       Bot identity contracts and in-memory/SQLite registry
   users/      Shared users, explicit external identity links, scoped user data
   core/       Configuration, shared context, logging, runtime
@@ -99,9 +108,12 @@ src/
   services/   Typed in-memory service registry
 tests/        Integration-style tests for the implemented contracts
 docs/         Architecture and continuity documentation
+providers/whatsapp-rust/  Standalone Rust pairing-code provider
 ```
 
-There is one README in this repository: this root `README.md`.
+There are two tracked README files: this root `README.md` and
+[`providers/whatsapp-rust/README.md`](providers/whatsapp-rust/README.md).
+Both require review before every development commit.
 
 Clippy's first strict CI run identified three pre-existing lint failures in legal-document row typing, ciphertext size arithmetic, and user schema-range validation. The follow-up changes preserve public APIs and require a passing CI run before they are considered verified.
 
@@ -248,9 +260,10 @@ conexión real hoy.
 únicamente un código de vinculación**, con autorización del propietario,
 número internacional de 8–15 dígitos, código temporal redactado y sin
 persistencia en SQLite. **No implementa QR, no registra un comando ping y
-no abre por sí mismo una conexión WhatsApp.** El proveedor real queda
-pendiente de conectar a este contrato sin reemplazar ni borrar sesiones
-existentes. No se modifica ni se inicia Bot-Matter.
+no abre por sí mismo una conexión WhatsApp.** El proveedor Rust independiente está implementado en
+`providers/whatsapp-rust`, pero la conexión real y recuperación en teléfono
+siguen pendientes de validación; no se deben borrar sesiones.
+No se modifica ni se inicia Bot-Matter.
 
 `ControlDispatcher` procesa el prefijo global canónico `=/>` antes del
 router del bot. Los prefijos `=` y `/>` permanecen como alias de
@@ -271,10 +284,13 @@ chat, event ID and message body**. It requires the WhatsApp Web provider to
 authenticate the original `fromMe` event. Only canonical `=\/>` control
 verbs are admitted; the old ping and bot routing are unreachable.
 
-This library accepts a JSON frame and dispatches through ControlDispatcher;
-it does not yet run a TCP/HTTP listener or authenticate a live WhatsApp
-session by itself. The transport must keep its bridge key local, reject
-group/nonowner messages and use the shared replay guard. The bridge rejects
+The library accepts a signed JSON frame and dispatches through
+ControlDispatcher. The separate `whatsapp-matter-control` Rust executable
+listens exclusively on 127.0.0.1, while the independent
+`providers/whatsapp-rust` process owns the platform session.
+Neither process by itself proves a live WhatsApp connection.
+The transport must keep its bridge key local, reject group/nonowner messages
+and use the shared replay guard. The bridge rejects
 signatures, timestamps beyond two minutes, duplicate event IDs and attempts
 to control another owner's socket. The protocol is documented in
 [WhatsApp bridge v1](docs/WHATSAPP_BRIDGE.md).

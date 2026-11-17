@@ -46,12 +46,18 @@ uses constant-time HMAC verification.
 
 ## Outstanding production work
 
-The current Rust library accepts signed frames, but no live provider IPC,
-transport security configuration, credential storage, remote liveness
-proof, pairing-code delivery or actual mobile linkage has been verified.
-A user-controlled local TCP bridge with a dedicated listener and runtime
-integration must be implemented and tested separately, including
-restart/revocation and multi-process isolation.
+The independent Rust `whatsapp-matter-control` binary and the
+`providers/whatsapp-rust` executable are now linked over 127.0.0.1 with
+HMAC-SHA256 signed frames and a durable SQLite replay store. Offline tests
+start a real controller process, send signed frames, interrupt it, restart it
+using OS locks and reject prior replay IDs. A private self-chat acknowledgment
+is implemented in the provider but has not been observed on a real phone.
+
+Remaining requirements: confirm real pairing code generation, phone/JID/LID
+identity, authorized inbound controls, self-chat reply delivery, upstream
+session persistence, logout and revocation, recovery under network failures
+and least-privilege operator security. CI is not proof of live WhatsApp.
+Never call this bridge production-stable until these gates are verified.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
