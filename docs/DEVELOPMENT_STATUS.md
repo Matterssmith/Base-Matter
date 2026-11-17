@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Contrato universal de proveedores (CI pendiente)
+
+- Se añadió el registro Rust de conexiones y mensajería por plataforma: WhatsApp, Telegram y Discord utilizan los contratos de Base-Matter existentes, sin reemplazar whatsapp-rust ni iniciar Bot-Matter.
+- Las plataformas desconocidas, los controladores ausentes y los registros duplicados fallan cerrados; no hay fallback entre sockets ni entre plataformas. Cuatro pruebas de regresión offline cubren enrutamiento, nombres, aislamiento y ciclo de conexión.
+- Revisados íntegros 2 README (raíz y proveedor Rust): 2/2; actualizado el raíz, sin cambios necesarios al proveedor. Créditos y guía de pairing code conservados.
+- La CI de Rust y las pruebas con cuenta/telefono reales aún deben confirmar este nuevo checkpoint. Telegram y Discord no están conectados.
+
+
 ## 2026-11-17 — Pairing guide Markdown rendering corrected
 
 - Corrected literal Markdown backtick escaping in the new WhatsApp operator guide and root README so that terminal commands render as fenced code instead of raw escape text.

@@ -604,3 +604,7 @@ Los dos ejecutables Rust incorporan `--check` para revisar variables de entorno,
 ## Prueba real de WhatsApp — dos procesos Rust
 
 Para probar el emparejamiento exclusivamente por código en `matter-beta`, sigue la [guía paso a paso](docs/WHATSAPP_TRIAL.md). Incluye creación de un entorno privado y comandos separados del receptor Base-Matter y del proveedor `whatsapp-rust`. Sin sesión real verificada, no declarar estabilidad ni promover el proveedor a `matter`.
+
+## Contrato común para WhatsApp, Telegram y Discord
+
+La infraestructura de conexiones y mensajes conserva los controles de Base-Matter para todas las plataformas. El [registro de controladores Rust](docs/PLATFORM_CONTRACT.md) dirige cada sesión exclusivamente a su proveedor canónico, sin fallback cruzado, sin compartir credenciales y sin suplantar identidad. Los adaptadores de Telegram-Matter y Discord-Matter permanecen pendientes; este contrato no afirma que estén conectados. WhatsApp continúa usando `whatsapp-rust` y pairing code; la prueba con teléfono y las puertas de estabilidad siguen pendientes.
