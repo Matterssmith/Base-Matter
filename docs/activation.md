@@ -27,17 +27,23 @@ Version 1 upgrades preserve existing policies; existing sockets remain unbound
 until explicitly associated with a bot.
 Unknown versions are rejected. Audit records omit message bodies and credentials.
 Tests cover reopening, precedence, isolation, authorization, duplicate provisioning,
-audit-write rollback, corrupt policy rejection, and unsupported schema versions using isolated temporary DBs.
+audit-write rollback (including binding), corrupt policy rejection, concurrent
+independent-connection power changes and unsupported schema versions using
+isolated temporary DBs. Control tests verify unbound and ownership-revoked
+sockets can still be powered off without executing normal handlers.
 
 `bind_bot(socket, actor, bot_id, bots)` requires both socket and bot ownership.
 Bindings are durable and immutable; a conflicting rebinding fails. The dispatcher
-rechecks the stored socket owner's bot authority on every admission. A later bot
-ownership transfer blocks that socket until a dedicated recovery/transfer flow
-is implemented. Ownership checks across these two stores are not a distributed
-transaction; revocation does not cancel requests already admitted.
+rechecks the stored socket owner's bot authority before normal command admission.
+A later bot ownership transfer blocks normal commands until a dedicated
+recovery/transfer flow is implemented. Socket owners retain power control even
+without a bot binding or after bot ownership changes. Powering on alone does
+not authorize normal execution; powering off always closes normal admission.
+Ownership checks across these two stores are not a distributed transaction; revocation does not cancel requests already admitted.
 
 `control::ControlDispatcher` accepts the receiving socket from a trusted adapter,
-resolves its bot internally and intercepts control messages before normal routing.
+intercepts control messages before consulting bot bindings or normal routing.
+For normal messages it applies power/policy gating, then resolves its bot internally.
 Grammar: `=on [SOCKET_ID]`, `=off [SOCKET_ID]`, with `/>` and `=/>` also accepted.
 Unknown control verbs fail without reaching registered handlers. Only the target
 socket's owner may change its power. An explicit target grants no extra privilege.

@@ -61,8 +61,8 @@ cannot both withdraw the same grant or observe a document-registration race
 between its duplicate check and insert. An access check uses one SQL statement
 to read the user and applicable document/decision state from one snapshot.
 The event bus, service registry, translation catalogs, and runtime config are
-in memory or caller supplied. General roles, socket control, plugin isolation,
-and a general authorization/audit service remain unimplemented.
+in memory or caller supplied. General roles, network socket lifecycle, plugin
+isolation, and a general authorization/audit service remain unimplemented.
 
 The security provider abstractions allow a caller to supply trusted key
 material and providers. Envelope plaintext and ciphertext are limited to
@@ -108,4 +108,6 @@ verification results are maintained in
 Socket activation policy storage is described in [activation contracts](activation.md).
 It provides durable ownership/power/overrides and atomic audits, but does not
 manage network connections. `ControlDispatcher` enforces activation before
-normal routing and intercepts power commands with owner checks.
+normal routing and intercepts power commands with socket-owner checks before
+bot lookup. A missing binding or revoked bot ownership blocks normal commands,
+but cannot prevent the socket owner from switching operational power off.

@@ -56,7 +56,8 @@ of a deleted bot is not exposed through the current registry API.
 The security module defines provider and key-provider contracts. It does not
 ship a production Matter-Vault integration or store platform sessions or
 credentials. The tests use local test providers and do not verify a live Vault
-service.
+service. [Repository contract evidence](docs/vault-integration.md) is available
+separately and does not establish a live integration.
 
 ## Implemented components
 
@@ -272,12 +273,15 @@ deny. Only the stored owner can change policies or read its audit history.
 The application must authenticate provisioning and actors; this store does not
 authenticate platform sessions. `bind_bot` establishes a durable bot association;
 `ControlDispatcher` intercepts `=on`, `=off` (also `/>` and `=/>`) and gates
-normal commands. Explicit socket targets still require the target owner. See [activation contracts](docs/activation.md).
+normal commands. Explicit socket targets still require the target owner.
+Socket power controls work before bot binding and remain available to the socket
+owner after bot ownership changes; normal commands still require a valid binding
+and current bot authority. See [activation contracts](docs/activation.md).
 
 ## Roadmap boundary
 
-General role inheritance, durable command audit integration, Control Plane and
-socket policy, connection and messaging contracts, plugin validation, and
+General role inheritance, durable command audit integration, full Control Plane
+lifecycle and global-policy persistence, connection and messaging contracts, plugin validation, and
 effective sandbox isolation remain pending. Matter-Bot must not be built on
 this crate until those core contracts are implemented, integrated, documented,
 and tested.

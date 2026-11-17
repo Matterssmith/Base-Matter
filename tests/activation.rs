@@ -127,3 +127,77 @@ fn corrupt_persisted_power_does_not_enable_dispatch() {
         .unwrap();
     assert!(store.resolve("a", None, Some(true)).is_err());
 }
+
+#[test]
+fn independent_connections_serialize_power_and_audit_together() {
+    let dir = TestDirectory::new();
+    let path = dir.0.join("concurrent.db");
+    let first = SocketActivationStore::open(&path).unwrap();
+    first.provision("a", "alice").unwrap();
+    let second = SocketActivationStore::open(&path).unwrap();
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+    let joins: Vec<_> = [(first, true), (second, false)]
+        .into_iter()
+        .map(|(store, power)| {
+            let barrier = barrier.clone();
+            std::thread::spawn(move || {
+                barrier.wait();
+                store.set_power("a", "alice", power).unwrap();
+            })
+        })
+        .collect();
+    for join in joins {
+        join.join().unwrap();
+    }
+    let recovered = SocketActivationStore::open(&path).unwrap();
+    let audit = recovered.audit_history("a", "alice").unwrap();
+    assert_eq!(audit.len(), 3);
+    assert_eq!(audit[1].action, "power");
+    assert_eq!(audit[2].action, "power");
+    assert_ne!(audit[1].value, audit[2].value);
+    assert_eq!(
+        Some(recovered.resolve("a", None, Some(true)).unwrap().enabled),
+        audit[2].value
+    );
+}
+
+#[test]
+fn binding_audit_failure_rolls_back_and_conflicting_binding_preserves_original() {
+    let dir = TestDirectory::new();
+    let path = dir.0.join("binding.db");
+    let store = SocketActivationStore::open(&path).unwrap();
+    let bots = matter_base::BotRegistry::in_memory();
+    let first = bots.register("f", "r", "first", "alice").unwrap();
+    let second = bots.register("f", "r", "second", "alice").unwrap();
+    store.provision("a", "alice").unwrap();
+    let c = rusqlite::Connection::open(&path).unwrap();
+    c.execute_batch("CREATE TRIGGER reject_binding_audit BEFORE INSERT ON activation_audit WHEN NEW.action='bind_bot' BEGIN SELECT RAISE(ABORT,'injected failure'); END;").unwrap();
+    assert!(store
+        .bind_bot("a", "alice", first.instance_id(), &bots)
+        .is_err());
+    let count: i64 = c
+        .query_row("SELECT COUNT(*) FROM activation_bindings", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(count, 0);
+    assert_eq!(store.audit_history("a", "alice").unwrap().len(), 1);
+    c.execute_batch("DROP TRIGGER reject_binding_audit;")
+        .unwrap();
+    store
+        .bind_bot("a", "alice", first.instance_id(), &bots)
+        .unwrap();
+    store
+        .bind_bot("a", "alice", first.instance_id(), &bots)
+        .unwrap();
+    assert!(store
+        .bind_bot("a", "alice", second.instance_id(), &bots)
+        .is_err());
+    let stored: String = c
+        .query_row(
+            "SELECT bot_instance_id FROM activation_bindings WHERE socket_id='a'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(stored, first.instance_id());
+    assert_eq!(store.audit_history("a", "alice").unwrap().len(), 2);
+}

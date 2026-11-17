@@ -4,7 +4,67 @@ This is a development ledger. GitHub remains the source of truth. Its
 synchronization entry records the published base of each working checkpoint;
 verify the branch log for the current published commit.
 
-## Recovery snapshot
+## 2026-11-17 — Resumed control audit and Vault prerequisite
+
+- Synchronized `matter-beta` with `origin/matter-beta` at
+  `cec9df539f5031af9381564545c0abce7880ccc8`. The working tree was clean;
+  no new stash was necessary. The existing legacy bot-registry stash and
+  ignored `target/` were preserved. Root `AGENTS.md` applies; no nested
+  instructions were found. No local stable-branch changes were made.
+- Recovered previously unrecorded progress from that backup commit: durable
+  bot/socket bindings, ControlDispatcher, schema-v1 upgrade coverage, ecosystem
+  naming instructions and the opt-in real Vault repository metadata test.
+  These were inspected and retained, not reimplemented.
+- Confirmed and corrected an admission-order defect: bot binding/ownership
+  checks ran before reserved power commands, preventing a socket owner from
+  powering off after bot ownership transfer or before binding. Controls now
+  check the target socket owner directly through the transactional activation
+  store. Normal messages check power/policy, binding and current bot authority
+  before reaching the router. A new bot owner/global owner gains no authority
+  over an independently owned socket. No network connection is needed to
+  change operational power. Admission remains snapshot-based.
+- Added regressions for all three reserved prefixes, unbound control, revoked
+  bot authority, foreign/global owner denial and absence of handler effects.
+  Added independent-connection concurrent power/audit recovery coverage and
+  binding-audit failure rollback, idempotent binding and conflicting rebind
+  rejection. Existing Group > Socket > Global > deny tests remain passing.
+- Verified: `cargo fmt --all`, `cargo check --all-targets`, focused control and
+  activation tests (9 passed), full `cargo test` (223 passed, 0 failed,
+  1 opt-in Vault test ignored; 0 doc tests), and `git diff --check`.
+  Explicit `MATTER_VAULT_CHECKOUT=/home/Sakura/Matter-Vault cargo test --test
+  vault_repository -- --ignored` also passed (1 test). Formatting normalized
+  the preexisting Vault test; no encryption format changed.
+- README audit: 1 total, 1 reviewed in full, 1 updated, 0 unchanged.
+  Findings/fixes: clarified power independence, linked real Vault metadata
+  evidence, and corrected roadmap wording that implied all socket policy was
+  still absent. README examples were reviewed against the actual APIs;
+  repository-relative Markdown links resolve. Identity/credits are preserved.
+  Full diff/new-file and added-line secret-pattern review found no accidental
+  secrets; this is not a comprehensive secret audit. No new/deleted files.
+  Release documentation for absent systems remains pending.
+- Real external blocker: read-only remote inspection confirms Matter-Vault
+  `matter` is still `072c60a288d0773020f3460a639e77f84bd76c4c`; no
+  `matter-beta` exists there. Its clean checkout has only README/ignore rules,
+  manifest, version metadata and envelope schema. There is no executable
+  key/binding provider or authenticated service contract to exercise. The
+  metadata test cannot substitute for real key retrieval, binding, rotation,
+  recovery or authenticated administrative integration. Requested the location
+  of that external implementation/contract without requesting secret values.
+- H and I have advanced but remain incomplete; J–L are not complete. Missing
+  local subsystems remain implementation work, not external blockers: durable
+  command audit, general authorization, persistent global policy, socket
+  recovery/transfer, session/credential interfaces, connections/messaging,
+  plugin isolation and public contract/release readiness work. Matter-Bot and
+  platform implementation remain unopened.
+- Exact next work: obtain and inspect the real external key/binding source and
+  authenticated access contract, implement the Base-side integration against
+  it while preserving Vault independence/envelope compatibility, and verify
+  failure/recovery with a real source. Continue local audit and the missing
+  prerequisites above; do not mark H–L done from metadata or isolated tests.
+  At resume, use the repository's safe synchronization procedure and inspect
+  this checkpoint's actual published SHA before editing.
+
+## Historical recovery snapshot
 
 - Repository: `/home/Sakura/Matter-Base`
 - Working branch: `matter-beta`
@@ -43,9 +103,9 @@ not ready for Matter-Bot.
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
 | Persistence and recovery | PARTIAL | SQLite persists bot identities, shared users/identity links/bot-scoped data, and legal documents/decisions. No config/network-connection/service persistence or ecosystem-wide migration coordinator; each persistent component has its own versioned schema. |
 | Events and messaging | PARTIAL | Named synchronous in-memory event callbacks exist; no durable events or messaging contract. |
-| Router and command registry | PARTIAL | `CommandRouter` supports bounded prefixes/names/aliases/arguments, mandatory injected authorization, middleware, and synchronous handlers; no durable audit integration, Control Plane activation, or platform-specific parsing exists. |
+| Router and command registry | PARTIAL | `CommandRouter` supports bounded prefixes/names/aliases/arguments, mandatory injected authorization, middleware, and synchronous handlers; ControlDispatcher provides socket gating and reserved control-prefix interception; durable command audit and platform-specific parsing remain pending. |
 | Middleware, roles, permissions, authorization | PARTIAL | Bot owner/co-owner checks and injectable user/legal action/resource authorization contracts exist; no general role inheritance or socket/resource policy engine. |
-| Control Plane, sockets, activation | PARTIAL | SQLite socket activation store provides owner checks, power, group/socket overrides, recovery and atomic audit. Bot binding, network lifecycle, control-prefix interception and router gating remain absent. |
+| Control Plane, sockets, activation | PARTIAL | SQLite socket activation store provides owner checks, power, group/socket overrides, recovery and atomic audit. Durable bot binding and control-prefix interception/router gating exist. Network lifecycle, socket ownership transfer and global-policy persistence remain pending. |
 | Services and connections | PARTIAL | Typed in-memory service registry only; no connection manager or lifecycle. |
 | Plugins, extensions, sandbox | ABSENT | No manifest validation, isolation, or resource limits. |
 | Application audit log | ABSENT | Legal decisions are append-only; no general administrative audit system. |

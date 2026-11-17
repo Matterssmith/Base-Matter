@@ -14,6 +14,14 @@ files and checks field/constant/type agreement plus ephemeral local crypto
 roundtrips. It is not a complete JSON Schema validator, remote key-service test,
 production-key recovery test or proof of authenticated administrative access.
 
+On 2026-11-17, read-only `git ls-remote` confirmed that `matter` still points
+to that exact revision and no `matter-beta` branch is advertised. The local
+checkout is clean and contains only the README, ignore rules and those three
+metadata files. The explicit repository test passed (1 test); it did not use
+production keys, write Vault records or contact a key service. Live verification
+requires the external trusted key/binding source and its authenticated access
+contract; neither is provided by this repository snapshot.
+
 Run after inspecting and synchronizing both repositories:
 
 ```sh

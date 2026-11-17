@@ -131,9 +131,107 @@ fn control_precedes_router_and_off_blocks_handler_effects_after_recovery() {
     );
     bots.transfer_owner(a.instance_id(), "alice", "new-owner")
         .unwrap();
-    assert!(dispatcher
+    dispatcher
         .dispatch("socket-a", "alice", "room", None, "=on")
+        .unwrap();
+    // Bot ownership revocation blocks normal execution, but cannot prevent the
+    // socket owner from switching off its independently owned operational power.
+    assert!(dispatcher
+        .dispatch("socket-a", "member", "room", None, "#help")
         .is_err());
+    assert!(dispatcher
+        .dispatch("socket-a", "new-owner", "room", None, "=off")
+        .is_err());
+    dispatcher
+        .dispatch("socket-a", "alice", "room", None, "=off")
+        .unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("socket-a", "member", "room", None, "#help")
+            .unwrap(),
+        DispatchResult::Inactive
+    );
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn power_control_does_not_require_a_bot_binding_or_network_connection() {
+    let dir = Temp::new();
+    let path = dir.0.join("activation.db");
+    let activation = Arc::new(SocketActivationStore::open(&path).unwrap());
+    activation.provision("unbound", "alice").unwrap();
+    let bots = Arc::new(BotRegistry::in_memory());
+    let router = Arc::new(CommandRouter::new(vec!["=".into()], Arc::new(TestPolicy)).unwrap());
+    let calls = Arc::new(AtomicUsize::new(0));
+    let handler_calls = calls.clone();
+    router
+        .register("on", &[], move |_| {
+            handler_calls.fetch_add(1, Ordering::SeqCst);
+            Ok("must not execute".into())
+        })
+        .unwrap();
+    let dispatcher = ControlDispatcher::new(activation.clone(), bots, router, Some(true));
+    for prefix in ["=", "/>", "=/>"] {
+        for invalid in ["", "unknown", "on unbound extra"] {
+            assert!(dispatcher
+                .dispatch(
+                    "unbound",
+                    "alice",
+                    "room",
+                    None,
+                    &format!("{prefix}{invalid}")
+                )
+                .is_err());
+        }
+        assert!(dispatcher
+            .dispatch(
+                "unbound",
+                "global-owner",
+                "room",
+                None,
+                &format!("{prefix}on unbound")
+            )
+            .is_err());
+        assert_eq!(
+            dispatcher
+                .dispatch(
+                    "unbound",
+                    "alice",
+                    "room",
+                    None,
+                    &format!("{prefix}on unbound")
+                )
+                .unwrap(),
+            DispatchResult::Control {
+                socket_id: "unbound".into(),
+                powered: true
+            }
+        );
+        assert!(dispatcher
+            .dispatch("unbound", "member", "room", None, "normal")
+            .is_err());
+        dispatcher
+            .dispatch("unbound", "alice", "room", None, &format!("{prefix}off"))
+            .unwrap();
+        assert_eq!(
+            dispatcher
+                .dispatch("unbound", "member", "room", None, "normal")
+                .unwrap(),
+            DispatchResult::Inactive
+        );
+    }
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    let recovered = SocketActivationStore::open(&path).unwrap();
+    assert!(
+        !recovered
+            .resolve("unbound", None, Some(true))
+            .unwrap()
+            .enabled
+    );
+    assert_eq!(
+        recovered.audit_history("unbound", "alice").unwrap().len(),
+        7
+    );
 }
 
 #[test]
