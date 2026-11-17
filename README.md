@@ -502,13 +502,16 @@ de seguridad, compilación y pruebas SQLite/Windows. Su commit
 [CI estable](https://github.com/Matterssmith/Matter-Base/actions/runs/44139981479)
 en Ubuntu y Windows. No se trasladaron los módulos de integración incompletos.
 
-La prueba de WhatsApp con Baileys vive en
-[Matter-Baileys/matter-beta](https://github.com/Matterssmith/Matter-Baileys/tree/matter-beta)
-(nombre futuro WhatsApp-Matter). Su comprobación de dependencias y sus
-ocho tests offline pasaron en la
-[CI de WhatsApp](https://github.com/Matterssmith/Matter-Baileys/actions/runs/44139262152).
-No existe vinculación de número real ni puente autenticado a Base-Matter,
-por lo que Matter-Bot sigue bloqueado.
+El proveedor elegido es **whatsapp-rust**, recuperable desde el commit histórico
+[3c36d97bb](https://github.com/Matterssmith/Matter-Base/blob/3c36d97bb/src/providers/whatsapp/mod.rs).
+La vinculación por código y la prueba anterior de ping pertenecen al historial
+del desarrollo Rust. No se han repetido sobre la revisión actual de Base-Matter.
+
+El repositorio Matter-Baileys conserva un experimento separado, **congelado y
+no seleccionado** para este proyecto. No se usará para sustituir la integración
+Rust ni se desarrollará Bot-Matter antes de completar Base. En la beta actual
+están verificados los contratos Rust de pairing y el control global, pero no
+un nuevo emparejamiento real de WhatsApp.
 
 ## Global socket status without Bot-Matter
 

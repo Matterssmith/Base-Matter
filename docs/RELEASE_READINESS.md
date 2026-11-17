@@ -97,3 +97,13 @@ The HMAC-validated owner-only global control frame and local replay checks
 are unit-tested separately from actual WhatsApp pairing. Before promotion,
 require live phone pairing via code, verified incoming owner messages,
 dedicated per-socket keys, no socket crossover, revocation and crash tests.
+
+## Proveedor primario elegido y créditos
+
+Se continúa con **whatsapp-rust**, por código de vinculación únicamente. El
+prototipo Node/Baileys no es el proveedor de Base-Matter y está congelado.
+Los futuros comandos de control global se registran en Rust bajo `=/>`, con
+controles del propietario y crédito requerido por AGENTS.md:
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].

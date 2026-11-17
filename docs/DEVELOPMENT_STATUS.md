@@ -1,5 +1,20 @@
 # Matter-Base development status
 
+## 2026-11-17 — CI verde y README alineado con Rust (documentación)
+
+- La revisión `184a0819865ffa3548cc8eb1e51f7bd5dc521cc9` pasó la CI de
+  Linux y Windows (run 44149787360). Los seis nuevos tests de comandos
+  globales, Cargo fmt/check/test, documentación y Clippy fueron aprobados.
+- Auditoría README: 1 README raíz leído íntegro; 1 actualizado. Se corrigió
+  la descripción antigua que podía sugerir Baileys como proveedor seleccionado.
+  El proveedor seleccionado es whatsapp-rust histórico, con pairing code.
+- Se mantuvo intacta la referencia al experimento Node en su repositorio, pero
+  queda congelado; NO sustituye el proveedor Rust ni se inicia Bot-Matter.
+- Siguen pendientes las pruebas de vinculación real y la reintegración del
+  proveedor histórico con el control global actual. Solo se cambia beta;
+  rama estable matter sin cambios en este checkpoint.
+
+
 ## 2026-11-17 — Rust control extension registry (pending CI)
 
 - Prior Rust-only WhatsApp checkpoint passed GitHub Actions 44148678617 on Linux and Windows.
