@@ -64,6 +64,7 @@ pub use legal::{
 };
 
 pub use modules::{CoreModule, ModuleManager};
+pub use pairing::{PairingCode, PairingCodeProvider, PairingCodeService};
 pub use security::encryption;
 pub use services::ServiceRegistry;
 pub use sessions::{
