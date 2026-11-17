@@ -1,5 +1,22 @@
 # Matter-Base development status
 
+## 2026-11-17 — Session state and transport contracts (pending CI)
+
+- Previous authorization code passed GitHub Actions run 44098196776:
+  formatting, all-target checks/tests, documentation tests and strict Clippy.
+- Added SessionRegistry with bounded metadata, owner-only lifecycle management,
+  optimistic revision checks, immutable audit and transactional rollback.
+  Added MessageService, mandatory MessageAdmission policy and TransportDriver
+  abstraction; it holds no provider secrets or private session data.
+- Added six regression tests (restart, independent SQLite connections,
+  audit rollback, admission/connection, transport errors and payload bounds).
+  They exercise local contracts only, not external platform integration.
+- README audit: one root README reviewed and updated. Architecture and
+  docs/sessions.md describe the new boundary and actual missing providers.
+- CI results for this new session checkpoint are pending.
+  Keep H/I/J/K/L open; do not start Matter-Bot or modify the stable branch.
+
+
 ## 2026-11-17 — Scoped persistent role authorization (pending CI validation)
 
 - Added opt-in SQLite role scopes, immutable parent inheritance, owner-only

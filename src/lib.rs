@@ -24,6 +24,7 @@ pub mod i18n;
 pub mod legal;
 pub mod modules;
 pub mod security;
+pub mod sessions;
 pub mod services;
 pub mod users;
 
@@ -50,6 +51,10 @@ pub use legal::{
 pub use modules::{CoreModule, ModuleManager};
 pub use security::encryption;
 pub use services::ServiceRegistry;
+pub use sessions::{
+    ConnectionState, MessageAdmission, MessageService, OutboundMessage, SessionAuditRecord,
+    SessionRecord, SessionRegistry, TransportAcceptance, TransportDriver,
+};
 
 pub use users::{
     ExternalIdentity, UserAction, UserAuthorizationRequest, UserAuthorizer, UserPrincipal,

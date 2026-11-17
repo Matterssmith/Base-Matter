@@ -24,6 +24,9 @@ Public crate API (`src/lib.rs`)
 │                     ├─ ServiceRegistry (in memory)
 │                     ├─ UserRegistry (injected; memory or SQLite)
 │                     └─ LegalStore (SQLite)
+├── SessionRegistry (SQLite connection metadata/revision/audit)
+├── MessageService (admission and external driver contract)
+├── RoleStore (SQLite inherited role policy, bounded audit)
 ├── SocketActivationStore (SQLite policy/ownership/bot binding/audit)
 ├── ControlDispatcher (control interception and socket activation gate)
 ├── CommandRouter (prefixes, aliases, injected authorization and middleware)
@@ -65,8 +68,9 @@ cannot both withdraw the same grant or observe a document-registration race
 between its duplicate check and insert. An access check uses one SQL statement
 to read the user and applicable document/decision state from one snapshot.
 The event bus, service registry, translation catalogs, and runtime config are
-in memory or caller supplied. General roles, network socket lifecycle, plugin
-isolation, and a general authorization/audit service remain unimplemented.
+in memory or caller supplied. Scoped roles, session metadata and a message driver contract are opt-in.
+Real network socket lifecycle, external platform connections, and plugin
+isolation remain unimplemented.
 
 The security provider abstractions allow a caller to supply trusted key
 material and providers. Envelope plaintext and ciphertext are limited to

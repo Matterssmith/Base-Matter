@@ -123,6 +123,24 @@ only a decision at admission time. Callers must separately enforce the
 socket/activation gate, consent, and any platform security policy. The store
 does not persist sessions, platform credentials or encryption keys.
 
+## Session metadata and transport boundary
+
+The [session module](src/sessions.rs) provides a SQLite-backed lifecycle for
+socket connection **metadata**: owner, platform, connection state, optimistic
+revision and immutable audit. It does not store login tokens, session files,
+private platform credentials, WhatsApp keys or a live network connection.
+A trusted application provisions session metadata and drives valid lifecycle
+transitions. Socket power and bot activation are independent.
+
+MessageService accepts a required application MessageAdmission policy and
+a TransportDriver supplied by a platform adapter. Its sender refuses
+disconnected sessions, malformed/oversized messages and denied requests.
+The application must enforce authenticated actor, consent, socket activation,
+resource scope and group policy; this library does not infer those permissions.
+A driver acknowledgement is not a delivery guarantee, and in-flight sends
+can race with connection changes. No automatic retry or exactly-once
+semantics are provided. See [session contracts](docs/sessions.md).
+
 ## Continuous verification
 
 GitHub Actions workflow [Rust verification](.github/workflows/rust-ci.yml)
