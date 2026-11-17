@@ -52,7 +52,10 @@ pub use core::runtime::MatterRuntime;
 
 pub use events::EventBus;
 pub use i18n::Translator;
-pub use ingress::{InboundAdmission, InboundAuthenticator, InboundEvent, InboundGateway, InboundOutcome, InboundReplayStore, VerifiedIngress};
+pub use ingress::{
+    InboundAdmission, InboundAuthenticator, InboundEvent, InboundGateway, InboundOutcome,
+    InboundReplayStore, VerifiedIngress,
+};
 
 pub use legal::{
     ConsentDecision, ConsentRecord, LegalAction, LegalAuthorizationRequest, LegalAuthorizer,

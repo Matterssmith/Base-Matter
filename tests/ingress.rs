@@ -8,9 +8,9 @@ use anyhow::{bail, Result};
 use matter_base::{
     activation::SocketActivationStore,
     control::{ControlDispatcher, DispatchResult},
-    BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter,
-    InboundAdmission, InboundAuthenticator, InboundEvent, InboundGateway,
-    InboundOutcome, InboundReplayStore, VerifiedIngress,
+    BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter, InboundAdmission,
+    InboundAuthenticator, InboundEvent, InboundGateway, InboundOutcome, InboundReplayStore,
+    VerifiedIngress,
 };
 use rusqlite::Connection;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -65,15 +65,16 @@ fn build_gateway(
     activation
         .bind_bot("socket", "owner", bot.instance_id(), &bots)
         .unwrap();
-    activation.set_socket_policy("socket", "owner", Some(true)).unwrap();
-    let router = Arc::new(CommandRouter::new(
-        vec!["#".into()],
-        Arc::new(PermitCommands),
-    ).unwrap());
-    router.register("ping", &[], move |_| {
-        calls.fetch_add(1, Ordering::SeqCst);
-        Ok("pong".into())
-    }).unwrap();
+    activation
+        .set_socket_policy("socket", "owner", Some(true))
+        .unwrap();
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(PermitCommands)).unwrap());
+    router
+        .register("ping", &[], move |_| {
+            calls.fetch_add(1, Ordering::SeqCst);
+            Ok("pong".into())
+        })
+        .unwrap();
     let control = Arc::new(ControlDispatcher::new(
         activation.clone(),
         bots,
@@ -114,7 +115,10 @@ fn authenticated_gateway_gates_power_and_replays_before_handler_effects() {
         gateway.ingest(&event("event-1")).unwrap(),
         InboundOutcome::Dispatched(DispatchResult::Message(Some("pong".into())))
     );
-    assert_eq!(gateway.ingest(&event("event-1")).unwrap(), InboundOutcome::Duplicate);
+    assert_eq!(
+        gateway.ingest(&event("event-1")).unwrap(),
+        InboundOutcome::Duplicate
+    );
     assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert_eq!(
         gateway.ingest(&event("off-event")).unwrap(),
@@ -162,19 +166,31 @@ fn replay_ids_are_keyed_by_verified_platform_and_socket_and_not_stored_raw() {
     getrandom::fill(&mut nonce).unwrap();
     let path = std::env::temp_dir().join(format!("matter-ingress-{}.db", hex::encode(nonce)));
     let store = InboundReplayStore::open(&path, KEY).unwrap();
-    assert!(store.claim("whatsapp", "socket-1", "secret-event-123").unwrap());
-    assert!(!store.claim("whatsapp", "socket-1", "secret-event-123").unwrap());
-    assert!(store.claim("telegram", "socket-1", "secret-event-123").unwrap());
-    assert!(store.claim("whatsapp", "socket-2", "secret-event-123").unwrap());
+    assert!(store
+        .claim("whatsapp", "socket-1", "secret-event-123")
+        .unwrap());
+    assert!(!store
+        .claim("whatsapp", "socket-1", "secret-event-123")
+        .unwrap());
+    assert!(store
+        .claim("telegram", "socket-1", "secret-event-123")
+        .unwrap());
+    assert!(store
+        .claim("whatsapp", "socket-2", "secret-event-123")
+        .unwrap());
     let conn = Connection::open(&path).unwrap();
     let fingerprint: String = conn
-        .query_row("SELECT fingerprint FROM inbound_replay LIMIT 1", [], |r| r.get(0))
+        .query_row("SELECT fingerprint FROM inbound_replay LIMIT 1", [], |r| {
+            r.get(0)
+        })
         .unwrap();
     assert!(!fingerprint.contains("secret-event-123"));
     drop(conn);
     drop(store);
     let reopened = InboundReplayStore::open(&path, KEY).unwrap();
-    assert!(!reopened.claim("whatsapp", "socket-1", "secret-event-123").unwrap());
+    assert!(!reopened
+        .claim("whatsapp", "socket-1", "secret-event-123")
+        .unwrap());
     drop(reopened);
     std::fs::remove_file(path).unwrap();
 }
@@ -211,7 +227,8 @@ fn empty_replay_key_and_oversized_events_are_rejected() {
                 actor: "member",
             }),
             Arc::new(AtomicUsize::new(0)),
-        ).0
+        )
+        .0
     };
     let mut raw = event("too-long");
     raw.text = too_long;

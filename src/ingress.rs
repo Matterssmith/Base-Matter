@@ -150,11 +150,8 @@ impl InboundReplayStore {
         if existing != 0 {
             return Ok(false);
         }
-        let count: i64 = tx.query_row(
-            "SELECT COUNT(*) FROM inbound_replay",
-            [],
-            |row| row.get(0),
-        )?;
+        let count: i64 =
+            tx.query_row("SELECT COUNT(*) FROM inbound_replay", [], |row| row.get(0))?;
         if count >= MAX_REPLAY_RECORDS {
             bail!("Inbound replay capacity exhausted");
         }
@@ -227,9 +224,11 @@ impl InboundGateway {
         if trusted.platform != event.platform {
             bail!("Inbound provider identity mismatch");
         }
-        catch_unwind(AssertUnwindSafe(|| self.admission.authorize(event, &trusted)))
-            .map_err(|_| anyhow!("Inbound admission denied"))?
-            .map_err(|_| anyhow!("Inbound admission denied"))?;
+        catch_unwind(AssertUnwindSafe(|| {
+            self.admission.authorize(event, &trusted)
+        }))
+        .map_err(|_| anyhow!("Inbound admission denied"))?
+        .map_err(|_| anyhow!("Inbound admission denied"))?;
         if !self
             .replay
             .claim(&trusted.platform, &trusted.socket_id, &event.event_id)?
@@ -263,9 +262,9 @@ fn validate_platform(value: &str) -> Result<()> {
 fn validate_context(value: &str) -> Result<()> {
     if value.is_empty()
         || value.len() > MAX_CONTEXT_BYTES
-        || !value.bytes().all(|byte| {
-            byte.is_ascii_alphanumeric() || b"._:@/-".contains(&byte)
-        })
+        || !value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"._:@/-".contains(&byte))
     {
         bail!("Invalid authenticated ingress context");
     }
