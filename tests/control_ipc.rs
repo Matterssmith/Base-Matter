@@ -146,5 +146,10 @@ fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
         assert!(!bytes.windows(7).any(|window| window == b"socket-"));
     }
     server.join().unwrap();
-    assert!(!activation.resolve_persisted("socket-a", None).unwrap().enabled);
+    assert!(
+        !activation
+            .resolve_persisted("socket-a", None)
+            .unwrap()
+            .enabled
+    );
 }
