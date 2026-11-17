@@ -13,6 +13,7 @@
  */
 
 pub mod activation;
+pub mod authorization;
 pub mod bots;
 pub mod command_audit;
 pub mod commands;
@@ -26,6 +27,7 @@ pub mod security;
 pub mod services;
 pub mod users;
 
+pub use authorization::{RoleAuditRecord, RoleCommandAuthorizer, RoleStore, RuleEffect};
 pub use bots::{
     BotAction, BotAuditRecord, BotIdentity, BotIdentityStore, BotRegistry,
     InMemoryBotIdentityStore, OwnerRecoveryAuthorizer, SqliteBotIdentityStore,

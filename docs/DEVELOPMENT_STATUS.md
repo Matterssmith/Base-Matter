@@ -1,5 +1,23 @@
 # Matter-Base development status
 
+## 2026-11-17 — Scoped persistent role authorization (pending CI validation)
+
+- Added opt-in SQLite role scopes, immutable parent inheritance, owner-only
+  role/grant/rule administration, explicit deny precedence, default deny, a
+  bounded immutable audit and atomic policy-plus-audit transactions.
+- Added RoleCommandAuthorizer for the canonical CommandRouter permission
+  check; authenticated ingress and independent socket gating remain required.
+- Six integration regressions cover inheritance/deny, scope isolation and owner
+  authorization, persistence/revoke, audit rollback, alias dispatch and corrupt
+  role-chain refusal. They are not claims of live provider integration.
+- README audit before this commit: one README fully reviewed and updated.
+  New docs/authorization.md documents operational and trust limitations.
+- CI validation for this new code is pending. All earlier code is preserved,
+  matter remains unchanged and Matter-Bot is not started.
+- Follow-up: inspect GitHub Actions, fix any build/test/lint faults, then
+  extend integrations and resilience under stages H/I/J/K/L.
+
+
 ## 2026-11-17 — Strict CI lint remediation
 
 - Retrieved GitHub Actions run `44095876210` and job logs: formatting,

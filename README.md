@@ -38,8 +38,8 @@ verified stage assessment.
 Matter-Base is intended to host reusable Rust capabilities consumed through
 public APIs. It must remain independent of Matter-Bot and platform adapters.
 This repository currently does **not** implement WhatsApp, Telegram, Discord,
-general authorization roles, network socket control, plugin execution,
-or a sandbox. Command routing and persistent activation policies are partial.
+network socket control, plugin execution, or a sandbox. General scoped role
+authorization is opt-in and is not wired into platform adapters. Command routing and persistent activation policies are partial.
 
 Bot registration requires an owner ID. Consumers must derive actor IDs from
 authenticated requests before calling owner-management APIs. Owners can manage
@@ -104,6 +104,24 @@ docs/         Architecture and continuity documentation
 There is one README in this repository: this root `README.md`.
 
 Clippy's first strict CI run identified three pre-existing lint failures in legal-document row typing, ciphertext size arithmetic, and user schema-range validation. The follow-up changes preserve public APIs and require a passing CI run before they are considered verified.
+
+## Persistent roles and resource authorization
+
+The optional role store, in [src/authorization.rs](src/authorization.rs),
+provides SQLite-backed bot-scope role definitions, single-parent inheritance,
+owner-only administration, bounded memberships and rules, explicit deny
+precedence, default denial, and immutable audit records. Provisioning an
+owner/scope pair is a **trusted application-only operation**. Actor IDs must
+come from authenticated ingress; passing a claimed ID is not authentication.
+Scope administration grants no implicit command execution, socket power or
+access to another scope.
+
+[RoleCommandAuthorizer](src/authorization.rs) can be injected into
+CommandRouter; it checks the canonical name as resource
+\`command:<name>\` with action \`execute\`. A successful authorization is
+only a decision at admission time. Callers must separately enforce the
+socket/activation gate, consent, and any platform security policy. The store
+does not persist sessions, platform credentials or encryption keys.
 
 ## Continuous verification
 
