@@ -55,7 +55,6 @@ pub struct SignedFrame {
     pub signature: String,
 }
 
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ControlAck {
     Applied,

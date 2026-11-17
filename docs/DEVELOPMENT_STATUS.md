@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Normalización de rustfmt del resultado IPC (CI pendiente)
+
+- Ajustados en el proveedor dos detalles exactos de rustfmt identificados en GitHub Actions: separación de tipos y anidamiento de callback `match`.
+- READMEs revisados completos 2/2 (raíz y proveedor), ambos sin cambio en este commit. Ninguna sesión ni llave fue modificada.
+- Reejecutar el CI del proveedor en el SHA exacto antes de afirmar que el contrato de acuses quedó aprobado.
+
+
 ## 2026-11-17 — Resultados IPC tipados, sin falsos positivos (pendiente CI)
 
 - Corregida la interpretación de acuses de `whatsapp-rust`: `applied` y `duplicate` se reportan por separado; acuses ignorados, denegados, inválidos, extralimitados o con campos desconocidos fallan cerrados.

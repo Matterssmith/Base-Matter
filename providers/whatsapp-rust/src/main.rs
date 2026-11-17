@@ -120,19 +120,17 @@ async fn main() -> Result<()> {
                     timestamp: ctx.info.timestamp.timestamp(),
                 };
                 match config.signed_control(&data) {
-                    Ok(Some(frame)) => {
-                        match deliver(config.bridge_addr, &frame).await {
-                            Ok(ControlAck::Applied) => {
-                                println!("Base-Matter owner control applied");
-                            }
-                            Ok(ControlAck::Duplicate) => {
-                                println!("Base-Matter duplicate control ignored (no new effect)");
-                            }
-                            Err(_) => {
-                                eprintln!("Base-Matter owner control denied or unreachable");
-                            }
+                    Ok(Some(frame)) => match deliver(config.bridge_addr, &frame).await {
+                        Ok(ControlAck::Applied) => {
+                            println!("Base-Matter owner control applied");
                         }
-                    }
+                        Ok(ControlAck::Duplicate) => {
+                            println!("Base-Matter duplicate control ignored (no new effect)");
+                        }
+                        Err(_) => {
+                            eprintln!("Base-Matter owner control denied or unreachable");
+                        }
+                    },
                     Ok(None) => {}
                     Err(_) => eprintln!("Unsafe or expired owner control ignored"),
                 }
