@@ -17,9 +17,9 @@ pub mod authorization;
 pub mod bots;
 pub mod command_audit;
 pub mod commands;
+pub mod connections;
 pub mod control;
 pub mod control_sync;
-pub mod connections;
 pub mod core;
 pub mod events;
 pub mod i18n;
@@ -38,8 +38,10 @@ pub use bots::{
 };
 pub use command_audit::{CommandAuditOutcome, CommandAuditRecord, CommandAuditStore};
 pub use commands::{CommandAuthorizer, CommandInvocation, CommandRouter};
+pub use connections::{
+    ConnectionAdmission, ConnectionDriver, ConnectionService, SessionCredentialSource,
+};
 pub use control_sync::{EncryptedControlOutbox, EncryptedEnvelopeSink, OutboxStatus};
-pub use connections::{ConnectionAdmission, ConnectionDriver, ConnectionService, SessionCredentialSource};
 pub use core::config::CoreConfig;
 pub use core::context::MatterContext;
 pub use core::logger::init_logger;

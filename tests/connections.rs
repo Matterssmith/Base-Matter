@@ -7,8 +7,8 @@
 
 use anyhow::{bail, Result};
 use matter_base::{
-    ConnectionAdmission, ConnectionDriver, ConnectionService, ConnectionState, SessionCredentialSource,
-    SessionRecord, SessionRegistry,
+    ConnectionAdmission, ConnectionDriver, ConnectionService, ConnectionState,
+    SessionCredentialSource, SessionRecord, SessionRegistry,
 };
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -121,11 +121,20 @@ fn denied_and_failed_credential_load_does_not_start_driver() {
         loads: AtomicUsize::new(0),
     });
     let denied = service(sessions.clone(), false, creds.clone(), driver.clone());
-    assert_eq!(denied.connect("socket", "owner").unwrap_err().to_string(), "Connection access denied");
+    assert_eq!(
+        denied.connect("socket", "owner").unwrap_err().to_string(),
+        "Connection access denied"
+    );
     assert_eq!(creds.loads.load(Ordering::SeqCst), 0);
     let svc = service(sessions.clone(), true, creds.clone(), driver.clone());
-    assert_eq!(svc.connect("socket", "owner").unwrap_err().to_string(), "Connection operation failed");
-    assert_eq!(sessions.inspect("socket", "owner").unwrap().state, ConnectionState::Faulted);
+    assert_eq!(
+        svc.connect("socket", "owner").unwrap_err().to_string(),
+        "Connection operation failed"
+    );
+    assert_eq!(
+        sessions.inspect("socket", "owner").unwrap().state,
+        ConnectionState::Faulted
+    );
     assert_eq!(driver.connects.load(Ordering::SeqCst), 0);
 }
 
@@ -142,11 +151,17 @@ fn driver_failure_faults_state_without_leaking_details_and_allows_recovery() {
     let error = svc.connect("socket", "owner").unwrap_err().to_string();
     assert_eq!(error, "Connection operation failed");
     assert!(!error.contains("private"));
-    assert_eq!(sessions.inspect("socket", "owner").unwrap().state, ConnectionState::Faulted);
+    assert_eq!(
+        sessions.inspect("socket", "owner").unwrap().state,
+        ConnectionState::Faulted
+    );
     assert_eq!(failing.disconnects.load(Ordering::SeqCst), 1);
     let healthy = Arc::new(Driver::new(false));
     let recovered = service(sessions.clone(), true, creds, healthy);
-    assert_eq!(recovered.connect("socket", "owner").unwrap().state, ConnectionState::Connected);
+    assert_eq!(
+        recovered.connect("socket", "owner").unwrap().state,
+        ConnectionState::Connected
+    );
 }
 
 #[test]
@@ -162,9 +177,15 @@ fn health_failure_faults_and_requires_explicit_reconnection() {
     svc.connect("socket", "owner").unwrap();
     driver.live.store(false, Ordering::SeqCst);
     assert!(!svc.check_health("socket", "owner").unwrap());
-    assert_eq!(sessions.inspect("socket", "owner").unwrap().state, ConnectionState::Faulted);
+    assert_eq!(
+        sessions.inspect("socket", "owner").unwrap().state,
+        ConnectionState::Faulted
+    );
     assert!(!svc.check_health("socket", "owner").unwrap());
-    assert_eq!(svc.connect("socket", "owner").unwrap().state, ConnectionState::Connected);
+    assert_eq!(
+        svc.connect("socket", "owner").unwrap().state,
+        ConnectionState::Connected
+    );
 }
 
 #[test]
@@ -179,6 +200,9 @@ fn uncertain_state_can_be_marked_faulted_after_restart() {
         loads: AtomicUsize::new(0),
     });
     let svc = service(sessions.clone(), true, creds, Arc::new(Driver::new(false)));
-    assert_eq!(svc.mark_uncertain("socket", "owner").unwrap().state, ConnectionState::Faulted);
+    assert_eq!(
+        svc.mark_uncertain("socket", "owner").unwrap().state,
+        ConnectionState::Faulted
+    );
     assert!(svc.connect("socket", "owner").is_ok());
 }

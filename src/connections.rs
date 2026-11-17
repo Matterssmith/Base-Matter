@@ -155,8 +155,12 @@ impl ConnectionService {
                 bail!("Connection shutdown failed");
             }
         }
-        self.sessions
-            .transition(socket, actor, record.revision, ConnectionState::Disconnected)
+        self.sessions.transition(
+            socket,
+            actor,
+            record.revision,
+            ConnectionState::Disconnected,
+        )
     }
 
     /// A live probe is required before assuming stored Connected means online.
@@ -174,12 +178,9 @@ impl ConnectionService {
         if matches!(health, Ok(Ok(true))) {
             return Ok(true);
         }
-        let _ = self.sessions.transition(
-            socket,
-            actor,
-            record.revision,
-            ConnectionState::Faulted,
-        );
+        let _ = self
+            .sessions
+            .transition(socket, actor, record.revision, ConnectionState::Faulted);
         Ok(false)
     }
 
@@ -192,7 +193,8 @@ impl ConnectionService {
             .lock()
             .map_err(|_| anyhow!("Connection operation unavailable"))?;
         let record = self.authorized(socket, actor)?;
-        if record.state == ConnectionState::Disconnected || record.state == ConnectionState::Faulted {
+        if record.state == ConnectionState::Disconnected || record.state == ConnectionState::Faulted
+        {
             return Ok(record);
         }
         self.sessions
