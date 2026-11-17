@@ -7,8 +7,8 @@
 use anyhow::{anyhow, bail, Result};
 use matter_base::{
     activation::SocketActivationStore, control::ControlDispatcher, BotRegistry, CommandAuthorizer,
-    CommandInvocation, CommandRouter, InboundReplayStore, WhatsAppBridgeConfig,
-    WhatsAppControlBridge, WhatsAppControlIpc,
+    CommandInvocation, CommandRouter, ControlExtensionRegistry, InboundReplayStore,
+    WhatsAppBridgeConfig, WhatsAppControlBridge, WhatsAppControlIpc,
 };
 use std::{
     env,
@@ -203,12 +203,24 @@ fn main() -> Result<()> {
     let _lease = ExclusiveLock::acquire(lock)?;
     let replay = Arc::new(InboundReplayStore::open(&replay_path, replay_key)?);
     let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot))?);
-    let dispatcher = Arc::new(ControlDispatcher::new(
-        activation,
-        Arc::new(BotRegistry::in_memory()),
-        router,
-        None,
-    ));
+    let extensions = Arc::new(ControlExtensionRegistry::new());
+    // A signed, socket-owner-authorized request for live provider discovery.
+    // Mutations are intentionally unsupported in this alpha checkpoint.
+    extensions.register("start", &[], |_, arguments| {
+        if !arguments.is_empty() {
+            bail!("Community changes require an approved plan");
+        }
+        Ok("Community REGISTER read-only inventory authorized".to_owned())
+    })?;
+    let dispatcher = Arc::new(
+        ControlDispatcher::new(
+            activation,
+            Arc::new(BotRegistry::in_memory()),
+            router,
+            None,
+        )
+        .with_control_extensions(extensions),
+    );
     let bridge = Arc::new(WhatsAppControlBridge::new(
         WhatsAppBridgeConfig {
             socket_id: socket,

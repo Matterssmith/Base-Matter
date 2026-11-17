@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Extensión =/>start protegida en Base (alpha, CI pendiente)
+
+- Registrada `=/>start` en el proceso controlador Rust mediante la autorización del ControlDispatcher; funciona con bot apagado sin conceder autorización a otros sockets.
+- `=/>start apply` y argumentos no admitidos fallan cerrados hasta completar planes de mutación; agregado test de alcance/rol por socket.
+- README raíz y proveedor revisados íntegros (2/2); actualizado solo raíz. Sin sesión WhatsApp real en esta fase; queda por conectar el descubrimiento del proveedor.
+
+
 ## 2026-11-17 — Parser externo #matter en alpha (CI pendiente)
 
 - Agregado `src/external_compat.rs` como normalizador sintáctico no autenticador de `#matter` a `=/>`, con 2 tests de regresión para prefijos y caracteres de control.

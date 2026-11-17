@@ -698,3 +698,11 @@ ni cambio de permisos sin revisión del plan.
 El [contrato externo `#matter`](docs/EXTERNAL_BOT_COMPAT.md) permite que
 bots ajenos actúen como clientes autorizados del control `=/>`, sin copiar
 sesiones WhatsApp ni conceder privilegios por compartir un prefijo.
+
+## Comando alpha =/>start
+
+El proceso de control Base-Matter registra la orden `=/>start` y comprueba
+autorización del dueño del socket antes de admitir el inventario de
+comunidades. Funciona aunque el socket esté apagado. Las operaciones
+`=/>start apply` se rechazan mientras no exista un plan de cambios
+verificado; no se modifica ninguna comunidad por autorizar la lectura.
