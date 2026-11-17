@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Rustfmt del CLI de verificación (alpha, CI pendiente)
+
+- Se aplicaron 2 ajustes de formato en el CLI offline `--recovery-verify` y los imports del proveedor según GitHub Actions.
+- Revisados los dos README completos (2/2); ninguna modificación necesaria, credenciales y sesiones intactas. Volver a comprobar provider CI.
+
+
 ## 2026-11-17 — Verificación local del respaldo tras pérdida de sesión (alpha; CI pendiente)
 
 - Agregada opción offline `--recovery-verify <filename>.enc.json` al proveedor, con comprobación del filename, clave, AAD de socket/dueño e integridad; no abre WhatsApp ni expone JIDs o llaves.

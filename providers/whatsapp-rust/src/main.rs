@@ -13,7 +13,9 @@ use tokio::{
 };
 use whatsapp_matter_rust_provider::{
     parse_control_ack,
-    recovery::{read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot},
+    recovery::{
+        read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
+    },
     Config, ControlAck, Event, SessionLease,
 };
 use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*};
@@ -341,9 +343,9 @@ async fn main() -> Result<()> {
             if !filename.starts_with("community-recovery-")
                 || !filename.ends_with(".enc.json")
                 || filename.len() > 160
-                || !filename.bytes().all(|byte| {
-                    byte.is_ascii_alphanumeric() || b"._-".contains(&byte)
-                })
+                || !filename
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
                 || std::env::args().nth(3).is_some()
             {
                 bail!("Invalid recovery archive name");
