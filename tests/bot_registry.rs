@@ -10,16 +10,14 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Barrier};
 use std::thread;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 struct TemporaryDirectory(PathBuf);
 
 impl TemporaryDirectory {
     fn new() -> Self {
-        let nonce = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
+        let mut random = [0_u8; 16];
+        getrandom::fill(&mut random).unwrap();
+        let nonce = hex::encode(random);
         let path = std::env::temp_dir().join(format!(
             "matter-base-bot-registry-{}-{nonce}",
             std::process::id()
