@@ -1,5 +1,25 @@
 # Matter-Base development status
 
+## 2026-11-17 — Strict CI lint remediation
+
+- Retrieved GitHub Actions run `44095876210` and job logs: formatting,
+  `cargo check --all-targets --locked`, all default tests and doc tests
+  succeeded. Strict Clippy failed with exactly three diagnostics.
+- Corrected `src/legal/mod.rs` by naming the existing SQLite tuple type,
+  `src/security/encryption.rs` by using `div_ceil(3)`, and
+  `src/users/mod.rs` by using inclusive range membership. These are
+  targeted, behavior-preserving lint corrections, not a completed phase.
+- Reviewed the sole root README and updated it to explain this CI gate.
+  Source changes were published on `matter-beta`; no local worktree,
+  stable branch, Matter-Vault or Matter-Bot files were changed.
+- A successful CI run for the final commit is **not yet confirmed**.
+  The previous run's passing tests do not verify these new commits.
+  Check the final run and address any new diagnostics before proceeding
+  with persistent resource authorization and H–L completion.
+- README audit: 1 total, 1 reviewed, 1 updated, 0 unchanged.
+  Full repository-wide release/security verification remains pending.
+
+
 ## 2026-11-17 — Remote CI groundwork (ChatGPT checkpoint)
 
 - Continued from the actual remote `matter-beta` commit
