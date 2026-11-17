@@ -222,7 +222,6 @@ async fn preview_community_recovery(
     Ok(answer.chars().take(1600).collect())
 }
 
-
 async fn snapshot_community_recovery(
     ctx: &whatsapp_rust::bot::MessageContext,
     config: &Config,

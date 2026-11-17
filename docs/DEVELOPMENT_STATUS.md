@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Rustfmt de callback de snapshot (alpha; CI pendiente)
+
+- Corregida línea extra antes de `snapshot_community_recovery` según reporte rustfmt del proveedor. Ambos README revisados en su totalidad (2/2), sin cambios necesarios; claves y sesiones intactas.
+- Continuamos CI antes de cualquier prueba de WhatsApp real.
+
+
 ## 2026-11-17 — Rustfmt de snapshot cifrada (alpha, CI pendiente)
 
 - Aplicados ajustes exactos de rustfmt de GitHub Actions al nuevo módulo criptográfico y sus tests. README raíz y proveedor revisados completos (2/2) sin cambios de contenido.
