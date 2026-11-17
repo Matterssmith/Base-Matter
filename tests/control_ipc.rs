@@ -172,7 +172,9 @@ fn incomplete_or_oversized_tcp_frames_fail_closed() {
 
     let mut partial = TcpStream::connect(address).unwrap();
     partial.write_all(b"{").unwrap();
-    partial.set_read_timeout(Some(Duration::from_secs(6))).unwrap();
+    partial
+        .set_read_timeout(Some(Duration::from_secs(6)))
+        .unwrap();
     let since = Instant::now();
     let mut response = Vec::new();
     partial.read_to_end(&mut response).unwrap();
@@ -191,5 +193,10 @@ fn incomplete_or_oversized_tcp_frames_fail_closed() {
     assert_eq!(response["ok"], false);
     assert_eq!(response["outcome"], "denied");
     worker.join().unwrap();
-    assert!(!activation.resolve_persisted("socket-a", None).unwrap().enabled);
+    assert!(
+        !activation
+            .resolve_persisted("socket-a", None)
+            .unwrap()
+            .enabled
+    );
 }

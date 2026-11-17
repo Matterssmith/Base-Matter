@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Corrección de formato IPC (CI pendiente)
+
+- Rustfmt en el primer CI IPC identificó dos líneas del nuevo test; se aplicó el diff exacto requerido antes de ejecutar el resto de las verificaciones.
+- Se volvieron a revisar íntegros ambos README (2/2), sin cambios; no se tocó la lógica de seguridad, sesiones ni la rama estable.
+- Pendiente resultado del CI en Linux, Windows y proveedor para el SHA corregido.
+
+
 ## 2026-11-17 — Plazo total para la recepción IPC (CI pendiente)
 
 - El receptor local de WhatsApp aplica 16 KiB y un límite global de 4 segundos por frame, en lugar de reiniciar un plazo por cada lectura. Las conexiones parciales o excesivas devuelven un rechazo sin ejecutar efectos.
