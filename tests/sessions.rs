@@ -67,6 +67,7 @@ fn message() -> OutboundMessage {
         socket_id: "socket-1".to_owned(),
         actor_id: "owner-1".to_owned(),
         destination_id: "group-1".to_owned(),
+        group_id: Some("group-1".to_owned()),
         text: "hello".to_owned(),
     }
 }

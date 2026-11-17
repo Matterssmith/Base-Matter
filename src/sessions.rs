@@ -5,6 +5,8 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
+use crate::activation::{GlobalPolicy, SocketActivationStore};
+use crate::{BotRegistry, RoleStore};
 use anyhow::{anyhow, bail, Result};
 use rusqlite::{params, Connection, OptionalExtension, Transaction, TransactionBehavior};
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -391,6 +393,7 @@ pub struct OutboundMessage {
     pub socket_id: String,
     pub actor_id: String,
     pub destination_id: String,
+    pub group_id: Option<String>,
     pub text: String,
 }
 
@@ -399,6 +402,9 @@ impl OutboundMessage {
         validate_id(&self.socket_id)?;
         validate_id(&self.actor_id)?;
         validate_id(&self.destination_id)?;
+        if let Some(group) = &self.group_id {
+            validate_id(group)?;
+        }
         if self.text.is_empty() || self.text.len() > MAX_TEXT_BYTES {
             bail!("Invalid outbound message length");
         }
@@ -422,6 +428,101 @@ pub trait TransportDriver: Send + Sync {
 pub struct TransportAcceptance {
     pub driver_receipt: String,
     pub session_revision: i64,
+}
+
+
+/// Bridges outbound delivery admission with the existing activation, bot and
+/// role snapshots. An additional mandatory policy must check legal consent,
+/// authenticated identity and any provider-specific destination restrictions.
+/// This type does not claim network or cross-database atomicity.
+pub struct ControlPlaneMessageAdmission {
+    activation: Arc<SocketActivationStore>,
+    sessions: Arc<SessionRegistry>,
+    bots: Arc<BotRegistry>,
+    roles: Arc<RoleStore>,
+    additional: Arc<dyn MessageAdmission>,
+    global_policy: GlobalPolicy,
+}
+
+impl ControlPlaneMessageAdmission {
+    pub fn new(
+        activation: Arc<SocketActivationStore>,
+        sessions: Arc<SessionRegistry>,
+        bots: Arc<BotRegistry>,
+        roles: Arc<RoleStore>,
+        additional: Arc<dyn MessageAdmission>,
+        global_default: Option<bool>,
+    ) -> Self {
+        Self {
+            activation,
+            sessions,
+            bots,
+            roles,
+            additional,
+            global_policy: GlobalPolicy::Configured(global_default),
+        }
+    }
+
+    pub fn new_with_persistent_policy(
+        activation: Arc<SocketActivationStore>,
+        sessions: Arc<SessionRegistry>,
+        bots: Arc<BotRegistry>,
+        roles: Arc<RoleStore>,
+        additional: Arc<dyn MessageAdmission>,
+    ) -> Self {
+        Self {
+            activation,
+            sessions,
+            bots,
+            roles,
+            additional,
+            global_policy: GlobalPolicy::Persisted,
+        }
+    }
+}
+
+impl MessageAdmission for ControlPlaneMessageAdmission {
+    fn authorize(&self, message: &OutboundMessage) -> Result<()> {
+        let admission = self
+            .activation
+            .admission(
+                &message.socket_id,
+                message.group_id.as_deref(),
+                self.global_policy,
+            )
+            .map_err(|_| anyhow!("Message admission denied"))?;
+        if !admission.decision.enabled {
+            bail!("Message admission denied");
+        }
+        let bound_bot = admission
+            .bot_instance_id
+            .ok_or_else(|| anyhow!("Message admission denied"))?;
+        self.bots
+            .authorize_owner(&bound_bot, &admission.owner_id)
+            .map_err(|_| anyhow!("Message admission denied"))?;
+        let session = self
+            .sessions
+            .inspect_trusted(&message.socket_id)
+            .map_err(|_| anyhow!("Message admission denied"))?;
+        if session.owner_id != admission.owner_id {
+            bail!("Message admission denied");
+        }
+        if !self
+            .roles
+            .allowed(
+                &bound_bot,
+                &message.actor_id,
+                "message:send",
+                "execute",
+            )
+            .unwrap_or(false)
+        {
+            bail!("Message admission denied");
+        }
+        self.additional
+            .authorize(message)
+            .map_err(|_| anyhow!("Message admission denied"))
+    }
 }
 
 /// Synchronous transport boundary with fail-closed policy and session checks.

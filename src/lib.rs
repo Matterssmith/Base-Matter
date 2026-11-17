@@ -52,7 +52,8 @@ pub use modules::{CoreModule, ModuleManager};
 pub use security::encryption;
 pub use services::ServiceRegistry;
 pub use sessions::{
-    ConnectionState, MessageAdmission, MessageService, OutboundMessage, SessionAuditRecord,
+    ConnectionState, ControlPlaneMessageAdmission, MessageAdmission, MessageService,
+    OutboundMessage, SessionAuditRecord,
     SessionRecord, SessionRegistry, TransportAcceptance, TransportDriver,
 };
 

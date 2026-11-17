@@ -13,6 +13,12 @@ Matter-Base now owns durable **connection metadata**, not provider sessions.
 - Lifecycle states: Disconnected -> Connecting -> Connected. Connecting and
   Connected may fall back to Disconnected or Faulted; Faulted can recover
   through Connecting or Disconnected. Same-state updates are no-ops.
+- ControlPlaneMessageAdmission checks operational socket power, group/socket/global
+  policy, current bot binding/ownership, session owner consistency, and the
+  scoped message:send / execute role. It additionally requires an application
+  MessageAdmission implementation for identity, consent and provider rules.
+  It is fail-closed but cannot make independent DB reads/network effects atomic.
+  OutboundMessage.group_id distinguishes actual groups from private messages.
 - MessageService requires a MessageAdmission implementation to check actor
   authentication, authorization, legal consent, socket activation and group
   policy. It only calls a TransportDriver for a connected session.

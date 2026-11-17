@@ -139,7 +139,12 @@ The application must enforce authenticated actor, consent, socket activation,
 resource scope and group policy; this library does not infer those permissions.
 A driver acknowledgement is not a delivery guarantee, and in-flight sends
 can race with connection changes. No automatic retry or exactly-once
-semantics are provided. See [session contracts](docs/sessions.md).
+semantics are provided. A built-in ControlPlaneMessageAdmission can combine the persisted socket
+activation/bot binding snapshot with role rules and an additional mandatory
+application policy. Group destinations must be explicitly identified using
+OutboundMessage.group_id; private destinations use None. This still does not
+make separate stores or network effects atomic.
+See [session contracts](docs/sessions.md).
 
 ## Continuous verification
 

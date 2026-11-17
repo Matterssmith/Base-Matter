@@ -1,5 +1,23 @@
 # Matter-Base development status
 
+## 2026-11-17 — Outbound control-plane integration (pending CI)
+
+- Previous session contracts passed GitHub Actions run 44099305219.
+- Added ControlPlaneMessageAdmission bridging existing socket activation,
+  group precedence, bot binding, current bot owner, matching session owner,
+  persistent role rules and mandatory app-supplied legal/provider policy.
+  A disconnected/off/unbound/revoked socket fails before transport.
+- OutboundMessage now declares optional group_id explicitly; this avoids
+  treating private destinations as group-policy resources. This is a pre-1.0
+  API addition without a compatibility guarantee.
+- Three integration tests exercise powered-off, group denial, role revocation,
+  external policy, session owner mismatch and binding recovery.
+- README audit: one README reviewed and updated; documented cross-store
+  admission limitations. No secret data or platform sessions are persisted.
+- New integration CI is pending; external providers and exactly-once semantics
+  remain unavailable. H–L remain open; no Matter-Bot work.
+
+
 ## 2026-11-17 — Session state and transport contracts (pending CI)
 
 - Previous authorization code passed GitHub Actions run 44098196776:
