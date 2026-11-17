@@ -5,6 +5,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
+use crate::{CommandAuditOutcome, CommandAuditStore};
 use anyhow::{anyhow, bail, Result};
 use std::collections::{HashMap, HashSet};
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -55,6 +56,7 @@ pub struct CommandRouter {
     prefixes: Vec<String>,
     authorizer: Arc<dyn CommandAuthorizer>,
     state: RwLock<RouterState>,
+    audit: Option<Arc<CommandAuditStore>>,
 }
 
 impl CommandRouter {
@@ -78,7 +80,22 @@ impl CommandRouter {
             prefixes,
             authorizer,
             state: RwLock::new(RouterState::default()),
+            audit: None,
         })
+    }
+
+    /// Persist a recognized command attempt before invoking any callback, and
+    /// its outcome before returning. Audit write failure stops dispatch; a
+    /// failed outcome write cannot undo handler effects. Never retry blindly.
+    /// Invalid/unregistered commands and non-command messages are not recorded.
+    pub fn new_with_audit(
+        prefixes: Vec<String>,
+        authorizer: Arc<dyn CommandAuthorizer>,
+        audit: Arc<CommandAuditStore>,
+    ) -> Result<Self> {
+        let mut router = Self::new(prefixes, authorizer)?;
+        router.audit = Some(audit);
+        Ok(router)
     }
 
     /// Adds a synchronous middleware callback. Callbacks execute in registration
@@ -204,18 +221,46 @@ impl CommandRouter {
             args,
         };
 
-        catch_unwind(AssertUnwindSafe(|| self.authorizer.authorize(&invocation)))
-            .map_err(|_| anyhow!("Command authorization denied"))?
-            .map_err(|_| anyhow!("Command authorization denied"))?;
-        for middleware in middleware {
-            catch_unwind(AssertUnwindSafe(|| middleware(&invocation)))
-                .map_err(|_| anyhow!("Command middleware rejected"))?
-                .map_err(|_| anyhow!("Command middleware rejected"))?;
+        let attempt = self
+            .audit
+            .as_ref()
+            .map(|audit| audit.begin(&invocation))
+            .transpose()
+            .map_err(|_| anyhow!("Command audit persistence failed"))?;
+        let finish = |outcome| -> Result<()> {
+            if let (Some(audit), Some(attempt)) = (&self.audit, attempt) {
+                audit
+                    .finish(attempt, outcome)
+                    .map_err(|_| anyhow!("Command audit persistence failed"))?;
+            }
+            Ok(())
+        };
+        let authorization =
+            catch_unwind(AssertUnwindSafe(|| self.authorizer.authorize(&invocation)))
+                .map_err(|_| anyhow!("Command authorization denied"))
+                .and_then(|result| result.map_err(|_| anyhow!("Command authorization denied")));
+        if let Err(error) = authorization {
+            finish(CommandAuditOutcome::Denied)?;
+            return Err(error);
         }
-        catch_unwind(AssertUnwindSafe(|| handler(&invocation)))
-            .map_err(|_| anyhow!("Command execution failed"))?
-            .map(Some)
+        for middleware in middleware {
+            let result = catch_unwind(AssertUnwindSafe(|| middleware(&invocation)))
+                .map_err(|_| anyhow!("Command middleware rejected"))
+                .and_then(|result| result.map_err(|_| anyhow!("Command middleware rejected")));
+            if let Err(error) = result {
+                finish(CommandAuditOutcome::MiddlewareRejected)?;
+                return Err(error);
+            }
+        }
+        let result = catch_unwind(AssertUnwindSafe(|| handler(&invocation)))
             .map_err(|_| anyhow!("Command execution failed"))
+            .and_then(|result| result.map_err(|_| anyhow!("Command execution failed")));
+        finish(if result.is_ok() {
+            CommandAuditOutcome::Succeeded
+        } else {
+            CommandAuditOutcome::Failed
+        })?;
+        result.map(Some)
     }
 }
 

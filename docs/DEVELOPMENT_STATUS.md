@@ -4,6 +4,59 @@ This is a development ledger. GitHub remains the source of truth. Its
 synchronization entry records the published base of each working checkpoint;
 verify the branch log for the current published commit.
 
+## 2026-11-17 — Durable command audit integration
+
+- Continued independent Base work after publishing and fetching control fix
+  `402f1bec2432e6646e89242f57ee944d4b5eed0b`; local HEAD and origin matched.
+  Worked only on `matter-beta`, preserving the legacy stash and ignored files.
+- Added `CommandAuditStore`, owner-scoped bounded history, immutable SQLite
+  attempts/outcomes and transactional schema version `command_audit=1`.
+  `CommandRouter::new_with_audit` persists recognized canonical commands before
+  callbacks and records authorization, middleware and handler results, including
+  unwinding panics. Default `new` preserves its existing unaudited behavior.
+- Audit start failure prevents callbacks; outcome-write failure returns a
+  sanitized error and leaves a durable Pending attempt. Handler effects cannot
+  be undone by this store. No automatic retry or exactly-once claim is made.
+  Arguments, message bodies, responses and callback diagnostics are omitted.
+- Added six integration tests covering callback failures/panics, SQLite start
+  and completion failures, recovery, foreign/current-owner read authorization,
+  ownership revocation, bounded pagination, canonical alias logging, payload
+  omission, concurrent independent connections, immutable records (including
+  replacement inserts), migration rollback and future-version rejection.
+  One flow integrates actual persistent bot/activation/audit stores with the
+  router and ControlDispatcher: off blocks normal commands before audit;
+  power changes retain their separate atomic activation audit.
+- Files created: `src/command_audit.rs`, `tests/command_audit.rs`,
+  `docs/command-audit.md`. Modified router/public exports, README, architecture
+  and this ledger. No dependencies, cryptographic formats or external
+  repositories changed; no files deleted.
+- Verification: `cargo fmt --all`, `cargo check --all-targets`, focused audit
+  tests (6 passed), full `cargo test` (229 passed, 0 failed, 1 opt-in Vault test
+  ignored; 0 doc tests), and `git diff --check` passed. The explicit Vault
+  metadata test passed in the preceding checkpoint; no live-source verification
+  has become available.
+- README audit before commit: 1 total, 1 fully reviewed, 1 updated, 0 unchanged.
+  Corrected previously absent audit claims, described the opt-in constructor,
+  failure/recovery semantics and bounded owner-scoped reads, and linked the
+  new contract. Existing examples and new API use match the compiled tests;
+  internal links resolve, project identity/credits are preserved, full diff
+  and all new files were reviewed, and secret-pattern scans found no matches.
+  The scan is not an independent security audit. Broader ingress auditing,
+  archival/retention operations and release documentation remain pending.
+- H/I progress is verified at this scope; no phase is declared complete.
+  The Vault implementation/access-contract question remains pending. A real
+  source is needed to implement and verify authenticated key/binding reads,
+  failure handling, rotation and recovery. Its metadata repository alone
+  cannot fulfill that dependency.
+- Exact next local work: persist authorized global activation policy and its
+  audit without granting global owners power over sockets; add socket ownership
+  recovery/transfer and general resource authorization. Then complete
+  session/credential and connection/messaging contracts and implementations,
+  effective plugin isolation, cross-module resilience, security review and
+  public compatibility/release criteria. Keep Matter-Bot blocked and do not
+  substitute isolated tests for an external integration. Read this latest
+  entry and synchronize safely on resume; historical entries below are retained.
+
 ## 2026-11-17 — Resumed control audit and Vault prerequisite
 
 - Synchronized `matter-beta` with `origin/matter-beta` at
@@ -103,12 +156,12 @@ not ready for Matter-Bot.
 | Sessions and platform credential contracts | ABSENT | No session/credential subsystem; platform credentials must remain outside this crate. |
 | Persistence and recovery | PARTIAL | SQLite persists bot identities, shared users/identity links/bot-scoped data, and legal documents/decisions. No config/network-connection/service persistence or ecosystem-wide migration coordinator; each persistent component has its own versioned schema. |
 | Events and messaging | PARTIAL | Named synchronous in-memory event callbacks exist; no durable events or messaging contract. |
-| Router and command registry | PARTIAL | `CommandRouter` supports bounded prefixes/names/aliases/arguments, mandatory injected authorization, middleware, and synchronous handlers; ControlDispatcher provides socket gating and reserved control-prefix interception; durable command audit and platform-specific parsing remain pending. |
+| Router and command registry | PARTIAL | `CommandRouter` supports bounded prefixes/names/aliases/arguments, mandatory injected authorization, middleware, and synchronous handlers; ControlDispatcher provides socket gating and reserved control-prefix interception; an injected CommandAuditStore persists recognized attempts/outcomes; default routing remains unaudited and platform-specific parsing remains pending. |
 | Middleware, roles, permissions, authorization | PARTIAL | Bot owner/co-owner checks and injectable user/legal action/resource authorization contracts exist; no general role inheritance or socket/resource policy engine. |
 | Control Plane, sockets, activation | PARTIAL | SQLite socket activation store provides owner checks, power, group/socket overrides, recovery and atomic audit. Durable bot binding and control-prefix interception/router gating exist. Network lifecycle, socket ownership transfer and global-policy persistence remain pending. |
 | Services and connections | PARTIAL | Typed in-memory service registry only; no connection manager or lifecycle. |
 | Plugins, extensions, sandbox | ABSENT | No manifest validation, isolation, or resource limits. |
-| Application audit log | ABSENT | Legal decisions are append-only; no general administrative audit system. |
+| Application audit log | PARTIAL | Legal decisions, bot/socket administrative changes and optional recognized-command attempts/outcomes persist. A unified audit service and broader ingress coverage remain pending. |
 | Encryption/key/provider contracts | PARTIAL | Primitives and injection contracts have tests; no production key service integration or independent security audit. |
 | Provider assertion replay protection | PARTIAL | Default is in memory; an injectable SQLite store persists IDs and rejects duplicates across restarts/connections, but no distributed store exists. |
 | Provider input resource limits | PARTIAL | Assertions are capped at 16 KiB and provider key loads at 4,096 IDs; no general service/plugin resource limits exist. |

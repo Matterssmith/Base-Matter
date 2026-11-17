@@ -14,6 +14,7 @@
 
 pub mod activation;
 pub mod bots;
+pub mod command_audit;
 pub mod commands;
 pub mod control;
 pub mod core;
@@ -29,6 +30,7 @@ pub use bots::{
     BotAction, BotAuditRecord, BotIdentity, BotIdentityStore, BotRegistry,
     InMemoryBotIdentityStore, OwnerRecoveryAuthorizer, SqliteBotIdentityStore,
 };
+pub use command_audit::{CommandAuditOutcome, CommandAuditRecord, CommandAuditStore};
 pub use commands::{CommandAuthorizer, CommandInvocation, CommandRouter};
 pub use core::config::CoreConfig;
 pub use core::context::MatterContext;

@@ -68,7 +68,7 @@ separately and does not establish a live integration.
 | `core::context` | Shares event bus, typed service registry, legal store, bot registry, and user registry | Implemented at this scope |
 | `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; general roles remain pending |
 | `users` | Global application user IDs, explicit unique external identity links, and per-bot/user key-value data in memory or SQLite | Implemented with an injected `UserAuthorizer`; the application authenticates principals and enforces ownership and bot scope |
-| `commands` | Prefixes, canonical aliases, authorization, middleware and handlers | Partial; no durable command audit; socket gating via ControlDispatcher |
+| `commands` | Prefixes, canonical aliases, authorization, middleware and handlers | Optional SQLite attempt/outcome audit; socket gating via ControlDispatcher; no platform parsing |
 | `activation` | SQLite owner-scoped power, group/socket policy overrides and atomic audit | Partial; trusted provisioning, durable bot binding; no network connections |
 | `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish`; `publish_checked` catches unwinding panics per listener, continues dispatch, and returns an error |
 | `services` | In-memory type-indexed service registration and retrieval | Basic; no lifecycle management |
@@ -85,6 +85,7 @@ Matter-Base platform.
 ```text
 src/
   activation.rs  Persistent socket activation policy and owner checks
+  command_audit.rs  Persistent command attempts/outcomes and owner-scoped history
   commands.rs    Universal command routing
   control.rs     Control-prefix interception and socket-gated dispatch
   bots/       Bot identity contracts and in-memory/SQLite registry
@@ -233,8 +234,10 @@ middleware or handler code. Message size, command count, aliases, middleware,
 and argument count are bounded. Arguments are split on whitespace; adapters
 must handle platform-specific quoting and message parsing.
 
-The router does not provide durable audit records. `ControlDispatcher` adds
-socket activation checks before normal command routing.
+`CommandRouter::new_with_audit` injects a `CommandAuditStore` for durable
+recognized-command attempts and outcomes. The default `new` constructor remains
+unaudited. `ControlDispatcher` adds socket activation checks before normal
+command routing; power changes use the separate activation audit.
 The injected authorizer must enforce authenticated identity, bot scope,
 permissions, and operational activation before dispatch.
 
@@ -264,6 +267,17 @@ fn make_router() -> Result<CommandRouter> {
 }
 ```
 
+For persistent command auditing, create an application-owned SQLite database
+and pass `Arc::new(CommandAuditStore::open(path)?)` to
+`CommandRouter::new_with_audit(prefixes, authorizer, audit)`. Attempts persist
+before authorization/middleware/handlers run. Audit write failures return an
+error; an outcome-write failure cannot undo handler effects and leaves a
+`Pending` attempt. Never automatically retry based only on that status.
+`audit.history(bot_id, authenticated_owner, &bots, after_id, limit)` returns
+owner-scoped pages of at most 1,000 records. Arguments, responses, message bodies
+and callback diagnostics are omitted. See [command audit contracts](docs/command-audit.md)
+for coverage, recovery and storage boundaries.
+
 ## Socket activation policies
 
 `activation::SocketActivationStore` persists socket ownership, operational power,
@@ -280,8 +294,8 @@ and current bot authority. See [activation contracts](docs/activation.md).
 
 ## Roadmap boundary
 
-General role inheritance, durable command audit integration, full Control Plane
-lifecycle and global-policy persistence, connection and messaging contracts, plugin validation, and
+General role inheritance, full Control Plane lifecycle and global-policy
+persistence, connection and messaging contracts, plugin validation, and
 effective sandbox isolation remain pending. Matter-Bot must not be built on
 this crate until those core contracts are implemented, integrated, documented,
 and tested.

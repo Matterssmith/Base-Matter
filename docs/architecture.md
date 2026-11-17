@@ -27,6 +27,7 @@ Public crate API (`src/lib.rs`)
 ├── SocketActivationStore (SQLite policy/ownership/bot binding/audit)
 ├── ControlDispatcher (control interception and socket activation gate)
 ├── CommandRouter (prefixes, aliases, injected authorization and middleware)
+│   └── Optional CommandAuditStore (SQLite attempts/outcomes, owner-scoped history)
 ├── Translator (in memory)
 ├── CoreModule + runtime-owned ModuleManager
 └── Security
@@ -48,8 +49,11 @@ aliases, and whitespace-separated arguments. It requires an injected
 `CommandAuthorizer`, runs bounded middleware after authorization, and invokes
 synchronous handlers outside its registry lock. Authorization sees the
 canonical command name, so aliases cannot change permission matching. Callback
-errors and unwinding panics fail closed with sanitized errors. Platform parsing,
-durable command audit and network connection lifecycle are not integrated;
+errors and unwinding panics fail closed with sanitized errors. An injected
+`CommandAuditStore` persists recognized attempts before callbacks and terminal
+outcomes afterward; absent outcomes mean unknown effects, not safe retry.
+The default router is unaudited. Platform parsing and network connection
+lifecycle are not integrated;
 the caller's authorizer must enforce bot scope, permissions, and activation.
 
 ## Persistence and trust boundaries
@@ -88,7 +92,8 @@ contracts before applications consume them:
 
 - General role and resource authorization beyond the existing bot owner/co-owner checks.
 - Ownership, roles, permissions, and audited authorization.
-- Durable command audit and socket-aware dispatch beyond the existing command router.
+- Broader ingress audit (including invalid/unregistered messages); recognized
+  command auditing and socket gating are implemented when configured.
 - Full Control Plane/network lifecycle and ownership transfer; binding, activation storage and control dispatch are implemented in `activation`/`control`.
 - Session/credential interfaces, services, connections, and messaging.
 - Plugin manifest validation, resource limits, and effective sandboxing.
@@ -111,3 +116,5 @@ manage network connections. `ControlDispatcher` enforces activation before
 normal routing and intercepts power commands with socket-owner checks before
 bot lookup. A missing binding or revoked bot ownership blocks normal commands,
 but cannot prevent the socket owner from switching operational power off.
+
+Persistent command audit is described in [command audit contracts](command-audit.md).
