@@ -5,7 +5,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use anyhow::{bail, Result};
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
@@ -144,6 +144,79 @@ async fn discover_register(
     Ok(report.chars().take(3000).collect())
 }
 
+
+async fn preview_community_recovery(
+    ctx: &whatsapp_rust::bot::MessageContext,
+    owner_jid: &str,
+) -> Result<String> {
+    let participating = ctx
+        .client
+        .community()
+        .get_participating()
+        .await
+        .map_err(|_| anyhow::anyhow!("Community inventory unavailable"))?;
+    if participating.len() > 12 {
+        bail!("Community inventory exceeds safe review limit");
+    }
+    let mut parents: Vec<_> = participating.into_iter().collect();
+    parents.sort_by_key(|(jid, _)| jid.to_string());
+    let mut results = Vec::new();
+    for (community_id, metadata) in parents {
+        if !metadata.is_parent_group {
+            continue;
+        }
+        let is_admin = metadata.participants.iter().any(|p| {
+            p.is_admin()
+                && (p.jid.to_string() == owner_jid
+                    || p.phone_number
+                        .as_ref()
+                        .is_some_and(|jid| jid.to_string() == owner_jid)
+                    || p.lid.as_ref().is_some_and(|jid| jid.to_string() == owner_jid))
+        });
+        if !is_admin {
+            continue;
+        }
+        if metadata.is_suspended {
+            results.push("Comunidad suspendida: consulta de miembros no disponible".to_owned());
+            continue;
+        }
+        let participants = ctx
+            .client
+            .community()
+            .get_linked_groups_participants(community_id.clone())
+            .await
+            .map_err(|_| anyhow::anyhow!("Community participant inventory unavailable"))?;
+        if participants.len() > 15_000 {
+            bail!("Participant inventory exceeds safe limit");
+        }
+        let mut unique = HashSet::new();
+        for participant in participants {
+            let id = participant
+                .lid
+                .or(participant.phone_number)
+                .unwrap_or(participant.jid);
+            unique.insert(id.to_string());
+        }
+        let name: String = metadata.subject.chars().take(38).collect();
+        let summary = format!(
+            "Comunidad: {name}\nID: {community_id}\nMiembros aprox.: {}\nRespaldo sugerido: {name} - Respaldo",
+            unique.len()
+        );
+        results.push(summary);
+    }
+    if results.is_empty() {
+        return Ok(
+            "Base-Matter: sin comunidades con admin PN/LID verificado; no se copió ningún miembro."
+                .to_owned(),
+        );
+    }
+    let answer = format!(
+        "Base-Matter =/>add++ (VISTA PREVIA)\n{}\nNo se creó grupo, no se añadieron personas.\nPara conservar datos antes de la suspensión se necesita una instantánea cifrada.",
+        results.join("\n\n")
+    );
+    Ok(answer.chars().take(1600).collect())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     match std::env::args().nth(1).as_deref() {
@@ -241,6 +314,18 @@ async fn main() -> Result<()> {
                                     Ok(Ok(report)) => report,
                                     _ => "Base-Matter REGISTER: inspección no disponible o incompleta; no se hicieron cambios.".to_owned(),
                                 }
+                            } else if frame.text == "=/>add++" {
+                                match timeout(
+                                    Duration::from_secs(20),
+                                    preview_community_recovery(&ctx, &config.owner_jid),
+                                )
+                                .await
+                                {
+                                    Ok(Ok(report)) => report,
+                                    _ => "Base-Matter: inventario de recuperación incompleto; no se copiaron miembros.".to_owned(),
+                                }
+                            } else if frame.text.starts_with("=/>add++ snapshot ") {
+                                "Base-Matter: instantánea cifrada aún pendiente de implementar. Ningún respaldo fue guardado.".to_owned()
                             } else {
                                 match ack {
                                     ControlAck::AppliedWithMessage(text) => text,

@@ -21,3 +21,7 @@ En `alpha` se registra el comando con vista previa protegida. La lectura live, e
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Descubrimiento alfa implementado
+
+El proveedor Rust ahora responde `=/>add++` con una vista previa conectada a `Community::get_linked_groups_participants`, verificación admin por PN/LID, límites de tamaño y un grupo de respaldo sugerido. Se considera un número aproximado porque las identidades PN/LID de algunas sesiones pueden no estar totalmente resueltas. No se escriben archivos ni se ejecutan mutaciones. El comando `snapshot` responde por ahora que el respaldo cifrado no está disponible.

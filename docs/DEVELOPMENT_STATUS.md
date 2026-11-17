@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — =/>add++ lee miembros de comunidades autorizadas (alpha; CI pendiente)
+
+- El proveedor Rust ahora consulta `get_linked_groups_participants` después del acuse HMAC de Base para comunidades con admin PN/LID verificado. Excluye las suspendidas, deduplica identificadores disponibles y envía solo conteos aproximados al self-chat.
+- El nombre sugerido para el grupo de respaldo conserva el nombre de la comunidad con el sufijo `- Respaldo`. Sin creación de grupos ni incorporación de participantes.
+- `snapshot` declara claramente que todavía no se guarda un respaldo. Límite 12 comunidades, 15.000 participantes por comunidad y 20 s de consulta.
+- Dos README revisados completos (2/2), ambos actualizados; contrato de recuperación ampliado. Pendiente CI y prueba real; `beta` permanece sin cambios.
+
+
 ## 2026-11-17 — Control =/>add++ para recuperación (alpha; CI pendiente)
 
 - Se añadió la sintaxis exacta `add++` al registro global y al controlador Rust con permiso de dueño de socket, independientemente del encendido del bot. El modo inicial ofrece un inventario y reserva el comando explícito `snapshot <community-jid>`.
