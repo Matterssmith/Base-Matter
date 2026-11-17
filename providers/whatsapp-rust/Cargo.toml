@@ -1,0 +1,15 @@
+[package]
+name = "whatsapp-matter-rust-provider"
+version = "0.1.0-beta.1"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Pairing-code-only Rust WhatsApp provider adapter for Base-Matter"
+
+[dependencies]
+matter-base = { path = "../.." }
+whatsapp-rust = "=0.7.0"
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
+anyhow = "1.0"
+hex = "0.4"
+zeroize = "1.8"

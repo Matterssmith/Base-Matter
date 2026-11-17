@@ -1,5 +1,14 @@
 # Matter-Base development status
 
+## 2026-11-17 — Executable whatsapp-rust provider adapter (pending CI)
+
+- Introduced an independent Rust provider crate at providers/whatsapp-rust, pinned to upstream whatsapp-rust 0.7.0. No Node/Baileys implementation or Bot-Matter runtime.
+- Adapted historical PairCodeOptions + SQLite + connected/message callbacks from commit 3c36d97bb to trusted WhatsAppNativeIngress and reserved =/> control.
+- Explicit trusted provisioning, owner-only absolute private paths, anti-replay secret, exclusive per-session lock, no QR callback and no permanent ping handler.
+- Offline configuration/security/lock tests and dedicated CI compile job added. Upstream itself may generate internal QR during code pairing; none is displayed.
+- README audit: 2 README files reviewed and updated (root plus provider). Real phone linking, session-schema upgrade, restart/revocation testing, and upstream compatibility remain unverified until CI and real operator test. Stable matter untouched.
+
+
 ## 2026-11-17 — Rust native WhatsApp owner event guard (CI pending)
 
 - Added WhatsAppNativeIngress with owner private-JID exact matching, from_me and non-group checks, 120-second freshness, bounded input, persistent replay, and canonical =/> routing.

@@ -107,3 +107,7 @@ Preserve socket isolation and persist/audit administrative changes atomically.
   equivalent Telegram and Discord functionality where supported.
 - This scope does not relax Matter-Base readiness criteria. External service
   availability/account linking must be reported honestly when blocked.
+
+## Proveedor Rust verificable
+
+El proveedor de WhatsApp seleccionado es whatsapp-rust, ejecutado desde providers/whatsapp-rust con biblioteca fijada, sesión SQLite privada y pairing code. No utilizar Node/Baileys en sustitución. No afirmar estabilidad hasta comprobar compilación y una sesión real autorizada. Revisar su README y el README raíz antes de cada commit.

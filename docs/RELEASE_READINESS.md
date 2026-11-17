@@ -111,3 +111,7 @@ Hecho por Lournyx Matterssmith [Lou-Nyx].
 ## WhatsApp native ingress gate
 
 The Rust native ingress module is covered by offline tests only. A verified single-process whatsapp-rust pairing-code session, actual self-chat messages, revocation and recovery are required to qualify the live provider for stable.
+
+## Executable whatsapp-rust provider prerequisite
+
+An isolated Rust provider crate was added at providers/whatsapp-rust, with pairing code only, SQLite session lease and owner control. Run its separate CI and perform controlled live device pairing, recovery and security review before promoting to stable. The upstream library generates QR concurrently internally; this provider does not display or expose QR callbacks.

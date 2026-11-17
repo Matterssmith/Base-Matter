@@ -582,3 +582,7 @@ Los controladores de extensiones deben incluir comprobaciones adicionales de per
 ## Ingreso nativo de WhatsApp en Rust
 
 El modulo WhatsAppNativeIngress acepta eventos autenticados exclusivamente dentro del proceso de whatsapp-rust, comprueba el JID privado propio, from_me, ausencia de grupos, expiracion y replay persistente antes de ejecutar controles canónicos =/>. No activa Bot-Matter, no incluye QR ni registra un ping permanente. El proveedor externo real, el emparejamiento y las pruebas contra un telefono siguen pendientes. Ver docs/WHATSAPP_NATIVE.md.
+
+## Proveedor Rust ejecutable (pruebas aisladas)
+
+El directorio providers/whatsapp-rust contiene un binario Rust real que integra whatsapp-rust 0.7.0 con la autorización, replay y control de Base-Matter, sin iniciar Bot-Matter, Node ni mostrar QR. Se requiere provisionar el socket desde el host seguro y utilizar un archivo SQLite privado, con bloqueo de sesión. Ver providers/whatsapp-rust/README.md para variables y pruebas. La vinculación de un teléfono real todavía no ha sido validada sobre esta versión, por lo que la promoción live a matter continúa bloqueada.
