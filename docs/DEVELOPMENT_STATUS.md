@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Rechazo temprano de caracteres de control en #matter (alpha; CI pendiente)
+
+- Se corrigió el fallo reproducido en Linux/Windows: un NUL tras `#matter` se ignoraba como un prefijo inválido antes de validarse. Ahora se rechaza toda entrada con caracteres de control antes de analizar el separador.
+- 2 README inspeccionados íntegros (2/2), sin cambios necesarios. Sin cambios en sesiones, autorizaciones ni ramas estables.
+
+
 ## 2026-11-17 — Render de menu/help/h por comunidad (alpha, CI pendiente)
 
 - Nuevo `src/control_style.rs`: renderer reutilizable para `menu`, `help`, `h`, con título, bot ID, créditos y temas por comunidad; 2 tests comprueban aislamiento de temas y rechazo de entradas malformadas.

@@ -14,11 +14,11 @@ pub fn canonical_external_matter(message: &str) -> Result<Option<String>> {
     let Some(suffix) = message.strip_prefix("#matter") else {
         return Ok(None);
     };
-    if !suffix.is_empty() && !suffix.starts_with(' ') && !suffix.starts_with('\t') {
-        return Ok(None);
-    }
     if message.len() > 4096 || message.chars().any(char::is_control) {
         bail!("Invalid external command");
+    }
+    if !suffix.is_empty() && !suffix.starts_with(' ') && !suffix.starts_with('\t') {
+        return Ok(None);
     }
     let body = suffix.trim();
     if body.split_whitespace().count() > 16 {
