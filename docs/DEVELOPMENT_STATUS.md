@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Reparación de regresión de formato neutro (alpha; CI pendiente)
+
+- GitHub Actions detectó una aserción obsoleta en `tests/control_style.rs`: el texto plano `Bot ID` ya no coincide con la cadena decorativa anterior `BOT ID`. Ajustada la aserción sin cambiar la funcionalidad.
+- Los dos README (raíz y proveedor) fueron revisados en su totalidad, sin cambios adicionales; seguridad y sesiones intactas.
+- Repetir CI completa antes de promover `beta`.
+
+
 ## 2026-11-17 — Corrección de formato e instrucciones para beta WhatsApp (CI pendiente)
 
 - Corregido rustfmt del menú plano. Actualizadas las instrucciones: `stable` ya es rama predeterminada; solo deben permanecer `stable`, `beta`, `alpha`, retirando refs heredadas sin perder commits únicos.

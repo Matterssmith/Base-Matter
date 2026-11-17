@@ -36,7 +36,7 @@ fn community_styles_are_independent_and_untrusted_fields_fail_closed() {
     assert!(registry
         .render(Some("community-2@g.us"), "menu")
         .unwrap()
-        .contains("BOT ID: default"));
+        .contains("Bot ID: default"));
     assert!(ControlTheme::new("Unsafe\ncommand", "id", "*").is_err());
     assert!(registry.render(Some("../foreign"), "menu").is_err());
 }
