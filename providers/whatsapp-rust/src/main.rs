@@ -45,7 +45,15 @@ async fn deliver(
 async fn main() -> Result<()> {
     match std::env::args().nth(1).as_deref() {
         Some("--help") => {
-            println!("WhatsApp-Matter Rust provider: pairing code only, local authenticated Base-Matter bridge.");
+            println!("WhatsApp-Matter Rust provider: --check or run for pairing code, local authenticated Base-Matter bridge.");
+            return Ok(());
+        }
+        Some("--check") => {
+            let config = Config::from_env()?;
+            if config.session_db.with_extension("owner.lock").exists() {
+                bail!("Session already owned or lock recovery required");
+            }
+            println!("whatsapp-rust pairing settings checked; no session was opened.");
             return Ok(());
         }
         None => {}

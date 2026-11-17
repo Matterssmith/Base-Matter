@@ -99,10 +99,10 @@ fn private_database(name: &str) -> Result<PathBuf> {
 fn main() -> Result<()> {
     let action = env::args().nth(1).unwrap_or_else(|| "--help".into());
     if action == "--help" {
-        println!("Base-Matter WhatsApp control: --init once, then --serve on loopback. No QR, ping, or Bot-Matter runtime.");
+        println!("Base-Matter WhatsApp control: --check, --init once, then --serve on loopback. No QR, ping, or Bot-Matter runtime.");
         return Ok(());
     }
-    if action != "--init" && action != "--serve" {
+    if action != "--init" && action != "--serve" && action != "--check" {
         bail!("Unknown controller operation");
     }
     let socket = required("MATTER_WA_SOCKET_ID")?.to_string();
@@ -123,6 +123,28 @@ fn main() -> Result<()> {
     let replay_key = key("MATTER_WA_REPLAY_KEY_HEX")?;
     if bridge_key == replay_key {
         bail!("Transport authentication and replay keys must differ");
+    }
+    if action == "--check" {
+        // Verify configuration without creating SQLite, locks or a listener.
+        let jid_user = jid.split('@').next().unwrap_or("");
+        if socket.is_empty()
+            || owner.is_empty()
+            || socket.len() > 128
+            || owner.len() > 128
+            || [socket.as_str(), owner.as_str()].iter().any(|value| {
+                !value.bytes().all(|b| b.is_ascii_alphanumeric() || b"._:-".contains(&b))
+            })
+            || jid_user.is_empty()
+            || jid.len() > 128
+            || !(jid.ends_with("@s.whatsapp.net") || jid.ends_with("@lid"))
+            || !jid_user
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"._:-".contains(&b))
+        {
+            bail!("Invalid owner or socket configuration");
+        }
+        println!("Base-Matter control settings checked; no session was opened.");
+        return Ok(());
     }
     let activation = Arc::new(SocketActivationStore::open(&activation_path)?);
     if action == "--init" {

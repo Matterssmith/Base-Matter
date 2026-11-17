@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — WhatsApp provider preflight, without touching sessions (pending CI)
+
+- Added `--check` to both existing Rust executables, checking all required environment settings, loopback and private paths. Neither command opens a live connection nor SQLite in preflight.
+- Added isolated offline process tests for the controller and provider, including rejection of bad configuration and preservation of session files.
+- Root and provider READMEs reviewed/updated (2/2); credits preserved. No Node, QR or Bot-Matter.
+- A phone pairing and session recovery still require the authorized operator before a stable merge.
+
+
 ## 2026-11-17 — Rust loopback TCP end-to-end regression (pending CI)
 
 - Added a socket-level integration test that opens 127.0.0.1, exchanges real signed JSON frames, and verifies applied/duplicate/applied acknowledgment sequence while keeping WhatsApp offline.

@@ -147,3 +147,31 @@ fn old_or_malformed_control_events_are_rejected() {
     assert!(c.signed_control(&invalid).is_err());
     fs::remove_dir_all(root).unwrap();
 }
+
+
+#[test]
+fn preflight_validates_configuration_without_writing_a_session() {
+    use std::process::Command;
+    let (config, dir) = fixture();
+    let result = Command::new(env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider"))
+        .arg("--check")
+        .envs(&config)
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "Rust provider preflight failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(!dir.join("session.db").exists());
+    assert!(!dir.join("session.owner.lock").exists());
+    let mut invalid = config;
+    invalid.insert("MATTER_WA_PHONE".into(), "+5215512345678".into());
+    let denied = Command::new(env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider"))
+        .arg("--check")
+        .envs(&invalid)
+        .output()
+        .unwrap();
+    assert!(!denied.status.success());
+    fs::remove_dir_all(dir).unwrap();
+}

@@ -596,3 +596,7 @@ El proveedor whatsapp-rust 0.7.0 y el núcleo actual utilizan versiones de SQLit
 El binario de Base-Matter whatsapp-matter-control abre exclusivamente un socket TCP de loopback para eventos WhatsApp firmados por el proceso Rust whatsapp-rust independiente. Primero se ejecuta --init una sola vez para provisionar la identidad del socket; --serve exige dueño existente y claves de transporte/replay diferentes, y rechaza datos no autenticados. No ejecuta Bot-Matter, no admite QR ni ping. Los comandos de prueba on/off/status pasan por el mismo ControlDispatcher con persistencia y auditoria. Ver docs/WHATSAPP_IPC.md. La comunicacion entre procesos necesita pruebas reales con telefono antes de denominarse estable.
 
 La prueba local del puente TCP Rust comprueba una sesión de lazo local: on, repetición del mismo ID y off, sin enviar mensajes a WhatsApp. No sustituye las pruebas con un teléfono real.
+
+## Prueba de configuración del puente Rust
+
+Los dos ejecutables Rust incorporan `--check` para revisar variables de entorno, secretos diferentes, acceso a directorios privados y dirección TCP local antes de abrir una sesión. No crean bases SQLite ni inician WhatsApp en este modo. Las instrucciones de emparejamiento deben seguir siendo exclusivamente por pairing code. No utilizar el antiguo ping ni desarrollar Bot-Matter.
