@@ -33,3 +33,7 @@ El proveedor Rust ahora responde `=/>add++` con una vista previa conectada a `Co
 ## Integración del callback (alpha)
 
 El comando de snapshot está conectado al proveedor Rust. Antes de escribir se comprueba que el padre `@g.us` exista, no esté suspendido, que la propia identidad verificada de la sesión sea administradora (PN/LID) y que las identidades se obtengan por `get_linked_groups_participants`. La carpeta de sesión y la clave son privadas; se conserva el resultado ciphertext sin mostrar los JIDs al chat. Las pruebas CI aún son offline: no confirman que la API de la cuenta pueda consultar y almacenar sus miembros reales. El fichero debe respaldarse fuera del servidor temporal, junto con una copia segura e independiente de la clave. La incorporación masiva permanece sin implementar, requiere consentimiento y aprobación.
+
+## Verificación offline tras pérdida de acceso
+
+Se incorporó `--recovery-verify <nombre>.enc.json` al binario del proveedor. Este modo no requiere sesión conectada y descifra solamente snapshots autenticados con la clave/identidad de socket correctas. Muestra conteo sin exportar miembros. No permite una incorporación automática a grupos nuevos: primero debe existir destino, acceso autorizado y consentimiento verificable. La recuperación del roster del archivo sirve para planear invitaciones futuras sin recopilar miembros después de una suspensión.

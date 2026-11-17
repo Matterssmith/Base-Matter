@@ -769,3 +769,7 @@ El proveedor Rust incorpora instantáneas de recuperación cifradas con XChaCha2
 ## `=/>add++ snapshot` — Respaldo cifrado conectado
 
 Cuando el dueño emite `=/>add++ snapshot <community-jid>` en su propio chat, Base-Matter primero valida la firma HMAC y el propietario del socket; el proveedor revisa después que la sesión sea administradora de una comunidad activa, solicita los participantes vinculados y crea un archivo cifrado XChaCha20-Poly1305, sin publicar números de teléfono ni modificar grupos. Se requiere una clave adicional generada con `scripts/whatsapp-test-setup.sh --enable-recovery` para configuraciones existentes. Si falla la consulta, el guardado o la autorización, no se declara una copia completada. La recuperación por invitaciones sigue pendiente; una instantánea no fuerza a miembros a unirse a otra comunidad.
+
+## Comprobación offline de respaldos
+
+El proveedor expone `--recovery-verify <archivo>.enc.json` para comprobar autenticidad del snapshot cifrado, dueño y socket, sin conectarse a WhatsApp. Solo muestra el total de registros, nunca identificadores privados. El comando de instantánea es exclusivo de comunidades activas con admin verificado; no constituye autorización para agregar masivamente a terceros. [Guía de prueba](docs/WHATSAPP_TRIAL.md).

@@ -13,7 +13,7 @@ use tokio::{
 };
 use whatsapp_matter_rust_provider::{
     parse_control_ack,
-    recovery::{recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot},
+    recovery::{read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot},
     Config, ControlAck, Event, SessionLease,
 };
 use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*};
@@ -325,13 +325,41 @@ async fn snapshot_community_recovery(
 async fn main() -> Result<()> {
     match std::env::args().nth(1).as_deref() {
         Some("--help") => {
-            println!("WhatsApp-Matter Rust provider: --check or run for pairing code, local authenticated Base-Matter bridge.");
+            println!("WhatsApp-Matter Rust provider: --check, --recovery-verify <encrypted-filename>, or run for pairing code. Local Base-Matter IPC; no QR.");
             return Ok(());
         }
         Some("--check") => {
             let config = Config::from_env()?;
             SessionLease::check_available(&config.session_db)?;
             println!("whatsapp-rust pairing settings checked; no session was opened.");
+            return Ok(());
+        }
+        Some("--recovery-verify") => {
+            let filename = std::env::args()
+                .nth(2)
+                .ok_or_else(|| anyhow::anyhow!("Recovery archive name is required"))?;
+            if !filename.starts_with("community-recovery-")
+                || !filename.ends_with(".enc.json")
+                || filename.len() > 160
+                || !filename.bytes().all(|byte| {
+                    byte.is_ascii_alphanumeric() || b"._-".contains(&byte)
+                })
+                || std::env::args().nth(3).is_some()
+            {
+                bail!("Invalid recovery archive name");
+            }
+            let config = Config::from_env()?;
+            let key = recovery_key_from_env(&config.bridge_key)?;
+            let path = config
+                .session_db
+                .parent()
+                .ok_or_else(|| anyhow::anyhow!("Private session directory missing"))?
+                .join(filename);
+            let snapshot = read_encrypted(&path, &key, &config.socket_id, &config.owner_jid)?;
+            println!(
+                "Recovery snapshot authenticated: {} member records; no session was opened.",
+                snapshot.members.len()
+            );
             return Ok(());
         }
         None => {}

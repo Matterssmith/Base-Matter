@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Verificación local del respaldo tras pérdida de sesión (alpha; CI pendiente)
+
+- Agregada opción offline `--recovery-verify <filename>.enc.json` al proveedor, con comprobación del filename, clave, AAD de socket/dueño e integridad; no abre WhatsApp ni expone JIDs o llaves.
+- README raíz, proveedor y guía operativa revisados completos (2/2 README) y actualizados para `=/>add++`, snapshot y prueba de archivo cifrado. Contrato de recuperación sincronizado. CI pendiente, sin cambios en `beta` ni en `stable`.
+
+
 ## 2026-11-17 — Rustfmt de callback de snapshot (alpha; CI pendiente)
 
 - Corregida línea extra antes de `snapshot_community_recovery` según reporte rustfmt del proveedor. Ambos README revisados en su totalidad (2/2), sin cambios necesarios; claves y sesiones intactas.

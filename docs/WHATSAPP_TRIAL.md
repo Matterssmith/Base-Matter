@@ -171,3 +171,26 @@ sí solo la respuesta de otros bots: para reproducir un estilo es
 necesario observar un mensaje real del bot fuente y autorizar la
 extracción de su marco decorativo. No se importarán comandos ajenos,
 enlaces, identidades ni sesiones. Ver `docs/MENU_STYLE_IMPORT.md`.
+
+## Recuperación de la comunidad: =/>add++ (alpha/beta experimental)
+
+Una vez vinculada la cuenta y verificado que administra una comunidad activa, usar `=/>add++` para inspeccionar el inventario aproximado sin escribir archivos. Para conservar una copia cifrada antes de una suspensión, primero habilitar la clave dedicada en una configuración existente:
+
+```bash
+bash scripts/whatsapp-test-setup.sh --enable-recovery
+```
+
+Reabrir las dos terminales y volver a cargar `runtime.env` para que el proveedor lea la clave. Con una comunidad real identificada por `=/>start` o `=/>add++`, emitir desde el chat propio:
+
+```text
+=/>add++
+=/>add++ snapshot 120363EXAMPLE@g.us
+```
+
+Sustituye el ejemplo por el ID real de la comunidad, que debe terminar en `@g.us`. El resultado de `snapshot` debe confirmar el nombre de un archivo `community-recovery-*.enc.json` en la carpeta privada de la sesión y el conteo. **No añade integrantes**. Para verificar su integridad sin abrir WhatsApp:
+
+```bash
+cargo run --manifest-path providers/whatsapp-rust/Cargo.toml -- --recovery-verify ARCHIVO.enc.json
+```
+
+Antes de usarlo, cargar `runtime.env` como en la Terminal B. El argumento debe ser solo el nombre que devuelva el comando, sin directorios. No compartir la clave ni publicar el respaldo cifrado; guardarlos separadamente en medios seguros. Si tu servidor es temporal, conserva ambas copias fuera del servidor antes de perder acceso.
