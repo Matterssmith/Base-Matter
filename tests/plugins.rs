@@ -72,7 +72,7 @@ fn manifest() -> PluginManifest {
     }
 }
 
-fn router() -> CommandRouter {
+fn build_router() -> CommandRouter {
     CommandRouter::new(vec!["#".to_owned()], Arc::new(Permit)).unwrap()
 }
 
@@ -99,7 +99,7 @@ fn rejects_traversal_unknown_runtime_duplicate_caps_and_aliases() {
 #[test]
 fn manifest_and_execution_policy_are_both_required() {
     let calls = Arc::new(Sandbox(AtomicUsize::new(0)));
-    let router = router();
+    let router = build_router();
     let untrusted = PluginHost::new(
         Arc::new(Trust {
             manifest: false,
@@ -129,7 +129,7 @@ fn manifest_and_execution_policy_are_both_required() {
 #[test]
 fn sandbox_adapter_runs_with_canonical_command_and_no_fallback() {
     let calls = Arc::new(Sandbox(AtomicUsize::new(0)));
-    let router = router();
+    let router = build_router();
     PluginHost::new(
         Arc::new(Trust {
             manifest: true,
@@ -144,7 +144,7 @@ fn sandbox_adapter_runs_with_canonical_command_and_no_fallback() {
         Some("status:hello".into())
     );
     assert_eq!(calls.0.load(Ordering::SeqCst), 1);
-    let router = router();
+    let router = build_router();
     PluginHost::new(
         Arc::new(Trust {
             manifest: true,
@@ -177,7 +177,7 @@ fn verified_manifests_load_but_invalid_batch_installs_none() {
         serde_json::to_string(&duplicate).unwrap(),
     )
     .unwrap();
-    let router = router();
+    let router = build_router();
     let host = PluginHost::new(
         Arc::new(Trust {
             manifest: true,
@@ -186,7 +186,7 @@ fn verified_manifests_load_but_invalid_batch_installs_none() {
         Arc::new(DenyPluginSandbox),
     );
     assert!(host.load_manifests(&router, &dir).is_err());
-    assert_eq!(router.route("bot", "user", "room", "#st").unwrap(), None);
+    assert!(router.route("bot", "user", "room", "#st").is_err());
     std::fs::remove_file(dir.join("b.json")).unwrap();
     assert_eq!(host.load_manifests(&router, &dir).unwrap(), 1);
     assert!(router.route("bot", "user", "room", "#st").is_err());
