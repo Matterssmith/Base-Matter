@@ -133,9 +133,27 @@ fn control_precedes_router_and_off_blocks_handler_effects_after_recovery() {
     );
     bots.transfer_owner(a.instance_id(), "alice", "new-owner")
         .unwrap();
-    assert_eq!(dispatcher.dispatch("socket-a", "alice", "room", None, "=on").unwrap(), DispatchResult::Control { socket_id: "socket-a".into(), powered: true });
-    assert!(dispatcher.dispatch("socket-a", "member", "room", None, "#help").is_err());
-    assert_eq!(dispatcher.dispatch("socket-a", "alice", "room", None, "=/>off").unwrap(), DispatchResult::Control { socket_id: "socket-a".into(), powered: false });
+    assert_eq!(
+        dispatcher
+            .dispatch("socket-a", "alice", "room", None, "=on")
+            .unwrap(),
+        DispatchResult::Control {
+            socket_id: "socket-a".into(),
+            powered: true
+        }
+    );
+    assert!(dispatcher
+        .dispatch("socket-a", "member", "room", None, "#help")
+        .is_err());
+    assert_eq!(
+        dispatcher
+            .dispatch("socket-a", "alice", "room", None, "=/>off")
+            .unwrap(),
+        DispatchResult::Control {
+            socket_id: "socket-a".into(),
+            powered: false
+        }
+    );
 }
 
 #[test]
@@ -165,15 +183,49 @@ fn owner_only_can_toggle_power_without_bot_binding() {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket-a", "alice").unwrap();
     activation.provision("socket-b", "bob").unwrap();
-    let router=Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(TestPolicy)).unwrap());
-    let dispatch = ControlDispatcher::new(activation.clone(), Arc::new(BotRegistry::in_memory()),router,None);
-    assert_eq!(dispatch.dispatch("socket-a","alice","room",None,"=/>on").unwrap(), DispatchResult::Control { socket_id:"socket-a".into(), powered:true });
-    assert!(dispatch.dispatch("socket-a","intruder","room",None,"=/>off").is_err());
-    assert!(dispatch.dispatch("socket-a","alice","room",None,"=/>off socket-b").is_err());
-    assert_eq!(dispatch.dispatch("socket-a","alice","room",None,"=/>off").unwrap(), DispatchResult::Control {socket_id:"socket-a".into(), powered:false});
-    assert!(!activation.resolve("socket-a",None,Some(true)).unwrap().enabled);
-    assert!(dispatch.dispatch("socket-a","alice","room",None,"#help").is_err());
-    assert!(dispatch.dispatch("socket-a","alice","room",None,"=/>ping").is_err());
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(TestPolicy)).unwrap());
+    let dispatch = ControlDispatcher::new(
+        activation.clone(),
+        Arc::new(BotRegistry::in_memory()),
+        router,
+        None,
+    );
+    assert_eq!(
+        dispatch
+            .dispatch("socket-a", "alice", "room", None, "=/>on")
+            .unwrap(),
+        DispatchResult::Control {
+            socket_id: "socket-a".into(),
+            powered: true
+        }
+    );
+    assert!(dispatch
+        .dispatch("socket-a", "intruder", "room", None, "=/>off")
+        .is_err());
+    assert!(dispatch
+        .dispatch("socket-a", "alice", "room", None, "=/>off socket-b")
+        .is_err());
+    assert_eq!(
+        dispatch
+            .dispatch("socket-a", "alice", "room", None, "=/>off")
+            .unwrap(),
+        DispatchResult::Control {
+            socket_id: "socket-a".into(),
+            powered: false
+        }
+    );
+    assert!(
+        !activation
+            .resolve("socket-a", None, Some(true))
+            .unwrap()
+            .enabled
+    );
+    assert!(dispatch
+        .dispatch("socket-a", "alice", "room", None, "#help")
+        .is_err());
+    assert!(dispatch
+        .dispatch("socket-a", "alice", "room", None, "=/>ping")
+        .is_err());
 }
 // Créditos:
 // Hecho por Lournyx Matterssmith [Lou-Nyx].
