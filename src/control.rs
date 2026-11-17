@@ -31,7 +31,10 @@ pub enum DispatchResult {
     },
     Inactive,
     Message(Option<String>),
-    Extension { command: String, output: String },
+    Extension {
+        command: String,
+        output: String,
+    },
 }
 
 /// Trusted ingress boundary. The application authenticates `actor`, establishes
@@ -186,13 +189,15 @@ impl ControlDispatcher {
                     return self.change_role(receiving_socket, actor, user, role, false);
                 }
                 [command, args @ ..] if canonical_global_prefix => {
-                    let admission = self.activation.admission(
-                        receiving_socket,None,self.global_policy
-                    )?;
+                    let admission =
+                        self.activation
+                            .admission(receiving_socket, None, self.global_policy)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }
-                    let registry = self.extensions.as_ref()
+                    let registry = self
+                        .extensions
+                        .as_ref()
                         .ok_or_else(|| anyhow!("Invalid control command"))?;
                     let context = ControlExtensionContext {
                         socket_id: receiving_socket,
@@ -201,7 +206,8 @@ impl ControlDispatcher {
                         group_id: group,
                     };
                     let arguments = args.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
-                    let (command, output) = registry.execute(command,&context,&arguments)?
+                    let (command, output) = registry
+                        .execute(command, &context, &arguments)?
                         .ok_or_else(|| anyhow!("Invalid control command"))?;
                     return Ok(DispatchResult::Extension { command, output });
                 }
