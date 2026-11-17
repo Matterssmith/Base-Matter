@@ -159,3 +159,11 @@ El proveedor de WhatsApp seleccionado es whatsapp-rust, ejecutado desde provider
 - Separar la lectura de miembros, instantánea cifrada y plan de invitación de las mutaciones. Sin consentimiento, límites de WhatsApp o permisos no añadir de golpe a terceros. Evitar reintentos intensivos y suspender ante señales de restricciones.
 - Poner en cuarentena `apply` hasta tener verificación de consentimiento, plan revisado, idempotencia y pruebas externas. Las instantáneas cifradas no son sesiones WhatsApp y no se publican en Git.
 - El grupo de emergencia puede llevar el nombre de la comunidad, acompañado de `Respaldo`, para evitar suplantar el original. Si la comunidad fue suspendida antes del respaldo y no hay acceso, no afirmar recuperación posible.
+
+## Gramática de =/>add (petición 2026-11-17)
+
+- Las órdenes universales nuevas son `=/>add user <número|@usuario|reply> [group|community <id>]`, `=/>add group [--hide] community <id>`, `=/>add community <id>`, `=/>add community new --Nombre`, `=/>add community backup <origen> to <destino> [--hide]`.
+- `<id>` admite `official` y, para el subgrupo oficial configurado, `official --register`. La resolución debe emplear IDs realmente autenticados, nunca coincidencias de título.
+- El bot solo debe planificar y reportar, NO añadir usuarios sin su consentimiento ni eludir ajustes de privacidad, cuotas o suspensiones. La promoción de un grupo a otra comunidad exige autorización admin, verificación del chat origen, destino y capacidad API. `--hide` es una preferencia, no una técnica para ocultar usuarios.
+- Un mensaje citado se resuelve desde metadata confiable. Un alias @usuario solo se acepta si el proveedor da una resolución de identidad comprobable. Los comandos de grupo aún no cuentan con admisión de mensajes grupales: no declarar mutaciones completas.
+- `=/>add++` sigue siendo diferente: inventario y respaldo cifrado preventivo de participantes; no es autorización para incorporaciones masivas.

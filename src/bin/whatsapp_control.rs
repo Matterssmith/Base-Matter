@@ -5,6 +5,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use anyhow::{anyhow, bail, Result};
+use matter_base::add_commands::{parse_add_args, AddIntent};
 use matter_base::control_style::{ControlTheme, ControlThemes};
 use matter_base::{
     activation::SocketActivationStore, control::ControlDispatcher, BotRegistry, CommandAuthorizer,
@@ -235,6 +236,21 @@ fn main() -> Result<()> {
             }
         }
         bail!("Recovery only supports a read-only preview or explicit snapshot")
+    })?;
+    extensions.register("add", &[], |context, args| {
+        if context.group_id.is_some() {
+            bail!("Add planning requires an authenticated private owner context");
+        }
+        let intent = parse_add_args(args)?;
+        let kind = match intent {
+            AddIntent::User { .. } => "usuario",
+            AddIntent::Group { .. } => "traslado de grupo",
+            AddIntent::Community { .. } => "comunidad",
+            AddIntent::Backup { .. } => "respaldo de comunidad",
+        };
+        Ok(format!(
+            "Base-Matter: intención {kind} validada. Solo vista previa. Sin cambios en WhatsApp."
+        ))
     })?;
     let style = Arc::new(ControlThemes::new(ControlTheme::new(
         "Base-Matter",

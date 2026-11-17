@@ -777,3 +777,7 @@ El proveedor expone `--recovery-verify <archivo>.enc.json` para comprobar autent
 ## Prueba CLI del respaldo sin WhatsApp
 
 Las pruebas automatizadas ejecutan el binario real del proveedor con `--recovery-verify` y verifican que puede validar la instantánea sin abrir la sesión, sin crear SQLite y sin mostrar PN/LID. Se rechazan llaves equivocadas y nombres de archivo inválidos. La prueba sigue siendo offline y no certifica que una cuenta real permita el inventario.
+
+## Sintaxis de =/>add (alpha)
+
+Se ha integrado un parser Rust independiente y se ha reservado el comando global `=/>add` con autorización del propietario del socket. Admite `add user` (número, nombre de usuario o remitente del mensaje respondido), `add group [--hide] community <id>`, `add community new --Nombre`, `add community backup <origen> to <destino> [--hide]` y referencias `official --register`. Todos son **planes sintácticos sin mutaciones**: la lectura de reply, el traslado de grupos y la incorporación a comunidades todavía requieren contexto WhatsApp autenticado, permisos administrativos y aceptación de los usuarios. Ver [contrato de comandos](docs/ADD_COMMANDS.md).

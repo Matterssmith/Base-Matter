@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Parser de add conectado al control global (alpha; CI pendiente)
+
+- Parser tipado `src/add_commands.rs` con `add user/group/community/backup`, destino `official --register`, nombre `--Nombre`, y `--hide`, sin mutaciones y con pruebas offline.
+- Controlador Rust registra `=/>add` con el mismo control de dueño de socket y contesta con un acuse genérico, sin números de teléfono ni acciones administrativas. Menú universal incorpora la orden sin decoración.
+- README raíz y proveedor auditados íntegramente (2/2), ambos actualizados. AGENTS, documentación ADD_COMMANDS y bitácora sincronizados.
+- Falta autorizar acción con metadatos WhatsApp reales; CI Rust Linux/Windows y proveedor pendiente para este commit. La beta existente no se modificó.
+
+
 ## 2026-11-17 — HMAC test tamper determinista, sin flakiness (alpha, CI pendiente)
 
 - El CI reprodujo un fallo intermitente del test `rejects_forged_signatures_cross_socket_and_sender`: reemplazaba los primeros dos bytes hex por `ab`, que podían coincidir con la firma original. La prueba ahora alterna `ab/ac` garantizando siempre una mutación.
