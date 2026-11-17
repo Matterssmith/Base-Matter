@@ -143,9 +143,7 @@ impl Config {
         {
             bail!("Invalid WhatsApp control data");
         }
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)?
-            .as_secs() as i64;
+        let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
         if now.abs_diff(event.timestamp) > 120 {
             bail!("Expired WhatsApp control data");
         }
@@ -193,12 +191,16 @@ pub fn sign_frame(frame: &SignedFrame, secret: &[u8; 32]) -> Result<String> {
 pub fn private_path(raw: &str) -> Result<PathBuf> {
     let path = PathBuf::from(raw);
     if !path.is_absolute()
-        || path.components().any(|part| matches!(part, Component::ParentDir))
+        || path
+            .components()
+            .any(|part| matches!(part, Component::ParentDir))
         || path.file_name().is_none()
     {
         bail!("Session path must be absolute without parent traversal");
     }
-    let parent = path.parent().ok_or_else(|| anyhow!("Session directory missing"))?;
+    let parent = path
+        .parent()
+        .ok_or_else(|| anyhow!("Session directory missing"))?;
     let info = fs::symlink_metadata(parent)?;
     if !info.is_dir() || info.file_type().is_symlink() {
         bail!("Session directory must be an ordinary directory");

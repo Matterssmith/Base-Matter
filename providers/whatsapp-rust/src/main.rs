@@ -71,7 +71,10 @@ async fn main() -> Result<()> {
         // challenge, but this provider never displays or exports it.
         .on_pair_code(|code, expiry| async move {
             if code.len() == 8 && code.bytes().all(|b| b.is_ascii_alphanumeric()) {
-                println!("Authorized pairing code: {code} ({} seconds)", expiry.as_secs());
+                println!(
+                    "Authorized pairing code: {code} ({} seconds)",
+                    expiry.as_secs()
+                );
             } else {
                 eprintln!("Provider returned an invalid pairing code");
             }
