@@ -352,7 +352,7 @@ fn valid_rfc3339_timestamp_with_offset_is_accepted() {
 #[test]
 fn oversized_ciphertext_is_rejected_before_base64_decoding() {
     let mut envelope = encrypted_envelope();
-    envelope.ciphertext = "A".repeat((16 * 1024 * 1024 * 4 + 2) / 3 + 1);
+    envelope.ciphertext = "A".repeat((16_usize * 1024 * 1024 * 4).div_ceil(3) + 1);
 
     assert!(validate_envelope(&envelope).is_err());
 }

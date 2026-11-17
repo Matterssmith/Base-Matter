@@ -22,7 +22,7 @@ const NONCE_LENGTH: usize = 24;
 const TAG_LENGTH: usize = 16;
 const MAX_TEXT_LENGTH: usize = 128;
 const MAX_CIPHERTEXT_BYTES: usize = 16 * 1024 * 1024;
-const MAX_CIPHERTEXT_BASE64_BYTES: usize = (MAX_CIPHERTEXT_BYTES * 4 + 2) / 3;
+const MAX_CIPHERTEXT_BASE64_BYTES: usize = (MAX_CIPHERTEXT_BYTES * 4).div_ceil(3);
 
 const ALLOWED_RECORD_TYPES: &[&str] = &[
     "roles",

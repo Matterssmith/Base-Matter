@@ -6,10 +6,12 @@ use matter_base::activation::{ActivationSource, SocketActivationStore};
 struct TestDirectory(std::path::PathBuf);
 impl TestDirectory {
     fn new() -> Self {
+        let mut nonce = [0_u8; 16];
+        getrandom::fill(&mut nonce).unwrap();
         let p = std::env::temp_dir().join(format!(
             "matter-activation-{}-{}",
             std::process::id(),
-            time::OffsetDateTime::now_utc().unix_timestamp_nanos()
+            hex::encode(nonce)
         ));
         std::fs::create_dir(&p).unwrap();
         Self(p)

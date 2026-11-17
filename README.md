@@ -7,7 +7,7 @@ src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColo
 width="100%"
 />
 
-# Matter Base
+# Base-Matter (compatible con Matter-Base)
 
 ### The Core Architecture.
 
@@ -19,6 +19,22 @@ width="100%"
 </div>
 
 ---
+
+## Alcance de la rama estable
+
+La marca prevista es **Base-Matter**; el nombre real del repositorio sigue
+siendo \`Matter-Base\` hasta la migración administrativa en GitHub. El crate
+Rust \`matter_base\` y el paquete \`matter-base\` se mantienen para no romper
+contratos existentes.
+
+\`matter\` contiene solamente la base Rust y correcciones de estabilidad
+verificadas. Los nuevos roles, conexiones externas, cola cifrada, adaptador de
+WhatsApp y demás trabajo de integración permanecen en \`matter-beta\`.
+Revisión de seguridad y conexiones reales pendientes.
+
+El contrato exacto para esta rama está en
+[stable release checkpoint](docs/STABLE_RELEASE.md).
+No se promocionará a estable una interfaz solo por compilar en aislamiento.
 
 ## Project status
 
