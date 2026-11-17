@@ -221,6 +221,22 @@ Windows. Passing Linux and Windows CI is not a Termux or provider test. Windows
 also checks that SQLite-backed test files are closed before cleanup.
 
 
+## Authenticated platform ingress
+
+InboundGateway receives untrusted provider text/events but does not accept
+claimed actor IDs from those messages. A required external InboundAuthenticator
+verifies the provider connection/webhook and derives the authenticated socket,
+sender, source and group. A separate InboundAdmission enforces legal consent
+and platform policy before routing to ControlDispatcher. A SQLite-backed,
+HMAC-keyed InboundReplayStore refuses duplicate event IDs across connections
+and keeps only encrypted-style keyed fingerprints, never raw provider IDs.
+
+Replay claims occur before handler effects. A crash after claiming can leave
+an uncertain result; blind retry is prohibited. Replay binding keys must be
+provisioned externally and shared across processes; key rotation and pruning
+require coordinated retention. **No live WhatsApp/Telegram/Discord identity
+authenticator ships with Base.** See [inbound contracts](docs/ingress.md).
+
 ## Continuous verification
 
 GitHub Actions workflow [Rust verification](.github/workflows/rust-ci.yml)

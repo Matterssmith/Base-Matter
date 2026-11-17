@@ -23,6 +23,7 @@ pub mod control_sync;
 pub mod core;
 pub mod events;
 pub mod i18n;
+pub mod ingress;
 pub mod legal;
 pub mod modules;
 pub mod plugins;
@@ -51,6 +52,7 @@ pub use core::runtime::MatterRuntime;
 
 pub use events::EventBus;
 pub use i18n::Translator;
+pub use ingress::{InboundAdmission, InboundAuthenticator, InboundEvent, InboundGateway, InboundOutcome, InboundReplayStore, VerifiedIngress};
 
 pub use legal::{
     ConsentDecision, ConsentRecord, LegalAction, LegalAuthorizationRequest, LegalAuthorizer,

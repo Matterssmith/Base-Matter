@@ -62,3 +62,6 @@ Hecho por Lournyx Matterssmith [Lou-Nyx].
 
 The matter-beta workflow includes Linux and Windows Rust lanes. Termux and
 real platform/provider compatibility remain separate release gates.
+
+The inbound gateway provides replay and authorization contracts only; actual
+signed webhooks and authenticated platform sender bindings remain unverified.

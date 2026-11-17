@@ -1,5 +1,22 @@
 # Matter-Base development status
 
+## 2026-11-17 — Authenticated ingress and replay contract (pending CI)
+
+- Previous Windows SQLite-handle fix passed GitHub Actions run 44124628703
+  on both Ubuntu and Windows (compile, tests and strict Clippy).
+- Added InboundGateway requiring external authenticated provider identity and
+  mandatory authorization/consent policy before ControlDispatcher.
+- Added bounded SQLite HMAC-keyed replay claims per verified platform/socket
+  and provider event ID, without storing message text, raw IDs or replay key.
+- Five regressions cover power gating, duplicate handling, denial, provider
+  mismatch, durable replay isolation and invalid/oversized input.
+- README audit: one root README reviewed and updated; ingress and architecture
+  docs added. CI for this phase is pending.
+- Production webhook signature verification, platform identity mapping and
+  replay-key rotation still require real adapter validation.
+  Stable matter/Matter-Bot untouched; H–L remain open.
+
+
 ## 2026-11-17 — Windows SQLite file-handle regression (pending CI)
 
 - Run 44124073091: Linux checks passed, Windows compilation passed, but two
