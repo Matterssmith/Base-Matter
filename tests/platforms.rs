@@ -8,9 +8,7 @@
 use anyhow::Result;
 use matter_base::connections::ConnectionDriver;
 use matter_base::platforms::{MatterPlatform, PlatformConnectionDrivers, PlatformTransports};
-use matter_base::sessions::{
-    ConnectionState, OutboundMessage, SessionRecord, TransportDriver,
-};
+use matter_base::sessions::{ConnectionState, OutboundMessage, SessionRecord, TransportDriver};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
@@ -94,13 +92,11 @@ fn transports_route_to_exact_platform_without_cross_socket_fallback() {
             .unwrap();
     }
 
-    for (platform, expected) in [
-        ("whatsapp", "wa"),
-        ("telegram", "tg"),
-        ("discord", "dc"),
-    ] {
+    for (platform, expected) in [("whatsapp", "wa"), ("telegram", "tg"), ("discord", "dc")] {
         assert_eq!(
-            registry.transmit(&session(platform, "socket-1"), &message("socket-1")).unwrap(),
+            registry
+                .transmit(&session(platform, "socket-1"), &message("socket-1"))
+                .unwrap(),
             expected
         );
     }

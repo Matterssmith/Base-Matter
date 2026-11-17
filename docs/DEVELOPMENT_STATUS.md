@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Formato del registro de plataformas (CI pendiente)
+
+- La primera ejecución de CI detectó tres diferencias rustfmt en `src/lib.rs` y `tests/platforms.rs`, sin llegar a comprobar el comportamiento de los nuevos registros. Se aplicó el formato requerido por el propio diff de CI.
+- README auditados íntegros 2/2 (raíz y proveedor Rust); ambos conservados sin cambios. No se modificaron sesiones, secretos, Cargo.lock ni la rama estable.
+- Verificar CI Linux, Windows y proveedor para el nuevo commit antes de aceptar el registro.
+
+
 ## 2026-11-17 — Contrato universal de proveedores (CI pendiente)
 
 - Se añadió el registro Rust de conexiones y mensajería por plataforma: WhatsApp, Telegram y Discord utilizan los contratos de Base-Matter existentes, sin reemplazar whatsapp-rust ni iniciar Bot-Matter.

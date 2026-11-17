@@ -71,8 +71,8 @@ pub use legal::{
 };
 
 pub use modules::{CoreModule, ModuleManager};
-pub use platforms::{MatterPlatform, PlatformConnectionDrivers, PlatformTransports};
 pub use pairing::{PairingCode, PairingCodeProvider, PairingCodeService};
+pub use platforms::{MatterPlatform, PlatformConnectionDrivers, PlatformTransports};
 pub use security::encryption;
 pub use services::ServiceRegistry;
 pub use sessions::{
