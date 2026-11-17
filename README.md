@@ -189,6 +189,23 @@ No OS-level sandbox backend, signed artifact verification service or live
 cross-language process is supplied. No in-process mock should be treated as
 real isolation. See [plugin security contract](docs/plugins.md).
 
+## External connection lifecycle
+
+ConnectionService orchestrates an authenticated session owner, an
+application-provided ConnectionAdmission policy, a SessionCredentialSource
+returning zeroizing secret bytes and a separate ConnectionDriver implemented
+by a platform adapter. Failures fault the session metadata and are not retried
+automatically. The service exposes guarded connect/disconnect, live health
+checks and explicit recovery for uncertain states. **No real WhatsApp,
+Telegram or Discord adapter is bundled.**
+
+Credential bytes are transient and never persisted in Matter-Base; the
+external source is responsible for authentication, storage, rotation and
+retrieval. A connected database state cannot prove the external provider is
+online. Network operations across processes need provider-side generation
+fencing and revocation. See [connections and sessions](docs/sessions.md).
+
+
 ## Continuous verification
 
 GitHub Actions workflow [Rust verification](.github/workflows/rust-ci.yml)

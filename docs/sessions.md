@@ -39,3 +39,22 @@ and transport compatibility remain integration work.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Authenticated connection lifecycle
+
+The optional `connections` module provides ConnectionService on top of
+SessionRegistry. The application supplies an authenticated ConnectionAdmission,
+SessionCredentialSource returning `Zeroizing<Vec<u8>>`, and a separate
+ConnectionDriver for the real platform. The orchestration owns no network
+socket implementation and never stores external sessions or login credentials.
+
+State changes are compared by revision. Connecting moves to Connected only
+when the external driver reports success. Driver or credential-source failure
+marks the record Faulted and suppresses private diagnostics. `check_health`
+probes actual provider liveness and faults a disconnected session. An
+uncertain state after a process crash can be marked Faulted explicitly.
+Adapters must fence and revoke old connection generations across processes:
+SQLite state changes are not atomic with a network connection. A real
+credential source, socket activation, consent and destination authorization
+remain mandatory in the consuming application. No network transport is
+bundled with this crate.

@@ -1,5 +1,23 @@
 # Matter-Base development status
 
+## 2026-11-17 — Connection lifecycle and credentials contract (pending CI)
+
+- Previous scope-owner handover is verified by GitHub Actions run 44122169726.
+- Added ConnectionService orchestrating connection state via SessionRegistry,
+  mandatory authenticated ConnectionAdmission, zeroizing credential source,
+  and external ConnectionDriver for connect/disconnect/liveness.
+- Five deterministic regression tests cover owner checks, transient credentials,
+  connection failures, health faulting, recovery and versioned transitions.
+- No provider credentials, login sessions, master keys or network adapters
+  are added to Matter-Base. Driver implementations require real external
+  generation fencing and credential storage.
+- README audit: one root README reviewed and updated; session/architecture
+  contracts updated. CI for this checkpoint is pending.
+- H–L remain in progress; independent provider integration and real isolated
+  plugin execution are unverified. Stable matter untouched, Matter-Bot blocked.
+
+
+
 ## 2026-11-17 — Role scope owner handover (pending CI)
 
 - Previous plugin contract checkpoint passed GitHub Actions run 44102970673.
