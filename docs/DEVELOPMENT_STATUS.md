@@ -1,5 +1,21 @@
 # Matter-Base development status
 
+## 2026-11-17 — Eliminate Windows test-directory collision (pending CI)
+
+- Windows run 44126198795 exposed a flaky duplicate temporary directory
+  name in tests/control.rs. Clock-based nanosecond identifiers are not
+  reliably unique on Windows under parallel test execution.
+- Replaced process/time-derived directory IDs with 128-bit randomized IDs
+  in tests/control.rs, tests/activation.rs, tests/platform_flow.rs,
+  tests/bot_registry.rs and tests/core.rs. This changes test fixture
+  allocation only, not production state or behavior.
+- README audit: one root README fully reviewed, unchanged, no new broken
+  links or design discrepancy. CI on Linux and Windows must pass again.
+- Real Vault integration, signed platform adapters, isolated sandbox,
+  crash-recoverable owner coordination and Termux verification remain open.
+  Stable matter and Matter-Bot remain unchanged.
+
+
 ## 2026-11-17 — Verified beta checkpoint and actual remaining gates
 
 - Verified GitHub Actions run **44125657053** on exact beta SHA

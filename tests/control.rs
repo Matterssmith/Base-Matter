@@ -20,10 +20,12 @@ impl CommandAuthorizer for TestPolicy {
 struct Temp(std::path::PathBuf);
 impl Temp {
     fn new() -> Self {
+        let mut nonce = [0_u8; 16];
+        getrandom::fill(&mut nonce).unwrap();
         let path = std::env::temp_dir().join(format!(
             "matter-control-{}-{}",
             std::process::id(),
-            time::OffsetDateTime::now_utc().unix_timestamp_nanos()
+            hex::encode(nonce)
         ));
         std::fs::create_dir(&path).unwrap();
         Self(path)
