@@ -41,7 +41,7 @@ pub use commands::{CommandAuthorizer, CommandInvocation, CommandRouter};
 pub use connections::{
     ConnectionAdmission, ConnectionDriver, ConnectionService, SessionCredentialSource,
 };
-pub use control_sync::{EncryptedControlOutbox, EncryptedEnvelopeSink, OutboxStatus};
+pub use control_sync::{EncryptedControlOutbox, EncryptedEnvelopeReader, EncryptedEnvelopeSink, OutboxStatus};
 pub use core::config::CoreConfig;
 pub use core::context::MatterContext;
 pub use core::logger::init_logger;

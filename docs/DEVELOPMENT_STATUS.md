@@ -1,5 +1,19 @@
 # Matter-Base development status
 
+## 2026-11-17 — Remote encrypted acknowledgment reconciliation (pending CI)
+
+- Prior connection lifecycle checkpoint passed GitHub Actions run 44122884865.
+- Added EncryptedEnvelopeReader and fail-closed outbox reconcile operation,
+  verifying full envelope identity, metadata and ciphertext before updating
+  the local revision/sync flag in the same transaction as immutable audit.
+- Three regressions cover lost network acknowledgments, remote divergence,
+  missing entries and ciphertext tampering. No retry or remote overwrite on
+  conflict; no plaintext, token or master key stored in GitHub.
+- README audit: one root README reviewed and updated; Vault docs updated.
+  Real authenticated GitHub sink/source and full remote import remain open.
+- This checkpoint awaits CI. No work on stable matter or Matter-Bot.
+
+
 ## 2026-11-17 — Connection lifecycle and credentials contract (pending CI)
 
 - Previous scope-owner handover is verified by GitHub Actions run 44122169726.

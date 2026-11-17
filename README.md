@@ -168,9 +168,12 @@ The same content under the same key is not queued again; key rotation queues
 fresh ciphertext. Failed publication keeps the encrypted record pending.
 
 This is **not** a live GitHub/Matter-Vault adapter. No GitHub credential,
-private key, master key or external session is stored here. Remote conflicts,
-multiple simultaneous publishers, recovery/import and actual authenticated
-GitHub commits remain integration requirements. See
+private key, master key or external session is stored here. An optional EncryptedEnvelopeReader supports lost-acknowledgment recovery:
+a pending record is marked published only if the returned remote envelope
+matches every field of the locally queued ciphertext. Conflicting remote
+records remain pending; they are never overwritten automatically. Multiple
+concurrent publishers, full restore/import and actual authenticated GitHub
+commits remain integration requirements. See
 [Vault integration](docs/vault-integration.md).
 
 ## Trusted plugin manifests and sandbox contracts

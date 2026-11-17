@@ -27,6 +27,13 @@ pub trait EncryptedEnvelopeSink: Send + Sync {
     fn put(&self, envelope: &EncryptedEnvelope, expected_revision: Option<&str>) -> Result<String>;
 }
 
+/// Trusted remote reader. The implementation must authenticate remote
+/// identity, verify scope and enforce read permissions. A remote revision is
+/// an opaque compare-and-swap token, never a credential.
+pub trait EncryptedEnvelopeReader: Send + Sync {
+    fn get(&self, scope: &str, record_type: &str) -> Result<Option<(EncryptedEnvelope, String)>>;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OutboxStatus {
     pub sequence: i64,
@@ -250,6 +257,71 @@ impl EncryptedControlOutbox {
             bail!("Outbox changed during external publication; reconcile remote state");
         }
         audit(&tx, scope, record_type, sequence, "published")?;
+        tx.commit()?;
+        Ok(true)
+    }
+
+    /// Reconcile an uncertain delivery after network/acknowledgment loss.
+    /// A remote record is accepted only when ALL authenticated envelope fields
+    /// match the locally queued ciphertext. No overwrite or retry is made on
+    /// divergence. Existing pending ciphertext must not be re-encrypted.
+    pub fn reconcile(
+        &self,
+        reader: &dyn EncryptedEnvelopeReader,
+        scope: &str,
+        record_type: &str,
+    ) -> Result<bool> {
+        validate_scope(scope)?;
+        validate_type(record_type)?;
+        let pending: Option<(i64, String, i64)> = {
+            let connection = self.lock()?;
+            connection
+                .query_row(
+                    "SELECT sequence,envelope_json,synchronized
+                     FROM encrypted_control_outbox
+                     WHERE scope=?1 AND record_type=?2",
+                    params![scope, record_type],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                )
+                .optional()?
+        };
+        let (sequence, encoded, synchronized) =
+            pending.ok_or_else(|| anyhow!("Unknown outbox record"))?;
+        if synchronized == 1 {
+            return Ok(false);
+        }
+        if synchronized != 0 {
+            bail!("Invalid outbox synchronization status");
+        }
+        let local: EncryptedEnvelope = serde_json::from_str(&encoded)?;
+        encryption::validate_envelope(&local)?;
+        if local.scope != scope || local.record_type != record_type {
+            bail!("Outbox identity mismatch");
+        }
+        let remote = reader
+            .get(scope, record_type)
+            .map_err(|_| anyhow!("Encrypted remote reconciliation failed"))?;
+        let Some((remote_envelope, revision)) = remote else {
+            return Ok(false);
+        };
+        validate_revision(&revision)?;
+        encryption::validate_envelope(&remote_envelope)?;
+        if serde_json::to_value(&local)? != serde_json::to_value(&remote_envelope)? {
+            bail!("Remote encrypted record diverged");
+        }
+        let mut connection = self.lock()?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let updated = tx.execute(
+            "UPDATE encrypted_control_outbox
+             SET remote_revision=?1,synchronized=1
+             WHERE scope=?2 AND record_type=?3 AND sequence=?4
+               AND envelope_json=?5 AND synchronized=0",
+            params![revision, scope, record_type, sequence, encoded],
+        )?;
+        if updated != 1 {
+            bail!("Outbox changed during remote reconciliation");
+        }
+        audit(&tx, scope, record_type, sequence, "reconciled")?;
         tx.commit()?;
         Ok(true)
     }

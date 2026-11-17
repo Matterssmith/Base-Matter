@@ -51,3 +51,17 @@ idempotency by envelope ID and access isolation. This repository does not ship
 a GitHub App transport, a production Vault key source or encrypted recovery.
 Lost acknowledgements or concurrent publishers may require remote reconciliation;
 no exactly-once claim is made.
+
+
+## Lost-acknowledgment reconciliation
+
+`EncryptedControlOutbox::reconcile` receives a trusted
+`EncryptedEnvelopeReader` and checks the exact remote envelope (every
+authenticated metadata/ciphertext field) against the local queued envelope.
+If the data is identical, it stores the remote revision and marks the local
+entry synchronized with an immutable audit record. Missing remote data
+leaves it pending. Divergent or malformed remote ciphertext fails closed;
+no automatic overwrite occurs. The remote reader must authenticate the
+provider and enforce access isolation. This mechanism handles uncertain
+publish acknowledgments, not complete remote state import, secret recovery,
+or concurrent publisher arbitration.
