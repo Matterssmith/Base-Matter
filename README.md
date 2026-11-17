@@ -311,3 +311,7 @@ and provider imports are pending ecosystem work. Provider methods belong in
 separate directories such as `providers/baileys` and `providers/telegraf`, using
 verified official upstream revisions and preserved licenses/history. Base and
 Vault readiness remains the immediate priority. See [repository instructions](AGENTS.md).
+
+## Encendido de sockets independiente de Bot-Matter
+
+La rama estable permite a su propietario autenticado usar =/>on y =/>off incluso sin bot vinculado o si la propiedad del bot cambió. No concede autorización para comandos normales, no permite actuar sobre sockets ajenos y no establece ninguna conexión de WhatsApp. El proveedor whatsapp-rust con código de vinculación queda en beta hasta la verificación externa.

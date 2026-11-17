@@ -33,7 +33,9 @@ to matter-beta. Review EVERY repository README before EACH commit, report total,
 reviewed, updated, unchanged, findings, fixes and pending issues. Update affected
 README/code/contracts together; preserve correct content and design. Check new
 files, full diff, examples, internal links, credits and accidental secrets.
-Confirm the pushed SHA against origin. Never promote to matter automatically.
+Confirm the pushed SHA against origin. The owner has authorized promotion of
+independently verified stable fixes with green CI on candidate and PR revisions.
+Never merge incomplete beta features as a bulk release.
 
 ## Scope and continuity
 
@@ -72,3 +74,7 @@ Preserve socket isolation and persist/audit administrative changes atomically.
   equivalent Telegram and Discord functionality where supported.
 - This scope does not relax Matter-Base readiness criteria. External service
   availability/account linking must be reported honestly when blocked.
+
+## 2026-11-17
+
+Control global =/> es propiedad del núcleo Rust; el dueño del socket conserva on/off sin bot vinculado. WhatsApp utiliza whatsapp-rust y solo pairing code; Bot-Matter sigue bloqueado. Conservar créditos exactos Lou-Nyx.
