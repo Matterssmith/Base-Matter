@@ -103,6 +103,8 @@ docs/         Architecture and continuity documentation
 
 There is one README in this repository: this root `README.md`.
 
+Clippy's first strict CI run identified three pre-existing lint failures in legal-document row typing, ciphertext size arithmetic, and user schema-range validation. The follow-up changes preserve public APIs and require a passing CI run before they are considered verified.
+
 ## Continuous verification
 
 GitHub Actions workflow [Rust verification](.github/workflows/rust-ci.yml)
