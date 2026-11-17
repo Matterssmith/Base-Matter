@@ -622,9 +622,10 @@ El receptor TCP de controles `=/>` corta los frames de más de 16 KiB y los env�
 El proveedor Rust ahora distingue el acuse de control `applied` del resultado
 `duplicate`. Los frames repetidos no se muestran como ejecuciones nuevas;
 `ignored`, `denied`, errores de JSON, claves extrañas y acuses incompletos
-fallan cerrados. Esto mejora la observabilidad de las pruebas y no añade
-respuesta en el chat WhatsApp ni modifica el protocolo HMAC. La conexión real
-y la identidad del JID siguen pendientes de prueba.
+fallan cerrados. Esto mejora la observabilidad de las pruebas sin alterar
+el protocolo HMAC. El proveedor añade posteriormente una confirmación
+genérica solo para `applied`, documentada abajo. La conexión real y
+la identidad del JID siguen pendientes de prueba.
 
 ## Recuperación de procesos WhatsApp
 

@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Coherencia de documentación del acuse en WhatsApp (CI pendiente)
+
+- Corregidas descripciones históricas en los dos README que afirmaban que el proveedor nunca respondía por WhatsApp. Ahora distinguen el acuse genérico de `applied` de una respuesta completa de `status`.
+- Revisados íntegramente 2 README (2/2), ambos actualizados, sin cambios funcionales. Continúa pendiente la verificación real de recepción/envío en teléfono y CI del SHA.
+
+
 ## 2026-11-17 — Confirmación mínima en WhatsApp del control del dueño (CI pendiente)
 
 - El callback de `whatsapp-rust` intenta responder en el self-chat privado del propietario con un texto fijo sin prefijo, exclusivamente después del acuse `applied`; no responde a `duplicate`, `denied`, `ignored`, grupos ni otros chats.

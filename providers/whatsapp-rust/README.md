@@ -36,7 +36,8 @@ sin que este proceso lo exponga.
 El proceso valida el mensaje de la cuenta propia, JID de chat y remitente
 exactos, fromMe y chat no grupal. Firma únicamente mensajes canónicos
 =/> con timestamp reciente y los entrega al controlador Rust de Base.
-No envía mensajes de WhatsApp, no responde ping y no ejecuta Bot-Matter.
+Solo responde con el acuse genérico `applied` al chat propio autenticado;
+no responde ping ni ejecuta Bot-Matter.
 
 ## Límite de estabilidad
 
@@ -68,7 +69,8 @@ En sistemas Unix, el archivo `owner.lock` se crea con permisos `0600` en la llam
 Al enviar `=/>`, el proveedor diferencia el efecto nuevo `applied` del
 replay `duplicate` y los rechazos. Un resultado `duplicate` nunca se anuncia
 como ejecución nueva; los acuses malformados o desconocidos se rechazan.
-El control continúa sin respuesta automática por WhatsApp y requiere prueba
+El control solo intenta una confirmación breve cuando se ejecuta una
+operación; no devuelve todavía los detalles del estado. Requiere prueba
 real autorizada antes de promoverlo a estable.
 
 ## Reinicio seguro tras una caída
