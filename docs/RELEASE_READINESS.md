@@ -107,3 +107,7 @@ controles del propietario y crédito requerido por AGENTS.md:
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## WhatsApp native ingress gate
+
+The Rust native ingress module is covered by offline tests only. A verified single-process whatsapp-rust pairing-code session, actual self-chat messages, revocation and recovery are required to qualify the live provider for stable.

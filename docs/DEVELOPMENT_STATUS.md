@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Rust native WhatsApp owner event guard (CI pending)
+
+- Added WhatsAppNativeIngress with owner private-JID exact matching, from_me and non-group checks, 120-second freshness, bounded input, persistent replay, and canonical =/> routing.
+- Added five Rust unit/integration tests for owner power/policy, group/other chat, no ping, replay expiry and invalid identity.
+- README reviewed and updated (1/1), new docs/WHATSAPP_NATIVE.md. No Node provider and no live phone pairing is claimed; stable branch unchanged.
+
+
 ## 2026-11-17 — CI verde y README alineado con Rust (documentación)
 
 - La revisión `184a0819865ffa3548cc8eb1e51f7bd5dc521cc9` pasó la CI de

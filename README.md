@@ -578,3 +578,7 @@ Los códigos deben conservar los créditos exigidos en `AGENTS.md` y sus pruebas
 Base-Matter contiene ControlExtensionRegistry, que admite comandos adicionales bajo el prefijo canónico =/> y alias declarados por un host Rust confiable. El núcleo comprueba al propietario del socket antes de ejecutar la extensión; los comandos continúan independientes de Bot-Matter y están disponibles incluso con el bot apagado. Los verbos administrativos on/off/status/set/unset y el ping histórico son reservados y no pueden sobrescribirse. Los prefijos antiguos = y /> solo mantienen los controles incorporados.
 
 Los controladores de extensiones deben incluir comprobaciones adicionales de permisos y auditoría donde sus efectos lo requieran. Los fallos no exponen datos internos; los argumentos y resultados están acotados. Consulte docs/CONTROL_EXTENSIONS.md. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Ingreso nativo de WhatsApp en Rust
+
+El modulo WhatsAppNativeIngress acepta eventos autenticados exclusivamente dentro del proceso de whatsapp-rust, comprueba el JID privado propio, from_me, ausencia de grupos, expiracion y replay persistente antes de ejecutar controles canónicos =/>. No activa Bot-Matter, no incluye QR ni registra un ping permanente. El proveedor externo real, el emparejamiento y las pruebas contra un telefono siguen pendientes. Ver docs/WHATSAPP_NATIVE.md.

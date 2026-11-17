@@ -34,6 +34,7 @@ pub mod services;
 pub mod sessions;
 pub mod users;
 pub mod whatsapp_bridge;
+pub mod whatsapp_native;
 
 pub use authorization::{RoleAuditRecord, RoleCommandAuthorizer, RoleStore, RuleEffect};
 pub use bots::{
@@ -75,6 +76,7 @@ pub use sessions::{
     OutboundMessage, SessionAuditRecord, SessionRecord, SessionRegistry, TransportAcceptance,
     TransportDriver,
 };
+pub use whatsapp_native::{WhatsAppNativeConfig,WhatsAppNativeIngress,WhatsAppNativeMessage,WhatsAppNativeOutcome};
 pub use whatsapp_bridge::{
     WhatsAppBridgeConfig, WhatsAppBridgeOutcome, WhatsAppControlBridge, WhatsAppControlFrame,
 };
