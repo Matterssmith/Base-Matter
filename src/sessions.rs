@@ -430,7 +430,6 @@ pub struct TransportAcceptance {
     pub session_revision: i64,
 }
 
-
 /// Bridges outbound delivery admission with the existing activation, bot and
 /// role snapshots. An additional mandatory policy must check legal consent,
 /// authenticated identity and any provider-specific destination restrictions.
@@ -509,12 +508,7 @@ impl MessageAdmission for ControlPlaneMessageAdmission {
         }
         if !self
             .roles
-            .allowed(
-                &bound_bot,
-                &message.actor_id,
-                "message:send",
-                "execute",
-            )
+            .allowed(&bound_bot, &message.actor_id, "message:send", "execute")
             .unwrap_or(false)
         {
             bail!("Message admission denied");

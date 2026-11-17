@@ -7,9 +7,9 @@
 
 use anyhow::Result;
 use matter_base::{
-    activation::SocketActivationStore, BotRegistry, ConnectionState,
-    ControlPlaneMessageAdmission, MessageAdmission, MessageService, OutboundMessage, RoleStore,
-    RuleEffect, SessionRecord, SessionRegistry, TransportDriver,
+    activation::SocketActivationStore, BotRegistry, ConnectionState, ControlPlaneMessageAdmission,
+    MessageAdmission, MessageService, OutboundMessage, RoleStore, RuleEffect, SessionRecord,
+    SessionRegistry, TransportDriver,
 };
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -48,10 +48,8 @@ impl Fixture {
     fn new() -> Self {
         let mut random = [0_u8; 16];
         getrandom::fill(&mut random).unwrap();
-        let db_path = std::env::temp_dir().join(format!(
-            "matter-outbound-{}.db",
-            hex::encode(random)
-        ));
+        let db_path =
+            std::env::temp_dir().join(format!("matter-outbound-{}.db", hex::encode(random)));
         let activation = Arc::new(SocketActivationStore::open(&db_path).unwrap());
         let sessions = Arc::new(SessionRegistry::open(&db_path).unwrap());
         let roles = Arc::new(RoleStore::open(&db_path).unwrap());
@@ -59,8 +57,12 @@ impl Fixture {
         let bot = bots.register("family", "v1", "bot", "owner").unwrap();
         let bot_id = bot.instance_id().to_owned();
         activation.provision("socket", "owner").unwrap();
-        activation.bind_bot("socket", "owner", &bot_id, &bots).unwrap();
-        activation.set_socket_policy("socket", "owner", Some(true)).unwrap();
+        activation
+            .bind_bot("socket", "owner", &bot_id, &bots)
+            .unwrap();
+        activation
+            .set_socket_policy("socket", "owner", Some(true))
+            .unwrap();
         sessions.register("socket", "owner", "whatsapp").unwrap();
         sessions
             .transition("socket", "owner", 0, ConnectionState::Connecting)
@@ -127,7 +129,10 @@ fn outbound_respects_activation_group_policy_and_role_revocation() {
     assert!(service.send(&outbound()).is_err());
     assert_eq!(driver.0.load(Ordering::SeqCst), 0);
     f.activation.set_power("socket", "owner", true).unwrap();
-    assert_eq!(service.send(&outbound()).unwrap().driver_receipt, "received");
+    assert_eq!(
+        service.send(&outbound()).unwrap().driver_receipt,
+        "received"
+    );
     f.activation
         .set_group_policy("socket", "owner", "group-a", Some(false))
         .unwrap();
@@ -135,7 +140,9 @@ fn outbound_respects_activation_group_policy_and_role_revocation() {
     f.activation
         .set_group_policy("socket", "owner", "group-a", None)
         .unwrap();
-    f.roles.revoke(&f.bot_id, "owner", "member", "sender").unwrap();
+    f.roles
+        .revoke(&f.bot_id, "owner", "member", "sender")
+        .unwrap();
     assert!(service.send(&outbound()).is_err());
     assert_eq!(driver.0.load(Ordering::SeqCst), 1);
 }
@@ -153,7 +160,9 @@ fn external_policy_and_session_owner_disagreement_fail_closed() {
     let allowed = f.service(true, driver.clone());
     assert!(allowed.send(&outbound()).is_ok());
     let untrusted = Arc::new(SessionRegistry::in_memory().unwrap());
-    untrusted.register("socket", "other-owner", "whatsapp").unwrap();
+    untrusted
+        .register("socket", "other-owner", "whatsapp")
+        .unwrap();
     untrusted
         .transition("socket", "other-owner", 0, ConnectionState::Connecting)
         .unwrap();

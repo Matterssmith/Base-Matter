@@ -53,8 +53,8 @@ pub use security::encryption;
 pub use services::ServiceRegistry;
 pub use sessions::{
     ConnectionState, ControlPlaneMessageAdmission, MessageAdmission, MessageService,
-    OutboundMessage, SessionAuditRecord,
-    SessionRecord, SessionRegistry, TransportAcceptance, TransportDriver,
+    OutboundMessage, SessionAuditRecord, SessionRecord, SessionRegistry, TransportAcceptance,
+    TransportDriver,
 };
 
 pub use users::{
