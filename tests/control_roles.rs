@@ -29,7 +29,9 @@ fn role_control_works_while_off_and_observes_current_owners() {
     let bots = Arc::new(BotRegistry::in_memory());
     let bot = bots.register("family", "v1", "name", "alice").unwrap();
     let bot_id = bot.instance_id().to_owned();
-    activation.bind_bot("socket", "alice", &bot_id, &bots).unwrap();
+    activation
+        .bind_bot("socket", "alice", &bot_id, &bots)
+        .unwrap();
     let roles = Arc::new(RoleStore::open(&db).unwrap());
     roles.provision_scope(&bot_id, "alice").unwrap();
     roles.create_role(&bot_id, "alice", "staff", None).unwrap();
@@ -40,7 +42,12 @@ fn role_control_works_while_off_and_observes_current_owners() {
         router.clone(),
     )
     .with_roles(roles.clone());
-    assert!(!activation.resolve_persisted("socket", None).unwrap().enabled);
+    assert!(
+        !activation
+            .resolve_persisted("socket", None)
+            .unwrap()
+            .enabled
+    );
     assert!(dispatcher
         .dispatch("socket", "bob", "room", None, "=/>set role bob staff")
         .is_err());
@@ -83,7 +90,8 @@ fn role_control_works_while_off_and_observes_current_owners() {
             changed: true,
         }
     );
-    let plain = ControlDispatcher::new_with_persistent_policy(activation.clone(), bots.clone(), router);
+    let plain =
+        ControlDispatcher::new_with_persistent_policy(activation.clone(), bots.clone(), router);
     assert!(plain
         .dispatch("socket", "alice", "room", None, "=set role bob staff")
         .is_err());
@@ -94,8 +102,16 @@ fn role_control_works_while_off_and_observes_current_owners() {
     assert!(dispatcher
         .dispatch("socket", "charlie", "room", None, "=set role bob staff")
         .is_err());
-    assert!(!activation.resolve_persisted("socket", None).unwrap().enabled);
-    assert_eq!(roles.audit_history(&bot_id, "alice", 100, 0).unwrap().len(), 4);
+    assert!(
+        !activation
+            .resolve_persisted("socket", None)
+            .unwrap()
+            .enabled
+    );
+    assert_eq!(
+        roles.audit_history(&bot_id, "alice", 100, 0).unwrap().len(),
+        4
+    );
     drop(dispatcher);
     drop(plain);
     drop(roles);

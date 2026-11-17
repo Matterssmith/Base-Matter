@@ -12,7 +12,10 @@ use std::sync::Arc;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum DispatchResult {
-    Control { socket_id: String, powered: bool },
+    Control {
+        socket_id: String,
+        powered: bool,
+    },
     RoleChanged {
         bot_instance_id: String,
         user_id: String,
@@ -67,7 +70,6 @@ impl ControlDispatcher {
             roles: None,
         }
     }
-
 
     /// Installs optional role management on reserved control commands.
     pub fn with_roles(mut self, roles: Arc<RoleStore>) -> Self {
