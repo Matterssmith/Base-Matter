@@ -58,7 +58,15 @@ fn signed(id: &str, text: &str) -> Vec<u8> {
     let stamp = OffsetDateTime::now_utc().unix_timestamp();
     let mut mac = Hmac::<Sha256>::new_from_slice(&BRIDGE_KEY).unwrap();
     mac.update(b"Base-Matter:WhatsApp-Control:v1\0");
-    for part in ["1", "socket-test", "owner-test", OWNER_JID, OWNER_JID, id, text] {
+    for part in [
+        "1",
+        "socket-test",
+        "owner-test",
+        OWNER_JID,
+        OWNER_JID,
+        id,
+        text,
+    ] {
         let data = part.as_bytes();
         mac.update(&(data.len() as u32).to_be_bytes());
         mac.update(data);
@@ -120,7 +128,10 @@ fn real_controller_process_preserves_replay_and_recovers_after_abrupt_stop() {
         ("MATTER_WA_BRIDGE_ADDR", addr.clone()),
         ("MATTER_WA_BRIDGE_KEY_HEX", hex::encode(BRIDGE_KEY)),
         ("MATTER_WA_REPLAY_KEY_HEX", "09".repeat(32)),
-        ("MATTER_WA_ACTIVATION_DB", activation.to_string_lossy().into_owned()),
+        (
+            "MATTER_WA_ACTIVATION_DB",
+            activation.to_string_lossy().into_owned(),
+        ),
         ("MATTER_WA_REPLAY_DB", replay.to_string_lossy().into_owned()),
     ] {
         vars.insert(k.to_owned(), v);
@@ -130,7 +141,10 @@ fn real_controller_process_preserves_replay_and_recovers_after_abrupt_stop() {
     assert!(command(&vars, "--init").status().unwrap().success());
     let server = start(&vars, &addr);
     assert!(!command(&vars, "--check").status().unwrap().success());
-    assert_eq!(deliver(&addr, &signed("first", "=/>on"))["outcome"], "applied");
+    assert_eq!(
+        deliver(&addr, &signed("first", "=/>on"))["outcome"],
+        "applied"
+    );
     assert_eq!(
         deliver(&addr, &signed("first", "=/>on"))["outcome"],
         "duplicate"

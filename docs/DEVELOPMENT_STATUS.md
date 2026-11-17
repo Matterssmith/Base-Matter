@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Formato del test E2E de procesos (CI pendiente)
+
+- Corregidos tres detalles de rustfmt en el test nuevo de procesos del controlador, sin alterar su comportamiento.
+- Se revisaron los 2 README íntegros (2/2), sin cambios adicionales; la prueba interproceso debe aprobar Linux y Windows antes de aceptar el checkpoint.
+
+
 ## 2026-11-17 — Regresión E2E real entre procesos Rust (CI pendiente)
 
 - Añadida `tests/whatsapp_process.rs`: ejecuta el binario real del controlador Rust con configuración temporal privada, realiza `--init`, arranca TCP loopback, envía comandos HMAC, comprueba replay, interrumpe bruscamente el proceso y reinicia sobre el lock v2.
