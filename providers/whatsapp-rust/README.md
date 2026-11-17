@@ -116,3 +116,13 @@ La función de detección solo reconoce la primera línea exacta
 comunitario. Las coincidencias parciales, colocadas en otra línea o con
 ID de otra comunidad se rechazan. La descripción **no es autenticación**;
 además se deben verificar metadatos de pertenencia y rol de administrador.
+
+## Escaneo de comunidades reales con =/>start (alpha)
+
+Tras pasar HMAC y permisos en Base, el callback de `whatsapp-rust` utiliza
+`Community::get_participating`, `get_subgroups` y
+`query_linked_group`. El escaneo verifica el admin del propio JID PN/LID,
+pertenencia del subgrupo a la comunidad y encabezado REGISTER exacto.
+Responde en el chat propio y no modifica grupos ni roles. Limita a 12
+comunidades, 64 subgrupos por comunidad y 20 segundos por solicitud.
+No se puede declarar probado en red sin un teléfono vinculado.

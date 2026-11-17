@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Descubrimiento REGISTER mediante API WhatsApp Rust (alpha, CI pendiente)
+
+- El proveedor Rust consulta comunidades reales con `get_participating`, `get_subgroups` y `query_linked_group` después de que Base autoriza `=/>start`. Verifica admin del JID propio PN/LID, subgrupo vinculado e identificador exacto en primera línea.
+- Devuelve un resumen de solo lectura en self-chat, con límites de alcance/tiempo. Errores dan aviso de inspección incompleta y ninguna mutación; no crea ni configura grupos.
+- READMEs íntegros auditados 2/2; ambos actualizados. Contrato de comunidad actualizado; CI y la sesión real siguen pendientes para este commit.
+
+
 ## 2026-11-17 — Identificador REGISTER exacto en WhatsApp Rust (alpha; CI pendiente)
 
 - Añadida función pura `official_register_description` en el proveedor Rust, con validación del JID y primera línea exacta del ID comunitario; incorpora pruebas para coincidencias, inyección y prefijos parciales.

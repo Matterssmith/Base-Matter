@@ -706,3 +706,13 @@ autorización del dueño del socket antes de admitir el inventario de
 comunidades. Funciona aunque el socket esté apagado. Las operaciones
 `=/>start apply` se rechazan mientras no exista un plan de cambios
 verificado; no se modifica ninguna comunidad por autorizar la lectura.
+
+## =/>start — inventario comunitario de solo lectura
+
+Desde `alpha`, la confirmación del controlador Base-Matter permite que el
+proveedor Rust consulte las comunidades de la sesión WhatsApp, compruebe
+qué comunidades tienen admin verificado para el propio JID PN/LID, enumere
+subgrupos vinculados y compare la primera línea exacta de la descripción
+con `MATTER:OFFICIAL:register:<community-id>`. Responde únicamente al
+chat propio con el resultado o un fallo de lectura. Los cambios de nombre,
+imagen, permisos, links y creación permanecen bloqueados.

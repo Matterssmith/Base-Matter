@@ -76,3 +76,16 @@ implementadas sin confirmación remota. No iniciar Bot-Matter.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Lectura directa en el proveedor Rust alpha
+
+Implementado un recorrido de comunidades del cliente conectado, con
+comprobación exacta de rol admin del JID del dueño (incluyendo coincidencia
+expresa PN/LID cuando la metadata la contiene), enumeración de subgrupos,
+verificación de `parent_group_jid` y encabezado REGISTER. La ejecución
+es posterior a la autorización del `ControlDispatcher` mediante HMAC.
+Un error o expiración de lectura informa fallo sin ejecutar cambios.
+
+Esta primera fase no asigna permisos, no crea grupos, no obtiene enlaces
+y no agrega/promueve números. Esas fases requieren plan aprobado,
+gestión de conflictos y revisión real de privilegios antes de activarse.
