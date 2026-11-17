@@ -42,3 +42,10 @@ Hecho por Lournyx Matterssmith [Lou-Nyx].
 La consulta de estado del socket se hace mediante `=/>status`, con
 identidad del dueño. No solicita ni muestra el código temporal de
 vinculación, y no expone un método QR.
+
+## Global control after verified pairing
+
+`WhatsAppControlBridge` verifies a provider-signed owner-only event before
+calling ControlDispatcher for `=/>` commands. It cannot pair or authenticate
+a live phone by itself; the external provider must use pairing code only.
+See [bridge protocol](WHATSAPP_BRIDGE.md).

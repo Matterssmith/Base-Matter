@@ -27,6 +27,7 @@ pub mod ingress;
 pub mod legal;
 pub mod modules;
 pub mod pairing;
+pub mod whatsapp_bridge;
 pub mod plugins;
 pub mod security;
 pub mod services;
@@ -65,6 +66,9 @@ pub use legal::{
 
 pub use modules::{CoreModule, ModuleManager};
 pub use pairing::{PairingCode, PairingCodeProvider, PairingCodeService};
+pub use whatsapp_bridge::{
+    WhatsAppBridgeConfig, WhatsAppBridgeOutcome, WhatsAppControlBridge, WhatsAppControlFrame,
+};
 pub use security::encryption;
 pub use services::ServiceRegistry;
 pub use sessions::{

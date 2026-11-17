@@ -1,5 +1,25 @@
 # Matter-Base development status
 
+## 2026-11-17 — Signed WhatsApp-to-Base global control bridge (pending CI)
+
+- Historical Rust WhatsApp pairing provider source recovered from commit
+  3c36d97bb. The live provider was subsequently removed; current Base
+  exports pairing contracts, not the historical live connection.
+- Added WhatsAppControlBridge verifying dedicated HMAC-SHA256 proof over
+  socket/owner/private chat/event/text/timestamp and requiring from_me=true.
+  Uses persistent InboundReplayStore and existing ControlDispatcher, while
+  refusing Bot-Matter routing and #ping as global commands.
+- Added six regression tests: owner-controlled off/on/status, no ping or
+  alias bypass, signature/identity changes, replay and clock skew,
+  malformed/oversized frames, and a cross-language HMAC test vector.
+- README reviewed and updated; protocol documented in
+  docs/WHATSAPP_BRIDGE.md. No provider keys, phone numbers, session files or
+  credentials committed.
+- The bridge has no live socket or full provider transport yet. Neither
+  a real WhatsApp pairing nor delivery can be declared verified.
+  Run CI before merging; stable matter remains untouched.
+
+
 ## 2026-11-17 — Reserved socket status control (pending CI)
 
 - Built `=/>status [SOCKET_ID]` as a socket-owner-only introspection

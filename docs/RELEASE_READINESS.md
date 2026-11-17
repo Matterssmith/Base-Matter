@@ -90,3 +90,10 @@ socket autenticado de su dueño. Confirmar conexión real y recuperación de
 la sesión sin sobrescribir credenciales. El `ping` histórico no es el bot
 global: los cambios administrativos usan `=/>` desde Base-Matter.
 Bot-Matter no se desarrolla hasta cerrar todos los criterios de Base-Matter.
+
+## Signed WhatsApp control integration checkpoint
+
+The HMAC-validated owner-only global control frame and local replay checks
+are unit-tested separately from actual WhatsApp pairing. Before promotion,
+require live phone pairing via code, verified incoming owner messages,
+dedicated per-socket keys, no socket crossover, revocation and crash tests.

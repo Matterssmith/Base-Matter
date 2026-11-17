@@ -263,6 +263,23 @@ Todos los repositorios de la organización pertenecen al ecosistema Matter;
 el futuro \`Bot-Matter\` consumirá contratos de sus componentes **solo
 cuando Base-Matter termine**. Véase [pairing code](docs/PAIRING_CODE.md).
 
+## WhatsApp owner control — authenticated bridge v1 (beta)
+
+The opt-in \`WhatsAppControlBridge\` validates a short-lived HMAC-SHA256
+provider frame bound to a **specific socket ID, owner ID, owner JID, private
+chat, event ID and message body**. It requires the WhatsApp Web provider to
+authenticate the original \`fromMe\` event. Only canonical \`=\/>\` control
+verbs are admitted; the old ping and bot routing are unreachable.
+
+This library accepts a JSON frame and dispatches through ControlDispatcher;
+it does not yet run a TCP/HTTP listener or authenticate a live WhatsApp
+session by itself. The transport must keep its bridge key local, reject
+group/nonowner messages and use the shared replay guard. The bridge rejects
+signatures, timestamps beyond two minutes, duplicate event IDs and attempts
+to control another owner's socket. The protocol is documented in
+[WhatsApp bridge v1](docs/WHATSAPP_BRIDGE.md).
+
+
 ## Continuous verification
 
 GitHub Actions workflow [Rust verification](.github/workflows/rust-ci.yml)
