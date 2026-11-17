@@ -126,3 +126,11 @@ pertenencia del subgrupo a la comunidad y encabezado REGISTER exacto.
 Responde en el chat propio y no modifica grupos ni roles. Limita a 12
 comunidades, 64 subgrupos por comunidad y 20 segundos por solicitud.
 No se puede declarar probado en red sin un teléfono vinculado.
+
+## Respuesta de comandos globales desde Base
+
+El proveedor admite el acuse opcional `message` de una operación
+`applied` para mostrar menús o estados en el self-chat. Exige menos
+de 761 bytes, texto UTF-8 válido, sin NUL ni controles salvo saltos de
+línea. Los `duplicate`, `denied` y campos inesperados no contienen
+respuestas. La verificación no equivale a privilegio de administración.

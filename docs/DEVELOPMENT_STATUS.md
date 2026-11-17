@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Acuse opcional con texto validado en proveedor Rust (alpha; CI pendiente)
+
+- El proveedor interpreta `applied` con un campo opcional `message` acotado a 760 bytes y sin controles, compatible con respuestas antiguas sin ese campo. No admite mensajes en `duplicate` o `denied`; tests ampliados.
+- Los 2 README fueron leídos íntegros (2/2), actualizado el README del proveedor. No se enviará el campo hasta enlazar el callback.
+
+
 ## 2026-11-17 — Respuesta de texto validada del puente IPC (alpha; CI pendiente)
 
 - El receptor Rust puede incluir `message` únicamente al acuse `applied` para status, encendido/apagado y extensiones; límite 760 bytes y sanitización. La API `dispatch()` conserva el retorno anterior.

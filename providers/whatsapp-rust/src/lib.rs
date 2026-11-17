@@ -55,9 +55,10 @@ pub struct SignedFrame {
     pub signature: String,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ControlAck {
     Applied,
+    AppliedWithMessage(String),
     Duplicate,
 }
 
@@ -66,6 +67,8 @@ pub enum ControlAck {
 struct ControlAckWire {
     ok: bool,
     outcome: String,
+    #[serde(default)]
+    message: Option<String>,
 }
 
 /// Interpret the signed-control IPC acknowledgment conservatively.
@@ -76,9 +79,16 @@ pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
     }
     let response: ControlAckWire =
         serde_json::from_slice(input).map_err(|_| anyhow!("Invalid controller acknowledgment"))?;
-    match (response.ok, response.outcome.as_str()) {
-        (true, "applied") => Ok(ControlAck::Applied),
-        (true, "duplicate") => Ok(ControlAck::Duplicate),
+    match (response.ok, response.outcome.as_str(), response.message) {
+        (true, "applied", None) => Ok(ControlAck::Applied),
+        (true, "applied", Some(message))
+            if !message.is_empty()
+                && message.len() <= 760
+                && !message.chars().any(|c| c.is_control() && c != '\n') =>
+        {
+            Ok(ControlAck::AppliedWithMessage(message))
+        }
+        (true, "duplicate", None) => Ok(ControlAck::Duplicate),
         _ => bail!("Controller denied the operation"),
     }
 }
