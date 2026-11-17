@@ -16,9 +16,9 @@ Preserve upstream copyright/license notices when importing provider code.
 
 ## Git and verification
 
-Default development: `alpha` (experimental), `beta` (integration), `stable` (releases). GitHub is the source of truth. Legacy refs `matter` (current default) and `matter-beta` are preserved; never force-reset or delete them. Until a verified migration is completed, they remain separate histories.
+Default development: `alpha` (experimental), `beta` (integration), `stable` (releases). GitHub is the source of truth. `stable` is the repository default. Only these THREE branches should remain after migration. Legacy references `matter`, `matter-beta`, `stable-hardening-20261117` and `stable-socket-owner-control-20261117` have no exclusive commits relative to their replacements; an authorized repository administrator may delete their refs after updating consumers and preserving tags or release references as appropriate. Never rewrite unique commits or delete session data.
 Inspect all local differences first. When dirty, protect tracked and new
-nonignored files with `git stash push -u`. Fetch origin, switch to matter-beta,
+nonignored files with `git stash push -u`. Fetch origin, switch to the explicitly selected `alpha` or `beta` branch,
 reset ONLY to the verified remote head of the explicitly selected working branch, restore the stash and inspect conflicts. Do not mix `alpha`, `beta` and legacy `matter-beta` during recovery. If fetch
 or stash restoration fails, stop dependent modifications/verification, retain
 recovery data and report the failure. Never use git clean or remove ignored
@@ -137,3 +137,17 @@ El proveedor de WhatsApp seleccionado es whatsapp-rust, ejecutado desde provider
 - Identidad de actor, socket, bot externo, canal, alcance, expiración y nonce deben venir de enlace autentificado. No confiar en nombres, números o texto como prueba de identidad, ni permitir acceso a sockets ajenos.
 - Sin compartir tokens, claves maestras ni archivos de sesión por defecto. Si un proveedor incompatible requiere migración, crear un EXPORT LOCAL ENCRIPTADO, voluntario y autorizado por dueño, con bloqueo de proceso y controles de origen/destino; jamás duplicar sesiones activas o publicar credenciales en Git/Vault.
 - Solo mapear capacidades compatibles; Telegram, Discord y plataformas externas pueden carecer de algunas operaciones y deben reportarlo.
+
+## Menú universal y copia de estética (instrucción correctiva 2026-11-17)
+
+- `=/>menu`, `=/>help` y `=/>h` muestran exclusivamente los comandos
+  globales reales en texto plano, sin estética inventada por Base-Matter.
+- La intención es leer una respuesta real del comando `menu` de OTRO
+  bot, con fuente identificada y permiso del propietario, y extraer
+  SOLAMENTE su diseño decorativo. No copiar su lista de comandos,
+  identidad, credenciales, enlaces, base de datos, sesiones ni lógica.
+- No afirmar que Base observa otros bots sin una sesión autorizada,
+  fuente real y control de mensajes. Los estilos importados deben
+  validarse y aislarse por comunidad antes de activarse.
+- `#matter` queda como interfaz opcional para integraciones externas
+  autenticadas; no sustituye el prefijo `=/>` ni copia sesiones activas.

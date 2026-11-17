@@ -1,5 +1,14 @@
 # Matter-Base development status
 
+## 2026-11-17 — Corrección de formato e instrucciones para beta WhatsApp (CI pendiente)
+
+- Corregido rustfmt del menú plano. Actualizadas las instrucciones: `stable` ya es rama predeterminada; solo deben permanecer `stable`, `beta`, `alpha`, retirando refs heredadas sin perder commits únicos.
+- Revisados enteros ambos README (2/2) y actualizados. Guía de prueba con `beta` y comandos `status/menu/help/h/start/on/off` corregida.
+- Documentada la intención exacta de importar SOLO decoración de un menú real de otro bot; el observador externo y la importación automática NO están implementados.
+- No se han eliminado ramas con herramientas que carecen de esa capacidad. No se copiaron sesiones ni se modifica `stable`.
+- Se requiere CI verde antes de promover alpha a beta y pairing code real para promover a stable.
+
+
 ## 2026-11-17 — Menú universal plano para WhatsApp (alpha; CI pendiente)
 
 - Corregida la interpretación: el propietario no pidió que Base inventase un menú decorativo; solo pide tomar estética de un menú real de otro bot. El menú universal ahora se presenta sin marcos, con comandos que realmente puede ejecutar el controlador.

@@ -8,10 +8,12 @@
 | Beta | `beta` | `matter-beta` en `8e4bcede9a711ea871a74fadc10eef1baada18cf` | CI + revisión de integración |
 | Alpha | `alpha` | `matter-beta` en `8e4bcede9a711ea871a74fadc10eef1baada18cf` | Nuevas capacidades |
 
-Conservar `matter`, `matter-beta` y ramas auxiliares existentes durante
-la transición. GitHub mantiene `matter` como rama predeterminada hasta que
-un administrador cambie esa preferencia en Settings > General > Default branch
-a `stable`. Crear una rama no cambia la rama predeterminada.
+La rama predeterminada ya es `stable` (comprobado por GitHub). Solo las
+tres ramas oficiales deben permanecer después de retirar las referencias
+heredadas. Las ramas auxiliares de seguridad ya tienen 0 commits exclusivos
+frente a `stable`; `matter` y `matter-beta` apuntan a los mismos commits
+que los puntos iniciales de `stable` y `beta` respectivamente.
+La eliminación de referencias no implica borrar archivos ni sesiones.
 
 ## Promoción, seguridad y compatibilidad
 
@@ -26,9 +28,11 @@ experimentales. Las ramas base son divergentes y se deben preservar sus
 commits y `Cargo.lock`. Exigir CI verde sobre el SHA exacto, verificar
 pairing real, y nunca declarar producción por tests offline.
 
-No eliminar `matter` ni `matter-beta` antes de actualizar referencias y
-validar que todas las instalaciones usan la nueva ruta. Repositorio GitHub
-permanece fuente de verdad.
+Retirar `matter`, `matter-beta`, `stable-hardening-20261117` y
+`stable-socket-owner-control-20261117` mediante una acción autorizada
+de GitHub una vez actualizados los consumidores. El conector de este
+chat no ofrece eliminación de refs; no fingir que se borraron hasta
+verificar la lista de ramas. GitHub sigue siendo la fuente de verdad.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
