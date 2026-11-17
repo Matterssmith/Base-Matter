@@ -46,9 +46,17 @@ impl PluginTrust for Trust {
 
 struct Sandbox(AtomicUsize);
 impl PluginSandbox for Sandbox {
-    fn execute(&self, _manifest: &PluginManifest, invocation: &CommandInvocation) -> Result<String> {
+    fn execute(
+        &self,
+        _manifest: &PluginManifest,
+        invocation: &CommandInvocation,
+    ) -> Result<String> {
         self.0.fetch_add(1, Ordering::SeqCst);
-        Ok(format!("{}:{}", invocation.command, invocation.args.join(",")))
+        Ok(format!(
+            "{}:{}",
+            invocation.command,
+            invocation.args.join(",")
+        ))
     }
 }
 
@@ -109,7 +117,10 @@ fn manifest_and_execution_policy_are_both_required() {
     );
     denied.install(&router, manifest()).unwrap();
     assert_eq!(
-        router.route("bot", "user", "room", "#st").unwrap_err().to_string(),
+        router
+            .route("bot", "user", "room", "#st")
+            .unwrap_err()
+            .to_string(),
         "Command execution failed"
     );
     assert_eq!(calls.0.load(Ordering::SeqCst), 0);
@@ -152,12 +163,20 @@ fn verified_manifests_load_but_invalid_batch_installs_none() {
     getrandom::fill(&mut random).unwrap();
     let dir = std::env::temp_dir().join(format!("matter-plugins-{}", hex::encode(random)));
     std::fs::create_dir(&dir).unwrap();
-    std::fs::write(dir.join("a.json"), serde_json::to_string(&manifest()).unwrap()).unwrap();
+    std::fs::write(
+        dir.join("a.json"),
+        serde_json::to_string(&manifest()).unwrap(),
+    )
+    .unwrap();
     let mut duplicate = manifest();
     duplicate.plugin_id = "plugin-2".into();
     duplicate.command = "status-2".into();
     duplicate.aliases = vec!["st".into()];
-    std::fs::write(dir.join("b.json"), serde_json::to_string(&duplicate).unwrap()).unwrap();
+    std::fs::write(
+        dir.join("b.json"),
+        serde_json::to_string(&duplicate).unwrap(),
+    )
+    .unwrap();
     let router = router();
     let host = PluginHost::new(
         Arc::new(Trust {

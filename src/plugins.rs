@@ -47,14 +47,19 @@ impl PluginManifest {
         validate_identifier(&self.plugin_id)?;
         validate_identifier(&self.version)?;
         validate_identifier(&self.command)?;
-        if !matches!(self.runtime.as_str(), "rust" | "cpp" | "go" | "python" | "node") {
+        if !matches!(
+            self.runtime.as_str(),
+            "rust" | "cpp" | "go" | "python" | "node"
+        ) {
             bail!("Unsupported plugin runtime");
         }
         let entry = Path::new(&self.entrypoint);
         if self.entrypoint.is_empty()
             || self.entrypoint.len() > MAX_IDENTIFIER_BYTES
             || entry.components().count() == 0
-            || !entry.components().all(|c| matches!(c, Component::Normal(_)))
+            || !entry
+                .components()
+                .all(|c| matches!(c, Component::Normal(_)))
             || self.entrypoint.contains('\\')
         {
             bail!("Plugin entrypoint must be relative and traversal-free");
@@ -115,7 +120,11 @@ pub trait PluginSandbox: Send + Sync {
 pub struct DenyPluginSandbox;
 
 impl PluginSandbox for DenyPluginSandbox {
-    fn execute(&self, _manifest: &PluginManifest, _invocation: &CommandInvocation) -> Result<String> {
+    fn execute(
+        &self,
+        _manifest: &PluginManifest,
+        _invocation: &CommandInvocation,
+    ) -> Result<String> {
         bail!("Plugin sandbox not configured")
     }
 }
@@ -145,11 +154,9 @@ impl PluginHost {
             trust
                 .authorize_execution(&manifest, invocation)
                 .map_err(|_| anyhow!("Plugin execution denied"))?;
-            let result = catch_unwind(AssertUnwindSafe(|| {
-                sandbox.execute(&manifest, invocation)
-            }))
-            .map_err(|_| anyhow!("Plugin sandbox execution failed"))?
-            .map_err(|_| anyhow!("Plugin sandbox execution failed"))?;
+            let result = catch_unwind(AssertUnwindSafe(|| sandbox.execute(&manifest, invocation)))
+                .map_err(|_| anyhow!("Plugin sandbox execution failed"))?
+                .map_err(|_| anyhow!("Plugin sandbox execution failed"))?;
             if result.len() > MAX_RESPONSE_BYTES {
                 bail!("Plugin response exceeds size limit");
             }
@@ -164,7 +171,12 @@ impl PluginHost {
         let mut manifests = Vec::new();
         for entry in fs::read_dir(directory)? {
             let entry = entry?;
-            if entry.path().extension().and_then(|extension| extension.to_str()) != Some("json") {
+            if entry
+                .path()
+                .extension()
+                .and_then(|extension| extension.to_str())
+                != Some("json")
+            {
                 continue;
             }
             if !entry.file_type()?.is_file() {
