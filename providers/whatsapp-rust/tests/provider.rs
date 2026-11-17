@@ -129,6 +129,15 @@ fn exclusive_session_lock_never_removes_sqlite_file() {
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
     fs::write(&c.session_db, b"existing session").unwrap();
     let lease = SessionLease::acquire(&c.session_db).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = fs::metadata(c.session_db.with_extension("owner.lock"))
+            .unwrap()
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o077, 0, "Session lock must be private at creation");
+    }
     assert!(SessionLease::acquire(&c.session_db).is_err());
     drop(lease);
     assert_eq!(fs::read(&c.session_db).unwrap(), b"existing session");

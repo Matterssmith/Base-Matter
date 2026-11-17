@@ -227,16 +227,16 @@ pub struct SessionLease {
 impl SessionLease {
     pub fn acquire(database: &Path) -> Result<Self> {
         let path = database.with_extension("owner.lock");
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&path)
-            .map_err(|_| anyhow!("Session already owned or a lock requires recovery"))?;
+        let mut options = OpenOptions::new();
+        options.write(true).create_new(true);
         #[cfg(unix)]
         {
-            use std::os::unix::fs::PermissionsExt;
-            file.set_permissions(fs::Permissions::from_mode(0o600))?;
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
         }
+        let mut file = options
+            .open(&path)
+            .map_err(|_| anyhow!("Session already owned or a lock requires recovery"))?;
         writeln!(file, "{}", std::process::id())?;
         file.sync_all()?;
         Ok(Self { path, _file: file })

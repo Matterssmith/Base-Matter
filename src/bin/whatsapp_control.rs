@@ -32,9 +32,14 @@ struct ExclusiveLock {
 }
 impl ExclusiveLock {
     fn acquire(path: PathBuf) -> Result<Self> {
-        let mut file = OpenOptions::new()
-            .create_new(true)
-            .write(true)
+        let mut options = OpenOptions::new();
+        options.create_new(true).write(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        let mut file = options
             .open(&path)
             .map_err(|_| anyhow!("Control plane already owned or recovery required"))?;
         writeln!(file, "{}", std::process::id())?;
@@ -179,4 +184,32 @@ fn main() -> Result<()> {
     let service = WhatsAppControlIpc::new(bridge);
     println!("Base-Matter owner control listening on local loopback.");
     service.serve(bind)
+}
+
+#[cfg(test)]
+mod lock_tests {
+    use super::*;
+
+    #[test]
+    fn controller_lock_is_exclusive_and_created_private() {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = env::temp_dir().join(format!(
+            "base-matter-control-lock-{}-{nonce}",
+            std::process::id()
+        ));
+        let lease = ExclusiveLock::acquire(path.clone()).unwrap();
+        assert!(ExclusiveLock::acquire(path.clone()).is_err());
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = fs::metadata(&path).unwrap().permissions().mode();
+            assert_eq!(mode & 0o077, 0, "Control lock must be private at creation");
+        }
+        drop(lease);
+        assert!(!path.exists());
+    }
 }

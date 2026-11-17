@@ -608,3 +608,7 @@ Para probar el emparejamiento exclusivamente por código en `matter-beta`, sigue
 ## Contrato común para WhatsApp, Telegram y Discord
 
 La infraestructura de conexiones y mensajes conserva los controles de Base-Matter para todas las plataformas. El [registro de controladores Rust](docs/PLATFORM_CONTRACT.md) dirige cada sesión exclusivamente a su proveedor canónico, sin fallback cruzado, sin compartir credenciales y sin suplantar identidad. Los adaptadores de Telegram-Matter y Discord-Matter permanecen pendientes; este contrato no afirma que estén conectados. WhatsApp continúa usando `whatsapp-rust` y pairing code; la prueba con teléfono y las puertas de estabilidad siguen pendientes.
+
+## Protección de archivos de bloqueo en Rust
+
+Los dos procesos de WhatsApp crean sus archivos de bloqueo de propiedad de sesión con permisos privados `0600` desde la apertura en Unix. Conservan la exclusión por `create_new`, no sustituyen bases SQLite ni recuperan automáticamente locks obsoletos. Requiere CI y evaluación de la sesión real; no cambia el control global `=/>` ni habilita Bot-Matter.

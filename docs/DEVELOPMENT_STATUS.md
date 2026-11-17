@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Bloqueos privados desde creación (CI pendiente)
+
+- Hardening de los dos procesos Rust de WhatsApp: los locks exclusivos de controlador y proveedor se crean en modo Unix 0600 sin ventana intermedia; se conserva create_new, no se borran sesiones ni se activan reintentos inseguros.
+- Pruebas añadidas al binario Base y al proveedor para exclusividad/permisos. Su validación requiere CI y pruebas reales posteriores.
+- READMEs auditados íntegros 2/2 (raíz y proveedor); ambos actualizados con el contrato de lock. Se conserva pairing code, los créditos y la independencia de Bot-Matter.
+- No se modifican la rama estable, las llaves, el formato cifrado ni las sesiones del operador.
+
+
 ## 2026-11-17 — Formato del registro de plataformas (CI pendiente)
 
 - La primera ejecución de CI detectó tres diferencias rustfmt en `src/lib.rs` y `tests/platforms.rs`, sin llegar a comprobar el comportamiento de los nuevos registros. Se aplicó el formato requerido por el propio diff de CI.
