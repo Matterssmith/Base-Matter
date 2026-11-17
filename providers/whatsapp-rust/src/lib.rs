@@ -259,9 +259,7 @@ pub struct SessionLease {
 impl SessionLease {
     fn existing(path: &Path) -> Result<File> {
         let metadata = fs::symlink_metadata(path)?;
-        if !metadata.file_type().is_file()
-            || metadata.len() != SESSION_LEASE_MARKER.len() as u64
-        {
+        if !metadata.file_type().is_file() || metadata.len() != SESSION_LEASE_MARKER.len() as u64 {
             bail!("Legacy or unsafe session lock requires verified recovery");
         }
         #[cfg(unix)]

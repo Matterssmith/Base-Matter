@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Formato de locks v2 (CI pendiente)
+
+- Se aplicaron los dos ajustes exactos de rustfmt de GitHub Actions al proveedor y receptor Rust. Sin modificaciones de semántica, secretos ni sesiones.
+- READMEs verificados íntegros 2/2, sin cambios de contenido; el diseño de recuperación v2 sigue pendiente de CI en el SHA corregido.
+
+
 ## 2026-11-17 — Bloqueos nativos recuperables v2 (CI pendiente)
 
 - Migrados los locks exclusivos de controlador y proveedor Rust a marcadores v2 persistentes + `File::try_lock` de Rust 1.89+, sin dependencias nuevas ni cambio de formato SQLite.

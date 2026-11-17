@@ -34,9 +34,7 @@ struct ExclusiveLock {
 impl ExclusiveLock {
     fn existing(path: &PathBuf) -> Result<File> {
         let metadata = fs::symlink_metadata(path)?;
-        if !metadata.file_type().is_file()
-            || metadata.len() != CONTROL_LEASE_MARKER.len() as u64
-        {
+        if !metadata.file_type().is_file() || metadata.len() != CONTROL_LEASE_MARKER.len() as u64 {
             bail!("Legacy or unsafe control lock requires verified recovery");
         }
         #[cfg(unix)]
