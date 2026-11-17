@@ -11,13 +11,13 @@ use tokio::{
     net::TcpStream,
     time::{timeout, Duration},
 };
-use whatsapp_matter_rust_provider::{Config, Event, SessionLease};
+use whatsapp_matter_rust_provider::{parse_control_ack, Config, ControlAck, Event, SessionLease};
 use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*};
 
 async fn deliver(
     address: std::net::SocketAddrV4,
     frame: &whatsapp_matter_rust_provider::SignedFrame,
-) -> Result<()> {
+) -> Result<ControlAck> {
     let body = serde_json::to_vec(frame)?;
     if body.len() >= 16 * 1024 {
         bail!("Control frame exceeds limit");
@@ -31,11 +31,7 @@ async fn deliver(
         if response.len() > 1024 {
             bail!("Invalid bridge reply length");
         }
-        let ack: serde_json::Value = serde_json::from_slice(&response)?;
-        if ack.get("ok").and_then(serde_json::Value::as_bool) != Some(true) {
-            bail!("Control was rejected");
-        }
-        Ok(())
+        parse_control_ack(&response)
     };
     timeout(Duration::from_secs(4), transport).await??;
     Ok(())
@@ -125,10 +121,16 @@ async fn main() -> Result<()> {
                 };
                 match config.signed_control(&data) {
                     Ok(Some(frame)) => {
-                        if deliver(config.bridge_addr, &frame).await.is_ok() {
-                            println!("Base-Matter owner control accepted");
-                        } else {
-                            eprintln!("Base-Matter owner control was rejected or unreachable");
+                        match deliver(config.bridge_addr, &frame).await {
+                            Ok(ControlAck::Applied) => {
+                                println!("Base-Matter owner control applied");
+                            }
+                            Ok(ControlAck::Duplicate) => {
+                                println!("Base-Matter duplicate control ignored (no new effect)");
+                            }
+                            Err(_) => {
+                                eprintln!("Base-Matter owner control denied or unreachable");
+                            }
                         }
                     }
                     Ok(None) => {}

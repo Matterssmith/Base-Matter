@@ -62,3 +62,11 @@ La [guía de dos terminales y emparejamiento](../../docs/WHATSAPP_TRIAL.md) usa 
 ## Propiedad de sesión segura
 
 En sistemas Unix, el archivo `owner.lock` se crea con permisos `0600` en la llamada de apertura, sin una ventana inicial con permisos de grupo/otros. La carpeta de sesión debe seguir siendo privada (`0700`). Un bloqueo residual exige recuperación manual verificada; no eliminarlo automáticamente ni borrar `session.db`.
+
+## Resultados del control global
+
+Al enviar `=/>`, el proveedor diferencia el efecto nuevo `applied` del
+replay `duplicate` y los rechazos. Un resultado `duplicate` nunca se anuncia
+como ejecución nueva; los acuses malformados o desconocidos se rechazan.
+El control continúa sin respuesta automática por WhatsApp y requiere prueba
+real autorizada antes de promoverlo a estable.

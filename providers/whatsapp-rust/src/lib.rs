@@ -6,7 +6,7 @@
  */
 use anyhow::{anyhow, bail, Result};
 use hmac::{Hmac, Mac};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::{
     env,
@@ -53,6 +53,35 @@ pub struct SignedFrame {
     pub from_me: bool,
     pub timestamp: i64,
     pub signature: String,
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ControlAck {
+    Applied,
+    Duplicate,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ControlAckWire {
+    ok: bool,
+    outcome: String,
+}
+
+/// Interpret the signed-control IPC acknowledgment conservatively.
+/// A duplicate is acknowledged as a replay without claiming another effect.
+pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
+    if input.is_empty() || input.len() > 1024 {
+        bail!("Invalid controller acknowledgment");
+    }
+    let response: ControlAckWire =
+        serde_json::from_slice(input).map_err(|_| anyhow!("Invalid controller acknowledgment"))?;
+    match (response.ok, response.outcome.as_str()) {
+        (true, "applied") => Ok(ControlAck::Applied),
+        (true, "duplicate") => Ok(ControlAck::Duplicate),
+        _ => bail!("Controller denied the operation"),
+    }
 }
 
 impl Config {

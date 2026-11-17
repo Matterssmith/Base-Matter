@@ -5,7 +5,9 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use std::{collections::HashMap, fs};
-use whatsapp_matter_rust_provider::{sign_frame, Config, Event, SessionLease, SignedFrame};
+use whatsapp_matter_rust_provider::{
+    parse_control_ack, sign_frame, Config, ControlAck, Event, SessionLease, SignedFrame,
+};
 
 const OWNER: &str = "5215512345678@s.whatsapp.net";
 
@@ -182,4 +184,30 @@ fn preflight_validates_configuration_without_writing_a_session() {
         .unwrap();
     assert!(!denied.status.success());
     fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn controller_ack_distinguishes_applied_and_duplicate_without_false_success() {
+    assert_eq!(
+        parse_control_ack(br#"{"ok":true,"outcome":"applied"}"#).unwrap(),
+        ControlAck::Applied
+    );
+    assert_eq!(
+        parse_control_ack(br#"{"ok":true,"outcome":"duplicate"}"#).unwrap(),
+        ControlAck::Duplicate
+    );
+    for invalid in [
+        br#"{"ok":false,"outcome":"denied"}"#.as_slice(),
+        br#"{"ok":true,"outcome":"ignored"}"#,
+        br#"{"ok":true,"outcome":"denied"}"#,
+        br#"{"ok":false,"outcome":"applied"}"#,
+        br#"{"ok":true}"#,
+        br#"{"ok":"true","outcome":"applied"}"#,
+        br#"{"ok":true,"outcome":"applied","unexpected":1}"#,
+        br#"{}"#,
+        b"".as_slice(),
+    ] {
+        assert!(parse_control_ack(invalid).is_err());
+    }
+    assert!(parse_control_ack(&vec![b'a'; 1025]).is_err());
 }

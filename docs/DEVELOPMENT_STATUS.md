@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Resultados IPC tipados, sin falsos positivos (pendiente CI)
+
+- Corregida la interpretación de acuses de `whatsapp-rust`: `applied` y `duplicate` se reportan por separado; acuses ignorados, denegados, inválidos, extralimitados o con campos desconocidos fallan cerrados.
+- Añadido un test Rust de regresión del contrato de respuesta; sin cambios en el formato HMAC, en la sesión SQLite ni en el control global.
+- Revisados íntegros los 2 README del repositorio (2/2), ambos actualizados; guía de prueba ajustada; créditos y licencias conservados.
+- Pendiente CI de proveedor en el SHA exacto, y validación de pairing code en dispositivo real antes de promocionar a `matter`.
+
+
 ## 2026-11-17 — Corrección de formato IPC (CI pendiente)
 
 - Rustfmt en el primer CI IPC identificó dos líneas del nuevo test; se aplicó el diff exacto requerido antes de ejecutar el resto de las verificaciones.

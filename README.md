@@ -616,3 +616,12 @@ Los dos procesos de WhatsApp crean sus archivos de bloqueo de propiedad de sesi�
 ## Límite de recepción del puente WhatsApp
 
 El receptor TCP de controles `=/>` corta los frames de más de 16 KiB y los envíos incompletos o demasiado lentos. El plazo máximo de lectura es 4 segundos por conexión, no un temporizador reiniciado por cada fragmento. Esta es una protección local; no sustituye la verificación de sesión WhatsApp, HMAC ni las pruebas con un teléfono.
+
+## Verificación del resultado del control WhatsApp
+
+El proveedor Rust ahora distingue el acuse de control `applied` del resultado
+`duplicate`. Los frames repetidos no se muestran como ejecuciones nuevas;
+`ignored`, `denied`, errores de JSON, claves extrañas y acuses incompletos
+fallan cerrados. Esto mejora la observabilidad de las pruebas y no añade
+respuesta en el chat WhatsApp ni modifica el protocolo HMAC. La conexión real
+y la identidad del JID siguen pendientes de prueba.

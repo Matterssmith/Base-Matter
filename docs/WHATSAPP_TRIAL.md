@@ -115,3 +115,11 @@ cualquier migración.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Resultados en terminal
+
+El proveedor registra `applied` cuando el controlador ejecuta una operación
+autorizada, `duplicate` cuando no se repite ningún efecto por replay, o un
+rechazo genérico si el mensaje fue denegado o el controlador no respondió.
+No representa estos tres estados como una misma ejecución aceptada. Tampoco
+responde a WhatsApp; los resultados solo se observan en la terminal.
