@@ -172,6 +172,38 @@ impl RoleStore {
         Ok(())
     }
 
+    /// Reconciles role-scope ownership with an already completed bot transfer.
+    /// The previous role owner authorizes the change, and the target must be
+    /// the bot's current owner. Applications MUST serialize this operation
+    /// with external bot transfer; independent stores are not atomic together.
+    /// Lost-owner recovery needs a distinct trusted recovery protocol.
+    pub fn transfer_scope_owner(
+        &self,
+        scope: &str,
+        actor: &str,
+        new_owner: &str,
+        bots: &crate::BotRegistry,
+    ) -> Result<bool> {
+        validate_id(scope)?;
+        validate_id(actor)?;
+        validate_id(new_owner)?;
+        bots.authorize_owner(scope, new_owner)
+            .map_err(|_| anyhow!("Target is not the current bot owner"))?;
+        let mut connection = self.lock()?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        require_owner(&tx, scope, actor)?;
+        if actor == new_owner {
+            return Ok(false);
+        }
+        tx.execute(
+            "UPDATE role_scopes SET owner_id=?1 WHERE scope_id=?2 AND owner_id=?3",
+            params![new_owner, scope, actor],
+        )?;
+        audit(&tx, scope, actor, "transfer_scope_owner", Some(new_owner), None)?;
+        tx.commit()?;
+        Ok(true)
+    }
+
     /// Defines an immutable parent relationship; roles cannot form cycles.
     pub fn create_role(
         &self,

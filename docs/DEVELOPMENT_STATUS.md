@@ -1,5 +1,22 @@
 # Matter-Base development status
 
+## 2026-11-17 — Role scope owner handover (pending CI)
+
+- Previous plugin contract checkpoint passed GitHub Actions run 44102970673.
+- Added explicit RoleStore::transfer_scope_owner; caller must be the previous
+  role scope owner and target must already be current owner in BotRegistry.
+  Scope update and audit share one SQLite transaction, with fail-closed
+  target checks and idempotent same-owner operation.
+- Two regressions cover incorrect targets, revoked old administration, new
+  owner-only history and audit-trigger rollback/recovery.
+- README audit: 1 total, 1 reviewed and updated; corrected stale roadmap
+  and documented cross-store non-atomic owner handover.
+- This phase's CI is pending. Lost-owner recovery still requires a distinct
+  authenticated authority; no production-atomic bot/role transfer is claimed.
+  H–L remain open. Matter-Bot and stable matter remain unchanged.
+
+
+
 ## 2026-11-17 — Plugin trust and sandbox contracts (pending CI)
 
 - Previous encrypted control-outbox checkpoint passed GitHub Actions run

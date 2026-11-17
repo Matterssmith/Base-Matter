@@ -36,3 +36,17 @@ requirements.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Bot owner handover
+
+The opt-in `RoleStore::transfer_scope_owner` operation requires the previous
+role-scope owner as authenticated actor and independently verifies the target
+against the CURRENT owner in `BotRegistry`. It updates only role-scope
+ownership and audit atomically in SQLite. The old owner immediately loses
+role administration and owner-only audit access after commit.
+
+**Non-atomic boundary:** BotRegistry and RoleStore are independent persistence
+transactions. A bot transfer can complete while a role-scope transfer fails.
+The trusted host must serialize both operations with bot command admission and
+provide reconciliation or lost-owner recovery. This method is not an implicit
+global-owner bypass and cannot recover when the old role owner is unavailable.

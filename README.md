@@ -405,9 +405,11 @@ See [activation contracts](docs/activation.md).
 
 ## Roadmap boundary
 
-General role inheritance, full Control Plane lifecycle, connection and
-messaging contracts, plugin validation, and
-effective sandbox isolation remain pending. Matter-Bot must not be built on
+Scoped roles, persistent session metadata, guarded messaging contracts and
+plugin validation exist and have passed CI. Remaining readiness work includes
+complete authenticated Vault synchronization/recovery, externally verified
+provider connections, real sandbox isolation, cross-store owner handover
+coordination, and full release and security audits. Matter-Bot must not be built on
 this crate until those core contracts are implemented, integrated, documented,
 and tested.
 
