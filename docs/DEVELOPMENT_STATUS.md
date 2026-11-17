@@ -1,5 +1,37 @@
 # Matter-Base development status
 
+## 2026-11-17 — Verified beta checkpoint and actual remaining gates
+
+- Verified GitHub Actions run **44125657053** on exact beta SHA
+  `d4dcc7791fdf1641de74e755a2edef81f87531b8`:
+  **success** on Ubuntu and Windows. Jobs included locked compilation,
+  unit/integration tests, strict Clippy, formatting, docs, README link/credit
+  checks, tracked-secret-name audit and whitespace.
+- New since earlier stage H: scoped role authorization, owner handover,
+  reserved set/unset role controls, durable session metadata, outgoing
+  activation/role admission, connection/credential contracts, encrypted outbox
+  and lost-ack reconciliation, plugin trust/sandbox interface and trusted
+  inbound gateway/replay claims. These are verified local contracts, not
+  evidence of live provider or Vault integration.
+- `matter` stable remains at
+  `c1ad3498381ba9f1f18d4aef3cf702686dcd285c`.
+  Matter-Bot remains blocked. No changes to real user-local worktrees,
+  ignored sessions, production keys, Vault or stable branch were made.
+- README audit for this documentation-only commit: one README found, fully
+  reviewed, **0 updated, 1 unchanged**. Its current project status and
+  boundaries remain accurate; release-readiness document updated.
+- **Critical unverified work:** authenticated private Vault key/remote
+  publisher and restart/restore integration; real signed/authenticated
+  WhatsApp, Telegram and Discord adapters and test accounts; an independently
+  tested OS/WASM sandbox; coordinated atomic or crash-recoverable bot/socket/
+  role ownership handover; Termux/Android tests and final security threat
+  model/migrations. External secrets, provider test accounts and isolation
+  infrastructure are unavailable in this GitHub-only execution context.
+- Do not mark H–L or Matter-Base as complete. Next session must inspect actual
+  beta head/CI status and continue from these exact missing integrations,
+  without repeating passing modules or touching Matter-Bot.
+
+
 ## 2026-11-17 — Authenticated ingress and replay contract (pending CI)
 
 - Previous Windows SQLite-handle fix passed GitHub Actions run 44124628703

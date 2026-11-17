@@ -65,3 +65,10 @@ real platform/provider compatibility remain separate release gates.
 
 The inbound gateway provides replay and authorization contracts only; actual
 signed webhooks and authenticated platform sender bindings remain unverified.
+
+## Most recent verified development checkpoint
+
+GitHub Actions run `44125657053` on `matter-beta` SHA
+`d4dcc7791fdf1641de74e755a2edef81f87531b8` passed both Linux
+and Windows Rust lanes on November 17, 2026. This does not waive any of
+the external integration blockers above. No release promotion was performed.
