@@ -5,7 +5,7 @@
  */
 use crate::{
     activation::{GlobalPolicy, SocketActivationStore},
-    BotRegistry, CommandRouter,
+    BotRegistry, CommandRouter, RoleStore,
 };
 use anyhow::{anyhow, bail, Result};
 use std::sync::Arc;
@@ -13,6 +13,13 @@ use std::sync::Arc;
 #[derive(Debug, PartialEq, Eq)]
 pub enum DispatchResult {
     Control { socket_id: String, powered: bool },
+    RoleChanged {
+        bot_instance_id: String,
+        user_id: String,
+        role_id: String,
+        granted: bool,
+        changed: bool,
+    },
     Inactive,
     Message(Option<String>),
 }
@@ -26,6 +33,7 @@ pub struct ControlDispatcher {
     bots: Arc<BotRegistry>,
     router: Arc<CommandRouter>,
     global_policy: GlobalPolicy,
+    roles: Option<Arc<RoleStore>>,
 }
 
 impl ControlDispatcher {
@@ -40,6 +48,7 @@ impl ControlDispatcher {
             bots,
             router,
             global_policy: GlobalPolicy::Configured(global_default),
+            roles: None,
         }
     }
 
@@ -55,7 +64,51 @@ impl ControlDispatcher {
             bots,
             router,
             global_policy: GlobalPolicy::Persisted,
+            roles: None,
         }
+    }
+
+
+    /// Installs optional role management on reserved control commands.
+    pub fn with_roles(mut self, roles: Arc<RoleStore>) -> Self {
+        self.roles = Some(roles);
+        self
+    }
+
+    fn change_role(
+        &self,
+        socket: &str,
+        actor: &str,
+        user: &str,
+        role: &str,
+        grant: bool,
+    ) -> Result<DispatchResult> {
+        let roles = self
+            .roles
+            .as_ref()
+            .ok_or_else(|| anyhow!("Role control not configured"))?;
+        let admission = self
+            .activation
+            .admission(socket, None, self.global_policy)?;
+        if admission.owner_id != actor {
+            bail!("Socket owner authorization denied");
+        }
+        let bot = admission
+            .bot_instance_id
+            .ok_or_else(|| anyhow!("Socket has no bot binding"))?;
+        self.bots.authorize_owner(&bot, actor)?;
+        let changed = if grant {
+            roles.grant(&bot, actor, user, role)?
+        } else {
+            roles.revoke(&bot, actor, user, role)?
+        };
+        Ok(DispatchResult::RoleChanged {
+            bot_instance_id: bot,
+            user_id: user.to_owned(),
+            role_id: role.to_owned(),
+            granted: grant,
+            changed,
+        })
     }
 
     /// Control grammar: `=on [SOCKET_ID]`, `=off [SOCKET_ID]`; `/>` and
@@ -80,20 +133,24 @@ impl ControlDispatcher {
             .or_else(|| message.strip_prefix('='))
         {
             let tokens: Vec<_> = body.split_whitespace().collect();
-            if tokens.is_empty() || tokens.len() > 2 {
-                bail!("Invalid control command");
+            match tokens.as_slice() {
+                ["on"] | ["off"] | ["on", _] | ["off", _] => {
+                    let powered = tokens[0] == "on";
+                    let socket = tokens.get(1).copied().unwrap_or(receiving_socket);
+                    self.activation.set_power(socket, actor, powered)?;
+                    return Ok(DispatchResult::Control {
+                        socket_id: socket.to_owned(),
+                        powered,
+                    });
+                }
+                ["set", "role", user, role] => {
+                    return self.change_role(receiving_socket, actor, user, role, true);
+                }
+                ["unset", "role", user, role] => {
+                    return self.change_role(receiving_socket, actor, user, role, false);
+                }
+                _ => bail!("Invalid control command"),
             }
-            let powered = match tokens[0] {
-                "on" => true,
-                "off" => false,
-                _ => bail!("Unknown control command"),
-            };
-            let socket = tokens.get(1).copied().unwrap_or(receiving_socket);
-            self.activation.set_power(socket, actor, powered)?;
-            return Ok(DispatchResult::Control {
-                socket_id: socket.to_owned(),
-                powered,
-            });
         }
         let admission = self
             .activation

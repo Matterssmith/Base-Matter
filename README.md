@@ -146,6 +146,16 @@ OutboundMessage.group_id; private destinations use None. This still does not
 make separate stores or network effects atomic.
 See [session contracts](docs/sessions.md).
 
+## Reserved role-control commands
+
+With ControlDispatcher::with_roles, =, /> and =/> support "set role
+USER_ID ROLE_ID" and "unset role USER_ID ROLE_ID" for the bot bound to the
+receiving socket. The socket owner must remain the bot and role-scope owner.
+Role controls work even when the socket is off; the ordinary router cannot
+intercept them. Missing role configuration and foreign owners are denied.
+The host must serialize bot transfer with cross-store role administration.
+
+
 ## Continuous verification
 
 GitHub Actions workflow [Rust verification](.github/workflows/rust-ci.yml)

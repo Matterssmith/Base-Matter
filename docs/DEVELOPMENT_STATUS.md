@@ -1,5 +1,20 @@
 # Matter-Base development status
 
+## 2026-11-17 — Reserved role control (pending CI)
+
+- Previous outbound message-control integration passed GitHub Actions run
+  44099969055.
+- Added optional set/unset role operations on all reserved control prefixes,
+  requiring current socket, bot and authorization-scope ownership.
+- Added tests for powered-off operation, unauthorized actors, unknown roles,
+  idempotence, revocation, missing role configuration and bot transfer.
+- README audit: one root README reviewed and updated, plus activation docs.
+  Cross-store owner-transfer serialization remains a necessary host contract.
+- This checkpoint awaits CI verification. H–L are not fully complete.
+  Stable matter and Matter-Bot remain untouched.
+
+
+
 ## 2026-11-17 — Outbound control-plane integration (pending CI)
 
 - Previous session contracts passed GitHub Actions run 44099305219.

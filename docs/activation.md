@@ -128,3 +128,13 @@ These remain prerequisites for the real WhatsApp activation test.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Reserved role controls
+
+Use `ControlDispatcher::with_roles` to enable `=/>set role USER_ID ROLE_ID`
+and `=/>unset role USER_ID ROLE_ID` (aliases `=` and `/>`). The authenticated
+receiving socket owner must own the currently bound bot and role scope. The
+role must exist. Commands work while the socket is off and never invoke the
+normal router. Without a role store they fail closed. The host must serialize
+owner transfers with independent role/sockets stores; no cross-store atomicity
+is claimed.
