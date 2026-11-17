@@ -87,9 +87,11 @@ impl PairingCodeService {
         {
             bail!("Pairing session is not eligible");
         }
-        catch_unwind(AssertUnwindSafe(|| self.admission.authorize(&session, actor)))
-            .map_err(|_| anyhow!("Pairing request denied"))?
-            .map_err(|_| anyhow!("Pairing request denied"))?;
+        catch_unwind(AssertUnwindSafe(|| {
+            self.admission.authorize(&session, actor)
+        }))
+        .map_err(|_| anyhow!("Pairing request denied"))?
+        .map_err(|_| anyhow!("Pairing request denied"))?;
         let result = catch_unwind(AssertUnwindSafe(|| {
             self.provider.request_code(&session, phone)
         }))
@@ -97,7 +99,9 @@ impl PairingCodeService {
         .map_err(|_| anyhow!("Pairing provider failed"))?;
         let value = Zeroizing::new(result);
         if !(6..=16).contains(&value.len())
-            || !value.bytes().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
+            || !value
+                .bytes()
+                .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
         {
             bail!("Invalid pairing code from provider");
         }

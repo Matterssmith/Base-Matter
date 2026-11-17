@@ -40,29 +40,28 @@ impl PairingCodeProvider for Provider {
     }
 }
 
-fn fixture(platform: &str, allow: bool, code: &'static str) -> (
-    Arc<SessionRegistry>,
-    PairingCodeService,
-    Arc<Provider>,
-) {
+fn fixture(
+    platform: &str,
+    allow: bool,
+    code: &'static str,
+) -> (Arc<SessionRegistry>, PairingCodeService, Arc<Provider>) {
     let sessions = Arc::new(SessionRegistry::in_memory().unwrap());
     sessions.register("socket", "owner", platform).unwrap();
     let provider = Arc::new(Provider {
         attempts: AtomicUsize::new(0),
         code,
     });
-    let service = PairingCodeService::new(
-        sessions.clone(),
-        Arc::new(Auth(allow)),
-        provider.clone(),
-    );
+    let service =
+        PairingCodeService::new(sessions.clone(), Arc::new(Auth(allow)), provider.clone());
     (sessions, service, provider)
 }
 
 #[test]
 fn owner_can_request_transient_whatsapp_pairing_code_without_logging() {
     let (_sessions, service, provider) = fixture("whatsapp", true, "AB12CD34");
-    let code = service.request_code("socket", "owner", "5215512345678").unwrap();
+    let code = service
+        .request_code("socket", "owner", "5215512345678")
+        .unwrap();
     assert_eq!(code.expose_to_authenticated_owner(), "AB12CD34");
     assert!(!format!("{code:?}").contains("AB12CD34"));
     assert_eq!(provider.attempts.load(Ordering::SeqCst), 1);
@@ -71,15 +70,25 @@ fn owner_can_request_transient_whatsapp_pairing_code_without_logging() {
 #[test]
 fn nonowner_invalid_phone_and_policy_denial_never_call_provider() {
     let (_sessions, service, provider) = fixture("whatsapp", true, "AB12CD34");
-    assert!(service.request_code("socket", "intruder", "5215512345678").is_err());
-    for phone in ["", "+5215512345678", "123", "5215512345.78", "0000000000000000"] {
+    assert!(service
+        .request_code("socket", "intruder", "5215512345678")
+        .is_err());
+    for phone in [
+        "",
+        "+5215512345678",
+        "123",
+        "5215512345.78",
+        "0000000000000000",
+    ] {
         assert!(service.request_code("socket", "owner", phone).is_err());
     }
     assert_eq!(provider.attempts.load(Ordering::SeqCst), 0);
     let (_, denied, other) = fixture("whatsapp", false, "AB12CD34");
     assert_eq!(
-        denied.request_code("socket", "owner", "5215512345678")
-            .unwrap_err().to_string(),
+        denied
+            .request_code("socket", "owner", "5215512345678")
+            .unwrap_err()
+            .to_string(),
         "Pairing request denied"
     );
     assert_eq!(other.attempts.load(Ordering::SeqCst), 0);
@@ -88,7 +97,9 @@ fn nonowner_invalid_phone_and_policy_denial_never_call_provider() {
 #[test]
 fn refuses_other_platforms_and_already_connected_sessions() {
     let (_sessions, service, provider) = fixture("telegram", true, "AB12CD34");
-    assert!(service.request_code("socket", "owner", "5215512345678").is_err());
+    assert!(service
+        .request_code("socket", "owner", "5215512345678")
+        .is_err());
     assert_eq!(provider.attempts.load(Ordering::SeqCst), 0);
     let (sessions, service, provider) = fixture("whatsapp", true, "AB12CD34");
     sessions
@@ -97,7 +108,9 @@ fn refuses_other_platforms_and_already_connected_sessions() {
     sessions
         .transition("socket", "owner", 1, ConnectionState::Connected)
         .unwrap();
-    assert!(service.request_code("socket", "owner", "5215512345678").is_err());
+    assert!(service
+        .request_code("socket", "owner", "5215512345678")
+        .is_err());
     assert_eq!(provider.attempts.load(Ordering::SeqCst), 0);
 }
 
@@ -108,7 +121,8 @@ fn invalid_provider_codes_fail_closed() {
         assert_eq!(
             service
                 .request_code("socket", "owner", "5215512345678")
-                .unwrap_err().to_string(),
+                .unwrap_err()
+                .to_string(),
             "Invalid pairing code from provider"
         );
     }
