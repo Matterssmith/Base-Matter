@@ -83,3 +83,50 @@ fn rejects_untrusted_member_identity_and_file_edits() {
     assert!(read_encrypted(&path, &key, &snapshot.socket_id, &snapshot.owner_jid).is_err());
     fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn offline_cli_verifies_archive_without_starting_whatsapp() {
+    use std::process::Command;
+
+    let (dir, snapshot) = fixture();
+    let key = [0x52_u8; 32];
+    let db = dir.join("session.db");
+    let file = save_encrypted(&db, &key, &snapshot).unwrap();
+    let filename = file.file_name().unwrap().to_string_lossy().into_owned();
+
+    let mut command = Command::new(env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider"));
+    command
+        .arg("--recovery-verify")
+        .arg(&filename)
+        .env("MATTER_WA_PHONE", "5215512345678")
+        .env("MATTER_WA_OWNER_JID", &snapshot.owner_jid)
+        .env("MATTER_WA_SOCKET_ID", &snapshot.socket_id)
+        .env("MATTER_WA_OWNER_ID", "owner")
+        .env("MATTER_WA_SESSION_DB", &db)
+        .env("MATTER_WA_BRIDGE_ADDR", "127.0.0.1:39819")
+        .env("MATTER_WA_BRIDGE_KEY_HEX", "07".repeat(32))
+        .env("MATTER_WA_RECOVERY_KEY_HEX", hex::encode(key));
+    let result = command.output().unwrap();
+    assert!(
+        result.status.success(),
+        "Offline archive inspection failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let stdout = String::from_utf8(result.stdout).unwrap();
+    assert!(stdout.contains("1 member records"));
+    assert!(!stdout.contains("5215598765432"));
+    assert!(!db.exists(), "Offline verification must not open a session");
+
+    let denied = command
+        .env("MATTER_WA_RECOVERY_KEY_HEX", "ab".repeat(32))
+        .output()
+        .unwrap();
+    assert!(!denied.status.success());
+
+    let traversal = command
+        .arg("../unsafe")
+        .output()
+        .unwrap();
+    assert!(!traversal.status.success());
+    fs::remove_dir_all(dir).unwrap();
+}

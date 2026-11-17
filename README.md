@@ -773,3 +773,7 @@ Cuando el dueño emite `=/>add++ snapshot <community-jid>` en su propio chat, Ba
 ## Comprobación offline de respaldos
 
 El proveedor expone `--recovery-verify <archivo>.enc.json` para comprobar autenticidad del snapshot cifrado, dueño y socket, sin conectarse a WhatsApp. Solo muestra el total de registros, nunca identificadores privados. El comando de instantánea es exclusivo de comunidades activas con admin verificado; no constituye autorización para agregar masivamente a terceros. [Guía de prueba](docs/WHATSAPP_TRIAL.md).
+
+## Prueba CLI del respaldo sin WhatsApp
+
+Las pruebas automatizadas ejecutan el binario real del proveedor con `--recovery-verify` y verifican que puede validar la instantánea sin abrir la sesión, sin crear SQLite y sin mostrar PN/LID. Se rechazan llaves equivocadas y nombres de archivo inválidos. La prueba sigue siendo offline y no certifica que una cuenta real permita el inventario.

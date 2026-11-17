@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — E2E offline del CLI recovery (alpha; CI pendiente)
+
+- Test Rust ejecuta el binario real con `--recovery-verify`, clave y snapshot propios en directorio 0700, verifica lectura sin crear SQLite, sin exponer JIDs, y rechaza clave errónea y nombre de archivo inválido.
+- Se revisaron íntegros ambos README (2/2) y se actualizaron. La conexión real WhatsApp y migración por aceptación siguen pendientes.
+
+
 ## 2026-11-17 — Rustfmt del CLI de verificación (alpha, CI pendiente)
 
 - Se aplicaron 2 ajustes de formato en el CLI offline `--recovery-verify` y los imports del proveedor según GitHub Actions.
