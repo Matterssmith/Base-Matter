@@ -11,7 +11,11 @@ use tokio::{
     net::TcpStream,
     time::{timeout, Duration},
 };
-use whatsapp_matter_rust_provider::{parse_control_ack, Config, ControlAck, Event, SessionLease};
+use whatsapp_matter_rust_provider::{
+    parse_control_ack,
+    recovery::{recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot},
+    Config, ControlAck, Event, SessionLease,
+};
 use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*};
 
 async fn deliver(
@@ -218,6 +222,106 @@ async fn preview_community_recovery(
     Ok(answer.chars().take(1600).collect())
 }
 
+
+async fn snapshot_community_recovery(
+    ctx: &whatsapp_rust::bot::MessageContext,
+    config: &Config,
+    requested_community: &str,
+) -> Result<String> {
+    if requested_community.is_empty()
+        || requested_community.len() > 128
+        || !requested_community.ends_with("@g.us")
+        || !requested_community
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"@._:-".contains(&byte))
+    {
+        bail!("Invalid community recovery scope");
+    }
+    let participating = ctx
+        .client
+        .community()
+        .get_participating()
+        .await
+        .map_err(|_| anyhow::anyhow!("Community metadata unavailable"))?;
+    let (source_id, metadata) = participating
+        .into_iter()
+        .find(|(jid, group)| jid.to_string() == requested_community && group.is_parent_group)
+        .ok_or_else(|| anyhow::anyhow!("Community is not accessible"))?;
+    if metadata.is_suspended {
+        bail!("Suspended community may not be backed up");
+    }
+    let owner_is_admin = metadata.participants.iter().any(|member| {
+        member.is_admin()
+            && (member.jid.to_string() == config.owner_jid
+                || member
+                    .phone_number
+                    .as_ref()
+                    .is_some_and(|jid| jid.to_string() == config.owner_jid)
+                || member
+                    .lid
+                    .as_ref()
+                    .is_some_and(|jid| jid.to_string() == config.owner_jid))
+    });
+    if !owner_is_admin {
+        bail!("Authenticated community admin required");
+    }
+    let participants = ctx
+        .client
+        .community()
+        .get_linked_groups_participants(source_id.clone())
+        .await
+        .map_err(|_| anyhow::anyhow!("Community participant inventory unavailable"))?;
+    if participants.len() > 15_000 {
+        bail!("Participant count exceeds recovery snapshot limit");
+    }
+    let key = recovery_key_from_env(&config.bridge_key)?;
+    let mut seen = HashSet::new();
+    let mut members = Vec::new();
+    for participant in participants {
+        let candidate = participant
+            .lid
+            .as_ref()
+            .or(participant.phone_number.as_ref())
+            .unwrap_or(&participant.jid)
+            .to_string();
+        if !seen.insert(candidate) {
+            continue;
+        }
+        members.push(RecoveryMember {
+            jid: participant.jid.to_string(),
+            phone_jid: participant.phone_number.map(|jid| jid.to_string()),
+            lid_jid: participant.lid.map(|jid| jid.to_string()),
+        });
+    }
+    let created = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)?
+        .as_secs();
+    let name: String = metadata
+        .subject
+        .chars()
+        .filter(|character| !character.is_control())
+        .take(80)
+        .collect();
+    let snapshot = RecoverySnapshot {
+        version: 1,
+        socket_id: config.socket_id.clone(),
+        owner_jid: config.owner_jid.clone(),
+        community_jid: source_id.to_string(),
+        community_name: name,
+        captured_at: created,
+        members,
+    };
+    let count = snapshot.members.len();
+    let file = save_encrypted(&config.session_db, &key, &snapshot)?;
+    let filename = file
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| anyhow::anyhow!("Encrypted recovery path unavailable"))?;
+    Ok(format!(
+        "Base-Matter: snapshot cifrada guardada. Miembros: {count}. Archivo local: {filename}. No se añadió nadie. Protege el archivo y su clave por separado."
+    ))
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     match std::env::args().nth(1).as_deref() {
@@ -325,8 +429,18 @@ async fn main() -> Result<()> {
                                     Ok(Ok(report)) => report,
                                     _ => "Base-Matter: inventario de recuperación incompleto; no se copiaron miembros.".to_owned(),
                                 }
-                            } else if frame.text.starts_with("=/>add++ snapshot ") {
-                                "Base-Matter: instantánea cifrada aún pendiente de implementar. Ningún respaldo fue guardado.".to_owned()
+                            } else if let Some(community_id) =
+                                frame.text.strip_prefix("=/>add++ snapshot ")
+                            {
+                                match timeout(
+                                    Duration::from_secs(45),
+                                    snapshot_community_recovery(&ctx, &config, community_id),
+                                )
+                                .await
+                                {
+                                    Ok(Ok(report)) => report,
+                                    _ => "Base-Matter: no se guardó la instantánea. Verifica permisos admin, comunidad activa y clave de recuperación.".to_owned(),
+                                }
                             } else {
                                 match ack {
                                     ControlAck::AppliedWithMessage(text) => text,

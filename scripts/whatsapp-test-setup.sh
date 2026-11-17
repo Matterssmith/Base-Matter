@@ -12,6 +12,10 @@ setup() {
         return 1
     fi
     if [[ "${1:-}" == "--enable-recovery" ]]; then
+        if ! command -v openssl >/dev/null 2>&1; then
+            printf 'OpenSSL is required to generate a recovery key.\n' >&2
+            return 1
+        fi
         if [[ ! -f "$config" || -L "$config" ]]; then
             printf 'Existing regular runtime.env is required for recovery activation.\n' >&2
             return 1

@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Callback =/>add++ snapshot con backup cifrado (alpha; CI pendiente)
+
+- Conectado el comando `=/>add++ snapshot <community-jid>` al provider: verifica admin PN/LID de la comunidad activa, obtiene miembros vinculados, deduplica alias conocidos y cifra datos localmente con clave separada.
+- La respuesta al chat propio confirma el nombre del archivo y el conteo, sin JIDs; errores no afirman éxito. `=/>add++` continúa como vista previa.
+- Actualizado el setup `--enable-recovery` para comprobar OpenSSL. Leídos íntegros ambos README (2/2) y actualizados. Contrato de recuperación actualizado. No se agregan miembros ni se cambia la rama beta.
+- CI y prueba real de WhatsApp son requisitos para calificar el respaldo. En caso de suspensión no se hace bypass de restricciones de cuenta.
+
+
 ## 2026-11-17 — Almacén de respaldo cifrado en proveedor (alpha; CI pendiente)
 
 - Nuevo módulo Rust `providers/whatsapp-rust/src/recovery.rs` con XChaCha20-Poly1305, key dedicada, nonce aleatorio, AAD de socket/dueño, archivos privados 0600 sin overwrites, lectura autenticada y tests offline de integridad y separación de claves.
