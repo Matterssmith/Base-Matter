@@ -58,3 +58,11 @@ SQLite state changes are not atomic with a network connection. A real
 credential source, socket activation, consent and destination authorization
 remain mandatory in the consuming application. No network transport is
 bundled with this crate.
+
+## Pairing-code-only WhatsApp contract
+
+Use `PairingCodeService` with authenticated session ownership, injected
+`ConnectionAdmission` and a separate `PairingCodeProvider`. It returns a
+redacted, zeroizing temporary code for an unlinked WhatsApp session. No QR
+mode, pairing URL or ping test command is exposed. This remains a provider
+contract rather than a live socket. See [pairing-code contract](PAIRING_CODE.md).

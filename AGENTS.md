@@ -57,6 +57,27 @@ independent of network connection. Powered-off sockets execute no normal command
 Policy precedence when powered on: Group > Socket > Global > None (deny).
 Preserve socket isolation and persist/audit administrative changes atomically.
 
+## Current hard constraints — owner clarification 2026-11-17
+
+- Every \`*-Matter\` repository is part of the Matter ecosystem; Bot-Matter
+  will consume its components in a later, separate stage.
+- DO NOT implement, refactor or launch Bot-Matter until Base-Matter is complete.
+  Freeze separate platform prototypes until core readiness, unless the owner
+  explicitly reauthorizes them.
+- Historical WhatsApp pairing-code connection/ping tests were undertaken
+  before this beta version. Do not erase that history. However, do not claim
+  the current remote Base repository contains a verified live WhatsApp
+  connection without actual source and an end-to-end test.
+- WhatsApp linking MUST use pairing code only. QR must not be exposed,
+  advertised or used as fallback. Never overwrite existing local sessions.
+- The former ping is a test only; it is NOT a permanent global command.
+  Global control is implemented by Base-Matter using canonical \`=/>\`,
+  independent from the bot's own command prefix and even when the bot is off.
+  Legacy \`=\` and \`/>\` aliases are retained until an intentional migration.
+- Preserve every ecosystem repository's history and respect the fact that
+  provider modules are ultimately consumed by Bot-Matter, not developed as
+  an excuse to start Bot-Matter early.
+
 ## Updated ecosystem direction (user instruction)
 
 - Target name WhatsApp-Matter replaces Matter-Baileys.

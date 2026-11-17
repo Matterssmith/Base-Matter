@@ -118,7 +118,7 @@ access to another scope.
 
 [RoleCommandAuthorizer](src/authorization.rs) can be injected into
 CommandRouter; it checks the canonical name as resource
-\`command:<name>\` with action \`execute\`. A successful authorization is
+`command:<name>` with action `execute`. A successful authorization is
 only a decision at admission time. Callers must separately enforce the
 socket/activation gate, consent, and any platform security policy. The store
 does not persist sessions, platform credentials or encryption keys.
@@ -236,6 +236,32 @@ an uncertain result; blind retry is prohibited. Replay binding keys must be
 provisioned externally and shared across processes; key rotation and pruning
 require coordinated retention. **No live WhatsApp/Telegram/Discord identity
 authenticator ships with Base.** See [inbound contracts](docs/ingress.md).
+
+## Vinculación WhatsApp y control global — contrato corregido
+
+Se reconoce la prueba anterior de conexión a WhatsApp y \`ping\` en el
+desarrollo histórico. La rama publicada actualmente no contiene el antiguo
+adaptador ejecutable; conservar su historial no equivale a comprobar una
+conexión real hoy.
+
+\`PairingCodeService\` añade un contrato en Base-Matter para **solicitar
+únicamente un código de vinculación**, con autorización del propietario,
+número internacional de 8–15 dígitos, código temporal redactado y sin
+persistencia en SQLite. **No implementa QR, no registra un comando ping y
+no abre por sí mismo una conexión WhatsApp.** El proveedor real queda
+pendiente de conectar a este contrato sin reemplazar ni borrar sesiones
+existentes. No se modifica ni se inicia Bot-Matter.
+
+\`ControlDispatcher\` procesa el prefijo global canónico \`=/>\` antes del
+router del bot. Los prefijos \`=\` y \`/>\` permanecen como alias de
+compatibilidad. Ejemplos: \`=/>on\`, \`=/>off\`,
+\`=/>set role USER_ID ROLE_ID\`. El dueño del socket sigue siendo el único
+autorizado para manipularlo, y el control funciona con el bot apagado.
+No se transfiere poder al propietario de otros sockets.
+
+Todos los repositorios de la organización pertenecen al ecosistema Matter;
+el futuro \`Bot-Matter\` consumirá contratos de sus componentes **solo
+cuando Base-Matter termine**. Véase [pairing code](docs/PAIRING_CODE.md).
 
 ## Continuous verification
 
@@ -453,9 +479,9 @@ See [activation contracts](docs/activation.md).
 
 ## Promoción estable y pruebas WhatsApp — 17 nov 2026
 
-La rama \`matter\` ya recibió el PR #3 con **solo** endurecimiento verificado
+La rama `matter` ya recibió el PR #3 con **solo** endurecimiento verificado
 de seguridad, compilación y pruebas SQLite/Windows. Su commit
-\`e509cc4f8c53eafbb1233359bc2ae63e0dde7f48\` pasó la
+`e509cc4f8c53eafbb1233359bc2ae63e0dde7f48` pasó la
 [CI estable](https://github.com/Matterssmith/Matter-Base/actions/runs/44139981479)
 en Ubuntu y Windows. No se trasladaron los módulos de integración incompletos.
 
@@ -484,13 +510,13 @@ Hecho por Lournyx Matterssmith [Lou-Nyx].
 
 ## Nombres del ecosistema — Matter al final
 
-La convención solicitada es \`Componente-Matter\`: \`Base-Matter\`,
-\`Vault-Matter\`, \`Bot-Matter\`, \`WhatsApp-Matter\`,
-\`Telegram-Matter\`, \`Discord-Matter\` y equivalentes. El inventario
+La convención solicitada es `Componente-Matter`: `Base-Matter`,
+`Vault-Matter`, `Bot-Matter`, `WhatsApp-Matter`,
+`Telegram-Matter`, `Discord-Matter` y equivalentes. El inventario
 de los 22 repositorios y las comprobaciones previas a su renombrado
 están en [ecosystem rename](docs/ECOSYSTEM_RENAME.md).
 
-Los identificadores Rust \`matter-base\` / \`matter_base\` se mantienen
+Los identificadores Rust `matter-base` / `matter_base` se mantienen
 temporalmente por compatibilidad. La renominación de los repositorios de
 GitHub requiere una operación administrativa aparte y no se ha ejecutado.
 
@@ -498,8 +524,11 @@ GitHub requiere una operación administrativa aparte y no se ha ejecutado.
 
 The requested target repositories are **WhatsApp-Matter** (currently
 Matter-Baileys) and **Telegram-Matter** (currently Matter-Telegraf).
-The WhatsApp provider has an offline-tested, guarded pairing smoke in beta;
-its real QR pairing and cross-language Base integration are still pending.
+El protocolo para WhatsApp exige **solo código de vinculación**, sin QR.
+El antiguo ping fue una prueba temporal, no el bot global. La rama beta del
+repositorio de proveedor conserva un prototipo no apto para este flujo y queda
+congelada mientras se termina Base-Matter; no constituye prueba de conexión.
+El control global usa `=/>` desde Base, antes de cualquier comando del bot.
 Administrative repository renames and full provider imports remain outstanding. Provider methods belong in
 separate directories such as `providers/baileys` and `providers/telegraf`, using
 verified official upstream revisions and preserved licenses/history. Base and

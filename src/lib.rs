@@ -18,6 +18,7 @@ pub mod bots;
 pub mod command_audit;
 pub mod commands;
 pub mod connections;
+pub mod pairing;
 pub mod control;
 pub mod control_sync;
 pub mod core;

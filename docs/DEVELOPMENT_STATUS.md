@@ -1,5 +1,28 @@
 # Matter-Base development status
 
+## 2026-11-17 — Owner correction: pairing-code-only and global control boundary (pending CI)
+
+- Owner clarifies the 22+ \`Matter\` repos form one ecosystem, but Bot-Matter
+  must NOT receive development until Base-Matter is complete.
+- Historical WhatsApp connection and ping verification are acknowledged.
+  Current beta tree has no executable provider implementation. Do not confuse
+  previously tested server work with a current live integrated GitHub build.
+- WhatsApp pairing is strictly through a code derived from the operator's
+  authorized phone number; QR is excluded. The previous ping is a test-only
+  behavior and will not replace Base's global prefix \`=/>\`.
+- Added PairingCodeService contract in Base with per-socket owner/host policy,
+  phone and transient-code validation and zeroizing/redacted return.
+  It has no QR API, no network adapter, no credential persistence, no
+  automatic reconnect and no ping handler. Provider-specific implementation
+  and authenticated end-to-end tests remain open.
+- Added five tests covering access control, provider/code failure, session
+  eligibility and global prefix isolation without bot binding.
+- Existing legacy alias prefixes remain supported. All changes only in
+  matter-beta; matter stable and Bot-Matter are untouched.
+- README audit: 1 README reviewed/updated; AGENTS, architecture, session docs
+  and release-readiness updated. CI for this checkpoint pending.
+
+
 ## 2026-11-17 — Verified stable promotion, naming and WhatsApp beta
 
 - Promoted only standalone Rust lint/security/test hardening, MIT LICENSE,

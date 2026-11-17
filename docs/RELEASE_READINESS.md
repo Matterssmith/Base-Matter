@@ -82,3 +82,11 @@ administrative rename plan passed CI 44138531259. WhatsApp platform repo
 installation in 44139262152. These are not evidence of live WhatsApp pairing
 or production Vault, OS sandbox or account connection. Keep these as hard
 release blockers.
+
+## Clarificación obligatoria: WhatsApp y Bot-Matter
+
+Vinculación WhatsApp exclusivamente por pairing code (nunca QR) sobre un
+socket autenticado de su dueño. Confirmar conexión real y recuperación de
+la sesión sin sobrescribir credenciales. El `ping` histórico no es el bot
+global: los cambios administrativos usan `=/>` desde Base-Matter.
+Bot-Matter no se desarrolla hasta cerrar todos los criterios de Base-Matter.

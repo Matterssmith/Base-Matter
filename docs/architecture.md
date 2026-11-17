@@ -26,6 +26,7 @@ Public crate API (`src/lib.rs`)
 │                     └─ LegalStore (SQLite)
 ├── SessionRegistry (SQLite connection metadata/revision/audit)
 ├── ConnectionService (credential and external connection-driver contract)
+├── PairingCodeService (owner-approved temporary code, never QR)
 ├── InboundGateway (injected auth, SQLite replay and control dispatch)
 ├── MessageService (admission and external driver contract)
 ├── RoleStore (SQLite inherited role policy, bounded audit)
@@ -133,3 +134,13 @@ one SQLite snapshot together with socket ownership and bot binding. Owner
 transfer/release atomically clears binding/local overrides and powers off, so
 new admissions cannot combine state from before and after a handover. Global policy administrators have no implicit authority
 over socket power or local overrides; static configuration remains supported.
+
+## Ecosystem ownership and WhatsApp pairing
+
+Every `Component-Matter` repository belongs to the Matter ecosystem, but
+`Bot-Matter` will only consume modules once Base-Matter passes its release
+gates. Global control is part of Base (`=/>` canonical prefix), independent
+of bot routing and operational power. WhatsApp pairing is **code only**;
+there is no supported QR path. Historical ping testing is not a durable
+command. Current Base has the pairing-code interface, not a verified live
+WhatsApp provider. See [pairing](PAIRING_CODE.md).
