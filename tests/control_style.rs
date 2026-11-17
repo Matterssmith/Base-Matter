@@ -11,6 +11,7 @@ fn menu_help_h_share_a_reusable_renderer() {
     let style = ControlTheme::new("Matter", "base-matter", "✦").unwrap();
     let menu = style.render("menu").unwrap();
     assert!(menu.contains("BOT ID: base-matter"));
+    assert!(menu.contains("Matter"));
     assert!(menu.contains("=/>start"));
     assert!(menu.contains("Lournyx Matterssmith [Lou-Nyx]"));
     assert!(style.render("help").unwrap().contains("AYUDA"));

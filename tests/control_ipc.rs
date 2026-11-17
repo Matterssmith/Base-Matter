@@ -143,6 +143,13 @@ fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
         let response: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(response["ok"], true);
         assert_eq!(response["outcome"], outcome);
+        if outcome == "applied" {
+            assert!(response["message"]
+                .as_str()
+                .is_some_and(|text| text.starts_with("Base-Matter: socket")));
+        } else {
+            assert!(response.get("message").is_none());
+        }
         assert!(!bytes.windows(7).any(|window| window == b"socket-"));
     }
     server.join().unwrap();

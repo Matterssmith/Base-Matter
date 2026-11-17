@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Prueba del mensaje IPC autorizado (alpha; CI pendiente)
+
+- El test TCP de lazo local verifica que `applied` para control `on/off` incluye una respuesta informativa, mientras que el replay `duplicate` no contiene el campo `message`.
+- El test visual comprueba que el título de tema se muestra junto al bot ID.
+- READMEs raíz/proveedor inspeccionados completos (2/2), ambos preservados. Sin mutación del proveedor ni sesiones.
+
+
 ## 2026-11-17 — Formato de menú comunitario (alpha; CI pendiente)
 
 - Aplicadas cinco modificaciones exactas de rustfmt reportadas por GitHub Actions en `src/lib.rs`, `src/control_style.rs` y controlador WhatsApp.
