@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Regresión E2E real entre procesos Rust (CI pendiente)
+
+- Añadida `tests/whatsapp_process.rs`: ejecuta el binario real del controlador Rust con configuración temporal privada, realiza `--init`, arranca TCP loopback, envía comandos HMAC, comprueba replay, interrumpe bruscamente el proceso y reinicia sobre el lock v2.
+- Comprueba que el replay de mensajes emitidos antes de reiniciar sigue bloqueado y que el SQLite de activación/replay persiste. Solo usa material de prueba ficticio; no conecta un teléfono ni abre una sesión real.
+- Auditados íntegramente los 2 README (raíz y proveedor): 2/2; actualizado únicamente raíz. Sin cambios en proveedor, llaves de operación, runtime o rama estable.
+- Requiere CI Linux/Windows en el SHA exacto y la posterior vinculación autorizada por pairing code.
+
+
 ## 2026-11-17 — Formato de locks v2 (CI pendiente)
 
 - Se aplicaron los dos ajustes exactos de rustfmt de GitHub Actions al proveedor y receptor Rust. Sin modificaciones de semántica, secretos ni sesiones.

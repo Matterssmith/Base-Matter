@@ -636,3 +636,12 @@ reiniciar sin borrar la sesión SQLite. Los locks v1 con PID, sin formato v2,
 se rechazan hasta que el operador confirme que el proceso anterior se detuvo:
 **nunca se retiran ni se sobrescriben automáticamente**. La validación
 `--check` verifica un lock v2 sin modificar sesiones ni archivos.
+
+## Prueba real de procesos Rust sin dispositivo
+
+La suite de integración incluye un test que ejecuta el binario controlador
+`whatsapp-matter-control` en otro proceso, le envía comandos HMAC firmados
+por TCP local, corta bruscamente el proceso y verifica el reinicio con el lock
+v2. Un ID de mensaje usado antes de la caída sigue rechazado como replay
+gracias a SQLite. La prueba no conecta ni vincula ningún teléfono; la
+validación de WhatsApp real continúa pendiente.
