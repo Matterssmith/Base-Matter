@@ -569,3 +569,9 @@ El proveedor previamente probado era **`whatsapp-rust`** con `PairCodeOptions` y
 El archivo `src/whatsapp_bridge.rs` es una frontera de verificación escrita en Rust; **no es un adaptador Node**, no establece conexión y no debe confundirse con una prueba real de WhatsApp. El antiguo `ping` no forma parte de los comandos permanentes. El control de Base usa `=/>` con las autorizaciones del propietario del socket.
 
 Los códigos deben conservar los créditos exigidos en `AGENTS.md` y sus pruebas deben verificar la separación entre encendido operativo y política de ejecución.
+
+## Extensiones del control global en Rust
+
+Base-Matter contiene ControlExtensionRegistry, que admite comandos adicionales bajo el prefijo canónico =/> y alias declarados por un host Rust confiable. El núcleo comprueba al propietario del socket antes de ejecutar la extensión; los comandos continúan independientes de Bot-Matter y están disponibles incluso con el bot apagado. Los verbos administrativos on/off/status/set/unset y el ping histórico son reservados y no pueden sobrescribirse. Los prefijos antiguos = y /> solo mantienen los controles incorporados.
+
+Los controladores de extensiones deben incluir comprobaciones adicionales de permisos y auditoría donde sus efectos lo requieran. Los fallos no exponen datos internos; los argumentos y resultados están acotados. Consulte docs/CONTROL_EXTENSIONS.md. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].

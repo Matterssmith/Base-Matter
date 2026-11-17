@@ -1,5 +1,15 @@
 # Matter-Base development status
 
+## 2026-11-17 — Rust control extension registry (pending CI)
+
+- Prior Rust-only WhatsApp checkpoint passed GitHub Actions 44148678617 on Linux and Windows.
+- Added ControlExtensionRegistry: canonical =/> commands and aliases with owner checks, reserved administrative commands, bounded responses and sanitized panic/error handling. No Bot-Matter, Node or untrusted code execution added.
+- Added six regression tests including off/unbound socket, cross-owner isolation, prefix/alias separation and policy invariants.
+- README reviewed and updated (1/1). Architecture and docs/CONTROL_EXTENSIONS.md document contracts and required author credit.
+- CI pending for this checkpoint. Historic whatsapp-rust provider remains the selected implementation, without claiming a new live pairing test.
+
+
+
 ## 2026-11-17 — Rust-only WhatsApp direction and socket-policy regression (pending CI)
 
 - Owner corrected course: WhatsApp provider remains **whatsapp-rust** with pairing code only; Python/C++/Rust are principal languages. The Node/Baileys experiment is not the selected provider and is frozen. No work on Bot-Matter.

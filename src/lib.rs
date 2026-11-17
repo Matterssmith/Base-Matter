@@ -19,6 +19,7 @@ pub mod command_audit;
 pub mod commands;
 pub mod connections;
 pub mod control;
+pub mod control_extensions;
 pub mod control_sync;
 pub mod core;
 pub mod events;
@@ -44,6 +45,7 @@ pub use commands::{CommandAuthorizer, CommandInvocation, CommandRouter};
 pub use connections::{
     ConnectionAdmission, ConnectionDriver, ConnectionService, SessionCredentialSource,
 };
+pub use control_extensions::{ControlExtensionContext, ControlExtensionRegistry};
 pub use control_sync::{
     EncryptedControlOutbox, EncryptedEnvelopeReader, EncryptedEnvelopeSink, OutboxStatus,
 };

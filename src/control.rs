@@ -5,7 +5,7 @@
  */
 use crate::{
     activation::{ActivationSource, GlobalPolicy, SocketActivationStore},
-    BotRegistry, CommandRouter, RoleStore,
+    BotRegistry, CommandRouter, ControlExtensionContext, ControlExtensionRegistry, RoleStore,
 };
 use anyhow::{anyhow, bail, Result};
 use std::sync::Arc;
@@ -31,6 +31,7 @@ pub enum DispatchResult {
     },
     Inactive,
     Message(Option<String>),
+    Extension { command: String, output: String },
 }
 
 /// Trusted ingress boundary. The application authenticates `actor`, establishes
@@ -43,6 +44,7 @@ pub struct ControlDispatcher {
     router: Arc<CommandRouter>,
     global_policy: GlobalPolicy,
     roles: Option<Arc<RoleStore>>,
+    extensions: Option<Arc<ControlExtensionRegistry>>,
 }
 
 impl ControlDispatcher {
@@ -58,6 +60,7 @@ impl ControlDispatcher {
             router,
             global_policy: GlobalPolicy::Configured(global_default),
             roles: None,
+            extensions: None,
         }
     }
 
@@ -74,12 +77,18 @@ impl ControlDispatcher {
             router,
             global_policy: GlobalPolicy::Persisted,
             roles: None,
+            extensions: None,
         }
     }
 
     /// Installs optional role management on reserved control commands.
     pub fn with_roles(mut self, roles: Arc<RoleStore>) -> Self {
         self.roles = Some(roles);
+        self
+    }
+
+    pub fn with_control_extensions(mut self, registry: Arc<ControlExtensionRegistry>) -> Self {
+        self.extensions = Some(registry);
         self
     }
 
@@ -136,6 +145,7 @@ impl ControlDispatcher {
         if message.len() > 16 * 1024 {
             bail!("Message exceeds size limit");
         }
+        let canonical_global_prefix = message.starts_with("=/>");
         if let Some(body) = message
             .strip_prefix("=/>")
             .or_else(|| message.strip_prefix("/>"))
@@ -175,6 +185,26 @@ impl ControlDispatcher {
                 ["unset", "role", user, role] => {
                     return self.change_role(receiving_socket, actor, user, role, false);
                 }
+                [command, args @ ..] if canonical_global_prefix => {
+                    let admission = self.activation.admission(
+                        receiving_socket,None,self.global_policy
+                    )?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    let registry = self.extensions.as_ref()
+                        .ok_or_else(|| anyhow!("Invalid control command"))?;
+                    let context = ControlExtensionContext {
+                        socket_id: receiving_socket,
+                        actor_id: actor,
+                        source_id: source,
+                        group_id: group,
+                    };
+                    let arguments = args.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
+                    let (command, output) = registry.execute(command,&context,&arguments)?
+                        .ok_or_else(|| anyhow!("Invalid control command"))?;
+                    return Ok(DispatchResult::Extension { command, output });
+                }
                 _ => bail!("Invalid control command"),
             }
         }
@@ -193,3 +223,6 @@ impl ControlDispatcher {
             .map(DispatchResult::Message)
     }
 }
+
+// Créditos:
+// Hecho por Lournyx Matterssmith [Lou-Nyx].
