@@ -24,3 +24,10 @@ producción de conectores externos.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Encendido separado de Bot-Matter
+
+El ControlDispatcher de la rama estable permite exclusivamente al dueño del socket gestionar =/>on y =/>off antes de consultar la identidad del bot. No amplía permisos de bots ni habilita WhatsApp. Las pruebas de aislamiento de propietarios y cambios de dueño deben pasar CI Ubuntu/Windows.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].

@@ -56,8 +56,6 @@ impl ControlDispatcher {
         if message.len() > 16 * 1024 {
             bail!("Message exceeds size limit");
         }
-        let (bot, owner) = self.activation.binding(receiving_socket)?;
-        self.bots.authorize_owner(&bot, &owner)?;
         if let Some(body) = message
             .strip_prefix("=/>")
             .or_else(|| message.strip_prefix("/>"))
@@ -73,14 +71,14 @@ impl ControlDispatcher {
                 _ => bail!("Unknown control command"),
             };
             let socket = tokens.get(1).copied().unwrap_or(receiving_socket);
-            let (target_bot, target_owner) = self.activation.binding(socket)?;
-            self.bots.authorize_owner(&target_bot, &target_owner)?;
             self.activation.set_power(socket, actor, powered)?;
             return Ok(DispatchResult::Control {
                 socket_id: socket.to_owned(),
                 powered,
             });
         }
+        let (bot, owner) = self.activation.binding(receiving_socket)?;
+        self.bots.authorize_owner(&bot, &owner)?;
         if !self
             .activation
             .resolve(receiving_socket, group, self.global_default)?

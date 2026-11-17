@@ -772,3 +772,7 @@ to `matter` occurred.
   `916fdbbf61c7b6c1668f7d58f0c43df3eb323d09` is on origin/matter-beta.
   README re-review for this ledger-only commit: 1 found/reviewed, 0 updated,
   1 unchanged; no new documentation discrepancies. `git diff --check` passed.
+
+## 2026-11-17 — Candidato de control de sockets en estable
+
+Corrección aislada del control =/>on y =/>off para que el dueño del socket conserve sus derechos sin vinculación a un bot. Pruebas de dueños y aislamiento añadidas. README auditado (1/1); requiere CI verde Ubuntu/Windows antes de promover. WhatsApp-Rust real y Bot-Matter no se incluyen.
