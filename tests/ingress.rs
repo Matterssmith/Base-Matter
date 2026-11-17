@@ -52,13 +52,13 @@ impl InboundAdmission for Gate {
     }
 }
 
-fn gateway(
+fn build_gateway(
     replay: Arc<InboundReplayStore>,
     gate: Arc<Gate>,
     auth: Arc<Auth>,
     calls: Arc<AtomicUsize>,
 ) -> (InboundGateway, Arc<SocketActivationStore>) {
-    let activation = Arc::new(SocketActivationStore::open_in_memory().unwrap());
+    let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket", "owner").unwrap();
     let bots = Arc::new(BotRegistry::in_memory());
     let bot = bots.register("family", "v1", "bot", "owner").unwrap();
@@ -96,7 +96,7 @@ fn authenticated_gateway_gates_power_and_replays_before_handler_effects() {
     let replay = Arc::new(InboundReplayStore::in_memory(KEY).unwrap());
     let gate = Arc::new(Gate(AtomicBool::new(true)));
     let calls = Arc::new(AtomicUsize::new(0));
-    let (gateway, activation) = gateway(
+    let (gateway, activation) = build_gateway(
         replay,
         gate,
         Arc::new(Auth {
@@ -127,7 +127,7 @@ fn denial_and_platform_mismatch_do_not_claim_events() {
     let replay = Arc::new(InboundReplayStore::in_memory(KEY).unwrap());
     let gate = Arc::new(Gate(AtomicBool::new(false)));
     let calls = Arc::new(AtomicUsize::new(0));
-    let (gateway, activation) = gateway(
+    let (gateway, activation) = build_gateway(
         replay,
         gate.clone(),
         Arc::new(Auth {
@@ -144,7 +144,7 @@ fn denial_and_platform_mismatch_do_not_claim_events() {
     gate.0.store(true, Ordering::SeqCst);
     assert!(gateway.ingest(&event("event-x")).is_ok());
     let replay = Arc::new(InboundReplayStore::in_memory(KEY).unwrap());
-    let (wrong, _) = gateway(
+    let (wrong, _) = build_gateway(
         replay,
         gate,
         Arc::new(Auth {
@@ -203,7 +203,7 @@ fn empty_replay_key_and_oversized_events_are_rejected() {
     let too_long = "x".repeat(16 * 1024 + 1);
     let gateway = {
         let replay = Arc::new(store);
-        gateway(
+        build_gateway(
             replay,
             Arc::new(Gate(AtomicBool::new(true))),
             Arc::new(Auth {

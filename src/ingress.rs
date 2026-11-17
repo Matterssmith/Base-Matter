@@ -129,7 +129,7 @@ impl InboundReplayStore {
         {
             bail!("Invalid replay identifier");
         }
-        let mut mac = Hmac::<Sha256>::new_from_slice(self.key.as_ref())
+        let mut mac = Hmac::<Sha256>::new_from_slice(&self.key[..])
             .map_err(|_| anyhow!("Replay fingerprint unavailable"))?;
         mac.update(b"matter-inbound-replay-v1\0");
         for part in [platform.as_bytes(), socket.as_bytes(), event_id.as_bytes()] {
