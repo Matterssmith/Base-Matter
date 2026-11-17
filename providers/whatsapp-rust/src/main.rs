@@ -144,7 +144,6 @@ async fn discover_register(
     Ok(report.chars().take(3000).collect())
 }
 
-
 async fn preview_community_recovery(
     ctx: &whatsapp_rust::bot::MessageContext,
     owner_jid: &str,
@@ -171,7 +170,9 @@ async fn preview_community_recovery(
                     || p.phone_number
                         .as_ref()
                         .is_some_and(|jid| jid.to_string() == owner_jid)
-                    || p.lid.as_ref().is_some_and(|jid| jid.to_string() == owner_jid))
+                    || p.lid
+                        .as_ref()
+                        .is_some_and(|jid| jid.to_string() == owner_jid))
         });
         if !is_admin {
             continue;

@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Formato de escaneo add++ (alpha, CI pendiente)
+
+- Dos ajustes rustfmt exactos al callback del proveedor detectados por GitHub Actions. Sin cambios de lógica, sesiones ni miembros.
+- Auditoría de los 2 README completos (2/2), sin cambios de contenido. Volver a verificar CI antes de promover.
+
+
 ## 2026-11-17 — Corrección de tipo del subcomando add++ (alpha; CI pendiente)
 
 - Se resolvió E0308 en Windows: el matcher de `&[String]` no permite comparar `"snapshot"` como patrón `&str`. Ahora se valida la longitud y el texto directamente antes de autorizar la instantánea.
