@@ -33,7 +33,10 @@ to matter-beta. Review EVERY repository README before EACH commit, report total,
 reviewed, updated, unchanged, findings, fixes and pending issues. Update affected
 README/code/contracts together; preserve correct content and design. Check new
 files, full diff, examples, internal links, credits and accidental secrets.
-Confirm the pushed SHA against origin. Never promote to matter automatically.
+Confirm the pushed SHA against origin. The owner has authorized promoting independently verified stable subsets to
+`matter`, not a bulk merge of incomplete beta. Require green CI on the exact
+candidate SHA and preserve divergent stable commits (including Cargo.lock
+history). Leave all unverified work in matter-beta.
 
 ## Scope and continuity
 
@@ -56,8 +59,10 @@ Preserve socket isolation and persist/audit administrative changes atomically.
 
 ## Updated ecosystem direction (user instruction)
 
-- Target name Matter-WhatsApp replaces Matter-Baileys.
-- Target name Matter-Telegram replaces Matter-Telegraf.
+- Target name WhatsApp-Matter replaces Matter-Baileys.
+- Target name Telegram-Matter replaces Matter-Telegraf.
+- All other repositories follow <Component>-Matter, with Base-Matter and
+  Vault-Matter first. Preserve Matterssmith credits and stable branches.
 - Inspect and rename the actual GitHub repositories when ecosystem work begins;
   documenting these targets does not mean remote repositories were renamed.
 - Each platform repository may contain multiple provider methods in separate

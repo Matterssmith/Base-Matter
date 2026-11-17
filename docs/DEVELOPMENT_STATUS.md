@@ -1,5 +1,26 @@
 # Matter-Base development status
 
+## 2026-11-17 — Reversed ecosystem names and WhatsApp provider smoke
+
+- User requested '<Component>-Matter' names across the Matterssmith
+  ecosystem. Inventoried 22 prefixed repositories. Added
+  docs/ECOSYSTEM_RENAME.md and safe Python gh CLI migration planner;
+  default mode only previews, and --apply requires --only or --all.
+- GitHub connector lacks repository rename administration, so no actual
+  remote repository name has changed. The existing Beta and stable URLs
+  remain authoritative until a separately authorized GitHub CLI rename.
+- Provider repository Matterssmith/Matter-Baileys now has its own
+  matter-beta branch with offline-tested Baileys QR/pairing-code smoke,
+  fail-closed allowlisted #ping and seven tests (GitHub run 44138049692
+  successful). No live QR pairing or authenticated Base bridge proved.
+- Root README audited, reviewed and updated (1/1). AGENTS updated to the
+  latest naming convention and strict verified-subset release policy;
+  Rust package/crate names retained until compatibility validation.
+- Added unit tests for all 22 proposed names. Stage I integration continues;
+  Vault authentication, real provider binding, sandbox isolation,
+  cross-store transitions and Termux remain unverified.
+
+
 ## 2026-11-17 — Eliminate Windows test-directory collision (pending CI)
 
 - Windows run 44126198795 exposed a flaky duplicate temporary directory

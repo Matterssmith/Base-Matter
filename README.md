@@ -7,7 +7,7 @@ src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColo
 width="100%"
 />
 
-# Matter Base
+# Base-Matter (antes Matter-Base)
 
 ### The Core Architecture.
 
@@ -22,7 +22,7 @@ width="100%"
 
 ## Project status
 
-Matter-Base is an **incomplete development library**. The current repository
+Base-Matter (repositorio actualmente llamado Matter-Base) es una **biblioteca de desarrollo incompleta**. The current repository
 contains a runtime/context foundation, in-memory event and service
 registries, translation lookup, a persistent bot identity registry, an
 optionally persistent shared-user registry with explicitly authorized external
@@ -466,11 +466,25 @@ and tested.
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
 
+## Nombres del ecosistema — Matter al final
+
+La convención solicitada es \`Componente-Matter\`: \`Base-Matter\`,
+\`Vault-Matter\`, \`Bot-Matter\`, \`WhatsApp-Matter\`,
+\`Telegram-Matter\`, \`Discord-Matter\` y equivalentes. El inventario
+de los 22 repositorios y las comprobaciones previas a su renombrado
+están en [ecosystem rename](docs/ECOSYSTEM_RENAME.md).
+
+Los identificadores Rust \`matter-base\` / \`matter_base\` se mantienen
+temporalmente por compatibilidad. La renominación de los repositorios de
+GitHub requiere una operación administrativa aparte y no se ha ejecutado.
+
 ## Ecosystem names and provider layout
 
-The requested target repositories are **Matter-WhatsApp** (formerly
-Matter-Baileys) and **Matter-Telegram** (formerly Matter-Telegraf). Remote renames
-and provider imports are pending ecosystem work. Provider methods belong in
+The requested target repositories are **WhatsApp-Matter** (currently
+Matter-Baileys) and **Telegram-Matter** (currently Matter-Telegraf).
+The WhatsApp provider has an offline-tested, guarded pairing smoke in beta;
+its real QR pairing and cross-language Base integration are still pending.
+Administrative repository renames and full provider imports remain outstanding. Provider methods belong in
 separate directories such as `providers/baileys` and `providers/telegraf`, using
 verified official upstream revisions and preserved licenses/history. Base and
 Vault readiness remains the immediate priority. See [repository instructions](AGENTS.md).
