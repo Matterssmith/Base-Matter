@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Receptor activo antes del pairing (CI pendiente)
+
+- El proceso `whatsapp-rust` verifica TCP loopback en su receptor Base-Matter antes de abrir el SQLite del proveedor o iniciar la solicitud de pairing code. Si no escucha, falla sin tocar sesiones ni credenciales.
+- Modo `--check` permanece estrictamente offline. Test Tokio con listener local disponible/no disponible añadido; ningún secreto ni mensaje de control es transmitido durante el sondeo.
+- README raíz y README proveedor leídos completos (2/2) y actualizados, guía operador actualizada. La disponibilidad TCP no sustituye autenticación HMAC ni prueba real de teléfono.
+- CI del proveedor pendiente para el nuevo commit; estable `matter` sin cambios.
+
+
 ## 2026-11-17 — Formato del test E2E de procesos (CI pendiente)
 
 - Corregidos tres detalles de rustfmt en el test nuevo de procesos del controlador, sin alterar su comportamiento.

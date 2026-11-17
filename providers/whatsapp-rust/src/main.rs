@@ -36,6 +36,17 @@ async fn deliver(
     timeout(Duration::from_secs(4), transport).await?
 }
 
+
+async fn require_local_controller(address: std::net::SocketAddrV4) -> Result<()> {
+    // No SQLite, pairing request, login or authenticated command is sent.
+    // A successful TCP connection only proves that the local port listens.
+    timeout(Duration::from_secs(3), TcpStream::connect(address))
+        .await
+        .map_err(|_| anyhow::anyhow!("Base-Matter local controller unreachable"))?
+        .map_err(|_| anyhow::anyhow!("Base-Matter local controller unreachable"))?;
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     match std::env::args().nth(1).as_deref() {
@@ -53,6 +64,7 @@ async fn main() -> Result<()> {
         Some(_) => bail!("Unsupported provider operation"),
     }
     let config = Arc::new(Config::from_env()?);
+    require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
     let database = config
         .session_db
@@ -138,4 +150,21 @@ async fn main() -> Result<()> {
     println!("WhatsApp-Matter Rust session starting. Pairing code only.");
     bot.run().await;
     Ok(())
+}
+
+#[cfg(test)]
+mod readiness_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn controller_must_listen_before_a_whatsapp_session_is_opened() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = match listener.local_addr().unwrap() {
+            std::net::SocketAddr::V4(address) => address,
+            _ => unreachable!(),
+        };
+        require_local_controller(address).await.unwrap();
+        drop(listener);
+        assert!(require_local_controller(address).await.is_err());
+    }
 }

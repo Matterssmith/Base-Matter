@@ -645,3 +645,12 @@ por TCP local, corta bruscamente el proceso y verifica el reinicio con el lock
 v2. Un ID de mensaje usado antes de la caída sigue rechazado como replay
 gracias a SQLite. La prueba no conecta ni vincula ningún teléfono; la
 validación de WhatsApp real continúa pendiente.
+
+## Receptor obligatorio antes de WhatsApp
+
+El arranque del proveedor Rust exige que su controlador Base-Matter esté
+escuchando en el loopback configurado antes de abrir SQLite o iniciar el
+pairing code. Si no hay conexión TCP, el proveedor cancela el arranque con
+un error genérico, sin modificar la sesión. Esta comprobación no autentica
+el receptor ni sustituye HMAC: la firma se verifica en cada orden posterior.
+`--check` continúa sin conexiones ni cambios de archivos.

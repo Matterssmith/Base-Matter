@@ -80,3 +80,11 @@ de nuevo sin tocar `session.db`. Si hay otro proceso activo, se deniega
 el acceso. Los antiguos locks con PID (v1) se rechazan por seguridad hasta
 la revisión manual del operador: la migración nunca borra locks ni sesiones.
 `--check` verifica la disponibilidad del archivo de modo de solo inspección.
+
+## Orden de arranque comprobado
+
+Al ejecutar el proveedor para vincular WhatsApp, primero comprueba que el
+receptor Base-Matter escucha en la dirección 127.0.0.1 configurada; si no,
+aborta antes de abrir la sesión SQLite o solicitar un código. La comprobación
+solo establece disponibilidad TCP, **no autentica el controlador**: el HMAC
+protege los comandos. El modo `--check` sigue sin red ni escrituras.

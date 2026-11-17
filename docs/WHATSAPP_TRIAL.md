@@ -137,3 +137,12 @@ Un archivo antiguo con PID o con contenido desconocido no se migra
 automáticamente. Si aparece un error de lock v1, se debe confirmar que
 el proceso anterior terminó antes de una migración controlada; no borrar
 archivos a ciegas ni perder sesiones existentes.
+
+## Comprobación del receptor al arrancar
+
+Inicia primero el receptor Base-Matter (Terminal A). El proveedor de la
+Terminal B comprueba que su puerto TCP está escuchando antes de abrir
+sesión y solicitar pairing code. Si el receptor está caído, el proveedor
+falla sin modificar el SQLite ni solicitar un código a WhatsApp. Esto
+no demuestra por sí solo que la clave HMAC coincida, ni que el teléfono
+esté conectado.
