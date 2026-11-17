@@ -25,3 +25,7 @@ Hecho por Lournyx Matterssmith [Lou-Nyx].
 ## Descubrimiento alfa implementado
 
 El proveedor Rust ahora responde `=/>add++` con una vista previa conectada a `Community::get_linked_groups_participants`, verificación admin por PN/LID, límites de tamaño y un grupo de respaldo sugerido. Se considera un número aproximado porque las identidades PN/LID de algunas sesiones pueden no estar totalmente resueltas. No se escriben archivos ni se ejecutan mutaciones. El comando `snapshot` responde por ahora que el respaldo cifrado no está disponible.
+
+## Almacenamiento cifrado local (alfa)
+
+`providers/whatsapp-rust/src/recovery.rs` define snapshot de comunidad y miembros con identidades JID/PN/LID, cifrado autenticado XChaCha20-Poly1305, clave dedicada de 256 bits, nonce aleatorio y AAD ligado al socket y dueño. Los archivos se crean con nombres aleatorios y permisos 0600 dentro de la carpeta privada del SQLite, sin modificar credenciales ni incorporar usuarios. Se añade API de lectura autenticada para una recuperación posterior y tests de integridad/key mismatch. La llave vive exclusivamente en `runtime.env` del operador, fuera de Git; copias de seguridad cifradas y llave deben resguardarse separadamente para no perderlas con un servidor temporal. La función aún debe conectarse a `=/>add++ snapshot` y validar la API real.

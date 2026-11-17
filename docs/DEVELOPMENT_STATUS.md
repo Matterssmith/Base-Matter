@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Almacén de respaldo cifrado en proveedor (alpha; CI pendiente)
+
+- Nuevo módulo Rust `providers/whatsapp-rust/src/recovery.rs` con XChaCha20-Poly1305, key dedicada, nonce aleatorio, AAD de socket/dueño, archivos privados 0600 sin overwrites, lectura autenticada y tests offline de integridad y separación de claves.
+- Actualizado setup para nuevas configuraciones y `--enable-recovery` explícito para existentes, sin sobrescribir sesiones ni regenerar claves previas. Snapshot todavía NO está conectado al callback WhatsApp: falta certificar esa etapa.
+- Revisados ambos README completos (2/2), ambos actualizados. Contrato de recuperación actualizado; dependencias proveedor añadidas, CI pendiente. No se suben claves ni listas en texto claro.
+
+
 ## 2026-11-17 — Formato de escaneo add++ (alpha, CI pendiente)
 
 - Dos ajustes rustfmt exactos al callback del proveedor detectados por GitHub Actions. Sin cambios de lógica, sesiones ni miembros.

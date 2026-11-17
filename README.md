@@ -761,3 +761,7 @@ El controlador Rust reconoce la orden global exacta `=/>add++` del dueño del so
 ## Vista previa real de `=/>add++` en WhatsApp Rust
 
 En `alpha` el proveedor consulta `get_linked_groups_participants` solo para comunidades con administrador verificado, deduplica los identificadores PN/LID conocidos y muestra el número aproximado y el nombre sugerido para un grupo de respaldo. No transmite listas de números por chat ni agrega a ninguna persona. La modalidad `snapshot` aún indica explícitamente que no se ha guardado un respaldo cifrado. No está aprobada para una comunidad suspendida.
+
+## Cifrado del respaldo comunitario
+
+El proveedor Rust incorpora instantáneas de recuperación cifradas con XChaCha20-Poly1305, un nonce aleatorio y una clave dedicada de 256 bits distinta del puente WhatsApp. Cada instantánea contiene los identificadores PN/LID accesibles para recuperación futura, pero se guarda únicamente como ciphertext local con permisos 0600 en el directorio privado de la sesión. No se copia ninguna sesión ni se publican números en GitHub. Para configuraciones anteriores se habilita la clave sin reemplazar los valores existentes con `bash scripts/whatsapp-test-setup.sh --enable-recovery`. La conexión de este almacén con `=/>add++ snapshot` queda sujeta al próximo checkpoint de CI.
