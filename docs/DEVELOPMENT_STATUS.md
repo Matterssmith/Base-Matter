@@ -1,5 +1,13 @@
 # Matter-Base development status
 
+## 2026-11-17 — Separate Rust processes to resolve SQLite native linking conflict (pending CI)
+
+- Provider compilation revealed libsqlite3-sys native links collision: current Base rusqlite 0.32 and whatsapp-rust 0.7 SQLite use incompatible versions. Rather than upgrading Base blindly or replacing Rust with Node, decoupled the whatsapp-rust process from Base's direct Cargo dependency.
+- Standalone Rust provider now signs owner-only =/> events with the exact HMAC frame accepted by Base's Rust WhatsAppControlBridge and sends over 127.0.0.1. Five offline tests cover config, JID isolation, protocol vector, timestamp and exclusive SQLite lease.
+- Main crate remains independent; no Bot-Matter code or QR handler. Root README and provider README both reviewed/updated (2/2).
+- The Base TCP listener and actual phone-linked connection remain to be implemented/verified. Upstream SQLite security review is mandatory before production/stable qualification. CI pending.
+
+
 ## 2026-11-17 — Executable whatsapp-rust provider adapter (pending CI)
 
 - Introduced an independent Rust provider crate at providers/whatsapp-rust, pinned to upstream whatsapp-rust 0.7.0. No Node/Baileys implementation or Bot-Matter runtime.

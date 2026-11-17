@@ -1,60 +1,52 @@
-# Proveedor WhatsApp-Matter — Rust
+# WhatsApp-Matter: proveedor Rust independiente
 
-**Implementación:** whatsapp-rust 0.7.0 con SQLite y PairCodeOptions.
-No se utiliza Node, Baileys, código QR visible ni Bot-Matter. Este binario
-continúa el proveedor Rust de Base-Matter probado históricamente, commit
-3c36d97bb, adaptándolo a los contratos de control actuales.
+El proveedor original es whatsapp-rust, ejecutado en un **proceso Rust
+separado** del núcleo Base-Matter. No usa Node ni Baileys ni Bot-Matter.
 
-## Entorno obligatorio
+La separación responde a versiones incompatibles de libsqlite3-sys entre
+la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
+Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
+en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
-Todas las variables se suministran fuera de Git, desde el operador local.
-Nunca escribas teléfonos, claves o sesiones en este repositorio.
+## Parámetros locales
 
-- MATTER_WA_PHONE: número internacional de 8 a 15 dígitos, sin +
-- MATTER_WA_OWNER_JID: JID privado propio, con dominio s.whatsapp.net o lid
-- MATTER_WA_SOCKET_ID: ID estable del socket
-- MATTER_WA_OWNER_ID: identidad local del dueño autenticado
-- MATTER_WA_SESSION_DB: archivo SQLite absoluto de whatsapp-rust
-- MATTER_WA_ACTIVATION_DB: archivo SQLite absoluto del control de Base
-- MATTER_WA_REPLAY_DB: archivo SQLite absoluto del anti-replay
-- MATTER_WA_REPLAY_KEY_HEX: secreto local no nulo de 32 bytes en hexadecimal
+- MATTER_WA_PHONE: número para pairing code, 8–15 dígitos internacionales
+- MATTER_WA_OWNER_JID: JID propio privado (dominio s.whatsapp.net o lid)
+- MATTER_WA_SOCKET_ID: socket registrado en Base-Matter
+- MATTER_WA_OWNER_ID: dueño registrado en Base-Matter
+- MATTER_WA_SESSION_DB: ruta absoluta al SQLite privado de whatsapp-rust
+- MATTER_WA_BRIDGE_ADDR: 127.0.0.1:puerto del controlador de Base
+- MATTER_WA_BRIDGE_KEY_HEX: clave privada HMAC de 32 bytes, 64 hex
 
-La carpeta que contenga cada archivo debe existir, no ser un enlace simbólico
-y, en Linux, tener permisos únicamente para su dueño (0700).
+La carpeta del SQLite debe estar protegida para el usuario del servidor.
+El propietario de la sesión se bloquea mediante archivo owner.lock para
+impedir procesos duplicados. No se elimina la sesión de WhatsApp.
+Realizar un respaldo SQLite consistente antes de actualizar una sesión
+existente. Probar primero un número secundario.
 
-Una cuenta con acceso al servidor configura esas variables y ejecuta:
+Ejecución desde el repositorio, con las variables de entorno cargadas:
 
-    cargo run --manifest-path providers/whatsapp-rust/Cargo.toml -- --init
     cargo run --manifest-path providers/whatsapp-rust/Cargo.toml
 
-La primera instrucción registra el socket una sola vez. La segunda abre
-whatsapp-rust con el almacenamiento de sesión indicado. Se muestra
-**solo el código de emparejamiento**, que se introduce desde WhatsApp,
-Dispositivos vinculados, Vincular con número de teléfono.
+El enlace se realiza exclusivamente mediante código de vinculación mostrado
+en la terminal del operador. El proveedor no registra callback QR ni muestra
+códigos QR; whatsapp-rust puede crear un desafío QR interno en paralelo,
+sin que este proceso lo exponga.
 
-La biblioteca upstream 0.7 puede generar internamente un QR en paralelo al
-pairing code; este binario no registra ni presenta ningún callback QR. No se
-afirma que el flujo QR del protocolo esté desactivado.
+El proceso valida el mensaje de la cuenta propia, JID de chat y remitente
+exactos, fromMe y chat no grupal. Firma únicamente mensajes canónicos
+=/> con timestamp reciente y los entrega al controlador Rust de Base.
+No envía mensajes de WhatsApp, no responde ping y no ejecuta Bot-Matter.
 
-El proveedor solo admite controles globales =/> desde el chat privado propio.
-El verificador de Base necesita from_me, emisor y chat iguales al JID propio,
-ausencia de grupo, tiempo reciente, ID no repetido y propiedad del socket.
-No reenvía respuestas al chat ni acepta #ping como comando permanente.
+## Límite de estabilidad
 
-## Seguridad / pruebas
+El proveedor requiere un proceso receptor Base-Matter configurado con el
+mismo secreto y socket, una sesión real vinculada mediante pairing code,
+revisión de compatibilidad SQLite y pruebas de revocación y reconexión.
+No se puede afirmar estabilidad por aprobar únicamente pruebas offline.
 
-- El archivo SQLite nunca se elimina de forma automática.
-- Un archivo de bloqueo impide dos instancias del mismo adaptador.
-  Ante un bloqueo dejado por un proceso caído, verifica manualmente la
-  finalización del proceso y el estado de la sesión antes de retirarlo.
-- Realiza una copia de seguridad consistente de la base SQLite existente
-  antes de intentar actualizar versiones. Este código no migra ni modifica
-  sesiones antiguas sin la biblioteca upstream.
-- El almacén de repetición es independiente y debe ser persistente.
-- Las pruebas offline no verifican el emparejamiento ni la red WhatsApp.
-  Se requiere un número de pruebas autorizado y supervisión del socket
-  para aprobar el paso a estable.
-- La biblioteca whatsapp-rust es no oficial y no pertenece a Meta.
+Biblioteca upstream: oxidezap/whatsapp-rust, versión 0.7.0 (tercero, no
+oficial de WhatsApp). Conservar licencias y atribuciones upstream.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].

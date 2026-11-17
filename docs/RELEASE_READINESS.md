@@ -115,3 +115,7 @@ The Rust native ingress module is covered by offline tests only. A verified sing
 ## Executable whatsapp-rust provider prerequisite
 
 An isolated Rust provider crate was added at providers/whatsapp-rust, with pairing code only, SQLite session lease and owner control. Run its separate CI and perform controlled live device pairing, recovery and security review before promoting to stable. The upstream library generates QR concurrently internally; this provider does not display or expose QR callbacks.
+
+## Native SQLite version conflict resolved by process separation (architecture)
+
+whatsapp-rust 0.7 requires a different libsqlite3-sys major version from Base. They must not link into a single executable. Two Rust processes communicating over authenticated loopback remove the link collision, but do not themselves establish production readiness. Pairing code with an authorized phone, security checks, and receiver runtime tests are mandatory.

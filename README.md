@@ -586,3 +586,7 @@ El modulo WhatsAppNativeIngress acepta eventos autenticados exclusivamente dentr
 ## Proveedor Rust ejecutable (pruebas aisladas)
 
 El directorio providers/whatsapp-rust contiene un binario Rust real que integra whatsapp-rust 0.7.0 con la autorización, replay y control de Base-Matter, sin iniciar Bot-Matter, Node ni mostrar QR. Se requiere provisionar el socket desde el host seguro y utilizar un archivo SQLite privado, con bloqueo de sesión. Ver providers/whatsapp-rust/README.md para variables y pruebas. La vinculación de un teléfono real todavía no ha sido validada sobre esta versión, por lo que la promoción live a matter continúa bloqueada.
+
+## Separación de procesos Rust para WhatsApp
+
+El proveedor whatsapp-rust 0.7.0 y el núcleo actual utilizan versiones de SQLite nativas incompatibles. Para evitar alterar la persistencia estable del núcleo, el proveedor corre como proceso Rust independiente y entrega controles firmados HMAC por TCP local (127.0.0.1). El verificador Rust ya implementado en src/whatsapp_bridge.rs autentica esos eventos. No interviene Node. Ver providers/whatsapp-rust/README.md. El receptor TCP aún debe probarse e integrarse antes de su uso estable.
