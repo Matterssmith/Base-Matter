@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Formato del sondeo local del controlador (CI pendiente)
+
+- Se eliminó una línea de separación adicional entre funciones en `providers/whatsapp-rust/src/main.rs`, según rustfmt CI; sin cambios lógicos.
+- Ambos README revisados completos (2/2), sin cambios. Verificar en CI antes de promover.
+
+
 ## 2026-11-17 — Receptor activo antes del pairing (CI pendiente)
 
 - El proceso `whatsapp-rust` verifica TCP loopback en su receptor Base-Matter antes de abrir el SQLite del proveedor o iniciar la solicitud de pairing code. Si no escucha, falla sin tocar sesiones ni credenciales.

@@ -36,7 +36,6 @@ async fn deliver(
     timeout(Duration::from_secs(4), transport).await?
 }
 
-
 async fn require_local_controller(address: std::net::SocketAddrV4) -> Result<()> {
     // No SQLite, pairing request, login or authenticated command is sent.
     // A successful TCP connection only proves that the local port listens.
