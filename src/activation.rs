@@ -49,7 +49,7 @@ impl SocketActivationStore {
                 |row| row.get(0),
             )
             .optional()?;
-        if version.is_some_and(|v| v != 1 && v != 2) {
+        if version.is_some_and(|v| !(1..=3).contains(&v)) {
             bail!("Unsupported socket activation schema");
         }
         tx.execute_batch(
@@ -68,13 +68,97 @@ impl SocketActivationStore {
             CREATE TABLE IF NOT EXISTS activation_bindings (
             socket_id TEXT PRIMARY KEY NOT NULL REFERENCES activation_sockets(socket_id),
             bot_instance_id TEXT NOT NULL);
-            INSERT INTO matter_schema_versions VALUES('socket_activation',2)
+            CREATE TABLE IF NOT EXISTS activation_global (
+            singleton INTEGER PRIMARY KEY CHECK(singleton=1), owner_id TEXT NOT NULL,
+            policy INTEGER CHECK(policy IN (0,1)));
+            CREATE TABLE IF NOT EXISTS activation_global_audit (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, actor_id TEXT NOT NULL,
+            action TEXT NOT NULL, value INTEGER CHECK(value IN (0,1)),
+            created_at INTEGER NOT NULL);
+            INSERT INTO matter_schema_versions VALUES('socket_activation',3)
             ON CONFLICT(component) DO UPDATE SET version=excluded.version;",
         )?;
         tx.commit()?;
         Ok(Self {
             connection: Mutex::new(connection),
         })
+    }
+
+    /// Trusted bootstrap of the global policy administrator. This confers no
+    /// socket ownership or power authority. Duplicate provisioning is rejected.
+    pub fn provision_global(&self, authenticated_owner: &str) -> Result<()> {
+        validate(authenticated_owner)?;
+        let mut c = self
+            .connection
+            .lock()
+            .map_err(|_| anyhow!("Activation lock poisoned"))?;
+        let tx = c.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        tx.execute(
+            "INSERT INTO activation_global(singleton,owner_id) VALUES(1,?1)",
+            [authenticated_owner],
+        )?;
+        global_audit(&tx, authenticated_owner, "provision", None)?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Updates only the global fallback. None restores deny-by-default where
+    /// neither group nor socket overrides apply. It never changes socket power.
+    pub fn set_global_policy(&self, actor: &str, value: Option<bool>) -> Result<()> {
+        validate(actor)?;
+        let mut c = self
+            .connection
+            .lock()
+            .map_err(|_| anyhow!("Activation lock poisoned"))?;
+        let tx = c.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        require_global_owner(&tx, actor)?;
+        tx.execute(
+            "UPDATE activation_global SET policy=?1 WHERE singleton=1",
+            [value],
+        )?;
+        global_audit(&tx, actor, "policy", value)?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Reads a bounded page after an audit ID. Only the stored global policy
+    /// administrator may read it; socket ownership alone grants no access.
+    pub fn global_audit_history(
+        &self,
+        actor: &str,
+        after_id: i64,
+        limit: usize,
+    ) -> Result<Vec<GlobalActivationAuditRecord>> {
+        validate(actor)?;
+        if after_id < 0 || !(1..=1000).contains(&limit) {
+            bail!("Invalid global activation audit page");
+        }
+        let mut c = self
+            .connection
+            .lock()
+            .map_err(|_| anyhow!("Activation lock poisoned"))?;
+        let tx = c.transaction()?;
+        require_global_owner(&tx, actor)?;
+        let mut records = Vec::new();
+        {
+            let mut statement = tx.prepare(
+                "SELECT id,actor_id,action,value,created_at
+                FROM activation_global_audit WHERE id>?1 ORDER BY id LIMIT ?2",
+            )?;
+            let mut rows = statement.query(params![after_id, limit as i64])?;
+            while let Some(row) = rows.next()? {
+                let value: Option<i64> = row.get(3)?;
+                records.push(GlobalActivationAuditRecord {
+                    id: row.get(0)?,
+                    actor_id: row.get(1)?,
+                    action: row.get(2)?,
+                    value: value.map(decode_policy).transpose()?,
+                    created_at: row.get(4)?,
+                });
+            }
+        }
+        tx.commit()?;
+        Ok(records)
     }
 
     /// Trusted provisioning boundary. Does not authenticate arbitrary actor
@@ -242,6 +326,27 @@ impl SocketActivationStore {
         group: Option<&str>,
         global_default: Option<bool>,
     ) -> Result<ActivationDecision> {
+        self.resolve_with_global(socket, group, false, global_default)
+    }
+
+    /// Reads power, group, socket and persisted global policy in one snapshot.
+    /// No global provisioning/policy means no fallback (deny). Invalid stored
+    /// policy values fail closed even if another scope would override them.
+    pub fn resolve_persisted(
+        &self,
+        socket: &str,
+        group: Option<&str>,
+    ) -> Result<ActivationDecision> {
+        self.resolve_with_global(socket, group, true, None)
+    }
+
+    fn resolve_with_global(
+        &self,
+        socket: &str,
+        group: Option<&str>,
+        persisted: bool,
+        configured: Option<bool>,
+    ) -> Result<ActivationDecision> {
         validate(socket)?;
         if let Some(group) = group {
             validate(group)?;
@@ -250,20 +355,24 @@ impl SocketActivationStore {
             .connection
             .lock()
             .map_err(|_| anyhow!("Activation lock poisoned"))?;
-        let row: Option<(i64, Option<i64>, Option<i64>)> = c
+        type PolicyRow = (i64, Option<i64>, Option<i64>, Option<i64>);
+        let row: Option<PolicyRow> = c
             .query_row(
-                "SELECT s.powered,s.policy,g.policy FROM activation_sockets s
+                "SELECT s.powered,s.policy,g.policy,
+             CASE WHEN ?3 THEN (SELECT policy FROM activation_global WHERE singleton=1) ELSE ?4 END
+             FROM activation_sockets s
              LEFT JOIN activation_groups g ON g.socket_id=s.socket_id AND g.group_id=?2
              WHERE s.socket_id=?1",
-                params![socket, group],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+                params![socket, group, persisted, configured],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
             )
             .optional()?;
-        let (powered, socket_policy, group_policy) =
+        let (powered, socket_policy, group_policy, global_policy) =
             row.ok_or_else(|| anyhow!("Socket unavailable"))?;
         let powered = decode_policy(powered)?;
         let socket_policy = socket_policy.map(decode_policy).transpose()?;
         let group_policy = group_policy.map(decode_policy).transpose()?;
+        let global_policy = global_policy.map(decode_policy).transpose()?;
         if !powered {
             return Ok(ActivationDecision {
                 enabled: false,
@@ -273,7 +382,7 @@ impl SocketActivationStore {
         for (value, source) in [
             (group_policy, ActivationSource::Group),
             (socket_policy, ActivationSource::Socket),
-            (global_default, ActivationSource::Global),
+            (global_policy, ActivationSource::Global),
         ] {
             if let Some(enabled) = value {
                 return Ok(ActivationDecision { enabled, source });
@@ -319,6 +428,42 @@ pub struct ActivationAuditRecord {
     pub group_id: Option<String>,
     pub value: Option<bool>,
     pub created_at: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GlobalActivationAuditRecord {
+    pub id: i64,
+    pub actor_id: String,
+    pub action: String,
+    pub value: Option<bool>,
+    pub created_at: i64,
+}
+
+fn require_global_owner(c: &Connection, actor: &str) -> Result<()> {
+    let owner: Option<String> = c
+        .query_row(
+            "SELECT owner_id FROM activation_global WHERE singleton=1",
+            [],
+            |r| r.get(0),
+        )
+        .optional()?;
+    if owner.as_deref() != Some(actor) {
+        bail!("Global policy owner authorization denied");
+    }
+    Ok(())
+}
+
+fn global_audit(c: &Connection, actor: &str, action: &str, value: Option<bool>) -> Result<()> {
+    c.execute(
+        "INSERT INTO activation_global_audit(actor_id,action,value,created_at) VALUES(?1,?2,?3,?4)",
+        params![
+            actor,
+            action,
+            value,
+            time::OffsetDateTime::now_utc().unix_timestamp()
+        ],
+    )?;
+    Ok(())
 }
 
 fn validate(value: &str) -> Result<()> {

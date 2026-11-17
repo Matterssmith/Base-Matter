@@ -249,9 +249,84 @@ fn schema_v1_upgrade_keeps_existing_power_and_requires_explicit_binding() {
             |r| r.get(0),
         )
         .unwrap();
-    assert_eq!(version, 2);
+    assert_eq!(version, 3);
     let count: i64 = c
         .query_row("SELECT COUNT(*) FROM activation_bindings", [], |r| r.get(0))
         .unwrap();
     assert_eq!(count, 0);
+}
+
+#[test]
+fn persistent_global_changes_affect_admission_but_never_grant_power_authority() {
+    let dir = Temp::new();
+    let bots = Arc::new(BotRegistry::in_memory());
+    let bot = bots.register("f", "r", "bot", "alice").unwrap();
+    let path = dir.0.join("activation.db");
+    let activation = Arc::new(SocketActivationStore::open(&path).unwrap());
+    activation.provision_global("global-admin").unwrap();
+    activation.provision("socket", "alice").unwrap();
+    activation
+        .bind_bot("socket", "alice", bot.instance_id(), &bots)
+        .unwrap();
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(TestPolicy)).unwrap());
+    let calls = Arc::new(AtomicUsize::new(0));
+    let handler_calls = calls.clone();
+    router
+        .register("help", &[], move |_| {
+            handler_calls.fetch_add(1, Ordering::SeqCst);
+            Ok("help".into())
+        })
+        .unwrap();
+    let dispatcher =
+        ControlDispatcher::new_with_persistent_policy(activation.clone(), bots, router);
+    let separate = SocketActivationStore::open(&path).unwrap();
+    separate
+        .set_global_policy("global-admin", Some(true))
+        .unwrap();
+    assert!(dispatcher
+        .dispatch("socket", "global-admin", "room", None, "=on socket")
+        .is_err());
+    assert_eq!(
+        dispatcher
+            .dispatch("socket", "member", "room", None, "#help")
+            .unwrap(),
+        DispatchResult::Inactive
+    );
+    dispatcher
+        .dispatch("socket", "alice", "room", None, "=on")
+        .unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("socket", "member", "room", None, "#help")
+            .unwrap(),
+        DispatchResult::Message(Some("help".into()))
+    );
+    separate
+        .set_global_policy("global-admin", Some(false))
+        .unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("socket", "member", "room", None, "#help")
+            .unwrap(),
+        DispatchResult::Inactive
+    );
+    separate
+        .set_group_policy("socket", "alice", "room", Some(true))
+        .unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("socket", "member", "room", Some("room"), "#help")
+            .unwrap(),
+        DispatchResult::Message(Some("help".into()))
+    );
+    dispatcher
+        .dispatch("socket", "alice", "room", None, "=off")
+        .unwrap();
+    assert_eq!(
+        dispatcher
+            .dispatch("socket", "member", "room", Some("room"), "#help")
+            .unwrap(),
+        DispatchResult::Inactive
+    );
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
 }

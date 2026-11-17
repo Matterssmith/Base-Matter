@@ -111,10 +111,14 @@ verification results are maintained in
 [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).
 
 Socket activation policy storage is described in [activation contracts](activation.md).
-It provides durable ownership/power/overrides and atomic audits, but does not
+It provides durable ownership/power/overrides/global fallback and atomic audits, but does not
 manage network connections. `ControlDispatcher` enforces activation before
 normal routing and intercepts power commands with socket-owner checks before
 bot lookup. A missing binding or revoked bot ownership blocks normal commands,
 but cannot prevent the socket owner from switching operational power off.
 
 Persistent command audit is described in [command audit contracts](command-audit.md).
+
+The optional persistent global-policy dispatcher reads all activation scopes in
+one SQLite snapshot. Global policy administrators have no implicit authority
+over socket power or local overrides; static configuration remains supported.

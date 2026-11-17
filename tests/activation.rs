@@ -201,3 +201,172 @@ fn binding_audit_failure_rolls_back_and_conflicting_binding_preserves_original()
     assert_eq!(stored, first.instance_id());
     assert_eq!(store.audit_history("a", "alice").unwrap().len(), 2);
 }
+
+#[test]
+fn persistent_global_policy_recovers_precedence_without_socket_authority() {
+    let dir = TestDirectory::new();
+    let path = dir.0.join("global.db");
+    {
+        let store = SocketActivationStore::open(&path).unwrap();
+        store.provision("a", "alice").unwrap();
+        store.provision("b", "bob").unwrap();
+        store.set_power("a", "alice", true).unwrap();
+        assert_eq!(
+            store.resolve_persisted("a", None).unwrap().source,
+            ActivationSource::None
+        );
+        assert!(store.set_global_policy("admin", Some(true)).is_err());
+        store.provision_global("admin").unwrap();
+        assert!(store.provision_global("alice").is_err());
+        assert!(store.set_global_policy("alice", Some(true)).is_err());
+        assert!(store.global_audit_history("alice", 0, 10).is_err());
+        store.set_global_policy("admin", Some(true)).unwrap();
+        assert!(store.set_power("a", "admin", true).is_err());
+        assert!(store.set_socket_policy("a", "admin", Some(true)).is_err());
+        assert!(!store.resolve_persisted("b", None).unwrap().enabled);
+        assert!(store.resolve_persisted("a", None).unwrap().enabled);
+        store.set_socket_policy("a", "alice", Some(false)).unwrap();
+        store
+            .set_group_policy("a", "alice", "room", Some(true))
+            .unwrap();
+    }
+    let store = SocketActivationStore::open(&path).unwrap();
+    assert_eq!(
+        store.resolve_persisted("a", Some("room")).unwrap().source,
+        ActivationSource::Group
+    );
+    assert!(!store.resolve_persisted("a", None).unwrap().enabled);
+    store.set_socket_policy("a", "alice", None).unwrap();
+    assert_eq!(
+        store.resolve_persisted("a", None).unwrap().source,
+        ActivationSource::Global
+    );
+    store.set_global_policy("admin", None).unwrap();
+    assert_eq!(
+        store.resolve_persisted("a", None).unwrap().source,
+        ActivationSource::None
+    );
+    assert!(store.resolve_persisted("a", Some("room")).unwrap().enabled);
+    // The explicit static-policy API preserves its existing semantics.
+    assert!(store.resolve("a", None, Some(true)).unwrap().enabled);
+    let records = store.global_audit_history("admin", 0, 1).unwrap();
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].actor_id, "admin");
+    assert_eq!(records[0].action, "provision");
+    assert_eq!(
+        store
+            .global_audit_history("admin", records[0].id, 10)
+            .unwrap()
+            .len(),
+        2
+    );
+    for (after, limit) in [(-1, 1), (0, 0), (0, 1001)] {
+        assert!(store.global_audit_history("admin", after, limit).is_err());
+    }
+}
+
+#[test]
+fn global_audit_failure_rolls_back_bootstrap_and_policy_changes() {
+    let dir = TestDirectory::new();
+    let path = dir.0.join("global.db");
+    let store = SocketActivationStore::open(&path).unwrap();
+    store.provision("a", "alice").unwrap();
+    store.set_power("a", "alice", true).unwrap();
+    let c = rusqlite::Connection::open(&path).unwrap();
+    let trigger = "CREATE TRIGGER reject_global_audit BEFORE INSERT ON activation_global_audit
+        BEGIN SELECT RAISE(ABORT,'injected failure'); END;";
+    c.execute_batch(trigger).unwrap();
+    assert!(store.provision_global("admin").is_err());
+    let count: i64 = c
+        .query_row("SELECT COUNT(*) FROM activation_global", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(count, 0);
+    c.execute_batch("DROP TRIGGER reject_global_audit;")
+        .unwrap();
+    store.provision_global("admin").unwrap();
+    store.set_global_policy("admin", Some(true)).unwrap();
+    c.execute_batch(trigger).unwrap();
+    assert!(store.set_global_policy("admin", Some(false)).is_err());
+    assert!(store.resolve_persisted("a", None).unwrap().enabled);
+    assert_eq!(store.global_audit_history("admin", 0, 10).unwrap().len(), 2);
+    c.execute_batch(
+        "DROP TRIGGER reject_global_audit; PRAGMA ignore_check_constraints=ON;
+        UPDATE activation_global SET policy=2;",
+    )
+    .unwrap();
+    assert!(store.resolve_persisted("a", None).is_err());
+}
+
+#[test]
+fn concurrent_global_changes_commit_in_audit_order() {
+    let dir = TestDirectory::new();
+    let path = dir.0.join("global.db");
+    let first = SocketActivationStore::open(&path).unwrap();
+    first.provision_global("admin").unwrap();
+    first.provision("a", "alice").unwrap();
+    first.set_power("a", "alice", true).unwrap();
+    let second = SocketActivationStore::open(&path).unwrap();
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+    let joins: Vec<_> = [(first, true), (second, false)]
+        .into_iter()
+        .map(|(store, value)| {
+            let barrier = barrier.clone();
+            std::thread::spawn(move || {
+                barrier.wait();
+                store.set_global_policy("admin", Some(value)).unwrap();
+            })
+        })
+        .collect();
+    for join in joins {
+        join.join().unwrap();
+    }
+    let recovered = SocketActivationStore::open(&path).unwrap();
+    let audit = recovered.global_audit_history("admin", 0, 10).unwrap();
+    assert_eq!(audit.len(), 3);
+    assert_ne!(audit[1].value, audit[2].value);
+    assert_eq!(
+        Some(recovered.resolve_persisted("a", None).unwrap().enabled),
+        audit[2].value
+    );
+}
+
+#[test]
+fn version_two_global_migration_is_atomic_and_preserves_existing_binding() {
+    let dir = TestDirectory::new();
+    let path = dir.0.join("legacy.db");
+    let c = rusqlite::Connection::open(&path).unwrap();
+    c.execute_batch("CREATE TABLE matter_schema_versions(component TEXT PRIMARY KEY,version INTEGER NOT NULL);
+        INSERT INTO matter_schema_versions VALUES('socket_activation',2);
+        CREATE TABLE activation_sockets(socket_id TEXT PRIMARY KEY,owner_id TEXT NOT NULL,powered INTEGER NOT NULL,policy INTEGER);
+        INSERT INTO activation_sockets VALUES('legacy','alice',1,1);
+        CREATE TABLE activation_bindings(socket_id TEXT PRIMARY KEY,bot_instance_id TEXT NOT NULL);
+        INSERT INTO activation_bindings VALUES('legacy','original-bot');").unwrap();
+    // A conflicting object forces the new audit-table DDL to fail.
+    c.execute_batch("CREATE INDEX activation_global_audit ON activation_sockets(owner_id);")
+        .unwrap();
+    assert!(SocketActivationStore::open(&path).is_err());
+    let version: i64 = c
+        .query_row(
+            "SELECT version FROM matter_schema_versions WHERE component='socket_activation'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(version, 2);
+    c.execute_batch("DROP INDEX activation_global_audit;")
+        .unwrap();
+    let store = SocketActivationStore::open(&path).unwrap();
+    assert!(store.resolve_persisted("legacy", None).unwrap().enabled);
+    let binding: String = c
+        .query_row(
+            "SELECT bot_instance_id FROM activation_bindings WHERE socket_id='legacy'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(binding, "original-bot");
+    assert_eq!(
+        store.resolve_persisted("legacy", None).unwrap().source,
+        ActivationSource::Socket
+    );
+}

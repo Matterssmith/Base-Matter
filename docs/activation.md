@@ -22,9 +22,10 @@ deny. Removing an override with `None` restores fallback. This does not change
 the network connection. The read uses one SQL statement for a coherent snapshot.
 Missing sockets and storage failures return errors; callers must fail closed.
 
-Schema initialization is transactional and versioned as `socket_activation=2`.
-Version 1 upgrades preserve existing policies; existing sockets remain unbound
-until explicitly associated with a bot.
+Schema initialization is transactional and versioned as `socket_activation=3`.
+Version 1/2 upgrades preserve existing policies, audit and bindings. Version 1
+sockets remain unbound until explicitly associated with a bot. No global
+administrator or policy is inferred during migration.
 Unknown versions are rejected. Audit records omit message bodies and credentials.
 Tests cover reopening, precedence, isolation, authorization, duplicate provisioning,
 audit-write rollback (including binding), corrupt policy rejection, concurrent
@@ -56,8 +57,36 @@ Admission uses snapshots. Power-off prevents subsequent admissions; it does not
 cancel callbacks already admitted or undo their effects. Use the dispatcher for
 all inbound messages; calling the lower-level router directly skips socket gating.
 
+## Persistent global fallback
+
+Trusted provisioning calls `provision_global(authenticated_admin)` once. This
+creates only global policy administration authority, never socket ownership.
+The initial policy is absent (deny where neither group nor socket overrides
+apply). Duplicate provisioning fails; the application must authenticate and
+authorize bootstrap and must not expose it directly to untrusted callers.
+
+`set_global_policy(actor, Option<bool>)` requires the stored global administrator.
+The state mutation and audit insert share an immediate transaction. `None`
+removes fallback. A global administrator cannot change socket power, socket
+policy or group overrides without separately owning the target socket.
+`global_audit_history(actor, after_id, limit)` checks that administrator in the
+same read transaction as retrieving 1–1,000 records per page.
+
+`resolve_persisted(socket, group)` reads power, group, socket and global policy
+in a single SQL snapshot. Missing global configuration is equivalent to no
+fallback; malformed stored values fail closed. The dispatcher constructor
+`new_with_persistent_policy(activation, bots, router)` uses that query on each
+normal admission, so changes through independent connections take effect
+without rebuilding the dispatcher. Already admitted handlers are not cancelled.
+
+`resolve(..., global_default)` and `ControlDispatcher::new(..., global_default)`
+retain their explicit static-policy semantics and do not use persisted global
+policy. Choose one mode deliberately in trusted application setup. No inbound
+message may choose the policy source. Global updates use the administrative
+API; the reserved message grammar remains exclusively power on/off.
+
 Pending: interchangeable storage, ownership transfer, network connection lifecycle,
-global-policy persistence, authenticated adapter ingress and production integration.
+authenticated adapter ingress and production integration.
 These remain prerequisites for the real WhatsApp activation test.
 
 Créditos:

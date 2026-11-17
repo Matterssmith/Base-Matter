@@ -17,12 +17,17 @@ pub enum DispatchResult {
 /// Trusted ingress boundary. The application authenticates `actor`, establishes
 /// the receiving socket and source/group IDs, and protects this service from
 /// arbitrary in-process callers. A message never supplies the bot instance ID.
-/// Global policy is supplied once by trusted configuration.
+/// Global policy comes from trusted configuration or the activation store.
 pub struct ControlDispatcher {
     activation: Arc<SocketActivationStore>,
     bots: Arc<BotRegistry>,
     router: Arc<CommandRouter>,
-    global_default: Option<bool>,
+    global_policy: GlobalPolicy,
+}
+
+enum GlobalPolicy {
+    Configured(Option<bool>),
+    Persisted,
 }
 
 impl ControlDispatcher {
@@ -36,7 +41,22 @@ impl ControlDispatcher {
             activation,
             bots,
             router,
-            global_default,
+            global_policy: GlobalPolicy::Configured(global_default),
+        }
+    }
+
+    /// Observe authorized persistent global policy changes at each admission.
+    /// Global administrators still cannot power another owner's socket.
+    pub fn new_with_persistent_policy(
+        activation: Arc<SocketActivationStore>,
+        bots: Arc<BotRegistry>,
+        router: Arc<CommandRouter>,
+    ) -> Self {
+        Self {
+            activation,
+            bots,
+            router,
+            global_policy: GlobalPolicy::Persisted,
         }
     }
 
@@ -77,11 +97,15 @@ impl ControlDispatcher {
                 powered,
             });
         }
-        if !self
-            .activation
-            .resolve(receiving_socket, group, self.global_default)?
-            .enabled
-        {
+        let decision = match self.global_policy {
+            GlobalPolicy::Configured(default) => {
+                self.activation.resolve(receiving_socket, group, default)?
+            }
+            GlobalPolicy::Persisted => {
+                self.activation.resolve_persisted(receiving_socket, group)?
+            }
+        };
+        if !decision.enabled {
             return Ok(DispatchResult::Inactive);
         }
         let (bot, owner) = self.activation.binding(receiving_socket)?;

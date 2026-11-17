@@ -4,6 +4,41 @@ This is a development ledger. GitHub remains the source of truth. Its
 synchronization entry records the published base of each working checkpoint;
 verify the branch log for the current published commit.
 
+## 2026-11-17 — Persistent global activation policy
+
+- Resumed from verified `7ef49de36cdeae03446c8230bffe7a6aee76e18f` on
+  `matter-beta` after fetch/switch/reset with a clean tree. The existing stash,
+  ignored build output and stable branch were preserved.
+- Added trusted one-time global-policy administrator provisioning, owner-only
+  policy mutation and bounded owner-only audit pages. Provisioning and policy
+  changes commit with their audit rows; audit failure rolls everything back.
+- Schema `socket_activation=3` upgrades versions 1/2 transactionally while
+  preserving existing socket state and bindings. No administrator is inferred.
+- `resolve_persisted` and `ControlDispatcher::new_with_persistent_policy` read
+  power plus Group > Socket > Global > deny in one SQLite snapshot per normal
+  admission. Independent-connection changes become visible without rebuilding
+  the dispatcher. Existing static-global APIs retain their previous behavior.
+  Global administration grants no authority over another owner's socket power
+  or overrides. Missing global policy denies fallback; corrupt values fail closed.
+- Added five regressions for restart recovery, precedence and isolation,
+  authorization/pagination, provisioning and mutation rollback, corrupt global
+  values, concurrent writes/audit order, migration failure/retry, and actual
+  dispatcher behavior with live policy changes. No external service is mocked
+  or represented as verified by these tests.
+- Checks passed: `cargo fmt --all`, `cargo check --all-targets`, focused
+  activation/control tests (14 passed), full `cargo test` (234 passed, 0 failed,
+  1 opt-in Vault test ignored; 0 doc tests), and `git diff --check`.
+- README audit: 1 found, 1 fully reviewed, 1 updated, 0 unchanged. Added actual
+  persisted-global API use and corrected roadmap scope; examples match compiled
+  tests, relative links resolve and credits remain intact. Full diff and file
+  inventory reviewed; no new/deleted files or secret-pattern matches. Remaining
+  documentation gaps correspond to unimplemented systems, not this policy flow.
+- Next: socket ownership transfer and owner-authorized binding recovery with
+  atomic power-off, isolation and audit, then general resource authorization.
+  Continue independent local prerequisites while the external Vault key/binding
+  implementation and authenticated access contract remain unavailable. H–L
+  are still open; no stable promotion or Matter-Bot work occurred.
+
 ## 2026-11-17 — Durable command audit integration
 
 - Continued independent Base work after publishing and fetching control fix
@@ -158,7 +193,7 @@ not ready for Matter-Bot.
 | Events and messaging | PARTIAL | Named synchronous in-memory event callbacks exist; no durable events or messaging contract. |
 | Router and command registry | PARTIAL | `CommandRouter` supports bounded prefixes/names/aliases/arguments, mandatory injected authorization, middleware, and synchronous handlers; ControlDispatcher provides socket gating and reserved control-prefix interception; an injected CommandAuditStore persists recognized attempts/outcomes; default routing remains unaudited and platform-specific parsing remains pending. |
 | Middleware, roles, permissions, authorization | PARTIAL | Bot owner/co-owner checks and injectable user/legal action/resource authorization contracts exist; no general role inheritance or socket/resource policy engine. |
-| Control Plane, sockets, activation | PARTIAL | SQLite socket activation store provides owner checks, power, group/socket overrides, recovery and atomic audit. Durable bot binding and control-prefix interception/router gating exist. Network lifecycle, socket ownership transfer and global-policy persistence remain pending. |
+| Control Plane, sockets, activation | PARTIAL | SQLite socket activation store provides owner checks, power, group/socket overrides, recovery and atomic audit. Durable bot binding and control-prefix interception/router gating exist. Global fallback persistence and single-snapshot dispatcher integration are implemented; network lifecycle and socket ownership transfer remain pending. |
 | Services and connections | PARTIAL | Typed in-memory service registry only; no connection manager or lifecycle. |
 | Plugins, extensions, sandbox | ABSENT | No manifest validation, isolation, or resource limits. |
 | Application audit log | PARTIAL | Legal decisions, bot/socket administrative changes and optional recognized-command attempts/outcomes persist. A unified audit service and broader ingress coverage remain pending. |
