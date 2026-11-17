@@ -161,7 +161,12 @@ fn no_normal_bot_dispatch_ping_qr_or_legacy_global_aliases() {
 fn rejects_forged_signatures_cross_socket_and_sender() {
     let (bridge, activation) = fixture();
     let mut value = frame("id1", "=/>on");
-    value.signature.replace_range(0..2, "ab");
+    let forged_prefix = if value.signature.starts_with("ab") {
+        "ac"
+    } else {
+        "ab"
+    };
+    value.signature.replace_range(0..2, forged_prefix);
     assert!(bridge.ingest(&value).is_err());
     let mut value = frame("id2", "=/>on");
     value.socket_id = "other-socket".into();

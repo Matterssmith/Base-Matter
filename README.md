@@ -753,3 +753,27 @@ Los comandos `=/>menu`, `=/>help` y `=/>h` muestran exclusivamente los comandos 
 ## Ramas definitivas y estética del menú
 
 La rama predeterminada GitHub ya es `stable`; el desarrollo continúa en `alpha` y la integración validada se prepara en `beta`. Se retirarán referencias heredadas sin descartar commits exclusivos. La salida de `=/>menu` y `=/>help` es deliberadamente un listado sencillo. [La estética real de otros bots](docs/MENU_STYLE_IMPORT.md) se extraerá únicamente de un mensaje fuente autenticado, sin copiar sus comandos ni contenido.
+
+## Respaldo de recuperación comunitaria `=/>add++`
+
+El controlador Rust reconoce la orden global exacta `=/>add++` del dueño del socket, con independencia de que el bot esté encendido. Por defecto solo admite una previsualización; `=/>add++ snapshot <community-jid>` reserva una operación explícita de inventario privado cifrado. No existe modo `apply` de incorporación masiva y ningún comando agrega personas sin autorización o consentimiento. El objetivo es preparar una copia protegida de la lista accesible **antes** de una eventual suspensión; no garantiza acceso posterior ni eludir restricciones de WhatsApp. [Plan de recuperación](docs/COMMUNITY_RECOVERY.md).
+
+## Vista previa real de `=/>add++` en WhatsApp Rust
+
+En `alpha` el proveedor consulta `get_linked_groups_participants` solo para comunidades con administrador verificado, deduplica los identificadores PN/LID conocidos y muestra el número aproximado y el nombre sugerido para un grupo de respaldo. No transmite listas de números por chat ni agrega a ninguna persona. La modalidad `snapshot` aún indica explícitamente que no se ha guardado un respaldo cifrado. No está aprobada para una comunidad suspendida.
+
+## Cifrado del respaldo comunitario
+
+El proveedor Rust incorpora instantáneas de recuperación cifradas con XChaCha20-Poly1305, un nonce aleatorio y una clave dedicada de 256 bits distinta del puente WhatsApp. Cada instantánea contiene los identificadores PN/LID accesibles para recuperación futura, pero se guarda únicamente como ciphertext local con permisos 0600 en el directorio privado de la sesión. No se copia ninguna sesión ni se publican números en GitHub. Para configuraciones anteriores se habilita la clave sin reemplazar los valores existentes con `bash scripts/whatsapp-test-setup.sh --enable-recovery`. La conexión de este almacén con `=/>add++ snapshot` queda sujeta al próximo checkpoint de CI.
+
+## `=/>add++ snapshot` — Respaldo cifrado conectado
+
+Cuando el dueño emite `=/>add++ snapshot <community-jid>` en su propio chat, Base-Matter primero valida la firma HMAC y el propietario del socket; el proveedor revisa después que la sesión sea administradora de una comunidad activa, solicita los participantes vinculados y crea un archivo cifrado XChaCha20-Poly1305, sin publicar números de teléfono ni modificar grupos. Se requiere una clave adicional generada con `scripts/whatsapp-test-setup.sh --enable-recovery` para configuraciones existentes. Si falla la consulta, el guardado o la autorización, no se declara una copia completada. La recuperación por invitaciones sigue pendiente; una instantánea no fuerza a miembros a unirse a otra comunidad.
+
+## Comprobación offline de respaldos
+
+El proveedor expone `--recovery-verify <archivo>.enc.json` para comprobar autenticidad del snapshot cifrado, dueño y socket, sin conectarse a WhatsApp. Solo muestra el total de registros, nunca identificadores privados. El comando de instantánea es exclusivo de comunidades activas con admin verificado; no constituye autorización para agregar masivamente a terceros. [Guía de prueba](docs/WHATSAPP_TRIAL.md).
+
+## Prueba CLI del respaldo sin WhatsApp
+
+Las pruebas automatizadas ejecutan el binario real del proveedor con `--recovery-verify` y verifican que puede validar la instantánea sin abrir la sesión, sin crear SQLite y sin mostrar PN/LID. Se rechazan llaves equivocadas y nombres de archivo inválidos. La prueba sigue siendo offline y no certifica que una cuenta real permita el inventario.

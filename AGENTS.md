@@ -151,3 +151,11 @@ El proveedor de WhatsApp seleccionado es whatsapp-rust, ejecutado desde provider
   validarse y aislarse por comunidad antes de activarse.
 - `#matter` queda como interfaz opcional para integraciones externas
   autenticadas; no sustituye el prefijo `=/>` ni copia sesiones activas.
+
+## Recuperación comunitaria =/>add++ (solicitud 2026-11-17)
+
+- Objetivo: anticipar pérdida de una comunidad, preservando un inventario privado de sus integrantes y la posibilidad de ofrecerles entrar voluntariamente en una comunidad reemplazo.
+- La sintaxis exacta es `=/>add++` (dos signos más). Requerir autorización global del propietario del socket y verificación admin en el origen y destino. El bot normal apagado no modifica ese control.
+- Separar la lectura de miembros, instantánea cifrada y plan de invitación de las mutaciones. Sin consentimiento, límites de WhatsApp o permisos no añadir de golpe a terceros. Evitar reintentos intensivos y suspender ante señales de restricciones.
+- Poner en cuarentena `apply` hasta tener verificación de consentimiento, plan revisado, idempotencia y pruebas externas. Las instantáneas cifradas no son sesiones WhatsApp y no se publican en Git.
+- El grupo de emergencia puede llevar el nombre de la comunidad, acompañado de `Respaldo`, para evitar suplantar el original. Si la comunidad fue suspendida antes del respaldo y no hay acceso, no afirmar recuperación posible.

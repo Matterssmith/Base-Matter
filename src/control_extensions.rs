@@ -97,6 +97,11 @@ impl ControlExtensionRegistry {
     }
 }
 fn validate_name(name: &str) -> Result<()> {
+    // The owner explicitly reserved this exact recovery command spelling.
+    // Other '+'-containing names remain invalid.
+    if name == "add++" {
+        return Ok(());
+    }
     if name.is_empty()
         || name.len() > 64
         || RESERVED.contains(&name)

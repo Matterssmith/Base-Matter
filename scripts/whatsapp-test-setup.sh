@@ -11,6 +11,26 @@ setup() {
         printf 'Refusing symlink in private session path.\n' >&2
         return 1
     fi
+    if [[ "${1:-}" == "--enable-recovery" ]]; then
+        if ! command -v openssl >/dev/null 2>&1; then
+            printf 'OpenSSL is required to generate a recovery key.\n' >&2
+            return 1
+        fi
+        if [[ ! -f "$config" || -L "$config" ]]; then
+            printf 'Existing regular runtime.env is required for recovery activation.\n' >&2
+            return 1
+        fi
+        if grep -q '^export MATTER_WA_RECOVERY_KEY_HEX=' "$config"; then
+            printf 'Recovery key already present; existing configuration retained.\n'
+            return 0
+        fi
+        local recovery_key=""
+        recovery_key="$(openssl rand -hex 32)"
+        printf 'export MATTER_WA_RECOVERY_KEY_HEX=%q\n' "$recovery_key" >> "$config"
+        chmod 600 "$config"
+        printf 'Added a separate recovery key. Never share it or store it in Git.\n'
+        return 0
+    fi
     if [[ -e "$config" ]]; then
         printf 'Existing private configuration retained: %s\n' "$config"
         printf 'No keys or WhatsApp session files were replaced.\n'
@@ -45,9 +65,10 @@ setup() {
         return 1
     fi
 
-    local transport_key="" replay_key=""
+    local transport_key="" replay_key="" recovery_key=""
     transport_key="$(openssl rand -hex 32)"
     replay_key="$(openssl rand -hex 32)"
+    recovery_key="$(openssl rand -hex 32)"
     if [[ "$transport_key" == "$replay_key" ]]; then
         printf 'Key generation must produce distinct secrets.\n' >&2
         return 1
@@ -60,6 +81,7 @@ setup() {
         printf 'export MATTER_WA_BRIDGE_ADDR=%q\n' '127.0.0.1:39819'
         printf 'export MATTER_WA_BRIDGE_KEY_HEX=%q\n' "$transport_key"
         printf 'export MATTER_WA_REPLAY_KEY_HEX=%q\n' "$replay_key"
+        printf 'export MATTER_WA_RECOVERY_KEY_HEX=%q\n' "$recovery_key"
         printf 'export MATTER_WA_SESSION_DB=%q\n' "$directory/session.db"
         printf 'export MATTER_WA_ACTIVATION_DB=%q\n' "$directory/activation.db"
         printf 'export MATTER_WA_REPLAY_DB=%q\n' "$directory/replay.db"

@@ -4,6 +4,8 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
+pub mod recovery;
+
 use anyhow::{anyhow, bail, Result};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};

@@ -1,5 +1,90 @@
 # Matter-Base development status
 
+## 2026-11-17 — HMAC test tamper determinista, sin flakiness (alpha, CI pendiente)
+
+- El CI reprodujo un fallo intermitente del test `rejects_forged_signatures_cross_socket_and_sender`: reemplazaba los primeros dos bytes hex por `ab`, que podían coincidir con la firma original. La prueba ahora alterna `ab/ac` garantizando siempre una mutación.
+- No se alteró la verificación HMAC de producción, se corrigió únicamente la prueba. Ambos README leídos íntegros (2/2) sin cambios adicionales. Requerimos CI verde antes de fusionar a beta.
+
+
+## 2026-11-17 — Prueba real de path traversal en CLI y rustfmt (alpha, CI pendiente)
+
+- Se corrigió test `--recovery-verify` para probar realmente el nombre `../unsafe` en lugar de un argumento extra, evitando una falsa cobertura de seguridad. Se aplicó el formato requerido por rustfmt.
+- Revisados ambos README de forma íntegra (2/2), sin cambios. Mantener las pruebas del SHA exacto antes de fusionar a beta.
+
+
+## 2026-11-17 — E2E offline del CLI recovery (alpha; CI pendiente)
+
+- Test Rust ejecuta el binario real con `--recovery-verify`, clave y snapshot propios en directorio 0700, verifica lectura sin crear SQLite, sin exponer JIDs, y rechaza clave errónea y nombre de archivo inválido.
+- Se revisaron íntegros ambos README (2/2) y se actualizaron. La conexión real WhatsApp y migración por aceptación siguen pendientes.
+
+
+## 2026-11-17 — Rustfmt del CLI de verificación (alpha, CI pendiente)
+
+- Se aplicaron 2 ajustes de formato en el CLI offline `--recovery-verify` y los imports del proveedor según GitHub Actions.
+- Revisados los dos README completos (2/2); ninguna modificación necesaria, credenciales y sesiones intactas. Volver a comprobar provider CI.
+
+
+## 2026-11-17 — Verificación local del respaldo tras pérdida de sesión (alpha; CI pendiente)
+
+- Agregada opción offline `--recovery-verify <filename>.enc.json` al proveedor, con comprobación del filename, clave, AAD de socket/dueño e integridad; no abre WhatsApp ni expone JIDs o llaves.
+- README raíz, proveedor y guía operativa revisados completos (2/2 README) y actualizados para `=/>add++`, snapshot y prueba de archivo cifrado. Contrato de recuperación sincronizado. CI pendiente, sin cambios en `beta` ni en `stable`.
+
+
+## 2026-11-17 — Rustfmt de callback de snapshot (alpha; CI pendiente)
+
+- Corregida línea extra antes de `snapshot_community_recovery` según reporte rustfmt del proveedor. Ambos README revisados en su totalidad (2/2), sin cambios necesarios; claves y sesiones intactas.
+- Continuamos CI antes de cualquier prueba de WhatsApp real.
+
+
+## 2026-11-17 — Rustfmt de snapshot cifrada (alpha, CI pendiente)
+
+- Aplicados ajustes exactos de rustfmt de GitHub Actions al nuevo módulo criptográfico y sus tests. README raíz y proveedor revisados completos (2/2) sin cambios de contenido.
+- Aún faltan pruebas de compilación y la integración real por pairing code; no se modifican sesiones ni grupos.
+
+
+## 2026-11-17 — Callback =/>add++ snapshot con backup cifrado (alpha; CI pendiente)
+
+- Conectado el comando `=/>add++ snapshot <community-jid>` al provider: verifica admin PN/LID de la comunidad activa, obtiene miembros vinculados, deduplica alias conocidos y cifra datos localmente con clave separada.
+- La respuesta al chat propio confirma el nombre del archivo y el conteo, sin JIDs; errores no afirman éxito. `=/>add++` continúa como vista previa.
+- Actualizado el setup `--enable-recovery` para comprobar OpenSSL. Leídos íntegros ambos README (2/2) y actualizados. Contrato de recuperación actualizado. No se agregan miembros ni se cambia la rama beta.
+- CI y prueba real de WhatsApp son requisitos para calificar el respaldo. En caso de suspensión no se hace bypass de restricciones de cuenta.
+
+
+## 2026-11-17 — Almacén de respaldo cifrado en proveedor (alpha; CI pendiente)
+
+- Nuevo módulo Rust `providers/whatsapp-rust/src/recovery.rs` con XChaCha20-Poly1305, key dedicada, nonce aleatorio, AAD de socket/dueño, archivos privados 0600 sin overwrites, lectura autenticada y tests offline de integridad y separación de claves.
+- Actualizado setup para nuevas configuraciones y `--enable-recovery` explícito para existentes, sin sobrescribir sesiones ni regenerar claves previas. Snapshot todavía NO está conectado al callback WhatsApp: falta certificar esa etapa.
+- Revisados ambos README completos (2/2), ambos actualizados. Contrato de recuperación actualizado; dependencias proveedor añadidas, CI pendiente. No se suben claves ni listas en texto claro.
+
+
+## 2026-11-17 — Formato de escaneo add++ (alpha, CI pendiente)
+
+- Dos ajustes rustfmt exactos al callback del proveedor detectados por GitHub Actions. Sin cambios de lógica, sesiones ni miembros.
+- Auditoría de los 2 README completos (2/2), sin cambios de contenido. Volver a verificar CI antes de promover.
+
+
+## 2026-11-17 — Corrección de tipo del subcomando add++ (alpha; CI pendiente)
+
+- Se resolvió E0308 en Windows: el matcher de `&[String]` no permite comparar `"snapshot"` como patrón `&str`. Ahora se valida la longitud y el texto directamente antes de autorizar la instantánea.
+- Corregidos 2 detalles de rustfmt en `tests/control_extensions.rs`. README raíz y proveedor revisados íntegros (2/2) sin cambios de contenido. No se han incorporado usuarios ni alterado comunidades.
+
+
+## 2026-11-17 — =/>add++ lee miembros de comunidades autorizadas (alpha; CI pendiente)
+
+- El proveedor Rust ahora consulta `get_linked_groups_participants` después del acuse HMAC de Base para comunidades con admin PN/LID verificado. Excluye las suspendidas, deduplica identificadores disponibles y envía solo conteos aproximados al self-chat.
+- El nombre sugerido para el grupo de respaldo conserva el nombre de la comunidad con el sufijo `- Respaldo`. Sin creación de grupos ni incorporación de participantes.
+- `snapshot` declara claramente que todavía no se guarda un respaldo. Límite 12 comunidades, 15.000 participantes por comunidad y 20 s de consulta.
+- Dos README revisados completos (2/2), ambos actualizados; contrato de recuperación ampliado. Pendiente CI y prueba real; `beta` permanece sin cambios.
+
+
+## 2026-11-17 — Control =/>add++ para recuperación (alpha; CI pendiente)
+
+- Se añadió la sintaxis exacta `add++` al registro global y al controlador Rust con permiso de dueño de socket, independientemente del encendido del bot. El modo inicial ofrece un inventario y reserva el comando explícito `snapshot <community-jid>`.
+- Cualquier mutación `apply` y otras variantes no aprobadas son rechazadas; no se intenta incorporar a usuarios automáticamente, dado que WhatsApp impone privacidad, permisos y límites.
+- Se añadieron pruebas de aislamiento entre sockets, spoofing del prefijo y rechazo de variantes, y el contrato `docs/COMMUNITY_RECOVERY.md`.
+- Auditoría íntegra de los dos README (2/2); ambos actualizados. AGENTS complementado. Pendiente CI y lectura real del proveedor. No se tocó `beta` ni `stable`.
+
+
 ## 2026-11-17 — Reparación de regresión de formato neutro (alpha; CI pendiente)
 
 - GitHub Actions detectó una aserción obsoleta en `tests/control_style.rs`: el texto plano `Bot ID` ya no coincide con la cadena decorativa anterior `BOT ID`. Ajustada la aserción sin cambiar la funcionalidad.

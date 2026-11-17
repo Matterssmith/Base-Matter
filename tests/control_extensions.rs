@@ -102,6 +102,20 @@ fn reserved_names_and_alias_collisions_fail_closed() {
     ] {
         assert!(registry.register(name, &[], |_, _| Ok("x".into())).is_err());
     }
+    for invalid in ["add+", "add+++", "+add", "add+test"] {
+        assert!(registry
+            .register(invalid, &[], |_, _| Ok("bad".into()))
+            .is_err());
+    }
+    registry
+        .register("add++", &[], |_, args| {
+            if args.is_empty() {
+                Ok("preview".to_owned())
+            } else {
+                anyhow::bail!("mutations are not permitted")
+            }
+        })
+        .unwrap();
     registry
         .register("inspect", &["alias"], |_, _| Ok("yes".into()))
         .unwrap();
@@ -187,3 +201,42 @@ fn existing_power_behavior_cannot_be_overridden() {
 }
 // Créditos:
 // Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+#[test]
+fn recovery_add_plus_plus_is_owner_only_and_cannot_mutate_by_spelling() {
+    let (control, registry, activation) = setup();
+    registry
+        .register("add++", &[], |_, args| {
+            if !args.is_empty() {
+                anyhow::bail!("No bulk mutation without approval")
+            }
+            Ok("Preview only".into())
+        })
+        .unwrap();
+    assert_eq!(
+        control
+            .dispatch("socket-a", "alice", "private", None, "=/>add++")
+            .unwrap(),
+        matter_base::control::DispatchResult::Extension {
+            command: "add++".to_owned(),
+            output: "Preview only".to_owned()
+        }
+    );
+    for (socket, actor, command) in [
+        ("socket-a", "mallory", "=/>add++"),
+        ("socket-b", "alice", "=/>add++"),
+        ("socket-a", "alice", "=/>add++ apply"),
+        ("socket-a", "alice", "=add++"),
+        ("socket-a", "alice", "/>add++"),
+    ] {
+        assert!(control
+            .dispatch(socket, actor, "private", None, command)
+            .is_err());
+    }
+    assert!(
+        !activation
+            .resolve_persisted("socket-a", None)
+            .unwrap()
+            .enabled
+    );
+}
