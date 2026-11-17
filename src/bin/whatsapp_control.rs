@@ -132,7 +132,9 @@ fn main() -> Result<()> {
             || socket.len() > 128
             || owner.len() > 128
             || [socket.as_str(), owner.as_str()].iter().any(|value| {
-                !value.bytes().all(|b| b.is_ascii_alphanumeric() || b"._:-".contains(&b))
+                !value
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"._:-".contains(&b))
             })
             || jid_user.is_empty()
             || jid.len() > 128

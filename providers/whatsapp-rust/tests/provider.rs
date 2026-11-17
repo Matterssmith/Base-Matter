@@ -148,7 +148,6 @@ fn old_or_malformed_control_events_are_rejected() {
     fs::remove_dir_all(root).unwrap();
 }
 
-
 #[test]
 fn preflight_validates_configuration_without_writing_a_session() {
     use std::process::Command;

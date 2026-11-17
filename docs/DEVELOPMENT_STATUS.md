@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Format verification on operator preflight
+
+- Applied rustfmt formatting to controller binary and CLI tests; removed an extra blank line in provider tests. First preflight CI reported only these format issues at the initial step.
+- Root and provider READMEs both reviewed (2/2), unchanged; no runtime secrets or live sessions touched.
+- Re-run Linux, Windows and provider CI before accepting the preflight checkpoint. No stable WhatsApp claim or Bot-Matter work.
+
+
 ## 2026-11-17 — Reproducible operator pairing-code test setup (pending CI)
 
 - Added Bash-only operator setup helper for two Rust processes; generates two random 256-bit secrets in a private local file with directory mode 0700 and file mode 0600; refuses to overwrite settings or sessions.
