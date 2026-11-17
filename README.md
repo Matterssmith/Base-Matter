@@ -239,12 +239,12 @@ authenticator ships with Base.** See [inbound contracts](docs/ingress.md).
 
 ## Vinculación WhatsApp y control global — contrato corregido
 
-Se reconoce la prueba anterior de conexión a WhatsApp y \`ping\` en el
+Se reconoce la prueba anterior de conexión a WhatsApp y `ping` en el
 desarrollo histórico. La rama publicada actualmente no contiene el antiguo
 adaptador ejecutable; conservar su historial no equivale a comprobar una
 conexión real hoy.
 
-\`PairingCodeService\` añade un contrato en Base-Matter para **solicitar
+`PairingCodeService` añade un contrato en Base-Matter para **solicitar
 únicamente un código de vinculación**, con autorización del propietario,
 número internacional de 8–15 dígitos, código temporal redactado y sin
 persistencia en SQLite. **No implementa QR, no registra un comando ping y
@@ -252,23 +252,23 @@ no abre por sí mismo una conexión WhatsApp.** El proveedor real queda
 pendiente de conectar a este contrato sin reemplazar ni borrar sesiones
 existentes. No se modifica ni se inicia Bot-Matter.
 
-\`ControlDispatcher\` procesa el prefijo global canónico \`=/>\` antes del
-router del bot. Los prefijos \`=\` y \`/>\` permanecen como alias de
-compatibilidad. Ejemplos: \`=/>on\`, \`=/>off\`,
-\`=/>set role USER_ID ROLE_ID\`. El dueño del socket sigue siendo el único
+`ControlDispatcher` procesa el prefijo global canónico `=/>` antes del
+router del bot. Los prefijos `=` y `/>` permanecen como alias de
+compatibilidad. Ejemplos: `=/>on`, `=/>off`,
+`=/>set role USER_ID ROLE_ID`. El dueño del socket sigue siendo el único
 autorizado para manipularlo, y el control funciona con el bot apagado.
 No se transfiere poder al propietario de otros sockets.
 
 Todos los repositorios de la organización pertenecen al ecosistema Matter;
-el futuro \`Bot-Matter\` consumirá contratos de sus componentes **solo
+el futuro `Bot-Matter` consumirá contratos de sus componentes **solo
 cuando Base-Matter termine**. Véase [pairing code](docs/PAIRING_CODE.md).
 
 ## WhatsApp owner control — authenticated bridge v1 (beta)
 
-The opt-in \`WhatsAppControlBridge\` validates a short-lived HMAC-SHA256
+The opt-in `WhatsAppControlBridge` validates a short-lived HMAC-SHA256
 provider frame bound to a **specific socket ID, owner ID, owner JID, private
 chat, event ID and message body**. It requires the WhatsApp Web provider to
-authenticate the original \`fromMe\` event. Only canonical \`=\/>\` control
+authenticate the original `fromMe` event. Only canonical `=\/>` control
 verbs are admitted; the old ping and bot routing are unreachable.
 
 This library accepts a JSON frame and dispatches through ControlDispatcher;

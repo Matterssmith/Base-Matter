@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Pairing guide Markdown rendering corrected
+
+- Corrected literal Markdown backtick escaping in the new WhatsApp operator guide and root README so that terminal commands render as fenced code instead of raw escape text.
+- Audited 2 tracked READMEs; root updated, Rust provider README reviewed unchanged. No source code, credentials, sessions or runtime behavior changed in this checkpoint.
+
+
 ## 2026-11-17 — Format verification on operator preflight
 
 - Applied rustfmt formatting to controller binary and CLI tests; removed an extra blank line in provider tests. First preflight CI reported only these format issues at the initial step.
