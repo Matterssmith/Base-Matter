@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — Identificador REGISTER exacto en WhatsApp Rust (alpha; CI pendiente)
+
+- Añadida función pura `official_register_description` en el proveedor Rust, con validación del JID y primera línea exacta del ID comunitario; incorpora pruebas para coincidencias, inyección y prefijos parciales.
+- README raíz y proveedor revisados íntegros (2/2); solo README del proveedor actualizado. La descripción no concede autorización; falta lectura real de comunidades.
+
+
 ## 2026-11-17 — Extensión =/>start protegida en Base (alpha, CI pendiente)
 
 - Registrada `=/>start` en el proceso controlador Rust mediante la autorización del ControlDispatcher; funciona con bot apagado sin conceder autorización a otros sockets.

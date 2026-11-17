@@ -108,3 +108,11 @@ gestionadas por la sesión de WhatsApp. El diseño en
 requiere verificar el rol admin y los identificadores exactos de subgrupo,
 y distingue vista previa de operaciones con cambios. Ninguna actualización
 administrativa se debe asumir completa por aprobar CI offline.
+
+## Encabezado oficial REGISTER
+
+La función de detección solo reconoce la primera línea exacta
+`MATTER:OFFICIAL:register:<community-jid>`, validando formato de JID
+comunitario. Las coincidencias parciales, colocadas en otra línea o con
+ID de otra comunidad se rechazan. La descripción **no es autenticación**;
+además se deben verificar metadatos de pertenencia y rol de administrador.

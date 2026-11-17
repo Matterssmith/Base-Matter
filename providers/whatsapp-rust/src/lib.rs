@@ -317,3 +317,20 @@ impl SessionLease {
         Ok(Self { _file: file })
     }
 }
+
+/// An exact first-line marker for the official REGISTER subgroup.
+/// Community membership and admin identity MUST be independently verified
+/// from authenticated WhatsApp metadata before this predicate is used.
+pub fn official_register_description(description: &str, community_jid: &str) -> bool {
+    if community_jid.is_empty()
+        || community_jid.len() > 128
+        || !community_jid.ends_with("@g.us")
+        || !community_jid
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"@._:-".contains(&byte))
+    {
+        return false;
+    }
+    let expected = format!("MATTER:OFFICIAL:register:{community_jid}");
+    description.split('\n').next() == Some(expected.as_str())
+}
