@@ -28,10 +28,23 @@ pub enum User {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AddIntent {
-    User { user: User, destination: Option<(Destination, Resource)> },
-    Group { community: Resource, hide: bool },
-    Community { community: Resource, name: Option<String> },
-    Backup { source: Resource, destination: Resource, hide: bool },
+    User {
+        user: User,
+        destination: Option<(Destination, Resource)>,
+    },
+    Group {
+        community: Resource,
+        hide: bool,
+    },
+    Community {
+        community: Resource,
+        name: Option<String>,
+    },
+    Backup {
+        source: Resource,
+        destination: Resource,
+        hide: bool,
+    },
 }
 
 pub fn parse_add_text(value: &str) -> Result<AddIntent> {
@@ -41,15 +54,23 @@ pub fn parse_add_text(value: &str) -> Result<AddIntent> {
     if rest.is_empty() || rest.len() > 512 || rest.chars().any(char::is_control) {
         bail!("Invalid add command");
     }
-    parse_add_args(&rest.split_whitespace().map(str::to_owned).collect::<Vec<_>>())
+    parse_add_args(
+        &rest
+            .split_whitespace()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+    )
 }
 
 /// Parses syntax only; does not resolve aliases, approve plans or invoke WhatsApp.
 /// The authenticated adapter must determine the source chat and replied sender.
 pub fn parse_add_args(args: &[String]) -> Result<AddIntent> {
-    if args.is_empty() || args.len() > 16 || args.iter().any(|a| {
-        a.is_empty() || a.len() > 128 || a.chars().any(char::is_control)
-    }) {
+    if args.is_empty()
+        || args.len() > 16
+        || args
+            .iter()
+            .any(|a| a.is_empty() || a.len() > 128 || a.chars().any(char::is_control))
+    {
         bail!("Invalid add command arguments");
     }
     let tokens: Vec<&str> = args.iter().map(String::as_str).collect();
@@ -67,8 +88,11 @@ fn user(parts: &[&str]) -> Result<AddIntent> {
         Some("reply") => (User::Reply, &parts[1..]),
         Some(value) if value.starts_with('@') => {
             let name = &value[1..];
-            if name.is_empty() || name.len() > 64
-                || !name.bytes().all(|b| b.is_ascii_alphanumeric() || b"._".contains(&b))
+            if name.is_empty()
+                || name.len() > 64
+                || !name
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"._".contains(&b))
             {
                 bail!("Invalid username");
             }
@@ -96,7 +120,10 @@ fn user(parts: &[&str]) -> Result<AddIntent> {
         }
         Some((scope, value))
     };
-    Ok(AddIntent::User { user: who, destination })
+    Ok(AddIntent::User {
+        user: who,
+        destination,
+    })
 }
 
 fn group(parts: &[&str]) -> Result<AddIntent> {
@@ -134,7 +161,9 @@ fn community(parts: &[&str]) -> Result<AddIntent> {
             bail!("Invalid backup flags");
         }
         return Ok(AddIntent::Backup {
-            source, destination, hide,
+            source,
+            destination,
+            hide,
         });
     }
     if parts.first() == Some(&"new") {
@@ -143,26 +172,25 @@ fn community(parts: &[&str]) -> Result<AddIntent> {
         }
         let mut name = parts[1..].join(" ");
         name.drain(..2);
-        if name.trim().is_empty() || name.len() > 100
-            || parts[1..].contains(&"--hide")
-        {
+        if name.trim().is_empty() || name.len() > 100 || parts[1..].contains(&"--hide") {
             bail!("Invalid new community name");
         }
         return Ok(AddIntent::Community {
-            community: Resource::New, name: Some(name),
+            community: Resource::New,
+            name: Some(name),
         });
     }
     let (community, extras) = reference(parts, false)?;
     if !extras.is_empty() {
         bail!("Invalid community arguments");
     }
-    Ok(AddIntent::Community { community, name: None })
+    Ok(AddIntent::Community {
+        community,
+        name: None,
+    })
 }
 
-fn reference<'a>(
-    input: &'a [&'a str],
-    allow_new: bool,
-) -> Result<(Resource, &'a [&'a str])> {
+fn reference<'a>(input: &'a [&'a str], allow_new: bool) -> Result<(Resource, &'a [&'a str])> {
     let Some(&value) = input.first() else {
         bail!("Resource identifier missing");
     };
@@ -187,11 +215,17 @@ fn reference<'a>(
 }
 
 fn valid_tag(value: &str) -> bool {
-    !value.is_empty() && value.len() <= 64
-        && value.bytes().all(|b| b.is_ascii_alphanumeric() || b"_-".contains(&b))
+    !value.is_empty()
+        && value.len() <= 64
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"_-".contains(&b))
 }
 
 fn valid_id(value: &str) -> bool {
-    !value.is_empty() && value.len() <= 128
-        && value.bytes().all(|b| b.is_ascii_alphanumeric() || b"@._:-".contains(&b))
+    !value.is_empty()
+        && value.len() <= 128
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"@._:-".contains(&b))
 }

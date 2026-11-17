@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Rustfmt del parser add global (alpha; CI pendiente)
+
+- Aplicados 18 cambios de formato exactos extraídos de GitHub Actions al parser y sus pruebas.
+- Revisados ambos README completos (2/2), conservados sin cambios; esta corrección no toca sesión, permisos ni ramas estables.
+- Validar test del parser, Windows, Linux y proveedor sobre el SHA definitivo.
+
+
 ## 2026-11-17 — Parser de add conectado al control global (alpha; CI pendiente)
 
 - Parser tipado `src/add_commands.rs` con `add user/group/community/backup`, destino `official --register`, nombre `--Nombre`, y `--hide`, sin mutaciones y con pruebas offline.
