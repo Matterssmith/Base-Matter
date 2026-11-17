@@ -24,6 +24,7 @@ pub mod control_ipc;
 pub mod control_sync;
 pub mod core;
 pub mod events;
+pub mod external_compat;
 pub mod i18n;
 pub mod ingress;
 pub mod legal;

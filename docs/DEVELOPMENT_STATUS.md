@@ -1,5 +1,12 @@
 # Matter-Base development status
 
+## 2026-11-17 — Parser externo #matter en alpha (CI pendiente)
+
+- Agregado `src/external_compat.rs` como normalizador sintáctico no autenticador de `#matter` a `=/>`, con 2 tests de regresión para prefijos y caracteres de control.
+- Ambos README leídos íntegros (2/2) y conservados sin cambios; no se copiaron sesiones ni se integraron bots externos reales.
+- Falta aprobación CI del commit. El adaptador externo aún debe autenticar actor/socket y pasar por InboundGateway.
+
+
 ## 2026-11-17 — Ramas stable/beta/alpha y contrato REGISTER (alpha)
 
 - Se crearon nuevas ramas GitHub `stable` desde `matter`, `beta` y `alpha` desde `matter-beta`; las anteriores se preservan. GitHub continúa con default `matter` hasta una actualización de la configuración.
