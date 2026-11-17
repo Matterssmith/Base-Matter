@@ -1,5 +1,11 @@
 # Matter-Base development status
 
+## 2026-11-17 — HMAC test tamper determinista, sin flakiness (alpha, CI pendiente)
+
+- El CI reprodujo un fallo intermitente del test `rejects_forged_signatures_cross_socket_and_sender`: reemplazaba los primeros dos bytes hex por `ab`, que podían coincidir con la firma original. La prueba ahora alterna `ab/ac` garantizando siempre una mutación.
+- No se alteró la verificación HMAC de producción, se corrigió únicamente la prueba. Ambos README leídos íntegros (2/2) sin cambios adicionales. Requerimos CI verde antes de fusionar a beta.
+
+
 ## 2026-11-17 — Prueba real de path traversal en CLI y rustfmt (alpha, CI pendiente)
 
 - Se corrigió test `--recovery-verify` para probar realmente el nombre `../unsafe` en lugar de un argumento extra, evitando una falsa cobertura de seguridad. Se aplicó el formato requerido por rustfmt.
