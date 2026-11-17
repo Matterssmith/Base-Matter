@@ -561,3 +561,11 @@ Administrative repository renames and full provider imports remain outstanding. 
 separate directories such as `providers/baileys` and `providers/telegraf`, using
 verified official upstream revisions and preserved licenses/history. Base and
 Vault readiness remains the immediate priority. See [repository instructions](AGENTS.md).
+
+## Proveedor de WhatsApp: Rust exclusivamente
+
+El proveedor previamente probado era **`whatsapp-rust`** con `PairCodeOptions` y SQLite, recuperable desde el commit histórico `3c36d97bb`. Esta es la implementación que se debe continuar, sin sustituirla por Node.js, Baileys o un bot nuevo. La vinculación es exclusivamente por código, sin QR.
+
+El archivo `src/whatsapp_bridge.rs` es una frontera de verificación escrita en Rust; **no es un adaptador Node**, no establece conexión y no debe confundirse con una prueba real de WhatsApp. El antiguo `ping` no forma parte de los comandos permanentes. El control de Base usa `=/>` con las autorizaciones del propietario del socket.
+
+Los códigos deben conservar los créditos exigidos en `AGENTS.md` y sus pruebas deben verificar la separación entre encendido operativo y política de ejecución.

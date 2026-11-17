@@ -39,7 +39,9 @@ Signature input:
 - signed timestamp as an eight-byte big-endian integer.
 
 HMAC-SHA256 over these bytes, encoded as 64 lowercase hex chars.
-Both adapters have a cross-language fixed test vector. The Rust verifier
+The Rust library has a deterministic HMAC-SHA256 test vector. This wire
+format is optional verification infrastructure; it does NOT select Node.js
+as the WhatsApp provider. The selected historical provider is whatsapp-rust. The Rust verifier
 uses constant-time HMAC verification.
 
 ## Outstanding production work
@@ -53,3 +55,11 @@ restart/revocation and multi-process isolation.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## Dirección oficial del proveedor
+
+El proveedor WhatsApp que se seguirá desarrollando es `whatsapp-rust`, no
+Baileys/Node.js. El archivo histórico se conserva en el commit `3c36d97bb`,
+con emparejamiento exclusivamente por código. El puente HMAC Rust es un contrato
+opcional de protección de entrada y no sustituye el runtime probado. No se
+creará Bot-Matter antes de terminar Base-Matter.

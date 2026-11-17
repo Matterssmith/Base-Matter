@@ -101,6 +101,20 @@ fn owner_can_control_unbound_socket_without_starting_bot() {
             powered: true,
         })
     );
+    // Socket power and command admission policy are deliberately separate.
+    // Turning on an unconfigured socket must NOT enable bot command execution.
+    assert_eq!(
+        bridge.ingest(&frame("id-policy", "=/>status")).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Status {
+            socket_id: "socket-1".into(),
+            enabled: false,
+            source: matter_base::activation::ActivationSource::None,
+            bot_instance_id: None,
+        })
+    );
+    activation
+        .set_socket_policy("socket-1", "owner", Some(true))
+        .unwrap();
     assert_eq!(
         bridge.ingest(&frame("id2", "=/>status")).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Status {
@@ -172,6 +186,9 @@ fn rejects_forged_signatures_cross_socket_and_sender() {
 #[test]
 fn replay_and_timeout_fail_before_mutating_socket() {
     let (bridge, activation) = fixture();
+    activation
+        .set_socket_policy("socket-1", "owner", Some(true))
+        .unwrap();
     let value = frame("id1", "=/>on");
     assert!(matches!(
         bridge.ingest(&value).unwrap(),
@@ -204,7 +221,7 @@ fn rejects_truncated_or_oversized_wire_frames_and_unknown_fields() {
 }
 
 #[test]
-fn signature_encoding_matches_node_sha256_hmac_protocol() {
+fn signature_encoding_matches_hmac_sha256_protocol_vector() {
     let mut f = WhatsAppControlFrame {
         version: 1,
         socket_id: "socket-1".into(),
@@ -227,3 +244,6 @@ fn signature_encoding_matches_node_sha256_hmac_protocol() {
         "747dc915a2734e90d1f2042cc42df7e360f848efcacda76baa8f27925b3124c7"
     );
 }
+
+// Créditos:
+// Hecho por Lournyx Matterssmith [Lou-Nyx].

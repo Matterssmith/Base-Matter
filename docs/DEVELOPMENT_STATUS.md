@@ -1,5 +1,15 @@
 # Matter-Base development status
 
+## 2026-11-17 — Rust-only WhatsApp direction and socket-policy regression (pending CI)
+
+- Owner corrected course: WhatsApp provider remains **whatsapp-rust** with pairing code only; Python/C++/Rust are principal languages. The Node/Baileys experiment is not the selected provider and is frozen. No work on Bot-Matter.
+- Historical Rust provider `src/providers/whatsapp/mod.rs` from commit `3c36d97bb` remains retrievable. The current beta does not yet restore its live runtime; do not claim that the pairing test was repeated.
+- GitHub Actions run 44147212748 failed two new Rust tests on Linux and Windows because test fixtures assumed `=/>on` automatically enabled the socket command policy. Corrected tests to check deny-by-default after on, explicitly enable the socket policy for the positive case, and keep replay/expiration assertions.
+- Renamed an unnecessarily Node-specific HMAC test function to a transport-independent Rust protocol-vector name. Authenticated boundary remains Rust; no Node requirement was introduced in Base.
+- README audit: 1 root README reviewed, updated and cross-referenced. AGENTS and bridge docs updated; exact credits retained in modified Rust tests. This checkpoint awaits CI.
+- Experimental work remains on `matter-beta`; stable `matter` untouched. Actual WhatsApp linkage/credentials are not available to this CI environment.
+
+
 ## 2026-11-17 — Signed WhatsApp-to-Base global control bridge (pending CI)
 
 - Historical Rust WhatsApp pairing provider source recovered from commit
