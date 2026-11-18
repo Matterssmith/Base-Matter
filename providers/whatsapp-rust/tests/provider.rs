@@ -170,11 +170,20 @@ fn old_or_malformed_control_events_are_rejected() {
     fs::remove_dir_all(root).unwrap();
 }
 
+fn provider_binary() -> std::path::PathBuf {
+    option_env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider")
+        .map(Into::into)
+        .or_else(|| {
+            std::env::var_os("CARGO_BIN_EXE_whatsapp-matter-rust-provider").map(Into::into)
+        })
+        .expect("Cargo did not supply the WhatsApp Rust provider binary")
+}
+
 #[test]
 fn preflight_validates_configuration_without_writing_a_session() {
     use std::process::Command;
     let (config, dir) = fixture();
-    let result = Command::new(env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider"))
+    let result = Command::new(provider_binary())
         .arg("--check")
         .envs(&config)
         .output()
@@ -188,7 +197,7 @@ fn preflight_validates_configuration_without_writing_a_session() {
     assert!(!dir.join("session.owner.lock").exists());
     let mut invalid = config;
     invalid.insert("MATTER_WA_PHONE".into(), "+5215512345678".into());
-    let denied = Command::new(env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider"))
+    let denied = Command::new(provider_binary())
         .arg("--check")
         .envs(&invalid)
         .output()
