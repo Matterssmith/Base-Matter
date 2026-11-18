@@ -5,6 +5,7 @@ edition = "2021"
 description = "Universal multilingual and multi-platform bot infrastructure"
 license = "MIT"
 autobins = false
+default-run = "base-matter"
 
 [lib]
 name = "matter_base"
@@ -29,3 +30,7 @@ subtle = "2.6"
 [[bin]]
 name = "whatsapp-matter-control"
 path = "src/bin/whatsapp_control.rs"
+
+[[bin]]
+name = "base-matter"
+path = "src/bin/base_matter.rs"
