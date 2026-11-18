@@ -20,6 +20,21 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Ingreso WhatsApp nativo: validar tamaño antes de alias retirados (alpha)
+
+El operador confirmó las suites de Base-Matter hasta `tests/whatsapp_native.rs`.
+Allí falló `duplicated_expired_and_malformed_events_fail_closed` porque
+el test exigía un error para `=/>on` con 4096 espacios anexos, pero el
+ingreso lo marcaba `Ignored` **antes de aplicar el límite de longitud**.
+Se ajustó `src/whatsapp_native.rs` para validar primero el tamaño y
+el identificador del evento, después ignorar `=/>on/off` retirados.
+
+Se añadió una regresión equivalente para `=/>bot on` excesivamente
+largo y para garantizar que el rechazo no consuma el ID de replay.
+Los comandos retirados siguen bloqueados y la activación única
+sigue siendo `=/>bot on/off`. Pruebas de esta corrección todavía
+pendientes de ejecución en Debian. No se promueve a `beta` ni `stable`.
+
 ## 2026-11-18 — Ajuste de prueba de tema visual (alpha; nueva validación pendiente)
 
 La ejecución Debian del operador en el commit `19b5fc6` aprobó
