@@ -209,7 +209,11 @@ impl AntiStore {
         }
         let name = canonical_rule(verb)?;
         match args {
-            [] | [s] if args.is_empty() || s == "status" => {
+            [] => {
+                let state = self.get(socket, group, name)?;
+                Ok(format!("{name}: {} [{}]; aplicación real pendiente.", if state.enabled { "on" } else { "off" }, state.action.as_str()))
+            }
+            [state] if state == "status" => {
                 let state = self.get(socket, group, name)?;
                 Ok(format!("{name}: {} [{}]; aplicación real pendiente.", if state.enabled { "on" } else { "off" }, state.action.as_str()))
             }
