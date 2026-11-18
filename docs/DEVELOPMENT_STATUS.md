@@ -1,3 +1,12 @@
+## 2026-11-18 — Recuperación del arranque WhatsApp Rust (alpha; ejecución Debian y CI pendientes)
+
+- Comparados los tres ZIP aportados: `Matter-Base-matter-1.zip` incluye el arranque Rust directo y el `#ping` de prueba; los otros dos no constituyen ese punto de recuperación.
+- Corregidos los accesos `env!(CARGO_BIN_EXE...)` del test del proveedor, siguiendo el patrón del controlador ya probado.
+- Incorporado `cargo run` como lanzador Rust para una única terminal; el ejecutable administra el controlador local y el proveedor Rust separado, preservando la separación de SQLite y el control global `=/>`.
+- El script de configuración admite una ruta y puerto por rama sin sobrescribir sesiones anteriores; `alpha`, `beta` y `stable` continúan aisladas y no se han fusionado.
+- Añadido diagnóstico sin JID, teléfono ni secretos cuando un comando saliente autorizado por origen no coincide con el JID provisional PN/LID configurado.
+- Revisados los dos README y actualizado el procedimiento de arranque. No se ha probado conexión WhatsApp ni respuesta real con este nuevo SHA. No promocionar hasta que Debian y CI confirmen compilación, tests y recepción real.
+
 # Matter-Base development status
 
 ## 2026-11-17 — Rustfmt del parser add global (alpha; CI pendiente)
