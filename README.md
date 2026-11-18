@@ -149,7 +149,7 @@ y mantener `providers/whatsapp-rust/Cargo.lock` sin seguimiento.
 
 ### Seguridad del renderizador y avisos
 
-La plantilla no puede omitir los créditos o el marcador del cuerpo.
+La plantilla debe conservar el marcador del cuerpo y un marco válido; desde esta revisión el crédito no se imprime automáticamente, solo con `=/>credits`.
 Las respuestas, incluso si parecen ya formateadas, se someten
 a límite de tamaño y rechazo de caracteres de control.
 Los avisos comunitarios y canales siguen deshabilitados en
