@@ -12,7 +12,10 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use std::sync::Arc;
 
-const PROJECT_CREDITS: &str = "Créditos:\nHecho por Lournyx Matterssmith [Lou-Nyx].";
+// Visible only on demand. No GitHub membership or Vault rank is inferred from
+// a telephone number, display name or local role record. The collaborator
+// directory is empty until signed, scope-bound Vault decisions are available.
+const PROJECT_CREDITS: &str = "Créditos · Matterssmith\nFundadora y creadora: Lournyx Matterssmith [Lou-Nyx]\nColaboradores: pendientes de registro GitHub y verificación de rangos en Vault-Matter.";
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum DispatchResult {
