@@ -81,7 +81,6 @@ fn customized_group_template_formats_status_bot_on_and_off_without_copying_roles
             "╭─☆ {{TITLE}} {{ACCENT}}\n",
             "│ {{BODY}}\n",
             "╰─☆\n",
-            "Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].\n",
         ))
         .unwrap();
     themes.set_community(GROUP, group_theme).unwrap();
@@ -126,7 +125,8 @@ fn customized_group_template_formats_status_bot_on_and_off_without_copying_roles
         assert_eq!(reply["outcome"], "applied");
         let text = reply["message"].as_str().unwrap();
         assert!(text.starts_with("╭─☆ Grupo Pruebas ◇"));
-        assert!(text.contains("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
+        assert!(!text.contains("Créditos:"));
+        assert!(!text.contains("Lournyx Matterssmith"));
         assert_eq!(text.matches("╭─☆ Grupo Pruebas ◇").count(), 1);
         assert!(!text.contains("admin"));
         assert!(!text.contains("\\n"));
