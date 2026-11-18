@@ -1,5 +1,5 @@
 /*
- * Base-Matter — reusable community-scoped menu, help and h styling.
+ * Base-Matter — reusable Matterssmith category menu and scoped visual styling.
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
