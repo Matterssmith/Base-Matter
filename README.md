@@ -36,6 +36,30 @@ Telegram and Discord adapters are not release-qualified. See
 [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
 
+## 2026-11-18 — Consultas públicas verificadas, sin control administrativo (alpha; ensayo Debian pendiente)
+
+Se amplió el puente HMAC Rust para aceptar **solo lecturas públicas**
+`=/>status`, `=/>estado`, `=/>menu`, `=/>menú <categoría>`
+y `=/>bot` (sin argumentos) desde participantes de grupos o
+chats privados externos. La firma identifica al remitente real
+(`@lid` o `@s.whatsapp.net`) obtenido del evento de WhatsApp;
+nunca sustituye esa identidad por el propietario global.
+El despachador usa una ruta independiente que no tiene acceso
+a mutaciones, roles, extensiones arbitrarias ni ejecución de bots.
+
+Las consultas `status` funcionan aunque el bot esté apagado;
+`menu/bot` solo responden si la política efectiva del chat
+lo habilita. Se añadieron regresiones para replay, firma
+alterada, intento de `=/>on` y cambios de rol desde tercero.
+Los estados `private` controlan únicamente privados **externos**;
+el chat del propietario tiene su propio estado `self`.
+
+**No comprobado todavía en un grupo real con otra cuenta:** la
+llegada y respuesta de estos mensajes en el proveedor Rust. El
+soporte de canales y las delegaciones con Vault-Matter continúan
+pendientes. No se cambió el control exclusivo del propietario ni
+se habilitó Bot-Matter. Revisión: `alpha`, sin promoción.
+
 ## 2026-11-18 — Control de bot por contexto (alpha, pruebas pendientes)
 
 **Actualización de la prueba real:** en WhatsApp, el dueño observó
