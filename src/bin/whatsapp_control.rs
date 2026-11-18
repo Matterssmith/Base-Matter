@@ -279,18 +279,13 @@ fn main() -> Result<()> {
         "✦",
     )?));
     let menu_theme = Arc::clone(&style);
-    extensions.register("menu", &[], move |context, args| {
-        if !args.is_empty() {
-            bail!("Unexpected menu arguments");
-        }
-        menu_theme.render(context.group_id, "menu")
-    })?;
-    let help_theme = Arc::clone(&style);
-    extensions.register("help", &["h"], move |context, args| {
-        if !args.is_empty() {
-            bail!("Unexpected help arguments");
-        }
-        help_theme.render(context.group_id, "help")
+    extensions.register("menu", &["menú"], move |context, args| {
+        let section = match args {
+            [] => "menu".to_owned(),
+            [category] if category.len() <= 32 => format!("menu {category}"),
+            _ => bail!("Menu accepts at most one category"),
+        };
+        menu_theme.render(context.group_id, &section)
     })?;
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
