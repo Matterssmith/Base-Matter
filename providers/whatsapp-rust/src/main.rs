@@ -436,11 +436,18 @@ async fn main() -> Result<()> {
                     is_group: source.is_group,
                     timestamp: ctx.info.timestamp.timestamp(),
                 };
-                let verified = config.signed_verified_control(
-                    &data,
-                    own_pn.as_deref(),
-                    own_lid.as_deref(),
-                );
+                let verified = if data.from_me {
+                    config.signed_verified_control(
+                        &data, own_pn.as_deref(), own_lid.as_deref(),
+                    )
+                } else {
+                    // Public status/menu/bot help is signed under the real
+                    // sender identity. The owner control path is never used
+                    // for incoming third-party WhatsApp messages.
+                    config.signed_public_readonly(
+                        &data, own_pn.as_deref(), own_lid.as_deref(),
+                    )
+                };
                 // Log rejections without leaking phone numbers, LIDs,
                 // message bodies, sessions or cryptographic keys.
                 if data.from_me && !data.is_group && data.text.starts_with("=/>") {
