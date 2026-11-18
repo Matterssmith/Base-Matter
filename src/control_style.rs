@@ -39,7 +39,7 @@ impl ControlTheme {
             "Ayuda"
         };
         Ok(format!(
-            "{} - {}\nControl: grupo (solo propietario del socket)\n=/>group status - Estado del grupo\n=/>group on - Permitir política grupal\n=/>group off - Denegar política grupal\n=/>group inherit - Heredar política del socket\n=/>grupo encender/apagar/heredar - Alias\n=/>start - Inventario REGISTER (lectura)\n=/>add++ - Vista previa recuperación\n=/>add - Planificación, sin cambios reales\n=/>menu - Menú del grupo\n=/>help - Ayuda del grupo\n=/>h - Alias de ayuda\nControl global del socket: solo chat privado.\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].",
+            "{} - {}\nBot ID: {}\nControl: grupo (solo propietario del socket)\n=/>group status - Estado del grupo\n=/>group on - Permitir política grupal\n=/>group off - Denegar política grupal\n=/>group inherit - Heredar política del socket\n=/>grupo encender/apagar/heredar - Alias\n=/>start - Inventario REGISTER (lectura)\n=/>add++ - Vista previa recuperación\n=/>add - Planificación, sin cambios reales\n=/>menu - Menú del grupo\n=/>help - Ayuda del grupo\n=/>h - Alias de ayuda\nControl global del socket: solo chat privado.\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].",
             self.title, heading, self.bot_id
         ))
     }
