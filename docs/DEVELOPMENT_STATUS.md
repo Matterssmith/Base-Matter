@@ -1,3 +1,12 @@
+## 2026-11-18 — WhatsApp Rust conectado; corrección PN/LID (alpha; prueba de respuesta pendiente)
+
+- Evidencia del operador: `cargo run` en una única terminal con `CARGO_TARGET_DIR` compartido completó compilación y obtuvo `WhatsApp session connected`.
+- Bloqueo real observado: `outgoing control ignored (verified PN/LID owner mapping required)`.
+- Contrastada la API pública whatsapp-rust 0.7.0: el cliente ofrece PN y LID autenticados, y Jid permite normalización sin sufijos de dispositivo.
+- Modificado el proveedor para validar PN de sesión contra el teléfono configurado, aceptar PN/LID propios en chat y remitente, y firmar un frame canónico HMAC. Mantiene rechazo de terceros, grupos, mensajes entrantes y sesiones ajenas.
+- Añadidas pruebas offline para combinaciones PN/LID verificadas, denegación de identidad extraña y LID configurado. No se requirió rotación de llaves ni cambio de base SQLite.
+- Revisados README raíz y README del proveedor. Quedan pendientes compilación y `cargo test` en Debian, respuesta efectiva de `=/>status` y `=/>menu`, reinicio y recuperación de sesión. Ninguna promoción a beta/stable.
+
 ## 2026-11-18 — Instalación única y compilaciones compartidas (alpha; prueba Debian pendiente)
 
 - El operador informó agotamiento de disco al clonar/compilar alpha, beta y stable por separado y retiró el entorno local.
