@@ -189,7 +189,9 @@ impl Config {
         let allowed = if event.is_group {
             matches!(
                 command,
-                "=/>group"
+                "=/>on"
+                    | "=/>off"
+                    | "=/>group"
                     | "=/>grupo"
                     | "=/>menu"
                     | "=/>menú"
