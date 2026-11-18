@@ -101,7 +101,7 @@ fn owner_enables_current_chat_with_one_bot_command_without_binding() {
             policy: Some(true),
         })
     );
-    assert!(activation.inspect_bot_defaults("socket-1", "owner").unwrap().0);
+    assert!(activation.inspect_bot_defaults("socket-1", "owner").unwrap().socket_powered);
     assert_eq!(
         bridge.ingest(&frame("id2", "=/>status")).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Status {
