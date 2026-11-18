@@ -407,7 +407,7 @@ impl ControlDispatcher {
             let tokens: Vec<_> = body.split_whitespace().collect();
             let kind = if group.is_some() { "group" } else { "private" };
             match tokens.as_slice() {
-                ["status"] | ["status", "--debug"] => {
+                ["status" | "estado"] | ["status" | "estado", "--debug"] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
@@ -426,7 +426,7 @@ impl ControlDispatcher {
                         bot_instance_id: admission.bot_instance_id,
                     });
                 }
-                ["status", "--global"] | ["status", "--global", "--debug"] => {
+                ["status" | "estado", "--global"] | ["status" | "estado", "--global", "--debug"] => {
                     let admission =
                         self.activation.admission(receiving_socket, None, self.global_policy)?;
                     if admission.owner_id != actor {
@@ -439,13 +439,13 @@ impl ControlDispatcher {
                         bot_instance_id: admission.bot_instance_id,
                     });
                 }
-                ["bot", "on" | "off" | "inherit"]
-                | ["bot", "--global", "on" | "off" | "inherit"]
-                | ["bot", "group" | "private" | "channel", "on" | "off" | "inherit"] => {
+                ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
+                | ["bot", "--global", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
+                | ["bot", "group" | "private" | "channel" | "grupo" | "privado" | "canal", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"] => {
                     let action = tokens[tokens.len() - 1];
                     let policy = match action {
-                        "on" => Some(true),
-                        "off" => Some(false),
+                        "on" | "encender" => Some(true),
+                        "off" | "apagar" => Some(false),
                         _ => None,
                     };
                     let scope = if tokens.len() == 2 {
@@ -456,7 +456,12 @@ impl ControlDispatcher {
                         if group.is_some() {
                             bail!("Kind-wide policy changes require private owner chat");
                         }
-                        tokens[1]
+                        match tokens[1] {
+                            "grupo" => "group",
+                            "privado" => "private",
+                            "canal" => "channel",
+                            value => value,
+                        }
                     };
                     return self.change_bot_policy(
                         receiving_socket, actor, group, kind, scope, policy,
@@ -553,7 +558,7 @@ impl ControlDispatcher {
                         powered,
                     });
                 }
-                ["status", socket] if socket != &"--debug" && socket != &"--global" => {
+                ["status" | "estado", socket] if socket != &"--debug" && socket != &"--global" => {
                     if group.is_some() {
                         bail!("Targeted socket status requires private owner chat");
                     }
