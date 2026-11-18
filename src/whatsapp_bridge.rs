@@ -94,13 +94,21 @@ impl WhatsAppControlBridge {
     }
 
     pub fn ingest(&self, frame: &WhatsAppControlFrame) -> Result<WhatsAppBridgeOutcome> {
+        // Two disjoint identities, both backed by the provider's HMAC:
+        // (1) verified socket-owner controls; (2) incoming read-only
+        // requests bound to a real WhatsApp group or sender's private chat.
+        let is_owner = frame.from_me
+            && frame.actor_id == self.config.owner_actor_id
+            && (frame.chat_jid == self.config.owner_jid
+                || valid_group_jid(&frame.chat_jid));
+        let is_public_reader = !frame.from_me
+            && valid_user_jid(&frame.actor_id)
+            && (valid_group_jid(&frame.chat_jid)
+                || frame.chat_jid == frame.actor_id);
         if frame.version != VERSION
             || frame.socket_id != self.config.socket_id
-            || frame.actor_id != self.config.owner_actor_id
             || frame.owner_jid != self.config.owner_jid
-            || (frame.chat_jid != self.config.owner_jid
-                && !valid_group_jid(&frame.chat_jid))
-            || !frame.from_me
+            || !(is_owner || is_public_reader)
         {
             bail!("WhatsApp control identity denied");
         }
@@ -147,11 +155,28 @@ impl WhatsAppControlBridge {
         if !frame.text.starts_with("=/>") {
             return Ok(WhatsAppBridgeOutcome::Ignored);
         }
-        let group_id = if frame.chat_jid == self.config.owner_jid {
-            None
-        } else {
+        let group_id = if valid_group_jid(&frame.chat_jid) {
             Some(frame.chat_jid.as_str())
+        } else {
+            None
         };
+        if is_public_reader {
+            // Public commands have a dedicated, read-only policy path.
+            // Never pass their actor into the owner dispatcher.
+            let outcome = self.control.dispatch_public_readonly(
+                &self.config.socket_id,
+                &frame.actor_id,
+                &frame.chat_jid,
+                group_id,
+                &frame.text,
+            )?;
+            if !self.replay.claim(
+                "whatsapp", &self.config.socket_id, &frame.message_id
+            )? {
+                return Ok(WhatsAppBridgeOutcome::Duplicate);
+            }
+            return Ok(WhatsAppBridgeOutcome::Dispatched(outcome));
+        }
         let verb = frame.text.split_whitespace().next().unwrap_or_default();
         if group_id.is_some() {
             if !matches!(
@@ -186,6 +211,16 @@ impl WhatsAppControlBridge {
         )?;
         Ok(WhatsAppBridgeOutcome::Dispatched(outcome))
     }
+}
+
+fn valid_user_jid(value: &str) -> bool {
+    let account = value
+        .strip_suffix("@s.whatsapp.net")
+        .or_else(|| value.strip_suffix("@lid"));
+    account.is_some_and(|digits| {
+        (8..=20).contains(&digits.len())
+            && digits.bytes().all(|byte| byte.is_ascii_digit())
+    })
 }
 
 fn valid_group_jid(value: &str) -> bool {
