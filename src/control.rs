@@ -22,6 +22,15 @@ pub enum DispatchResult {
         source: ActivationSource,
         bot_instance_id: Option<String>,
     },
+    GroupPolicyChanged {
+        group_id: String,
+        policy: Option<bool>,
+    },
+    GroupStatus {
+        group_id: String,
+        enabled: bool,
+        source: ActivationSource,
+    },
     RoleChanged {
         bot_instance_id: String,
         user_id: String,
@@ -156,7 +165,44 @@ impl ControlDispatcher {
         {
             let tokens: Vec<_> = body.split_whitespace().collect();
             match tokens.as_slice() {
+                ["group" | "grupo", "on" | "encender"]
+                | ["group" | "grupo", "off" | "apagar"]
+                | ["group" | "grupo", "inherit" | "heredar"] => {
+                    let group_id = group.ok_or_else(|| {
+                        anyhow!("Group control requires an authenticated group chat")
+                    })?;
+                    let policy = match tokens[1] {
+                        "on" | "encender" => Some(true),
+                        "off" | "apagar" => Some(false),
+                        _ => None,
+                    };
+                    self.activation
+                        .set_group_policy(receiving_socket, actor, group_id, policy)?;
+                    return Ok(DispatchResult::GroupPolicyChanged {
+                        group_id: group_id.to_owned(),
+                        policy,
+                    });
+                }
+                ["group" | "grupo", "status" | "estado"] => {
+                    let group_id = group.ok_or_else(|| {
+                        anyhow!("Group status requires an authenticated group chat")
+                    })?;
+                    let admission = self
+                        .activation
+                        .admission(receiving_socket, Some(group_id), self.global_policy)?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    return Ok(DispatchResult::GroupStatus {
+                        group_id: group_id.to_owned(),
+                        enabled: admission.decision.enabled,
+                        source: admission.decision.source,
+                    });
+                }
                 ["on"] | ["off"] | ["on", _] | ["off", _] => {
+                    if group.is_some() {
+                        bail!("Global socket power is private configuration only");
+                    }
                     let powered = tokens[0] == "on";
                     let socket = tokens.get(1).copied().unwrap_or(receiving_socket);
                     self.activation.set_power(socket, actor, powered)?;
@@ -166,6 +212,9 @@ impl ControlDispatcher {
                     });
                 }
                 ["status"] | ["status", _] => {
+                    if group.is_some() {
+                        bail!("Global socket status is private configuration only");
+                    }
                     let socket = tokens.get(1).copied().unwrap_or(receiving_socket);
                     // One consistent snapshot: owner, binding, and effective
                     // activation policy. No role or bot binding is required.
@@ -183,9 +232,15 @@ impl ControlDispatcher {
                     });
                 }
                 ["set", "role", user, role] => {
+                    if group.is_some() {
+                        bail!("Socket-wide roles may be configured only in private");
+                    }
                     return self.change_role(receiving_socket, actor, user, role, true);
                 }
                 ["unset", "role", user, role] => {
+                    if group.is_some() {
+                        bail!("Socket-wide roles may be configured only in private");
+                    }
                     return self.change_role(receiving_socket, actor, user, role, false);
                 }
                 [command, args @ ..] if canonical_global_prefix => {
