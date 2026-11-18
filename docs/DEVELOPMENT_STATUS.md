@@ -1,3 +1,29 @@
+## 2026-11-18 — Refactorización contra clippy::type_complexity (alpha; validación pendiente)
+
+1. **Evidencia en Debian:** las pruebas visibles de `cargo test
+   --all-targets --locked` pasaron, incluido
+   `tests/whatsapp_native.rs`, `tests/whatsapp_theme_scopes.rs`,
+   el puente y los accesos públicos de solo lectura.
+   `cargo test --manifest-path providers/whatsapp-rust/Cargo.toml
+   --all-targets` pasó **21 pruebas**.
+2. **Bloqueo concreto:** `cargo clippy --all-targets --locked
+   -- -D warnings` falló en `src/activation.rs` por
+   `clippy::type_complexity` en una tupla con seis componentes;
+   `cargo check` y `cargo test` sí la compilaron.
+3. **Cambio publicado:** `BotDefaultPolicies` es una estructura
+   con campos explícitos que mantiene la semántica anterior.
+   Ajustados el consumidor de `=/>status --global` en
+   `src/control.rs` y las comprobaciones de activación
+   en `tests/live_unified_controls.rs`. No se inhibió el lint.
+4. **Pendientes reales:** sincronizar con seguridad los cambios
+   locales de formato, ejecutar `cargo fmt`,
+   `cargo clippy --all-targets --locked -- -D warnings`,
+   suite completa, Clippy del proveedor, auditoría de README.
+   Comprobar si surge otro lint nuevo. Sin CI verificado del SHA
+   ni prueba manual WhatsApp real del nuevo commit.
+5. **Ramas:** `alpha` exclusivamente; no promover a
+   `beta/stable` hasta pasar los controles.
+
 ## 2026-11-18 — Corrección de orden de validación en WhatsApp Native (alpha)
 
 1. **Hallazgo real del operador:** `cargo test --all-targets --locked`
