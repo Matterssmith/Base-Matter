@@ -1,3 +1,26 @@
+## 2026-11-18 — Corrección adicional de pruebas del proveedor WhatsApp Rust (alpha; Debian pendiente)
+
+- El operador ejecutó la suite general de Base-Matter: las pruebas mostradas,
+  incluidas `group_control`, `socket_control_roles`,
+  `socket_vault_outbox`, `vault_role_fail_closed`,
+  `whatsapp_bridge` y `whatsapp_process`, pasaron.
+  Una prueba opcional del contrato remoto de Vault quedó omitida por falta
+  de `MATTER_VAULT_CHECKOUT`.
+- La suite independiente del proveedor WhatsApp Rust falló al compilar
+  `tests/recovery.rs:97`: `env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider")`
+  no estaba disponible en tiempo de compilación.
+- Se corrigió `tests/recovery.rs` con resolución opcional en compilación
+  y alternativa de variable en tiempo de ejecución. Los comandos del
+  test reciben el ejecutable por referencia para evitar mover el `PathBuf`.
+- Se ajustó la prueba del alias LID de `tests/provider.rs`: `=/>status`
+  sí está permitido en el chat privado propio; `=/>menu` solo pertenece
+  al ámbito grupal y debe ignorarse en privado.
+- Revisados el README raíz y el README del proveedor. Pendientes:
+  `cargo fmt --manifest-path ... --all -- --check`, `cargo check` y
+  `cargo test --all-targets` del proveedor en Debian; no se declara
+  prueba real de grupos ni transporte Vault funcional. Sin promoción
+  a `beta` o `stable`.
+
 ## 2026-11-18 — Cambio de arquitectura: Vault-Matter autoridad única de roles
 
 - Solicitud expresa: Base-Matter solo lectura de rangos; Vault-Matter
