@@ -65,12 +65,11 @@ fn standalone_provider_uses_exact_same_external_matterssmith_template() {
         "REGISTER: solo lectura, sin cambios en grupos.",
     )
     .unwrap();
-    assert!(text.starts_with("*꒦꒷✰"));
-    assert!(text.contains("╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹"));
+    assert!(text.starts_with("╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹"));
     assert!(text.contains("REGISTER: solo lectura"));
     assert!(text.contains('\n'));
     assert!(!text.contains("\\n"));
-    assert!(text.contains("Lournyx Matterssmith [Lou-Nyx]"));
+    assert!(!text.contains("Lournyx Matterssmith [Lou-Nyx]"));
     assert_eq!(
         whatsapp_matter_rust_provider::render_provider_control(&text).unwrap(),
         text
