@@ -122,7 +122,7 @@ control real del propietario sobre encendido y política de grupos se
 mantiene separado de los rangos delegados. Ver
 [contrato Vault como única autoridad](docs/VAULT_ROLE_AUTHORITY.md).
 
-## WhatsApp private/group scopes and socket roles (alpha test contract)
+## Archivo histórico — Alcances anteriores privado/grupo (superados por BOT_POLICY_V2)
 
 A successful real-device self-chat `=/>status` followed by `=/>on`,
 `=/>help` and `=/>menu` confirmed that PN/LID owner identity and the
