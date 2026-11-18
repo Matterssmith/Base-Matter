@@ -181,7 +181,7 @@ impl WhatsAppControlBridge {
         if group_id.is_some() {
             if !matches!(
                 verb,
-                "=/>on" | "=/>off" | "=/>group"
+                "=/>group"
                     | "=/>grupo"
                     | "=/>menu"
                     | "=/>menú"
@@ -196,9 +196,7 @@ impl WhatsAppControlBridge {
             }
         } else if !matches!(
             verb,
-            "=/>on"
-                | "=/>off"
-                | "=/>status"
+            "=/>status"
                 | "=/>estado"
                 | "=/>bot"
                 | "=/>menu"
