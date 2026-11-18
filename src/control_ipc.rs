@@ -5,7 +5,8 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use crate::control::DispatchResult;
-use crate::control_style::ControlTheme;
+use crate::control_style::{ControlTheme, ControlThemes};
+use crate::whatsapp_bridge::WhatsAppControlFrame;
 use crate::whatsapp_bridge::{WhatsAppBridgeOutcome, WhatsAppControlBridge};
 use anyhow::{bail, Result};
 use std::{
@@ -38,20 +39,30 @@ impl ControlIpcOutcome {
 }
 pub struct WhatsAppControlIpc {
     bridge: Arc<WhatsAppControlBridge>,
-    theme: ControlTheme,
+    themes: Arc<ControlThemes>,
 }
 impl WhatsAppControlIpc {
     pub fn new(bridge: Arc<WhatsAppControlBridge>) -> Self {
         Self {
             bridge,
-            theme: ControlTheme::new("Base-Matter", "base-matter", "✦")
-                .expect("Static Matterssmith theme must be valid"),
+            themes: Arc::new(ControlThemes::new(
+                ControlTheme::new("Base-Matter", "base-matter", "✦")
+                    .expect("Static Matterssmith theme must be valid"),
+            )),
         }
     }
 
-    /// Install the same default theme used by the command menu.
+    /// Compatibility helper for changing only the fallback style.
     pub fn with_theme(mut self, theme: ControlTheme) -> Self {
-        self.theme = theme;
+        self.themes = Arc::new(ControlThemes::new(theme));
+        self
+    }
+
+    /// Share the exact scoped registry with the menu command.
+    /// This guarantees that status, menu, audit and policy replies use
+    /// the same selected theme for their verified chat scope.
+    pub fn with_themes(mut self, themes: Arc<ControlThemes>) -> Self {
+        self.themes = themes;
         self
     }
 
@@ -169,14 +180,26 @@ impl WhatsAppControlIpc {
             Err(_) => (ControlIpcOutcome::Denied, None),
         };
         let (outcome, message) = result;
-        // Every reply uses the same Matterssmith layout. The menu is
-        // already decorated, so the formatter is intentionally idempotent.
+        // We select a template from the chat identifier ONLY after the
+        // bridge has accepted and authenticated the signed frame.
+        let authenticated_group = if matches!(&outcome, ControlIpcOutcome::Applied) {
+            serde_json::from_str::<WhatsAppControlFrame>(text)
+                .ok()
+                .map(|frame| frame.chat_jid)
+                .filter(|chat| chat.ends_with("@g.us"))
+        } else {
+            None
+        };
+        // All successful replies use the same per-chat renderer.
+        // A menu preformatted through that registry is idempotent.
         let validated = message
-            .and_then(|text| self.theme.decorate(&text).ok())
-            .filter(|text| {
-                !text.is_empty()
-                    && text.len() <= 3800
-                    && !text.chars().any(|c| c.is_control() && c != '\n')
+            .and_then(|body| {
+                self.themes.decorate(authenticated_group.as_deref(), &body).ok()
+            })
+            .filter(|body| {
+                !body.is_empty()
+                    && body.len() <= 3800
+                    && !body.chars().any(|c| c.is_control() && c != '\n')
             });
         (outcome, validated)
     }
