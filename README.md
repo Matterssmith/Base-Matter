@@ -20,6 +20,21 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Seguimiento de Clippy: segunda referencia posicional (alpha)
+
+Tras actualizar `alpha` hasta `810c445`, la compilación estricta
+detectó `E0609` en `tests/whatsapp_native.rs:82`:
+`inspect_bot_defaults(...).unwrap().0` ya no es válido porque
+el resultado es `BotDefaultPolicies`.
+
+La prueba ahora consulta el campo `socket_powered`. Se revisaron
+también los consumidores del snapshot en el controlador y las
+pruebas de puente, IPC, estado y activación; no se hallaron otras
+referencias posicionales en los archivos revisados. El nuevo commit
+aún requiere `cargo clippy --all-targets --locked -- -D warnings`
+y el conjunto de pruebas en Debian. No hay cambios en la sesión,
+los archivos SQLite ni los comandos WhatsApp.
+
 ## 2026-11-18 — Consumidor residual de `BotDefaultPolicies` (alpha)
 
 El operador volvió a ejecutar Clippy estricto y encontró un fallo
