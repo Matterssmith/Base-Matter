@@ -1,3 +1,17 @@
+## 2026-11-18 — Ajuste final de respuestas y pruebas IPC (alpha)
+
+- `src/control_ipc.rs` elimina de los cuerpos de respuesta el prefijo
+  `Base-Matter:` y `Base-Matter |`, porque el único marco ya indica
+  `Control`. Acorta los acuses de política y deja intactos HMAC,
+  autorización, replay y sesiones.
+- `tests/control_ipc.rs` exige el único marco reducido y el texto
+  conciso; se revisaron las expectativas de estilos comunitarios,
+  menú y proveedor contra los nuevos archivos de plantilla.
+- La compilación, Clippy y pruebas sobre este lote de GitHub
+  **siguen pendientes** de ejecución Debian. No dar por
+  instalado el cambio en el WhatsApp del operador hasta actualizar
+  y reiniciar el proceso.
+
 ## 2026-11-18 — Limpieza de menú y separación de créditos (alpha)
 
 1. **Prueba previa:** el operador confirmó todo el conjunto Base,
