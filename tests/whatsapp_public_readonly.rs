@@ -148,9 +148,9 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
             if command == "menu" && output.contains("Matterssmith")
     ));
     assert!(matches!(
-        bridge.ingest(&frame("pub-4", "=/>menu group", READER, GROUP, false)).unwrap(),
+        bridge.ingest(&frame("pub-4", "=/>menu", READER, GROUP, false)).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
-            if command == "menu" && output.contains("=/>group")
+            if command == "menu" && output.contains("=/>on / =/>off")
     ));
     bridge
         .ingest(&frame(
@@ -227,6 +227,7 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
         "=/>bot private off",
         "=/>set role 5215512345678 admin",
         "=/>roles",
+        "=/>menu group",
         "=/>menu other extra",
     ]
     .iter()
