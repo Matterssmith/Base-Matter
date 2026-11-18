@@ -1,3 +1,21 @@
+## 2026-11-18 — Inspección de xd.zip y avance Rich/HTML (alpha)
+
+- Revisado ZIP aportado por usuario **sin ejecutar código**: 10 entradas
+  (4 Go, 3 HTML, 1 JS, 1 MD y un ZIP de audio). Las pruebas Go
+  referencian assets de juegos ausentes. `help_rich.go` advierte
+  falta de soporte de menú animado en iPhone/WhatsApp Web.
+- `testeos.js` y el código Go serializan `unifiedResponse` y
+  `embedded_screens`, pero dependen de un envoltorio que simula
+  un bot Meta AI. No se importó ni habilitó esa suplantación.
+- Rust: añadido `rich_preview.rs` para HTML local escapado y JSON
+  de esquema experimental sin sesión, envíos, scripts ni permisos.
+  Expuestas opciones CLI `--rich-preview-html/json` antes de
+  leer credenciales; tests de estructura, inocuidad y rechazo de
+  HTML inyectado; no sustituye NativeFlow ni el menú original.
+- Documentación creada `docs/WHATSAPP_RICH_HTML_COMPAT.md`.
+  Auditados y actualizados los dos README (2/2). Solo rama `alpha`.
+  Falta CI exacto y pruebas reales Android/iPhone/Web.
+
 ## 2026-11-18 — Rustfmt de alias NativeFlow (alpha)
 
 La verificación `44380170502` detectó exclusivamente orden

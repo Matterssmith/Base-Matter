@@ -328,8 +328,34 @@ async fn snapshot_community_recovery(
 #[tokio::main]
 async fn main() -> Result<()> {
     match std::env::args().nth(1).as_deref() {
+        Some("--rich-preview-html") => {
+            if std::env::args().nth(2).is_some() {
+                bail!("HTML preview accepts no parameters");
+            }
+            println!(
+                "{}",
+                whatsapp_matter_rust_provider::rich_preview::menu_html_preview(
+                    whatsapp_matter_rust_provider::rich_preview::original_menu()
+                )?
+            );
+            return Ok(());
+        }
+        Some("--rich-preview-json") => {
+            if std::env::args().nth(2).is_some() {
+                bail!("Rich preview accepts no parameters");
+            }
+            println!(
+                "{}",
+                serde_json::to_string_pretty(
+                    &whatsapp_matter_rust_provider::rich_preview::experimental_rich_schema(
+                        whatsapp_matter_rust_provider::rich_preview::original_menu()
+                    )?
+                )?
+            );
+            return Ok(());
+        }
         Some("--help") => {
-            println!("WhatsApp-Matter Rust provider: --check, --recovery-verify <encrypted-filename>, or run for pairing code. Local Base-Matter IPC; no QR.");
+            println!("WhatsApp-Matter Rust provider: --check, --rich-preview-html, --rich-preview-json (offline research only), --recovery-verify <encrypted-filename>, or run for pairing code. Local Base-Matter IPC; no QR.");
             return Ok(());
         }
         Some("--check") => {

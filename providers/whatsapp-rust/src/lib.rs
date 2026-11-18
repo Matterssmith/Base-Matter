@@ -5,6 +5,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 pub mod recovery;
+pub mod rich_preview;
 pub mod ui;
 
 // One implementation and one set of template assets are shared with

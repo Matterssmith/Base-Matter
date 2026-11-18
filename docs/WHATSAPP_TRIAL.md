@@ -1,3 +1,19 @@
+## Vista previa HTML local del menú original (alpha, 2026-11-18)
+
+Sin abrir sesión ni usar claves WhatsApp, el proveedor Rust permite
+inspeccionar un diseño web móvil inspirado en los ejemplos Rich,
+con el **menú original exacto** y controles deshabilitados:
+```bash
+cd /home/Sakura/Base-Matter
+cargo run --manifest-path providers/whatsapp-rust/Cargo.toml -- --rich-preview-html > matter-preview.html
+cargo run --manifest-path providers/whatsapp-rust/Cargo.toml -- --rich-preview-json > matter-preview.json
+```
+No enviar el JSON de prueba como mensaje firmado ni simular Meta AI.
+El HTML estático no es el HTML que WhatsApp muestra dentro del chat.
+Los botones de consulta NativeFlow se prueban separadamente mediante
+la opción `MATTER_WA_NATIVE_BUTTONS=1`, con sesión propia y fallback
+al diseño textual. Los metadatos de Android/iOS aún no están verificados.
+
 ## Menú con botones experimentales — alpha 2026-11-18
 
 El menú original en texto es el valor predeterminado. Para probar la

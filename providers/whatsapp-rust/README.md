@@ -1,3 +1,24 @@
+## Compatibilidad experimental del material Rich HTML (2026-11-18)
+
+Analizados ejemplos externos en Go/JavaScript/HTML: el contenedor
+`embedded_screens`/`FOAIDNixelButtonSheets` puede estudiarse, pero
+el envío proviene de un `botForwardedMessage` que aparenta tener
+identidad `0@bot`. Ese método **no** se trasplanta a Base-Matter ni
+se afirma que WhatsApp acepte HTML de terceros.
+
+Ahora `rich_preview.rs` genera HTML estático y un JSON de compatibilidad
+sin abrir el proveedor, con el menú original y sin JavaScript:
+```bash
+cargo run --manifest-path providers/whatsapp-rust/Cargo.toml -- --rich-preview-html > matter-preview.html
+cargo run --manifest-path providers/whatsapp-rust/Cargo.toml -- --rich-preview-json > matter-preview.json
+```
+El proceso debe iniciarse desde la raíz del repositorio. Las salidas
+son solamente **archivos locales de prueba**, no mensajes WhatsApp.
+Los botones del HTML se muestran deshabilitados deliberadamente; los
+únicos botones nativos reales siguen siendo NativeFlow opt-in. No se
+usa Node, Baileys, spoof de Meta AI ni una segunda sesión.
+Véase [análisis de compatibilidad](../../docs/WHATSAPP_RICH_HTML_COMPAT.md).
+
 ## Ajuste de orden de imports NativeFlow (alpha)
 
 El paso rustfmt en `3178e32` exigió ordenar el alias

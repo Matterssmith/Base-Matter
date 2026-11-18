@@ -20,6 +20,26 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Análisis de ejemplos Go/JS de HTML enriquecido (alpha)
+
+Se revisó el material `xd.zip` (Go, JavaScript, plantillas HTML y muestras
+de pruebas Rich). Sirve para estudiar el esquema `embedded_screens` y
+`FOAIDNixelButtonSheets`, pero su modo de envío finge ser un bot Meta AI
+(`0@bot`) y **no** se integró ni habilitó. También faltan recursos HTML
+de juegos que ese código espera encontrar.
+
+Nuevo módulo Rust `providers/whatsapp-rust/src/rich_preview.rs`: vista previa
+HTML **local**, menú original escapado, botones decorativos claramente
+deshabilitados, generador JSON offline del esquema experimental y tests
+de contenido/seguridad. El proveedor ofrece `--rich-preview-html` y
+`--rich-preview-json`, **sin abrir sesión**. La ruta real NativeFlow
+continúa como función experimental separada; el HTML del navegador
+**no se envía** a WhatsApp ni se declara compatible con iPhone/Web.
+
+Consulta [evaluación de Rich HTML](docs/WHATSAPP_RICH_HTML_COMPAT.md).
+Documentación y READMEs auditados 2/2; las ramas beta/stable, secretos y
+sesiones WhatsApp permanecen intactos. CI y prueba real pendientes.
+
 ## 2026-11-18 — Formato de importación en proveedor (alpha)
 
 El CI de `3178e32` detectó un único orden de imports distinto

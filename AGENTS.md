@@ -1,5 +1,21 @@
 # Matterssmith — repository instructions
 
+## Invariante adicional — compatibilidad de Rich HTML (alpha, 2026-11-18)
+
+Se revisaron ejemplos no confiables de Go/JS/HTML recibidos en
+`xd.zip`, usados exclusivamente como referencia de datos.
+Nunca copiar el origen falso Meta AI `0@bot`, marcar como
+reenviado un mensaje que no lo fue ni activar scripts HTML
+mediante el protocolo de WhatsApp. No incorporar juegos/medios
+externos a Base-Matter sin contratos, licencias y pruebas.
+
+El módulo `providers/whatsapp-rust/src/rich_preview.rs` construye
+HTML estático y estructura JSON experimental **solo offline**.
+El CLI `--rich-preview-html/json` no debe tocar sesión,
+credenciales ni red. HTML en WhatsApp **no está demostrado**
+y no se debe confundir con botones NativeFlow (opt-in).
+Bot-Matter permanece bloqueado. READMEs 2/2 antes de commits.
+
 ## Contrato nuevo — botones NativeFlow y HTML breve (alpha, 2026-11-18)
 
 Solicitud expresa: preparar controles interactivos reales al estilo de botones
