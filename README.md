@@ -20,6 +20,39 @@ width="100%"
 
 ---
 
+## Control global Matterssmith — contrato vigente (alpha; pruebas posteriores pendientes)
+
+El comando de activación para WhatsApp es **`=/>bot on/off`**, no
+`=/>on/off`. En el chat actual basta **un comando**: al activar,
+el estado operativo del socket despierta junto con la política en
+una transacción auditada. Desactivar un grupo no afecta otros grupos.
+
+Los alcances adicionales son `=/>bot --global on/off`,
+`=/>bot group on/off`, `=/>bot private on/off`,
+`=/>bot channel on/off` y `=/>bot community on/off`.
+Las dos últimas opciones solo guardan parámetros de tipo: su efecto
+real está bloqueado hasta que el proveedor identifique canales y
+grupos de avisos comunitarios mediante metadatos autenticados.
+`=/>status` consulta siempre el chat actual aunque esté apagado.
+
+**Un único menú corto, sin categorías.** Toda respuesta del controlador
+(estado, menú, configuración, auditoría y ayuda) y toda vista previa
+directa del proveedor Rust se representan mediante el renderizador
+compartido `src/control_style.rs`. El diseño predeterminado se configura
+en archivos independientes:
+`templates/matterssmith-control.txt` y
+`templates/matterssmith-menu.txt`. Usan saltos de línea reales
+y conservan los créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+La API de temas admite reemplazos validados por comunidad;
+su configuración persistente vía comando todavía no está terminada.
+
+**Estado real:** el operador confirmó anteriormente todas las pruebas
+locales y 20 pruebas del proveedor sobre `dfd9dab` (antes de esta
+corrección visual y de activación). Estas nuevas modificaciones en
+alpha **requieren volver a pasar Cargo, rustfmt y WhatsApp real**.
+Vault-Matter todavía no autoriza rangos en producción. No se han
+promovido estos cambios a beta ni a stable.
+
 ## Project status
 
 Base-Matter es una **biblioteca de desarrollo incompleta**. The current repository
