@@ -165,6 +165,64 @@ impl Config {
         })
     }
 
+    /// Accept the PN and LID aliases that belong to the *authenticated*
+    /// WhatsApp client, never arbitrary aliases supplied by an event.
+    ///
+    /// The caller must pass canonical, device-free JIDs obtained from
+    /// Client::pn(), Client::lid(), and MessageSource in the same session.
+    /// The signed bridge frame stays bound to the configured owner, because
+    /// Base-Matter checks its authenticated HMAC and canonical owner JID.
+    pub fn signed_verified_control(
+        &self,
+        event: &Event<'_>,
+        session_pn: Option<&str>,
+        session_lid: Option<&str>,
+    ) -> Result<Option<SignedFrame>> {
+        if !event.from_me || event.is_group || !event.text.starts_with("=/>") {
+            return Ok(None);
+        }
+
+        let expected_pn = format!("{}@s.whatsapp.net", self.phone);
+        // Proof of the linked account comes from the connected client,
+        // not the phone value typed at setup or the outgoing message itself.
+        if session_pn != Some(expected_pn.as_str()) {
+            bail!("Authenticated WhatsApp account does not match pairing owner");
+        }
+        let verified_lid = session_lid.filter(|jid| {
+            jid.ends_with("@lid")
+                && !jid.starts_with('@')
+                && jid.len() <= 128
+        });
+        // A preconfigured LID must itself match this session's verified LID.
+        if self.owner_jid != expected_pn
+            && Some(self.owner_jid.as_str()) != verified_lid
+        {
+            bail!("Configured WhatsApp owner differs from authenticated account");
+        }
+
+        let belongs_to_owner = |jid: &str| {
+            jid == expected_pn || verified_lid == Some(jid)
+        };
+        if !belongs_to_owner(event.chat_jid)
+            || !belongs_to_owner(event.sender_jid)
+        {
+            return Ok(None);
+        }
+
+        // Only identity fields proven above are canonicalized. Message ID,
+        // text, timestamp and from_me retain the original callback values.
+        let canonical = Event {
+            chat_jid: &self.owner_jid,
+            sender_jid: &self.owner_jid,
+            message_id: event.message_id,
+            text: event.text,
+            from_me: event.from_me,
+            is_group: event.is_group,
+            timestamp: event.timestamp,
+        };
+        self.signed_control(&canonical)
+    }
+
     /// Signs only recent, self-authored messages in the owner's own private
     /// chat. All identifiers come from the trusted whatsapp-rust callback.
     pub fn signed_control(&self, event: &Event<'_>) -> Result<Option<SignedFrame>> {
