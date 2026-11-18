@@ -98,6 +98,18 @@ impl WhatsAppControlIpc {
                     if enabled { "habilitado" } else { "deshabilitado" }
                 )),
             ),
+            Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::SocketRoleChanged {
+                role_id,
+                changed,
+                ..
+            })) => (
+                ControlIpcOutcome::Applied,
+                Some(format!(
+                    "Base-Matter: rango {} {} localmente. No concede permisos operativos todavía; Vault-Matter aún no sincronizado.",
+                    role_id,
+                    if changed { "actualizado" } else { "sin cambios" }
+                )),
+            ),
             Ok(WhatsAppBridgeOutcome::Dispatched(_)) => (ControlIpcOutcome::Applied, None),
             Ok(WhatsAppBridgeOutcome::Ignored) => (ControlIpcOutcome::Ignored, None),
             Ok(WhatsAppBridgeOutcome::Duplicate) => (ControlIpcOutcome::Duplicate, None),
