@@ -42,6 +42,7 @@ pub enum DispatchResult {
         group_policy: Option<bool>,
         private_policy: Option<bool>,
         channel_policy: Option<bool>,
+        community_policy: Option<bool>,
     },
     RoleChanged {
         bot_instance_id: String,
@@ -500,9 +501,9 @@ impl ControlDispatcher {
             }
             DispatchResult::BotGlobalStatus {
                 socket_powered, default_policy,
-                group_policy, private_policy, channel_policy,
+                group_policy, private_policy, channel_policy, community_policy,
             } => format!(
-                "Socket={socket_powered}; defecto={default_policy:?}; grupos={group_policy:?}; privados={private_policy:?}; canales={channel_policy:?}"
+                "Socket={socket_powered}; defecto={default_policy:?}; grupos={group_policy:?}; privados={private_policy:?}; canales={channel_policy:?}; avisos={community_policy:?}"
             ),
             DispatchResult::GroupPolicyChanged { policy, .. } => {
                 format!("Política de grupo: {policy:?}")
@@ -582,6 +583,7 @@ impl ControlDispatcher {
                         group_policy,
                         private_policy,
                         channel_policy,
+                        community_policy,
                     ) = self
                         .activation
                         .inspect_bot_defaults(receiving_socket, actor)?;
@@ -591,6 +593,7 @@ impl ControlDispatcher {
                         group_policy,
                         private_policy,
                         channel_policy,
+                        community_policy,
                     });
                 }
                 ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
