@@ -3,6 +3,14 @@
 # Créditos:
 # Hecho por Lournyx Matterssmith [Lou-Nyx].
 set -Eeuo pipefail
+CONTROLLER_PID=""
+cleanup() {
+    if [[ -n "$CONTROLLER_PID" ]] && kill -0 "$CONTROLLER_PID" 2>/dev/null; then
+        kill "$CONTROLLER_PID" 2>/dev/null || true
+        wait "$CONTROLLER_PID" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
 
 run() {
     umask 077
@@ -75,8 +83,8 @@ run() {
 
     "$controller" --serve >>"$state/controller.log" 2>&1 </dev/null &
     pid=$!
-    # This trap stops ONLY the child started here. Never kill unrelated sockets.
-    trap 'if kill -0 "$pid" 2>/dev/null; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi' RETURN
+    CONTROLLER_PID="$pid"
+    # The EXIT trap stops only this launcher-owned child.
     sleep 1
     if ! kill -0 "$pid" 2>/dev/null; then
         printf 'Controller failed to start; latest nonsecret diagnostic:\n' >&2
