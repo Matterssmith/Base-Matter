@@ -205,6 +205,73 @@ fn signed_owner_group_controls_are_scoped_and_replayed_once() {
 }
 
 #[test]
+fn signed_group_status_tracks_global_defaults_and_exact_group_override() {
+    let (bridge, _) = fixture();
+    let group = "120363555@g.us";
+    let mut status = frame("chat-status-1", "=/>status");
+    status.chat_jid = group.into();
+    sign(&mut status, &SECRET);
+    assert_eq!(
+        bridge.ingest(&status).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::GroupStatus {
+            group_id: group.into(),
+            enabled: false,
+            source: matter_base::activation::ActivationSource::PoweredOff,
+        })
+    );
+
+    assert_eq!(
+        bridge.ingest(&frame("chat-global-1", "=/>bot --global on")).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
+            scope: "socket-global".into(),
+            policy: Some(true),
+        })
+    );
+    assert_eq!(
+        bridge.ingest(&frame("chat-global-2", "=/>status --global")).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotGlobalStatus {
+            socket_powered: false,
+            default_policy: Some(true),
+            group_policy: None,
+            private_policy: None,
+            channel_policy: None,
+        })
+    );
+    bridge.ingest(&frame("chat-power-1", "=/>on")).unwrap();
+    status.message_id = "chat-status-2".into();
+    sign(&mut status, &SECRET);
+    assert_eq!(
+        bridge.ingest(&status).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::GroupStatus {
+            group_id: group.into(),
+            enabled: true,
+            source: matter_base::activation::ActivationSource::Socket,
+        })
+    );
+
+    let mut change = frame("chat-bot-1", "=/>bot off");
+    change.chat_jid = group.into();
+    sign(&mut change, &SECRET);
+    assert_eq!(
+        bridge.ingest(&change).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
+            scope: "current".into(),
+            policy: Some(false),
+        })
+    );
+    status.message_id = "chat-status-3".into();
+    sign(&mut status, &SECRET);
+    assert_eq!(
+        bridge.ingest(&status).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::GroupStatus {
+            group_id: group.into(),
+            enabled: false,
+            source: matter_base::activation::ActivationSource::Group,
+        })
+    );
+}
+
+#[test]
 fn rejects_forged_signatures_cross_socket_and_sender() {
     let (bridge, activation) = fixture();
     let mut value = frame("id1", "=/>on");
