@@ -1,3 +1,24 @@
+## 2026-11-18 — Corrección de orden de validación en WhatsApp Native (alpha)
+
+1. **Hallazgo real del operador:** `cargo test --all-targets --locked`
+   avanzó con pruebas aprobadas hasta `tests/whatsapp_native.rs`,
+   que terminó con 4 aprobadas y 1 fallida:
+   `duplicated_expired_and_malformed_events_fail_closed`.
+2. **Causa:** `ingest` clasificaba el alias retirado `=/>on`
+   como `Ignored` antes de validar que su texto excediera
+   los 4096 bytes. La prueba esperaba un rechazo explícito.
+3. **Corrección publicada:** validación del tamaño e ID del
+   mensaje antes del filtro de alias retirados. Se añadieron
+   pruebas de desbordamiento tanto para `=/>on` antiguo como
+   para `=/>bot on` vigente y de no consumo del replay ID.
+   La activación real **sigue siendo solamente**
+   `=/>bot on/off`.
+4. **Pendiente:** ejecutar `cargo test --test whatsapp_native
+   --locked`, después `cargo test --all-targets --locked`,
+   suite del proveedor y Clippy. Las comprobaciones de la
+   nueva corrección no tienen resultados Debian todavía.
+   Mantener `alpha` como única rama de desarrollo.
+
 ## 2026-11-18 — Regresión de estilo detectada en Debian (alpha)
 
 - **Evidencia:** operador sincronizó hasta `19b5fc6`;
