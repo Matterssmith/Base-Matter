@@ -238,8 +238,8 @@ fn main() -> Result<()> {
         bail!("Recovery only supports a read-only preview or explicit snapshot")
     })?;
     extensions.register("add", &[], |context, args| {
-        if context.group_id.is_some() {
-            bail!("Add planning requires an authenticated private owner context");
+        if context.group_id.is_none() {
+            bail!("Add planning requires an authenticated owner group context");
         }
         let intent = parse_add_args(args)?;
         let kind = match intent {
@@ -258,18 +258,18 @@ fn main() -> Result<()> {
         "✦",
     )?));
     let menu_theme = Arc::clone(&style);
-    extensions.register("menu", &[], move |_, args| {
+    extensions.register("menu", &[], move |context, args| {
         if !args.is_empty() {
             bail!("Unexpected menu arguments");
         }
-        menu_theme.render(None, "menu")
+        menu_theme.render(context.group_id, "menu")
     })?;
     let help_theme = Arc::clone(&style);
-    extensions.register("help", &["h"], move |_, args| {
+    extensions.register("help", &["h"], move |context, args| {
         if !args.is_empty() {
             bail!("Unexpected help arguments");
         }
-        help_theme.render(None, "help")
+        help_theme.render(context.group_id, "help")
     })?;
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
