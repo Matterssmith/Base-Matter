@@ -458,8 +458,9 @@ async fn main() -> Result<()> {
                     Ok(Some(frame)) => match deliver(config.bridge_addr, &frame).await {
                         Ok(ack @ (ControlAck::Applied | ControlAck::AppliedWithMessage(_))) => {
                             println!("Base-Matter owner control applied");
-                            // Only an authenticated private self-chat may receive
-                            // an authorized response. Text has no control prefix.
+                            // Only a verified owner-authored private/group event
+                            // may receive an authorized response. No reply is sent
+                            // for disabled bot functions or unauthorized senders.
                             let debug_requested = frame.text.ends_with(" --debug");
                             let actual_command = frame.text
                                 .strip_suffix(" --debug")
