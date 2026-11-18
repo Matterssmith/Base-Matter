@@ -1,3 +1,24 @@
+## 2026-11-18 — Endurecimiento de temas y avisos (alpha; recompilación pendiente)
+
+- `ControlTheme::decorate` valida tamaño y caracteres de
+  control **antes** de aceptar un cuerpo aparentemente ya
+  formateado, evitando que el camino idempotente evite
+  la barrera de transporte.
+- Actualizadas las pruebas de estilos: una plantilla
+  personalizada queda idempotente y rechaza controles
+  incrustados y respuestas excesivas.
+- `bot_admission` incluye la clase `community` en los
+  alcances externos que **deniegan por defecto**. El
+  ajuste `=/>bot community on/off` solo se persiste en
+  el ámbito de tipo; no debe deducirse que cualquier
+  JID `@g.us` sea grupo de avisos.
+- **Sin compilación en esta sesión:** el ambiente de
+  revisión no dispone de `cargo/rustfmt`. Se requiere
+  `cargo fmt --all -- --check`, `cargo check
+  --all-targets --locked`, suite completa de Base y
+  prueba del proveedor WhatsApp en el Debian del operador.
+  No publicar en `beta/stable` sin resultados verdes.
+
 ## 2026-11-18 — Plantillas seleccionadas en todos los controles (alpha; validación pendiente)
 
 1. **Implementado:** el registro `ControlThemes` expone una selección
