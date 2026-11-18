@@ -20,6 +20,15 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Rustfmt de pruebas Rich HTML (alpha)
+
+El primer CI para `2dfc214` encontró tres diferencias de Rustfmt
+en `providers/whatsapp-rust/tests/rich_preview.rs`, antes de compilar
+el proveedor. Se aplicaron las posiciones exactas emitidas por
+Rustfmt sin alterar casos ni permisos. El motor de vista previa sigue
+siendo offline. READMEs revisados 2/2 y actualizados; CI de la
+nueva revisión pendiente.
+
 ## 2026-11-18 — Análisis de ejemplos Go/JS de HTML enriquecido (alpha)
 
 Se revisó el material `xd.zip` (Go, JavaScript, plantillas HTML y muestras

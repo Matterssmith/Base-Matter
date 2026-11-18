@@ -1,3 +1,10 @@
+## Ajuste de formato del prototipo Rich (alpha)
+
+El verificador de `2dfc214` rechazó el formato de dos índices
+JSON y una aserción en `tests/rich_preview.rs`. Corregido conforme
+al log de Rustfmt, sin alterar lógica ni habilitar envío Rich.
+Nueva ejecución de verificación obligatoria.
+
 ## Compatibilidad experimental del material Rich HTML (2026-11-18)
 
 Analizados ejemplos externos en Go/JavaScript/HTML: el contenedor

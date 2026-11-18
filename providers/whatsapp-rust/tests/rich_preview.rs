@@ -45,12 +45,12 @@ fn sample_rich_screen_shape_is_offline_and_does_not_spoof_meta_ai() {
         "FOAIDNixelButtonSheets"
     );
     assert_eq!(
-        value["embedded_screens"][0]["content"][0]["tabs"][0]["sections"][0]
-            ["view_model"]["primitive"]["__typename"],
+        value["embedded_screens"][0]["content"][0]["tabs"][0]["sections"][0]["view_model"]
+            ["primitive"]["__typename"],
         "GenAIaeacdsnwHtmlPrimitive"
     );
-    let html = value["embedded_screens"][0]["content"][0]["tabs"][0]["sections"][0]
-        ["view_model"]["primitive"]["payload"]
+    let html = value["embedded_screens"][0]["content"][0]["tabs"][0]["sections"][0]["view_model"]
+        ["primitive"]["payload"]
         .as_str()
         .unwrap();
     assert!(html.contains("Base-Matter"));
@@ -63,6 +63,9 @@ fn sample_rich_screen_shape_is_offline_and_does_not_spoof_meta_ai() {
         "<script",
         "https://",
     ] {
-        assert!(!serialized.contains(forbidden), "forbidden marker: {forbidden}");
+        assert!(
+            !serialized.contains(forbidden),
+            "forbidden marker: {forbidden}"
+        );
     }
 }

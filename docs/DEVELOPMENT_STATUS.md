@@ -1,3 +1,11 @@
+## 2026-11-18 — Alineación Rustfmt del prototipo offline (alpha)
+
+CI `44383479213` informó tres diferencias de Rustfmt en
+`providers/whatsapp-rust/tests/rich_preview.rs` (dos accesos JSON
+y una aserción); corregidas. No se alteró el diseño del menú, la
+semántica de las pruebas, el puente HMAC ni sesiones.
+READMEs 2/2 revisados y actualizados; se necesita CI nuevo.
+
 ## 2026-11-18 — Inspección de xd.zip y avance Rich/HTML (alpha)
 
 - Revisado ZIP aportado por usuario **sin ejecutar código**: 10 entradas
