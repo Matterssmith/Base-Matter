@@ -297,7 +297,6 @@ impl Config {
             parts.as_slice(),
             ["=/>status" | "=/>estado"]
                 | ["=/>menu" | "=/>menú"]
-                | ["=/>menu" | "=/>menú", _]
                 | ["=/>bot"]
         );
         if !allowed {
