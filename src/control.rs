@@ -69,6 +69,7 @@ pub struct ControlDispatcher {
     roles: Option<Arc<RoleStore>>,
     socket_roles: Option<Arc<RoleStore>>,
     extensions: Option<Arc<ControlExtensionRegistry>>,
+    silent_when_disabled: bool,
 }
 
 impl ControlDispatcher {
@@ -86,6 +87,7 @@ impl ControlDispatcher {
             roles: None,
             socket_roles: None,
             extensions: None,
+            silent_when_disabled: false,
         }
     }
 
@@ -104,6 +106,7 @@ impl ControlDispatcher {
             roles: None,
             socket_roles: None,
             extensions: None,
+            silent_when_disabled: false,
         }
     }
 
@@ -271,6 +274,15 @@ impl ControlDispatcher {
         self.extensions = Some(registry);
         self
     }
+    /// Opt-in live chat policy: when the bot is disabled, do not execute
+    /// nonessential extensions or emit a chat acknowledgment.
+    /// Core control extensions retain their legacy owner-only behavior
+    /// unless a transport explicitly enables this setting.
+    pub fn with_silent_bot_commands(mut self) -> Self {
+        self.silent_when_disabled = true;
+        self
+    }
+
 
     fn change_role(
         &self,
@@ -523,7 +535,8 @@ impl ControlDispatcher {
                     }
                     // A disabled bot sends no reply for menu and other
                     // nonessential operations. Status remains available.
-                    if !admission.decision.enabled
+                    if self.silent_when_disabled
+                        && !admission.decision.enabled
                         && !matches!(*command, "roles" | "audit")
                     {
                         return Ok(DispatchResult::Inactive);
