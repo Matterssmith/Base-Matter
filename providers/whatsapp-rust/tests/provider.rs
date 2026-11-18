@@ -443,7 +443,7 @@ fn long_category_menu_ack_is_bounded_and_does_not_accept_control_characters() {
     });
     assert!(parse_control_ack(&serde_json::to_vec(&too_long).unwrap()).is_err());
     let unsafe_text = serde_json::json!({
-        "ok": true, "outcome": "applied", "message": "hello\\u{0000}"
+        "ok": true, "outcome": "applied", "message": "hello\u{0000}"
     });
     assert!(parse_control_ack(&serde_json::to_vec(&unsafe_text).unwrap()).is_err());
 }
