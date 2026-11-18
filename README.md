@@ -36,6 +36,23 @@ Telegram and Discord adapters are not release-qualified. See
 [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
 
+## 2026-11-18 — Verificación del proveedor WhatsApp Rust
+
+Las pruebas generales de `cargo test --all-targets --locked` de Base-Matter
+pasaron en el servidor Debian del operador, incluyendo las pruebas nuevas
+de grupos, roles, control HMAC y denegación sin Vault. La suite separada del
+proveedor `providers/whatsapp-rust` no se completó: en
+`tests/recovery.rs` persistía un `env!(CARGO_BIN_EXE_...)` que impide
+compilar la prueba cuando Cargo no proporciona esa variable durante
+`cargo check` / `cargo test --all-targets`. Se aplicó el mismo patrón
+`option_env!` con alternativa de variable de entorno de ejecución usado
+en `tests/provider.rs`, conservando la prueba real del ejecutable de
+`--recovery-verify`. También se ajustó una prueba de alias LID que
+todavía esperaba `=/>menu` en chat privado; la configuración privada
+solo admite `=/>status` y otros controles de socket, mientras el menú
+pertenece a grupos. El resultado de la suite del proveedor para estos
+cambios todavía requiere ejecución en Debian.
+
 ## Vault-Matter: única autoridad de roles (decisión actual)
 
 **Cambio de arquitectura:** los rangos del socket/grupo NO pertenecen a
