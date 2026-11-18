@@ -406,10 +406,7 @@ async fn main() -> Result<()> {
     );
     // Unverified rich-HTML transport, explicitly enabled only for
     // an authenticated owner's self-chat. No forged Meta AI envelope.
-    let rich_html_trial = matches!(
-        std::env::var("MATTER_WA_RICH_HTML").as_deref(),
-        Ok("1")
-    );
+    let rich_html_trial = matches!(std::env::var("MATTER_WA_RICH_HTML").as_deref(), Ok("1"));
     require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
     let database = config

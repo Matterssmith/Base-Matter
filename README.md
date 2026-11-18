@@ -20,6 +20,15 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Rustfmt del ensayo RichResponse (alpha)
+
+El primer CI del ensayo `d8c3857` detectó solo diferencias
+de formato en `src/main.rs` y `tests/rich_transport.rs`
+del proveedor antes de compilar los tipos protobuf nuevos.
+Se aplicaron los cambios exactos de Rustfmt sin alterar
+comandos, la limitación self-chat, flags ni sesiones.
+README raíz/proveedor revisados (2/2), CI nuevo pendiente.
+
 ## 2026-11-18 — Extensión segura sobre la vista previa Rich (alpha)
 
 Se conservaron los commits paralelos de `alpha` con vista previa

@@ -1,3 +1,11 @@
+## Normalización Rustfmt del transporte RichResponse (alpha)
+
+La comprobación inicial del commit `d8c3857` se detuvo
+en el formato de la bandera `MATTER_WA_RICH_HTML` y
+tres aserciones del test `rich_transport`. Ajustado
+conforme al diff de CI. Sin modificación funcional,
+sin habilitar envío por defecto. Revalidar el nuevo SHA.
+
 ## Ensayo RichResponse opt-in únicamente en el chat propio (alpha)
 
 Se conserva `rich_preview.rs` y sus comandos offline

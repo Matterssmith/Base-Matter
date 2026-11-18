@@ -6,8 +6,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use whatsapp_matter_rust_provider::{
-    rich_preview::original_menu,
-    rich_transport::experimental_self_chat_rich_message,
+    rich_preview::original_menu, rich_transport::experimental_self_chat_rich_message,
 };
 
 #[test]
@@ -27,16 +26,25 @@ fn rich_transport_wraps_original_owner_menu_without_fake_meta_ai_origin() {
         .unwrap();
     assert!(body.len() <= 16_384);
     let json: serde_json::Value = serde_json::from_slice(body).unwrap();
-    assert!(json["response_id"].as_str().unwrap().starts_with("matterssmith-"));
-    let html = json["embedded_screens"][0]["content"][0]["tabs"][0]["sections"][0]
-        ["view_model"]["primitive"]["payload"]
+    assert!(json["response_id"]
+        .as_str()
+        .unwrap()
+        .starts_with("matterssmith-"));
+    let html = json["embedded_screens"][0]["content"][0]["tabs"][0]["sections"][0]["view_model"]
+        ["primitive"]["payload"]
         .as_str()
         .unwrap();
     assert!(html.contains("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
     assert!(html.contains("꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡"));
     assert!(html.contains("disabled>Estado</button>"));
     let wire = json.to_string();
-    for marker in ["0@bot", "botForwardedMessage", "forwardedAiBotMessageInfo", "isForwarded", "<script"] {
+    for marker in [
+        "0@bot",
+        "botForwardedMessage",
+        "forwardedAiBotMessageInfo",
+        "isForwarded",
+        "<script",
+    ] {
         assert!(!wire.contains(marker), "forbidden marker: {marker}");
     }
 }

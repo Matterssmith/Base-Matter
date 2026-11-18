@@ -1,3 +1,13 @@
+## 2026-11-18 — Corrección de formato RichResponse (alpha)
+
+`d8c3857` inició dos workflows. Linux compiló la base,
+pero la suite independiente del proveedor se detuvo en
+Rustfmt de `src/main.rs` y `tests/rich_transport.rs`
+antes de comprobar el nuevo mensaje. Se normalizó todo
+según el log. Se conservan tests de límites, firma y no
+suplantación, con ensayo apagado por defecto y self-chat.
+READMEs auditados 2/2; nuevo CI por verificar.
+
 ## 2026-11-18 — Integración compatible con trabajo paralelo Rich (alpha)
 
 Al comparar el HEAD se detectaron dos commits concurrentes
