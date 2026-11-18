@@ -255,10 +255,10 @@ impl ControlDispatcher {
             .admission(socket, Some(&key), self.global_policy)?;
         if kind_admission.decision.source == ActivationSource::Group {
             Ok(kind_admission)
-        } else if matches!(kind, "group" | "private" | "channel") {
+        } else if matches!(kind, "group" | "private" | "channel" | "community") {
             // External chat surfaces fail closed by default. The socket-wide
-            // fallback never silently enables every group, stranger DM, or
-            // channel. A verified owner must explicitly permit that kind
+            // fallback never silently enables every group, stranger DM,
+            // channel or community announcement. A verified owner must permit the kind
             // or the exact group. Only the self-chat inherits socket-wide
             // policy automatically.
             let mut denied = direct;
