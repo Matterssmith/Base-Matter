@@ -126,6 +126,30 @@ and other historical commands must be integrated with a *real*
 Vault decision verifier and the platform's verified admin metadata.
 They are **not live actions** in this checkpoint.
 
+## Implementación posterior: lectura pública limitada (alpha, prueba real pendiente)
+
+El controlador puede ahora firmar y responder **únicamente**
+`status/estado`, `menu/menú [categoría]` y `bot` sin
+argumentos desde otros participantes. Esta ruta requiere
+evento de WhatsApp autenticado, remitente numérico
+`@lid/@s.whatsapp.net`, JID grupal real `@g.us` o
+chat privado cuyo JID sea el del remitente, HMAC válido,
+marca temporal reciente y rechazo de replay. El socket
+emparejado conserva su identidad PN/LID verificada.
+
+Solo consultas sin efectos: no se ejecutan handlers del bot,
+extensiones arbitrarias, cambios de activación, rangos ni
+escritura a Vault. La consulta `status` responde cuando
+está apagado y `menu/bot` es silencioso. Las identidades de
+canales y vinculación PN/LID cruzada para terceros siguen
+pendientes. `private` aplica únicamente a privados
+externos; `self` identifica el chat propio del propietario.
+
+La prueba de unidad confirma el contrato de código, **no**
+una prueba real de entrega para usuarios externos. Ejecutar
+el binario en Debian y probar contra una cuenta ajena antes
+de declarar listo este ingreso.
+
 ## Mandatory verification and promotion
 
 Use the owner's **single cloned checkout** and shared Cargo target.
