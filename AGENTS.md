@@ -24,7 +24,6 @@
 - Esta revisión es solo `alpha`. Repetir Rustfmt/Clippy/tests
   en Debian y probar el menú en WhatsApp antes de promover.
 
-# Matterssmith — repository instructions
 
 Read `docs/DEVELOPMENT_STATUS.md`, the root README and architecture before work.
 Inspect actual code, Git status, branch, ignored files and applicable nested instructions.
