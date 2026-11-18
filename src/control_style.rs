@@ -29,128 +29,54 @@ impl ControlTheme {
         })
     }
 
-    /// A distinct Matterssmith default, adapted to an ornamental category
-    /// menu; neither copied bot commands nor third-party links are imported.
-    /// Only implemented commands are shown as active controls.
-    pub fn render(&self, section: &str) -> Result<String> {
-        let category = if section == "menu" {
-            None
-        } else {
-            Some(
-                section
-                    .strip_prefix("menu ")
-                    .ok_or_else(|| anyhow!("Unsupported control menu section"))?,
-            )
-        };
-        let mut output = format!(
-            "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*\\n꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡 ۞₪»̶⟩\\n*{}* · {}\\nBot ID: {}\\n",
-            self.title, self.accent, self.bot_id
+    /// Shared visual shell for every control response.
+    /// Uses actual line breaks, never the literal characters backslash+n.
+    /// Idempotent so the menu can pass through the IPC formatter unchanged.
+    pub fn decorate(&self, body: &str) -> Result<String> {
+        const HEADER: &str = "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*";
+        if body.starts_with(HEADER) {
+            return Ok(body.to_owned());
+        }
+        if body.is_empty()
+            || body.len() > 3500
+            || body.chars().any(|c| c.is_control() && c != '\n')
+        {
+            bail!("Invalid control response");
+        }
+        let result = format!(
+            "{HEADER}\n꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡 ۞₪»̶⟩\n*{}* · {}\n\n╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹\n{}\n╰───────────⟨ 🌀\n\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].",
+            self.title, self.accent, body
         );
-        if category.is_none() {
-            output.push_str("💬 Selecciona una categoría de Base-Matter.\\n\\n╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀\\n");
-            for (symbol, label, slug) in [
-                ("✪", "Principal", "main"),
-                ("⚙︎", "Configuración", "config"),
-                ("♧", "Grupo", "group"),
-                ("◉", "Modo", "mode"),
-                ("ⴵ", "Conexiones", "sockets"),
-                ("♛", "Propietario", "owner"),
-                ("✦", "Estilo", "style"),
-                ("◈", "Vault", "vault"),
-                ("ⓘ", "Información", "info"),
-                ("⚙︎", "Sistema", "system"),
-                ("✧", "Todo lo disponible", "all"),
-            ] {
-                output.push_str(&format!("│·♪·╠[ {symbol} · {label} [=/>menu {slug}]\\n"));
-            }
-            output.push_str("╰───────────⟨ 🌀\\n\\n💠 Instrucciones: =/>menu <categoría>\\n");
-            output.push_str(
-                "El menú se muestra en chats habilitados. =/>status siempre informa el estado.\\n",
-            );
-        } else {
-            let entries: &[(&str, &str)] = match category.unwrap_or_default() {
-                "main" | "principal" => &[
-                    ("=/>status", "Estado efectivo del chat"),
-                    ("=/>status --global", "Política base del socket"),
-                    ("=/>bot", "Uso de la activación"),
-                    ("=/>menu", "Categorías"),
-                ],
-                "config" | "configuracion" | "configuración" => &[
-                    ("=/>set", "Opciones de configuración"),
-                    (
-                        "=/>bot --global on/off",
-                        "Predeterminado del socket [privado]",
-                    ),
-                    ("=/>bot group/private/channel on/off", "Por tipo [privado]"),
-                    ("=/>set role", "Vault-Matter [aún no conectado]"),
-                ],
-                "group" | "grupo" => &[
-                    ("=/>status", "Estado de este grupo"),
-                    ("=/>bot on/off/inherit", "Excepción de este grupo"),
-                    ("=/>group status", "Consulta grupal compatible"),
-                    ("=/>group on/off/inherit", "Política grupal compatible"),
-                    ("=/>start", "REGISTER [lectura]"),
-                    ("=/>add++", "Recuperación [vista previa]"),
-                ],
-                "mode" | "modo" => &[
-                    (
-                        "=/>bot --global on/off/inherit",
-                        "Base del socket [privado]",
-                    ),
-                    ("=/>bot group/private/channel on/off", "Tipos [privado]"),
-                    ("=/>bot on/off/inherit", "Chat actual"),
-                    ("=/>status", "Consultar sin activar el bot"),
-                ],
-                "sockets" | "conexiones" => &[
-                    ("=/>on / =/>off", "Energía del socket [privado]"),
-                    ("=/>status --global", "Estado base del socket"),
-                    ("=/>audit", "Auditoría [privado]"),
-                ],
-                "owner" | "propietario" => &[
-                    ("=/>on / =/>off", "Energía [solo propietario]"),
-                    ("=/>roles", "Catálogo de rangos [privado]"),
-                    ("=/>set role", "Vault requerido"),
-                ],
-                "style" | "estilo" => &[
-                    ("=/>menu", "Diseño Matterssmith predeterminado"),
-                    ("=/>set style", "Editor persistente [pendiente]"),
-                    ("=/>set style --auto", "IA supervisada [pendiente]"),
-                ],
-                "vault" => &[
-                    ("=/>roles", "Estado de los rangos [privado]"),
-                    ("=/>set role", "Mutaciones bloqueadas sin Vault"),
-                ],
-                "info" | "informacion" | "información" => &[
-                    ("=/>status", "Estado del chat"),
-                    ("=/>menu main", "Comandos implementados"),
-                ],
-                "system" | "sistema" => &[
-                    ("=/>status --global", "Política base"),
-                    ("=/>audit", "Auditoría [privado]"),
-                    ("=/>set", "Configuración"),
-                ],
-                "all" | "todo" => &[
-                    ("=/>status", "Cualquier contexto conectado"),
-                    ("=/>bot", "Activación y herencia"),
-                    ("=/>menu <categoría>", "Menú por sección"),
-                    ("=/>set", "Configuración"),
-                    ("=/>roles", "Sin escritura local"),
-                    ("=/>group status/on/off/inherit", "Compatibilidad grupal"),
-                    ("=/>start / =/>add / =/>add++", "Lecturas y vistas previas"),
-                ],
-                _ => bail!("Unknown menu category"),
-            };
-            output.push_str(&format!("\\n╭─💠 {}\\n", category.unwrap_or_default()));
-            for (command, purpose) in entries {
-                output.push_str(&format!("│·♪·╠ {command} — {purpose}\\n"));
-            }
-            output.push_str("╰───────────⟨ 🌀\\n=/>menu · regresar a categorías\\n");
+        if result.len() > 3800 {
+            bail!("Themed control reply exceeds transport limit");
         }
-        output.push_str("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].");
-        if output.len() > 3500 {
-            bail!("Rendered menu exceeds secure transport limit");
+        Ok(result)
+    }
+
+    /// One compact global control menu. The example menu's decoration is
+    /// reused, not its category taxonomy, external links or bot commands.
+    pub fn render(&self, section: &str) -> Result<String> {
+        if section != "menu" {
+            bail!("Global control has no menu categories");
         }
-        Ok(output)
+        let body = concat!(
+            "💬 𝗖𝗼𝗺𝗮𝗻𝗱𝗼𝘀 𝗱𝗲 𝗰𝗼𝗻𝘁𝗿𝗼𝗹\n",
+            "╭─💠 𝗕𝗮𝘀𝗲-𝗠𝗮𝘁𝘁𝗲𝗿\n",
+            "│·♪·╠[ ◉ =/>status — Estado de este chat\n",
+            "│·♪·╠[ ⓘ =/>status --global — Configuración general [propietario]\n",
+            "│·♪·╠[ ✦ =/>on / =/>off — Bot en este chat [propietario]\n",
+            "│·♪·╠[ ◉ =/>bot — Información de activación\n",
+            "│·♪·╠[ ♧ =/>bot inherit — Heredar política [propietario]\n",
+            "│·♪·╠[ ⚙︎ =/>bot --global on/off — Base del socket [propietario]\n",
+            "│·♪·╠[ ✧ =/>bot group/private/channel on/off — Tipos [propietario]\n",
+            "│·♪·╠[ ♛ =/>set — Configuraciones [propietario]\n",
+            "│·♪·╠[ ◈ =/>roles — Vault-Matter [solo consulta]\n",
+            "│·♪·╚[ ⴵ =/>audit — Auditoría [propietario]\n",
+            "╰───────────⟨ 🌀\n",
+            "📌 El menú se muestra si este chat tiene el bot activado.\n",
+            "📌 =/>status responde incluso si está apagado."
+        );
+        self.decorate(body)
     }
 }
 
