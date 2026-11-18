@@ -22,7 +22,7 @@ width="100%"
 
 ## Project status
 
-Base-Matter (repositorio actualmente llamado Matter-Base) es una **biblioteca de desarrollo incompleta**. The current repository
+Base-Matter es una **biblioteca de desarrollo incompleta**. The current repository
 contains a runtime/context foundation, in-memory event and service
 registries, translation lookup, a persistent bot identity registry, an
 optionally persistent shared-user registry with explicitly authorized external
@@ -781,3 +781,12 @@ Las pruebas automatizadas ejecutan el binario real del proveedor con `--recovery
 ## Sintaxis de =/>add (alpha)
 
 Se ha integrado un parser Rust independiente y se ha reservado el comando global `=/>add` con autorización del propietario del socket. Admite `add user` (número, nombre de usuario o remitente del mensaje respondido), `add group [--hide] community <id>`, `add community new --Nombre`, `add community backup <origen> to <destino> [--hide]` y referencias `official --register`. Todos son **planes sintácticos sin mutaciones**: la lectura de reply, el traslado de grupos y la incorporación a comunidades todavía requieren contexto WhatsApp autenticado, permisos administrativos y aceptación de los usuarios. Ver [contrato de comandos](docs/ADD_COMMANDS.md).
+
+## Pruebas Rust con Cargo en Debian
+
+El controlador Rust se prueba con `cargo check --all-targets --locked` y
+`cargo test --all-targets --locked`. Los tests de integración del binario
+`whatsapp-matter-control` deben compilar incluso cuando `cargo check` no expone
+`CARGO_BIN_EXE_whatsapp-matter-control`; al ejecutar las pruebas, la ruta del
+binario se obtiene del entorno de integración de Cargo. Estas pruebas son
+offline y no acreditan una conexión real de WhatsApp.

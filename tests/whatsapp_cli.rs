@@ -6,6 +6,13 @@
  */
 use std::{fs, process::Command};
 
+fn controller_binary() -> std::path::PathBuf {
+    option_env!("CARGO_BIN_EXE_whatsapp-matter-control")
+        .map(Into::into)
+        .or_else(|| std::env::var_os("CARGO_BIN_EXE_whatsapp-matter-control").map(Into::into))
+        .expect("Cargo did not supply the WhatsApp control binary for integration tests")
+}
+
 #[test]
 fn preflight_verifies_config_without_creating_databases_or_locks() {
     let mut nonce = [0_u8; 16];
@@ -39,7 +46,7 @@ fn preflight_verifies_config_without_creating_databases_or_locks() {
         ),
         ("MATTER_WA_REPLAY_DB", replay.to_string_lossy().into_owned()),
     ];
-    let success = Command::new(env!("CARGO_BIN_EXE_whatsapp-matter-control"))
+    let success = Command::new(controller_binary())
         .arg("--check")
         .envs(vars.iter().map(|(k, v)| (k, v)))
         .output()
@@ -51,7 +58,7 @@ fn preflight_verifies_config_without_creating_databases_or_locks() {
     );
     assert!(!activation.exists());
     assert!(!replay.exists());
-    let denied = Command::new(env!("CARGO_BIN_EXE_whatsapp-matter-control"))
+    let denied = Command::new(controller_binary())
         .arg("--check")
         .envs(vars.iter().map(|(k, v)| (k, v)))
         .env("MATTER_WA_BRIDGE_ADDR", "0.0.0.0:39819")

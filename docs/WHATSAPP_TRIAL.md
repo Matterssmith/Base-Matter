@@ -14,7 +14,7 @@ No compartas en GitHub ni en este chat los secretos ni el teléfono.
 Comprueba antes tus cambios locales. Nunca sobrescribas una sesión activa:
 
 ```bash
-cd /home/Sakura/Matter-Base
+cd /home/Sakura/Base-Matter
 git status --short --branch
 git fetch origin
 git switch beta
@@ -50,7 +50,7 @@ las comprobaciones para hacerlo funcionar.
 ## Terminal A: receptor Base-Matter
 
 ```bash
-cd /home/Sakura/Matter-Base
+cd /home/Sakura/Base-Matter
 source "$HOME/.local/share/base-matter/whatsapp-test/runtime.env"
 cargo run --locked --bin whatsapp-matter-control -- --check
 cargo run --locked --bin whatsapp-matter-control -- --init
@@ -65,7 +65,7 @@ el puerto 127.0.0.1:39819 en esta terminal.
 ## Terminal B: proveedor Rust whatsapp-rust
 
 ```bash
-cd /home/Sakura/Matter-Base
+cd /home/Sakura/Base-Matter
 source "$HOME/.local/share/base-matter/whatsapp-test/runtime.env"
 cargo run --manifest-path providers/whatsapp-rust/Cargo.toml -- --check
 cargo run --manifest-path providers/whatsapp-rust/Cargo.toml
@@ -194,3 +194,13 @@ cargo run --manifest-path providers/whatsapp-rust/Cargo.toml -- --recovery-verif
 ```
 
 Antes de usarlo, cargar `runtime.env` como en la Terminal B. El argumento debe ser solo el nombre que devuelva el comando, sin directorios. No compartir la clave ni publicar el respaldo cifrado; guardarlos separadamente en medios seguros. Si tu servidor es temporal, conserva ambas copias fuera del servidor antes de perder acceso.
+
+## Diagnóstico de sesión inexistente
+
+Si el directorio `$HOME/.local/share/base-matter/whatsapp-test/` no existe,
+no presupongas que la sesión se perdió ni ejecutes un reinicio destructivo.
+Busca primero `runtime.env` y `session.db` en las rutas locales que usaste
+antes, incluidos otros usuarios y la ubicación previa del repositorio.
+No regeneres llaves, no borres locks, no sobrescribas SQLite y no comuniques
+secretos ni códigos de vinculación. El cambio de carpeta del repositorio no
+mueve automáticamente los archivos de sesión de otra ruta.
