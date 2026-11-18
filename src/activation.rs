@@ -497,6 +497,45 @@ impl SocketActivationStore {
         })
     }
 
+    /// Read raw per-socket bot defaults regardless of operational power.
+    /// Only the verified socket owner may inspect these settings. The
+    /// synthetic kind keys are internal configuration scopes, not group
+    /// JIDs and never confer role permissions.
+    pub fn inspect_bot_defaults(
+        &self,
+        socket: &str,
+        actor: &str,
+    ) -> Result<(bool, Option<bool>, Option<bool>, Option<bool>, Option<bool>)> {
+        validate(socket)?;
+        validate(actor)?;
+        let c = self.connection
+            .lock()
+            .map_err(|_| anyhow!("Activation lock poisoned"))?;
+        require_owner(&c, socket, actor)?;
+        let (power, socket_policy): (i64, Option<i64>) = c.query_row(
+            "SELECT powered, policy FROM activation_sockets WHERE socket_id=?1",
+            [socket],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+        let mut kinds = [None; 3];
+        for (index, mode) in ["group", "private", "channel"].iter().enumerate() {
+            let key = format!("kind:{mode}");
+            let stored: Option<i64> = c.query_row(
+                "SELECT policy FROM activation_groups WHERE socket_id=?1 AND group_id=?2",
+                params![socket, key],
+                |row| row.get(0),
+            ).optional()?;
+            kinds[index] = stored.map(decode_policy).transpose()?;
+        }
+        Ok((
+            decode_policy(power)?,
+            socket_policy.map(decode_policy).transpose()?,
+            kinds[0],
+            kinds[1],
+            kinds[2],
+        ))
+    }
+
     pub fn audit_history(&self, socket: &str, actor: &str) -> Result<Vec<ActivationAuditRecord>> {
         validate(socket)?;
         validate(actor)?;
