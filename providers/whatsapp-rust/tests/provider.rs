@@ -288,6 +288,7 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
         "=/>bot on",
         "=/>bot off",
         "=/>estado",
+        "=/>credits",
     ] {
         assert!(c
             .signed_verified_control(&event(allowed), Some(OWNER), Some(VERIFIED_LID))
@@ -307,7 +308,14 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
     incoming.is_group = true;
     incoming.chat_jid = "120363111222333@g.us";
     incoming.sender_jid = public_id;
-    for text in ["=/>status", "=/>estado", "=/>menu", "=/>menú", "=/>bot"] {
+    for text in [
+        "=/>status",
+        "=/>estado",
+        "=/>menu",
+        "=/>menú",
+        "=/>bot",
+        "=/>credits",
+    ] {
         incoming.text = text;
         let signed = config
             .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
