@@ -10,6 +10,17 @@ en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
 ## Ejecución en una sola terminal (alpha)
 
+Para ahorrar espacio en Debian, utilizar **un solo clon Git** y exportar
+`CARGO_TARGET_DIR` como ruta absoluta compartida antes de ejecutar
+`cargo run`. El lanzador de `alpha` respeta la ruta tanto para
+`whatsapp-matter-control` como para este proveedor Rust independiente.
+Los artefactos compartidos no contienen las sesiones SQLite. Las sesiones,
+claves y configuración son locales y particulares de cada rama. Cambiar de
+rama requiere detener antes cualquier proceso WhatsApp activo. `stable` y
+`beta` conservan sus propias verificaciones; este lanzador no ha sido
+promovido y aún requiere prueba en un dispositivo real.
+
+
 La rama `alpha` incorpora `cargo run` desde la raíz de Base-Matter.
 El ejecutable `base-matter` inicia el controlador y este proveedor
 Rust como procesos independientes bajo una sola sesión de terminal,
