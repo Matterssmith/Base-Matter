@@ -1,3 +1,42 @@
+## 2026-11-18 — Nuevo modelo de activación del bot y menú contextual (alpha; compilación pendiente)
+
+- Evidencia real de WhatsApp proporcionada por el operador:
+  el dueño hizo `=/>help` y `=/>group on/status` en un grupo.
+  La respuesta `PoweredOff` es consistente con el `=/>off`
+  privado anterior, sin ser una prueba de fallo de grupo.
+- La nueva prioridad solicitada sustituye `help/h` por menú
+  categorizado, introduce `status` local/global, `bot`
+  por chat/tipo/socket, herencia, `set` de ayuda, alias
+  españoles y diagnóstico `--debug` limitado al propietario.
+- El controlador Rust implementa políticas por clase mediante
+  claves internas persistentes `kind:group/private/channel` en
+  el almacén de activación existente; el grupo exacto tiene
+  preferencia. `inspect_bot_defaults` lee los valores sin
+  ocultarlos por el encendido operativo. La propiedad del
+  socket se mantiene al escribir o inspeccionar.
+- La capa WhatsApp ahora admite `status/menu/bot` en el
+  propio chat y grupos del dueño, y retira `help/h`. La
+  opción `with_silent_bot_commands` impide respuestas de
+  funciones normales cuando el bot está apagado, sin romper
+  extensiones de otros anfitriones del núcleo.
+- El menú usa un tema Matterssmith separado de los comandos
+  y los enlaces externos del ejemplo. Los límites de IPC
+  se ajustaron de forma acotada; el proveedor reconoce un
+  acuse silencioso auténtico. Pruebas nuevas en
+  `tests/bot_policy.rs` y prueba de estilo/alias.
+- Pendientes reales: ejecutar Cargo fmt/check/test en Debian,
+  corregir cualquier regresión, pruebas en grupo/chat propio,
+  identidad autorizada de usuarios externos y canales,
+  tema persistente editable, importación visual de `#menu`
+  verificado, autorización `self/selfmod/mod` por Vault,
+  decisiones IA voluntarias y demás comandos históricos.
+  El proyecto Bot-Matter sigue bloqueado. Sin promoción
+  a beta/stable.
+- README raíz, README del proveedor, instrucciones y
+  contrato `docs/BOT_POLICY_V2.md` revisados/actualizados.
+  Compilación y funcionamiento live de este nuevo commit
+  **NO están verificados todavía**.
+
 ## 2026-11-18 — Corrección adicional de pruebas del proveedor WhatsApp Rust (alpha; Debian pendiente)
 
 - El operador ejecutó la suite general de Base-Matter: las pruebas mostradas,
