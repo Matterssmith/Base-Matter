@@ -577,23 +577,16 @@ impl ControlDispatcher {
                 }
                 ["status" | "estado", "--global"]
                 | ["status" | "estado", "--global", "--debug"] => {
-                    let (
-                        socket_powered,
-                        default_policy,
-                        group_policy,
-                        private_policy,
-                        channel_policy,
-                        community_policy,
-                    ) = self
+                    let defaults = self
                         .activation
                         .inspect_bot_defaults(receiving_socket, actor)?;
                     return Ok(DispatchResult::BotGlobalStatus {
-                        socket_powered,
-                        default_policy,
-                        group_policy,
-                        private_policy,
-                        channel_policy,
-                        community_policy,
+                        socket_powered: defaults.socket_powered,
+                        default_policy: defaults.default_policy,
+                        group_policy: defaults.group_policy,
+                        private_policy: defaults.private_policy,
+                        channel_policy: defaults.channel_policy,
+                        community_policy: defaults.community_policy,
                     });
                 }
                 ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
