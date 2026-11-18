@@ -346,9 +346,13 @@ impl ControlDispatcher {
     ) -> Result<DispatchResult> {
         // Debug is an opt-in *rendering* of an already authorized effect.
         // Strip it before command parsing; never grant permissions via flags.
-        let (statement, debug) = match message.strip_suffix(" --debug") {
-            Some(statement) => (statement, true),
-            None => (message, false),
+        let (statement, debug) = if message.starts_with("=/>") {
+            match message.strip_suffix(" --debug") {
+                Some(statement) => (statement, true),
+                None => (message, false),
+            }
+        } else {
+            (message, false)
         };
         let outcome = self.dispatch_inner(
             receiving_socket, actor, source, group, statement,
