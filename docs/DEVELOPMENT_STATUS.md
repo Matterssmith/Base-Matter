@@ -1,3 +1,34 @@
+## 2026-11-18 — Verificación Debian y corrección de expectativa IPC (alpha, segunda ejecución pendiente)
+
+1. **Evidencia real aportada por el operador:** `git pull`
+   avanzó desde `21bbfcf` hasta `46ffe7d`; `cargo check
+   --all-targets --locked` terminó correctamente. La suite
+   independiente de WhatsApp Rust terminó con **20 pruebas
+   aprobadas** (1 + 15 + 3 + 1). El servidor tiene
+   aproximadamente **5.1 GB** de espacio disponible.
+2. **Regresión localizada:** `cargo test --all-targets
+   --locked` se detuvo en
+   `control_ipc::disabled_chat_menu_is_silent_but_status_and_reactivation_work`.
+   En `tests/control_ipc.rs:170` el test esperaba `Ignored`
+   tras `=/>bot private off`, pero el resultado fue
+   `Applied`. El controlador actuó conforme al contrato
+   vigente: privado externo y chat propio tienen ámbitos
+   distintos (`kind:private` frente a `kind:self`).
+3. **Corrección publicada en alpha:** renombrada la prueba
+   y actualizado el caso para comprobar que `private off`
+   no silencie el menú propio; añadido `bot off` en el
+   chat propio, que **sí** debe silenciarlo, seguido de
+   `status` y `bot inherit` para comprobar recuperación.
+   No se alteró la implementación IPC ni se ampliaron
+   permisos; no se tocaron Vault-Matter, beta o stable.
+4. **Pendiente real:** ejecutar en Debian el caso focalizado,
+   `cargo test --all-targets --locked` completo y
+   `cargo fmt --all -- --check`. Todas las pruebas
+   posteriores a `control_ipc` siguen sin verificarse
+   en esta última ejecución. Mantener intacto el archivo
+   local `providers/whatsapp-rust/Cargo.lock` hasta
+   decidir su seguimiento reproducible.
+
 ## 2026-11-18 — Revisión final de contratos IPC; esperar pruebas reales de Debian
 
 - Añadida `tests/control_ipc.rs::disabled_chat_menu_is_silent_but_status_and_reactivation_work`:
