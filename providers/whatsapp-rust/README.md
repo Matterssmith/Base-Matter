@@ -8,6 +8,26 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Lectura pública autenticada sin rangos ni control de socket (alpha; pruebas pendientes)
+
+En un grupo, el proveedor puede firmar `status/menu/bot` procedentes
+de otros participantes usando el JID PN/LID real del remitente. En
+un chat privado externo exige que el JID del chat coincida exactamente
+con el del remitente. La sesión conectada debe coincidir además
+con la identidad emparejada del socket; el HMAC vincula al actor,
+chat, comando, mensaje y tiempo. En la capa Base una ruta especial
+devuelve solo estado o menú, sin invocar extensiones generales.
+
+No se acepta `=/>status --global`, `--debug`, `=/>on`,
+`=/>bot on`, cambios de configuración ni `=/>set role`
+desde terceros. Cuando está deshabilitado el bot, el estado
+sigue respondiendo y el menú no responde. No asumir
+funcionamiento de canales o privado PN/LID cruzado aún:
+esas identidades necesitan pruebas verificadas del proveedor.
+El chat propio usa política `self`, no el predeterminado
+`private` de chats externos. No se modificaron sesiones,
+llaves, ramas beta/stable ni repositorios de roles.
+
 ## Contratos recientes de chat, estado y silencio (alpha; build Debian pendiente)
 
 La sesión real ya respondió comandos de propietario dentro de un
