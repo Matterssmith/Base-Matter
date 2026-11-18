@@ -341,6 +341,67 @@ impl SocketActivationStore {
         self.mutate(socket, actor, "group_policy", Some(group), value)
     }
 
+    /// Live WhatsApp bot control: apply one policy and, when enabling it,
+    /// wake the existing operational power gate in the SAME transaction.
+    /// Turning a chat off never powers down other chats. This method is
+    /// owner-scoped and audited; a failed mutation cannot leave half a change.
+    pub fn set_live_bot_policy(
+        &self,
+        socket: &str,
+        actor: &str,
+        group: Option<&str>,
+        policy: Option<bool>,
+    ) -> Result<()> {
+        validate(socket)?;
+        validate(actor)?;
+        if let Some(group) = group {
+            validate(group)?;
+        }
+        let mut connection = self
+            .connection
+            .lock()
+            .map_err(|_| anyhow!("Activation lock poisoned"))?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        require_owner(&tx, socket, actor)?;
+        if policy == Some(true) {
+            let powered: i64 = tx.query_row(
+                "SELECT powered FROM activation_sockets WHERE socket_id=?1",
+                [socket],
+                |row| row.get(0),
+            )?;
+            if !decode_policy(powered)? {
+                tx.execute(
+                    "UPDATE activation_sockets SET powered=1 WHERE socket_id=?1",
+                    [socket],
+                )?;
+                audit(&tx, socket, actor, "power", None, Some(true), None)?;
+            }
+        }
+        if let Some(group) = group {
+            if let Some(value) = policy {
+                tx.execute(
+                    "INSERT INTO activation_groups VALUES(?1,?2,?3)
+                     ON CONFLICT(socket_id,group_id) DO UPDATE SET policy=excluded.policy",
+                    params![socket, group, value],
+                )?;
+            } else {
+                tx.execute(
+                    "DELETE FROM activation_groups WHERE socket_id=?1 AND group_id=?2",
+                    params![socket, group],
+                )?;
+            }
+            audit(&tx, socket, actor, "group_policy", Some(group), policy, None)?;
+        } else {
+            tx.execute(
+                "UPDATE activation_sockets SET policy=?2 WHERE socket_id=?1",
+                params![socket, policy],
+            )?;
+            audit(&tx, socket, actor, "socket_policy", None, policy, None)?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
     fn mutate(
         &self,
         socket: &str,
