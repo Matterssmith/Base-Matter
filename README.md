@@ -20,6 +20,27 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Ajuste de prueba de tema visual (alpha; nueva validación pendiente)
+
+La ejecución Debian del operador en el commit `19b5fc6` aprobó
+`cargo check --all-targets --locked` y las pruebas mostradas
+hasta `tests/control_style.rs`. El caso
+`community_styles_are_independent_and_untrusted_fields_fail_closed`
+falló porque verificaba la presencia textual de `community-one`,
+un identificador interno de bot ya excluido del menú.
+No es un fallo de la plantilla visual ni motivo para mostrar
+identificadores ocultos dentro del diseño.
+
+Se actualizó **solo la prueba** para exigir los elementos
+presentados al usuario (`*Register* · ✦` frente a
+`*Base* · *`) y verificar que la misma plantilla de grupo
+también se aplica a `status`, sin contaminación entre ámbitos.
+La suite completa posterior a `control_style` y el proveedor
+todavía **no se verificaron en esa ejecución**. Las modificaciones
+de formato locales del operador deben conservarse antes de
+actualizar Git: no borrar ni sobrescribir archivos de sesión,
+y mantener `providers/whatsapp-rust/Cargo.lock` sin seguimiento.
+
 ### Seguridad del renderizador y avisos
 
 La plantilla no puede omitir los créditos o el marcador del cuerpo.
