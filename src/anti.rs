@@ -154,6 +154,14 @@ pub fn canonical_rule(rule: &str) -> Result<&'static str> {
         .ok_or_else(|| anyhow!("Protección desconocida"))
 }
 
+fn display_name(name: &str) -> &str {
+    match name {
+        "antiviewonce" => "oneview",
+        "antivideo" => "movie",
+        other => other.strip_prefix("anti").unwrap_or(other),
+    }
+}
+
 impl AntiStore {
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
@@ -337,7 +345,7 @@ impl AntiStore {
         };
         Ok(format!(
             "{}: {} [{}]",
-            rule.strip_prefix("anti").unwrap_or(rule),
+            display_name(rule),
             if setting.enabled { "on" } else { "off" },
             setting.action.as_str(),
         ))
@@ -372,7 +380,7 @@ impl AntiStore {
                 let result = self.set(socket, group, name, Some(word == "on"), None)?;
                 Ok(format!(
                     "{}: {} [{}]; configuración guardada, sin moderación automática.",
-                    canonical_rule(name)?.strip_prefix("anti").unwrap_or(name),
+                    display_name(canonical_rule(name)?),
                     if result.enabled { "on" } else { "off" },
                     result.action.as_str(),
                 ))
@@ -381,7 +389,7 @@ impl AntiStore {
                 let result = self.inherit(socket, group.expect("checked scope"), name)?;
                 Ok(format!(
                     "{}: heredado [{}]; configuración guardada.",
-                    canonical_rule(name)?.strip_prefix("anti").unwrap_or(name),
+                    display_name(canonical_rule(name)?),
                     result.action.as_str(),
                 ))
             }
@@ -393,7 +401,7 @@ impl AntiStore {
         let selected = self.set(socket, group, name, None, Some(AntiAction::parse(action)?))?;
         Ok(format!(
             "{}: acción {} guardada; moderación automática pendiente.",
-            canonical_rule(name)?.strip_prefix("anti").unwrap_or(name),
+            display_name(canonical_rule(name)?),
             selected.action.as_str(),
         ))
     }
