@@ -108,6 +108,11 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
         bridge.ingest(&pending).unwrap(),
         WhatsAppBridgeOutcome::Duplicate
     );
+    assert!(matches!(
+        bridge.ingest(&frame("pub-global", "=/>status --global", READER, GROUP, false)).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
+            if command == "status" && output.contains("privada del propietario")
+    ));
     assert_eq!(
         bridge
             .ingest(&frame("pub-2", "=/>menu", READER, GROUP, false))
@@ -146,12 +151,12 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
     assert!(matches!(
         bridge.ingest(&frame("pub-3", "=/>menu", READER, GROUP, false)).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
-            if command == "menu" && output.contains("*Prefijo global:* `=/>`")
+            if command == "menu" && output.contains("│·♪·╠[ ◉ =/>status")
     ));
     assert!(matches!(
         bridge.ingest(&frame("pub-4", "=/>menu", READER, GROUP, false)).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
-            if command == "menu" && output.contains("bot [ámbito] on|off|inherit") && !output.contains("Lournyx Matterssmith")
+            if command == "menu" && output.contains("=/>bot --global on/off") && output.contains("Créditos: Hecho por Lournyx Matterssmith")
     ));
     assert!(matches!(
         bridge
@@ -231,7 +236,6 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
         "=/>on",
         "=/>off",
         "=/>group on",
-        "=/>status --global",
         "=/>bot --global on",
         "=/>bot private off",
         "=/>set role 5215512345678 admin",
@@ -245,6 +249,11 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
         let test = frame(&format!("denied-{index}"), text, READER, READER, false);
         assert!(bridge.ingest(&test).is_err(), "must reject {text}");
     }
+    assert!(matches!(
+        bridge.ingest(&frame("pub-private-global", "=/>status --global", READER, READER, false)).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
+            if command == "status" && output.contains("privada del propietario")
+    ));
     let wrong_chat = frame("wrong-1", "=/>menu", READER, OWNER_JID, false);
     assert!(bridge.ingest(&wrong_chat).is_err());
     let mut forged = frame("wrong-2", "=/>menu", READER, GROUP, false);

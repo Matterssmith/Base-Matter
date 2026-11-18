@@ -317,6 +317,7 @@ impl Config {
         let allowed = matches!(
             parts.as_slice(),
             ["=/>status" | "=/>estado"]
+                | ["=/>status" | "=/>estado", "--global"]
                 | ["=/>menu" | "=/>menú"]
                 | ["=/>bot"]
                 | ["=/>credits" | "=/>creditos" | "=/>créditos"]

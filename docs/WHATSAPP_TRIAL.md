@@ -1,3 +1,20 @@
+## Corrección vigente — menú original y estado global (alpha, 2026-11-18)
+
+Desde el chat propio y desde un grupo en el que eres el remitente autenticado:
+`=/>status` consulta solamente el estado efectivo de ese chat;
+`=/>status --global` consulta la configuración del socket, incluso desde
+grupo. Otros miembros del grupo y remitentes privados externos pueden enviar
+`=/>status` cuando el bot está apagado, sin permisos administrativos.
+Si solicitan `=/>status --global`, reciben una explicación de acceso
+reservado, **no** las políticas del socket.
+
+`=/>menu` vuelve a usar el diseño original completo con 12 comandos,
+marco ornamental y crédito Matterssmith una sola vez. Esta documentación
+prevalece sobre menciones históricas del menú abreviado, ausencia de créditos
+o permisos de estado restringidos. Las acciones de cambiar políticas siguen
+reservadas al dueño. El menú externo sigue silencioso con el bot apagado.
+No se activa ninguna regla anti automáticamente.
+
 ## Actualización alpha — menú corto y créditos
 
 La rama `alpha` muestra ahora un único marco corto de

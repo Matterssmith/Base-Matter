@@ -1,3 +1,16 @@
+## 2026-11-18 — Menú original y lectura contextual / global (alpha)
+
+El proveedor `whatsapp-rust` conserva el mensaje original de Matterssmith en
+`=/>menu`, incluido el crédito final, sin una segunda caja de control.
+`=/>status` de un participante externo se firma para la lectura del chat
+efectivo, aun con el bot apagado. `=/>status --global` del propietario funciona
+desde el chat propio y grupos autenticados, con las políticas reales.
+Cuando un tercero pide `--global`, se firma únicamente una consulta inocua
+y el controlador responde con una negativa informativa; no entrega datos de
+socket ni admite mutaciones. Los cambios de estado siguen siendo owner-only.
+La vinculación sigue por pairing code, con procesos Rust independientes y sin
+modificar bases de sesión. Son correcciones sujetas a CI y prueba WhatsApp real.
+
 # WhatsApp-Matter: proveedor Rust independiente
 
 El proveedor original es whatsapp-rust, ejecutado en un **proceso Rust

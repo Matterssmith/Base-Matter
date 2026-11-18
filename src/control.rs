@@ -394,6 +394,10 @@ impl ControlDispatcher {
                     })
                 }
             }
+            ["=/>status" | "=/>estado", "--global"] => Ok(DispatchResult::Extension {
+                command: "status".to_owned(),
+                output: "La configuración global del socket es privada del propietario. Usa =/>status para consultar el estado de este chat.".to_owned(),
+            }),
             ["=/>menu" | "=/>menú"] => {
                 if !decision.decision.enabled {
                     return Ok(DispatchResult::Inactive);

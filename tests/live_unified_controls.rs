@@ -156,6 +156,13 @@ fn group_switch_does_not_disable_another_group() {
         command(&control, b, "=/>status").unwrap(),
         DispatchResult::GroupStatus { enabled: true, .. },
     ));
+    assert!(matches!(
+        command(&control, a, "=/>status --global").unwrap(),
+        DispatchResult::BotGlobalStatus {
+            socket_powered: true,
+            ..
+        }
+    ));
     assert!(command(&control, a, "=/>bot --global on").is_err());
     assert!(control
         .dispatch("socket-alpha", "outsider", "owner-self", None, "=/>bot on")

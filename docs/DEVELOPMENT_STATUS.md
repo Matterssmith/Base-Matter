@@ -1,3 +1,20 @@
+## 2026-11-18 — Original Matterssmith / status de lectura (alpha)
+
+- Restaurada `templates/matterssmith-menu.txt` con la estética exacta
+  suministrada: ornamentos, Matterssmith, Base-Matter, 12 renglones y crédito
+  final. El renderer no duplica el marco del menú, ni añade créditos
+  automáticos a `status` y otras respuestas.
+- `status` conserva la ruta HMAC pública de solo lectura para cualquier
+  remitente verificado en grupos/privados, aun con bot apagado.
+- `status --global` usa la rama de propiedad del socket para quien es
+  dueño autenticado tanto en grupo como en chat propio. Los externos reciben
+  denegación informativa y no descubren estado interno.
+- Se amplían regresiones de Rust (tema, puente, ingreso público y despachador).
+  CI del commit y pruebas manuales WhatsApp aún por comprobar; no ascender
+  a beta/stable ni proclamar producción.
+- Auditado README 2/2: README raíz y proveedor; ambos actualizados.
+  Sesiones y credenciales fuera de Git; Bot-Matter bloqueado.
+
 ## 2026-11-18 — Clippy estricta: tres aserciones anti (alpha)
 
 - Tras `7de9a0d`, GitHub Actions Linux aprobó `cargo fmt` y alcanzó

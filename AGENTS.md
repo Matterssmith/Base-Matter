@@ -1,5 +1,24 @@
 # Matterssmith — repository instructions
 
+## Invariante de usuario actualizada — 2026-11-18: restaurar diseño original y alcance de status
+
+Esta instrucción expresa del propietario prevalece sobre la sección antigua de
+menú abreviado y prohibición de créditos en el **menú**. El menú completo de
+`templates/matterssmith-menu.txt` conserva exactamente el encabezado ornamental,
+`Matterssmith`, `Base-Matter`, las 12 líneas de comandos, el cierre con 🌀 y
+`Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].` una sola vez.
+No repetir ese pie en respuestas ordinarias de `status`, ajustes ni errores.
+Conservar las decoraciones por chat para las otras respuestas.
+
+`=/>status` es consulta de estado del chat actual, permitida a cualquier
+usuario con identidad WhatsApp verificada, también con el bot apagado, en
+grupos y privados externos. No concede poderes, roles ni acceso a otro socket.
+`=/>status --global` expone políticas de socket solamente al propietario
+autenticado, incluso si lo envía desde un grupo; las lecturas externas reciben
+una explicación sin revelar el estado global. Mutaciones siempre reservadas al
+dueño. Es obligatorio probar ambas rutas firmadas y el renderizador real,
+manteniendo Bot-Matter bloqueado y antis apagados por defecto.
+
 ## Invariante vigente de interfaz — 2026-11-18
 
 - Los créditos `Hecho por Lournyx Matterssmith [Lou-Nyx].`

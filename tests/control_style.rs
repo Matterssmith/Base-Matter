@@ -7,20 +7,20 @@
 use matter_base::control_style::{ControlTheme, ControlThemes};
 
 #[test]
-fn global_menu_uses_one_prefix_grouped_arguments_and_no_footer_credits() {
+fn global_menu_restores_owner_original_frame_and_single_credit_footer() {
     let style = ControlTheme::new("Matter", "base-matter", "✦").unwrap();
     let menu = style.render("menu").unwrap();
 
-    assert!(menu.starts_with("╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹"));
-    assert!(menu.contains("*Prefijo global:* `=/>`"));
-    assert_eq!(menu.matches("=/>").count(), 1);
-    assert!(menu.contains("status [--global]"));
-    assert!(menu.contains("bot [ámbito] on|off|inherit"));
-    assert!(menu.contains("--global · group · private · channel · community"));
-    assert!(menu.contains("credits — Créditos"));
-    assert!(!menu.contains("Lournyx Matterssmith"));
-    assert!(!menu.contains("Créditos: Hecho por"));
-    assert!(!menu.contains("*Base-Matter*"));
+    assert!(menu.starts_with("*꒦꒷✰꒷꒦"));
+    assert!(menu.contains("꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡"));
+    assert!(menu.contains("*Base-Matter* · ✦"));
+    assert!(menu.contains("│·♪·╠[ ◉ =/>status — Estado de este chat"));
+    assert!(menu.contains("│·♪·╠[ ⓘ =/>status --global — Configuración del socket [propietario]"));
+    assert!(menu.contains("│·♪·╚[ ⴵ =/>audit — Auditoría [propietario]"));
+    assert!(menu.contains("💠 =/>status funciona incluso cuando el bot está apagado."));
+    assert!(menu.ends_with("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
+    assert_eq!(menu.matches("Créditos: Hecho por").count(), 1);
+    assert_eq!(menu.matches("╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹").count(), 1);
     assert!(menu.contains('\n'));
     assert!(!menu.contains("\\n"));
     assert!(!menu.contains("Categorías"));
@@ -29,8 +29,7 @@ fn global_menu_uses_one_prefix_grouped_arguments_and_no_footer_credits() {
     assert!(style.render("help").is_err());
     assert!(style.render("h").is_err());
 
-    // Per-chat themes may opt into title/accent fields, but never an
-    // automatic credit footer. The caller's credit command is separate.
+    // Custom frames still cannot add automatic credit footers to statuses.
     let custom = "╭─*{{TITLE}}* · {{ACCENT}}\n{{BODY}}\n╰─☆\n";
     let changed = ControlTheme::new("Matter", "base-matter", "✦")
         .unwrap()
@@ -77,10 +76,10 @@ fn custom_community_themes_remain_isolated_and_fail_closed() {
     let first = registry.render(Some("community-1@g.us"), "menu").unwrap();
     let second = registry.render(Some("community-2@g.us"), "menu").unwrap();
     assert!(first.contains("*Register* · ✦"));
-    assert!(second.starts_with("╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹"));
+    assert!(second.starts_with("*꒦꒷✰꒷꒦"));
     assert_ne!(first, second);
     assert!(!first.contains("community-one"));
-    assert!(!second.contains("Créditos:"));
+    assert!(second.contains("Créditos: Hecho por Lournyx Matterssmith"));
     let status = registry
         .decorate(Some("community-1@g.us"), "BOT ACTIVADO")
         .unwrap();

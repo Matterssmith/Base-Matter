@@ -49,6 +49,18 @@ impl ControlTheme {
         {
             bail!("Invalid control response");
         }
+        // The original Matterssmith menu is a complete owner-approved
+        // WhatsApp message, including its banner and one credit footer.
+        // Keep it idempotent; other replies still use their scoped frame.
+        let default_frame =
+            include_str!("../templates/matterssmith-control.txt").replace("\r\n", "\n");
+        let original_menu =
+            include_str!("../templates/matterssmith-menu.txt").replace("\r\n", "\n");
+        if self.template == default_frame
+            && body.trim_end_matches('\n') == original_menu.trim_end_matches('\n')
+        {
+            return Ok(original_menu.trim_end_matches('\n').to_owned());
+        }
         // Repeated rendering of a preformatted menu/preview must be
         // idempotent even for an authorized, non-default theme.
         let (prefix, suffix) = self
@@ -80,7 +92,7 @@ impl ControlTheme {
         Ok(result)
     }
 
-    /// Global menu has no categories. Its content is also a separate file.
+    /// The original full menu has no categories and is stored in a separate file.
     pub fn render(&self, section: &str) -> Result<String> {
         if section != "menu" {
             bail!("Global control has no menu categories");
@@ -91,8 +103,8 @@ impl ControlTheme {
     }
 }
 
-/// Validate the user-visible frame. Credits live only in source files
-/// and the explicit =/>credits command, never in automatic footers.
+/// Validate the common response frame. The standalone owner-approved menu
+/// can carry a credit footer; generic status/control frames cannot.
 /// TITLE and ACCENT are optional customization fields, not mandatory brands.
 fn validate_template(source: &str) -> Result<()> {
     if source.is_empty()

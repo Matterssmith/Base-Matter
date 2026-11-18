@@ -191,6 +191,16 @@ fn signed_owner_group_bot_controls_are_scoped_and_replayed_once() {
             .unwrap()
             .enabled
     );
+    let mut socket_status = frame("group-global-status", "=/>status --global");
+    socket_status.chat_jid = group.chat_jid.clone();
+    sign(&mut socket_status, &SECRET);
+    assert!(matches!(
+        bridge.ingest(&socket_status).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotGlobalStatus {
+            socket_powered: true,
+            ..
+        })
+    ));
     let mut global_on = frame("group-3", "=/>bot --global on");
     global_on.chat_jid = group.chat_jid.clone();
     sign(&mut global_on, &SECRET);

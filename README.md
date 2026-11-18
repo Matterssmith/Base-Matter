@@ -20,6 +20,23 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Restitución del menú original y corrección de `status` (alpha)
+
+- Se restituye el mensaje visual aportado por la propietaria: encabezado
+  Matterssmith, Base-Matter, 12 comandos independientes, símbolos, marco y
+  crédito `Hecho por Lournyx Matterssmith [Lou-Nyx].` al pie del **menú**
+  solamente. El renderer evita duplicar marcos o créditos en el mensaje final.
+- `=/>status` permanece disponible para cualquier remitente verificado,
+  en grupos y privados externos, con el bot apagado. No enciende chats.
+- `=/>status --global` responde con la configuración completa del socket
+  solo cuando el origen es el propietario HMAC autenticado; funciona desde
+  chat propio o grupo verificado. A terceros responde únicamente que la
+  información global es privada. Nunca entrega llaves, identidades ni permisos.
+- Regresiones sobre menús, autorización, recepción pública y estado global
+  añadidas. Requiere CI del nuevo SHA y prueba real de recepción WhatsApp
+  antes de considerar la fase lista para promoción. `beta` y `stable` no se
+  modifican. README raíz y README del proveedor revisados (2/2).
+
 ## 2026-11-18 — Corrección de tres advertencias Clippy en pruebas anti (alpha)
 
 - En `7de9a0d`, el CI Linux aprobó formato y alcanzó Clippy estricto, que rechazó tres comparaciones `assert_eq!(..., false)` en `tests/anti.rs`.
