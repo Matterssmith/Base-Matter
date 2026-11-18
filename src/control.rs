@@ -330,8 +330,8 @@ impl ControlDispatcher {
         })
     }
 
-    /// Control grammar: `=/>on [SOCKET_ID]`, `=/>off [SOCKET_ID]`,
-    /// `=/>status [SOCKET_ID]`; `=` and `/>` remain compatibility aliases.
+    /// Control grammar: socket power, contextual status, bot policy scopes,
+    /// and reserved owner extensions. `=` and `/>` remain legacy aliases.
     /// Unknown control verbs never reach the
     /// normal router. Explicit target IDs still require that socket's owner.
     /// Admission is snapshot-based: powering off blocks subsequent admissions,
