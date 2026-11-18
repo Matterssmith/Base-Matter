@@ -6,7 +6,8 @@
  */
 use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
+use crate::menu::{Language, MenuPreferences, Style};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ControlTheme {
@@ -130,6 +131,7 @@ fn validate_template(source: &str) -> Result<()> {
 pub struct ControlThemes {
     fallback: ControlTheme,
     communities: RwLock<HashMap<String, ControlTheme>>,
+    dynamic_menu: Option<Arc<MenuPreferences>>,
 }
 
 impl ControlThemes {
@@ -137,7 +139,29 @@ impl ControlThemes {
         Self {
             fallback,
             communities: RwLock::new(HashMap::new()),
+            dynamic_menu: None,
         }
+    }
+
+    pub fn with_dynamic_menu(mut self, preferences: Arc<MenuPreferences>) -> Self {
+        self.dynamic_menu = Some(preferences);
+        self
+    }
+
+    pub fn set_menu_style(&self, value: &str) -> Result<()> {
+        let preferences = self
+            .dynamic_menu
+            .as_ref()
+            .ok_or_else(|| anyhow!("Dynamic menu not configured"))?;
+        preferences.set_style(Style::parse(value)?)
+    }
+
+    pub fn set_menu_language(&self, value: &str) -> Result<()> {
+        let preferences = self
+            .dynamic_menu
+            .as_ref()
+            .ok_or_else(|| anyhow!("Dynamic menu not configured"))?;
+        preferences.set_language(Language::parse(value)?)
     }
 
     pub fn set_community(&self, community_id: &str, theme: ControlTheme) -> Result<()> {
@@ -166,11 +190,37 @@ impl ControlThemes {
     /// One theme selection for every successful command response,
     /// not only the menu. The caller must supply a VERIFIED chat scope.
     pub fn decorate(&self, community_id: Option<&str>, body: &str) -> Result<String> {
+        // Dynamic menus are self-contained. The same verified IPC response
+        // passes through this renderer twice; never add another frame.
+        if self.dynamic_menu.is_some()
+            && (body.starts_with("꒦꒷✰꒷꒦︶꒦꒷✧")
+                || body.starts_with("Menú de control global")
+                || body.starts_with("Global control menu"))
+        {
+            if body.is_empty()
+                || body.len() > 3800
+                || body.chars().any(|character| character.is_control() && character != '\n')
+            {
+                bail!("Invalid dynamic menu body");
+            }
+            return Ok(body.to_owned());
+        }
         self.selected(community_id)?.decorate(body)
     }
 
     pub fn render(&self, community_id: Option<&str>, section: &str) -> Result<String> {
-        self.selected(community_id)?.render(section)
+        let theme = self.selected(community_id)?;
+        let Some(preferences) = &self.dynamic_menu else {
+            return theme.render(section);
+        };
+        let body = crate::menu::render(section, preferences.get()?)?;
+        let default_template =
+            include_str!("../templates/matterssmith-control.txt").replace("\r\n", "\n");
+        if theme.template == default_template {
+            Ok(body)
+        } else {
+            theme.decorate(&body)
+        }
     }
 }
 

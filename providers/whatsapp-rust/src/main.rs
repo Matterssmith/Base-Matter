@@ -610,7 +610,9 @@ async fn main() -> Result<()> {
                                 );
                             }
                             if native_buttons
-                                && matches!(actual_command, "=/>menu" | "=/>menú")
+                                && (matches!(actual_command, "=/>menu" | "=/>menú")
+                                    || actual_command.starts_with("=/>menu ")
+                                    || actual_command.starts_with("=/>menú "))
                             {
                                 if let Ok(interactive) = native_menu_message(&response) {
                                     if ctx.send_message(interactive).await.is_ok() {

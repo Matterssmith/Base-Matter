@@ -1,3 +1,29 @@
+## Menú modular y botones nativos, 2026-11-18 (alpha)
+
+El controlador usa un catálogo Rust por carpeta
+y por comando. Permite `menu`, `menu set`,
+`menu antis`, `menu antis 2`, `menu system`,
+`menu ai` y demás categorías. Estilos
+`classic`/`none`, idiomas `es`/`en`,
+preferencias persistidas fuera de la sesión.
+
+`MATTER_WA_NATIVE_BUTTONS=1` intenta enviar
+en un solo mensaje Estado, Menú y Antis.
+Su respuesta se convierte exclusivamente en
+`=/>status`, `=/>menu` o `=/>menu antis`,
+y se verifica por HMAC, origen, antirreplay
+y política de chat. Las llamadas a submenús
+de otros usuarios siguen siendo solo lectura.
+El pie usa marcas nativas generadas desde
+HTML breve validado; no HTML/CSS arbitrario.
+`MATTER_WA_RICH_HTML=1` es experimental,
+self-chat y no demuestra visualización Android/iOS.
+
+No se importan claves, no se ejecuta sandbox,
+no se activan servicios ni se conceden rangos.
+Ver `../../docs/MENU_CATALOG.md`.
+README del proveedor revisado.
+
 ## 2026-11-18 — Matter AI: solo broker Vault y permiso del titular
 
 El controlador `matter` sigue limitado al propietario autenticado

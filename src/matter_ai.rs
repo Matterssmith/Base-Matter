@@ -1,7 +1,7 @@
 // Base-Matter — Matter AI programming assistant through Vault's broker.
 // Never receives plaintext provider keys. Never executes, writes or grants roles.
-use anyhow::{bail, Result};
 use crate::vault_ai;
+use anyhow::{bail, Result};
 
 pub fn command(socket_id: &str, actor_id: &str, args: &[String]) -> Result<String> {
     if args.is_empty() || args == ["help"] {
@@ -37,9 +37,10 @@ pub fn command(socket_id: &str, actor_id: &str, args: &[String]) -> Result<Strin
     } else {
         question
     };
-    let (provider, answer) =
-        vault_ai::ask("coding-assistant", socket_id, actor_id, &prompt)?;
-    Ok(format!("Matter [{provider}] — asesoría, sin ejecución:\n{answer}"))
+    let (provider, answer) = vault_ai::ask("coding-assistant", socket_id, actor_id, &prompt)?;
+    Ok(format!(
+        "Matter [{provider}] — asesoría, sin ejecución:\n{answer}"
+    ))
 }
 
 #[cfg(test)]
@@ -56,6 +57,7 @@ mod tests {
             "socket-1",
             "owner-1",
             &["console".to_owned(), "ls".to_owned()]
-        ).is_err());
+        )
+        .is_err());
     }
 }

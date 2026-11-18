@@ -1,3 +1,23 @@
+## 2026-11-18 — Menú por comando, entrega alpha
+
+- 55 módulos de metadatos en nueve categorías;
+  `antis` incluye exactamente los 32 filtros reales.
+- Renderizador de menú y páginas por categoría,
+  estilo classic/none e idioma español/inglés;
+  sin créditos automáticos ni marca de bot personal.
+- `set style`/`set lang` requieren propietario
+  en privado y escriben SQLite independiente.
+- Botones rápidos Estado/Menú/Antis enlazados
+  a comandos firmados solo de lectura.
+- `src/whatsapp_bridge.rs`: `matter` admitido
+  en la lista privada, sin permisos nuevos.
+- Incluye ajustes de Rustfmt y compatibilidad
+  Windows del cliente Vault AI. CI nuevo pendiente.
+- Gateway Vault ausente, permiso Alya pendiente,
+  servicios/system/sandbox/test/eval/console y
+  archivos citados pendientes. Sin promoción beta.
+- README raíz y proveedor revisados 2/2.
+
 ## 2026-11-18 — Contrato de uso externo de IA y consentimiento (alpha)
 
 - Vault-Matter `matter` en commit `427b169`: concesiones

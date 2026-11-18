@@ -13,7 +13,7 @@ const MAX_MENU_BYTES: usize = 3200;
 const BUTTONS: [(&str, &str, &str); 3] = [
     ("matter.read.status", "Estado", "=/>status"),
     ("matter.read.menu", "Menú", "=/>menu"),
-    ("matter.read.credits", "Créditos", "=/>credits"),
+    ("matter.read.antis", "Antis", "=/>menu antis"),
 ];
 
 /// Convert a *small* allowlisted HTML-style fragment to WhatsApp text
@@ -89,7 +89,7 @@ pub fn short_html_to_whatsapp(input: &str) -> Result<String> {
 }
 
 /// Construct a real WhatsApp NativeFlow message from a signed, already
-/// formatted controller menu. The original banner and credit remain intact.
+/// formatted controller menu. No hard-coded brand or credit is appended.
 /// Delivery and display still require a real client test.
 pub fn native_menu_message(menu: &str) -> Result<wa::Message> {
     if menu.is_empty()
@@ -115,7 +115,7 @@ pub fn native_menu_message(menu: &str) -> Result<wa::Message> {
                 text: Some(menu.to_owned()),
             }),
             footer: MessageField::some(wa::message::interactive_message::Footer {
-                text: Some(short_html_to_whatsapp("<i>Botones de consulta</i>")?),
+                text: Some(short_html_to_whatsapp("<b>Control</b> · <i>Selecciona una categoría</i>")?),
                 ..Default::default()
             }),
             interactive_message: Some(

@@ -50,7 +50,7 @@ fn original_menu_is_carried_in_the_same_native_message_with_three_real_buttons()
     for (index, id) in [
         "matter.read.status",
         "matter.read.menu",
-        "matter.read.credits",
+        "matter.read.antis",
     ]
     .iter()
     .enumerate()
@@ -80,8 +80,8 @@ fn only_readonly_clicks_can_be_mapped_to_control_commands() {
         Some("=/>menu")
     );
     assert_eq!(
-        readonly_button_command(&incoming_click("matter.read.credits")),
-        Some("=/>credits")
+        readonly_button_command(&incoming_click("matter.read.antis")),
+        Some("=/>menu antis")
     );
     for unsafe_id in [
         "matter.bot.on",

@@ -1,4 +1,29 @@
-# Matterssmith — repository instructions
+# Base-Matter — repository instructions
+
+## Contrato de menú de Base-Matter, 2026-11-18
+
+`src/menu.rs` contiene contratos de presentación:
+nueve carpetas y un módulo por comando, sin
+autoridad de ejecución. Los menús se generan
+automáticamente y muestran `[pendiente]` cuando
+no existe ejecutor. Estilo classic con
+`╞═╦═`, `│♪║`, `│♪╠`, `│♪╚`;
+estilo none sin símbolos. Idiomas es/en.
+El prefijo global aparece una sola vez y no
+se agrega marca personal ni créditos al menú.
+Solo el dueño autenticado cambia el estilo
+desde el privado; persistir en SQLite separado.
+
+Las respuestas rápidas solo ejecutan consultas
+en el puente HMAC/PN/LID, nunca modifican
+activación ni roles. El HTML completo es
+experimental, sin pruebas de renderizado móvil.
+No borrar la plantilla antigua hasta auditar
+sus consumidores, pero no usarla en el
+controlador de producción. El permiso de
+Alya Core continúa pendiente; ninguna clave
+se importa de Aura Reed ni se transmite por
+WhatsApp. Ver `docs/MENU_CATALOG.md`.
 
 ## Contrato de permisos de IA concedidos por titulares — 2026-11-18
 

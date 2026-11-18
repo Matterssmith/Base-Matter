@@ -398,7 +398,7 @@ impl ControlDispatcher {
                 command: "status".to_owned(),
                 output: "La configuración global del socket es privada del propietario. Usa =/>status para consultar el estado de este chat.".to_owned(),
             }),
-            ["=/>menu" | "=/>menú"] => {
+            ["=/>menu" | "=/>menú", rest @ ..] if rest.len() <= 2 => {
                 if !decision.decision.enabled {
                     return Ok(DispatchResult::Inactive);
                 }
@@ -406,7 +406,12 @@ impl ControlDispatcher {
                     .public_menu
                     .as_ref()
                     .ok_or_else(|| anyhow!("Read-only menu is unavailable"))?;
-                let output = theme.render(group, "menu")?;
+                let section = if rest.is_empty() {
+                    "menu".to_owned()
+                } else {
+                    format!("menu {}", rest.join(" "))
+                };
+                let output = theme.render(group, &section)?;
                 Ok(DispatchResult::Extension {
                     command: "menu".to_owned(),
                     output,
@@ -789,6 +794,29 @@ impl ControlDispatcher {
                         output: "BOT: =/>bot on/off/inherit (chat actual); =/>bot group/private/channel/community on/off/inherit (tipos, desde chat propio); =/>bot --global on/off/inherit (predeterminado del socket). =/>bot community configura avisos, pero requiere metadatos verificados para aplicarse. =/>status consulta el chat, =/>status --global las políticas. Roles exclusivos de Vault-Matter.".to_owned(),
                     });
                 }
+                ["set", "style" | "lang" | "language", value] => {
+                    if group.is_some() {
+                        bail!("Menu configuration requires the owner's private chat");
+                    }
+                    let admission =
+                        self.activation
+                            .admission(receiving_socket, None, self.global_policy)?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    let themes = self.public_menu
+                        .as_ref()
+                        .ok_or_else(|| anyhow!("Menu preferences are unavailable"))?;
+                    if tokens[1] == "style" {
+                        themes.set_menu_style(value)?;
+                    } else {
+                        themes.set_menu_language(value)?;
+                    }
+                    return Ok(DispatchResult::Extension {
+                        command: "set".to_owned(),
+                        output: format!("Menú {}: {}. Abre menu para verificar.", tokens[1], value),
+                    });
+                }
                 ["set"] => {
                     if group.is_some() {
                         bail!("Configuration is private owner control");
@@ -799,9 +827,12 @@ impl ControlDispatcher {
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }
+                    let themes = self.public_menu
+                        .as_ref()
+                        .ok_or_else(|| anyhow!("Menu configuration unavailable"))?;
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
-                        output: "SET: =/>set role <identidad> <rango> requiere Vault-Matter (no disponible). =/>set style/theme: ajuste visual pendiente. Las políticas del bot se configuran con =/>bot. --debug no concede permisos.".to_owned(),
+                        output: themes.render(None, "menu set")?,
                     });
                 }
                 ["set", "role"] => {

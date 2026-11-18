@@ -20,6 +20,47 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Catálogo de menú automático por categoría (alpha)
+
+Se integra el catálogo público `src/menu.rs` con nueve
+directorios en `src/menu/`, un archivo Rust independiente
+por cada comando (55 descriptores), incluidos los 32 antis
+de `anti::RULES`. Cada categoría se genera desde su
+`mod.rs` y publica descripción, variantes, traducción
+es/en y el estado de implementación. **El catálogo no
+concede permisos ni ejecuta código**. Las entradas
+sin ejecución están etiquetadas `[pendiente]`.
+
+El menú de producción usa el estilo solicitado
+`╞═╦═`, `│♪║`, `│♪╠` y `│♪╚`, sin
+marca ni créditos automáticos. El prefijo `=/>`
+aparece solo en el encabezado. Las categorías
+admiten submenús y páginas: `menu set`,
+`menu antis 2`, `menu system`.
+`set style classic|none` y `set lang es|en`
+son opciones privadas de propietario, persistentes
+en SQLite propio, independiente de la sesión.
+
+Los botones NativeFlow Estado/Menú/Antis mapean
+a `=/>status`, `=/>menu` y `=/>menu antis`;
+el evento vuelve al puente autenticado y solo
+permite consulta. El formato HTML limitado se
+convierte a texto WhatsApp en el mismo mensaje.
+La hoja HTML experimental no tiene garantía
+de visualización real en móvil.
+
+El puente privado acepta `matter` en su lista
+autenticada; la API sigue bloqueada hasta
+existir el gateway Vault y concesiones del titular.
+Alya Core/Aura Reed: **PERMISO PENDIENTE**,
+sin credenciales provisionadas. Sistema, sandbox,
+test, console, eval, adjuntos citados y ejecución
+real de moderación siguen pendientes.
+
+Se revisaron ambos README; `beta` y `stable`
+no se modifican hasta CI y prueba WhatsApp.
+Ver [catálogo](docs/MENU_CATALOG.md).
+
 ## 2026-11-18 — Uso de IA limitado por licencias de sus titulares (alpha)
 
 `matter` cambia a un **cliente del futuro broker Vault-Matter**: ya

@@ -32,6 +32,7 @@ pub mod i18n;
 pub mod ingress;
 pub mod legal;
 pub mod matter_ai;
+pub mod menu;
 pub mod modules;
 pub mod pairing;
 pub mod platforms;

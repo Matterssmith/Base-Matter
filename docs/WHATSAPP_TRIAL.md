@@ -1,3 +1,48 @@
+## Prueba de menú modular por WhatsApp (alpha 2026-11-18)
+
+Detén antes la instancia anterior con Ctrl+C.
+No ejecutes dos proveedores con el mismo almacén
+de sesión. Mantén el emparejamiento por código.
+Para habilitar botones y deshabilitar la hoja
+HTML experimental:
+
+```bash
+export MATTER_WA_NATIVE_BUTTONS=1
+export MATTER_WA_RICH_HTML=0
+cargo run --locked
+```
+
+Desde tu chat propio autenticado, con bot activo:
+
+```text
+=/>status
+=/>menu
+=/>menu set
+=/>menu antis
+=/>menu antis 2
+=/>menu system
+=/>set style none
+=/>menu set
+=/>set lang en
+=/>menu
+=/>set style classic
+=/>set lang es
+=/>menu
+=/>matter status
+```
+
+El modo none debe tener texto sin dibujos.
+El idioma inglés debe traducir las descripciones.
+Las preferencias sobreviven al reinicio.
+El botón Antis intenta `=/>menu antis`,
+y Estado y Menú ejecutan consultas equivalentes.
+El control público solo funciona para menús
+de chats encendidos; status sigue público
+aunque el bot esté apagado. No probar
+comandos `[pendiente]` ni introducir claves
+en WhatsApp. El envío Rich/NativeFlow
+aceptado no garantiza renderizado del cliente.
+
 ## Prueba experimental RichResponse en self-chat — alpha 2026-11-18
 
 No cambia el menú predeterminado. `--rich-preview-html/json`

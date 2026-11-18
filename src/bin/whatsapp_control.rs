@@ -8,6 +8,7 @@ use anyhow::{anyhow, bail, Result};
 use matter_base::add_commands::{parse_add_args, AddIntent};
 use matter_base::anti::AntiStore;
 use matter_base::control_style::{ControlTheme, ControlThemes};
+use matter_base::menu::MenuPreferences;
 use matter_base::{
     activation::SocketActivationStore, control::ControlDispatcher, BotRegistry, CommandAuthorizer,
     CommandInvocation, CommandRouter, ControlExtensionRegistry, InboundReplayStore,
@@ -286,13 +287,24 @@ fn main() -> Result<()> {
         Ok(format!("Base-Matter: auditoría del socket, {} registros locales. Vault-Matter aún no sincronizado.", records.len()))
     })?;
     let default_theme = ControlTheme::new("Base-Matter", "base-matter", "✦")?;
-    let style = Arc::new(ControlThemes::new(default_theme.clone()));
+    // Independent private SQLite store; never overwrite WhatsApp session DB.
+    let menu_preferences = Arc::new(MenuPreferences::open(
+        activation_path.with_extension("menu.sqlite"),
+    )?);
+    let style = Arc::new(
+        ControlThemes::new(default_theme.clone()).with_dynamic_menu(menu_preferences),
+    );
     let menu_theme = Arc::clone(&style);
     extensions.register("menu", &["menú"], move |context, args| {
-        if !args.is_empty() {
-            bail!("Global control menu has no categories");
+        if args.len() > 2 {
+            bail!("Usage: menu [category] [page]");
         }
-        menu_theme.render(context.group_id, "menu")
+        let section = if args.is_empty() {
+            "menu".to_owned()
+        } else {
+            format!("menu {}", args.join(" "))
+        };
+        menu_theme.render(context.group_id, &section)
     })?;
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)

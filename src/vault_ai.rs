@@ -1,14 +1,22 @@
 // Base-Matter — Vault-owned AI execution and credential boundary.
 // The client sends an authorized request to a local Unix socket. It never
 // obtains provider API keys, endpoints, or decrypted Vault records.
-use anyhow::{anyhow, bail, Result};
-use serde::{Deserialize, Serialize};
+use anyhow::{bail, Result};
+#[cfg(unix)]
+use anyhow::anyhow;
+#[cfg(any(unix, test))]
+use serde::Deserialize;
+#[cfg(unix)]
+use serde::Serialize;
 use std::env;
 
 const MAX_PROMPT_BYTES: usize = 2400;
+#[cfg(unix)]
 const MAX_REPLY_BYTES: usize = 8192;
+#[cfg(unix)]
 const MAX_TEXT_BYTES: usize = 2200;
 
+#[cfg(unix)]
 #[derive(Debug, Serialize)]
 struct Request<'a> {
     protocol: u32,
@@ -20,6 +28,7 @@ struct Request<'a> {
     prompt: &'a str,
 }
 
+#[cfg(any(unix, test))]
 #[derive(Debug, Deserialize)]
 struct Response {
     protocol: u32,
@@ -42,7 +51,9 @@ struct Response {
 pub fn provider_name(name: &str) -> bool {
     let len = name.len();
     (2..=64).contains(&len)
-        && name.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+        && name
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
 
 fn validate_request(capability: &str, socket: &str, actor: &str, prompt: &str) -> Result<()> {
@@ -52,14 +63,18 @@ fn validate_request(capability: &str, socket: &str, actor: &str, prompt: &str) -
     for identifier in [socket, actor] {
         if identifier.is_empty()
             || identifier.len() > 128
-            || !identifier.bytes().all(|b| b.is_ascii_alphanumeric() || b"._:-@".contains(&b))
+            || !identifier
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"._:-@".contains(&b))
         {
             bail!("Invalid Vault AI request identity");
         }
     }
     if prompt.trim().is_empty()
         || prompt.len() > MAX_PROMPT_BYTES
-        || prompt.chars().any(|c| c.is_control() && c != '\n' && c != '\t')
+        || prompt
+            .chars()
+            .any(|c| c.is_control() && c != '\n' && c != '\t')
     {
         bail!("Invalid Vault AI prompt");
     }
@@ -70,10 +85,13 @@ fn validate_request(capability: &str, socket: &str, actor: &str, prompt: &str) -
 // revocation and expiry, apply the policy text to the model before each call,
 // and enforce permissions in code. The AI response alone is not a grant.
 // Old/legacy workers without a policy receipt are rejected.
+#[cfg(any(unix, test))]
 fn validate_receipt(receipt: &Response, expected_nonce: &str, capability: &str) -> Result<()> {
     let valid_grant = receipt.grant_id.as_deref().is_some_and(|grant| {
         (4..=96).contains(&grant.len())
-            && grant.bytes().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+            && grant
+                .bytes()
+                .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
     });
     if receipt.protocol != 1
         || receipt.nonce != expected_nonce
@@ -109,7 +127,12 @@ pub fn ask(capability: &str, socket: &str, actor: &str, prompt: &str) -> Result<
 }
 
 #[cfg(unix)]
-fn call_unix(capability: &str, socket: &str, actor: &str, prompt: &str) -> Result<(String, String)> {
+fn call_unix(
+    capability: &str,
+    socket: &str,
+    actor: &str,
+    prompt: &str,
+) -> Result<(String, String)> {
     use std::fs;
     use std::io::{Read, Write};
     use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
@@ -117,21 +140,24 @@ fn call_unix(capability: &str, socket: &str, actor: &str, prompt: &str) -> Resul
     use std::path::{Component, Path};
     use std::time::Duration;
 
-    let location = env::var("MATTER_VAULT_AI_SOCKET")
-        .map_err(|_| anyhow!("Vault AI is not configured"))?;
+    let location =
+        env::var("MATTER_VAULT_AI_SOCKET").map_err(|_| anyhow!("Vault AI is not configured"))?;
     let path = Path::new(&location);
     if !path.is_absolute() || location.len() > 240 {
         bail!("Vault AI socket must be an absolute local path");
     }
-    if path.components().any(|part| matches!(part, Component::ParentDir)) {
+    if path
+        .components()
+        .any(|part| matches!(part, Component::ParentDir))
+    {
         bail!("Vault AI socket path traversal denied");
     }
     let expected_uid = env::var("MATTER_VAULT_AI_UID")
         .map_err(|_| anyhow!("Vault AI expected Unix UID not configured"))?
         .parse::<u32>()
         .map_err(|_| anyhow!("Vault AI expected UID invalid"))?;
-    let metadata = fs::symlink_metadata(path)
-        .map_err(|_| anyhow!("Vault AI gateway unavailable"))?;
+    let metadata =
+        fs::symlink_metadata(path).map_err(|_| anyhow!("Vault AI gateway unavailable"))?;
     if !metadata.file_type().is_socket()
         || metadata.file_type().is_symlink()
         || metadata.permissions().mode() & 0o077 != 0
@@ -139,7 +165,9 @@ fn call_unix(capability: &str, socket: &str, actor: &str, prompt: &str) -> Resul
     {
         bail!("Vault AI gateway socket is not private");
     }
-    let parent = path.parent().ok_or_else(|| anyhow!("Vault AI socket parent missing"))?;
+    let parent = path
+        .parent()
+        .ok_or_else(|| anyhow!("Vault AI socket parent missing"))?;
     let parent_metadata = fs::symlink_metadata(parent)?;
     if !parent_metadata.file_type().is_dir()
         || parent_metadata.file_type().is_symlink()
@@ -177,17 +205,23 @@ fn call_unix(capability: &str, socket: &str, actor: &str, prompt: &str) -> Resul
     if bytes.is_empty() || bytes.len() > MAX_REPLY_BYTES {
         bail!("Invalid Vault AI response size");
     }
-    let response: Response = serde_json::from_slice(&bytes)
-        .map_err(|_| anyhow!("Invalid Vault AI response format"))?;
+    let response: Response =
+        serde_json::from_slice(&bytes).map_err(|_| anyhow!("Invalid Vault AI response format"))?;
     validate_receipt(&response, &nonce, capability)?;
-    let provider = response.provider.ok_or_else(|| anyhow!("Vault AI provider missing"))?;
+    let provider = response
+        .provider
+        .ok_or_else(|| anyhow!("Vault AI provider missing"))?;
     if !provider_name(&provider) {
         bail!("Invalid Vault AI provider identity");
     }
-    let text = response.text.ok_or_else(|| anyhow!("Vault AI answer missing"))?;
+    let text = response
+        .text
+        .ok_or_else(|| anyhow!("Vault AI answer missing"))?;
     if text.trim().is_empty()
         || text.len() > MAX_TEXT_BYTES
-        || text.chars().any(|c| c.is_control() && c != '\n' && c != '\t')
+        || text
+            .chars()
+            .any(|c| c.is_control() && c != '\n' && c != '\t')
     {
         bail!("Invalid Vault AI answer");
     }
@@ -205,7 +239,14 @@ mod tests {
         assert!(provider_name("openai"));
         assert!(provider_name("alya-core"));
         assert!(provider_name("future-provider-32"));
-        for invalid in ["", "x", "OPENAI", "https://api.example.com", "../keys", "test env"] {
+        for invalid in [
+            "",
+            "x",
+            "OPENAI",
+            "https://api.example.com",
+            "../keys",
+            "test env",
+        ] {
             assert!(!provider_name(invalid));
         }
     }
@@ -223,6 +264,8 @@ mod tests {
             provider: Some("claude".to_owned()),
             text: Some("Response".to_owned()),
         };
+        assert_eq!(receipt.provider.as_deref(), Some("claude"));
+        assert_eq!(receipt.text.as_deref(), Some("Response"));
         assert!(validate_receipt(&receipt, "ab12", "coding-assistant").is_err());
         receipt.policy_applied = true;
         assert!(validate_receipt(&receipt, "ab12", "coding-assistant").is_ok());
@@ -242,6 +285,8 @@ mod tests {
         assert!(validate_request("host-exec", "socket-1", "actor-1", "ls").is_err());
         assert!(validate_request("coding-assistant", "socket/1", "actor-1", "help").is_err());
         assert!(validate_request("coding-assistant", "socket-1", "actor-1", "").is_err());
-        assert!(validate_request("coding-assistant", "socket-1", "actor-1", &"x".repeat(2500)).is_err());
+        assert!(
+            validate_request("coding-assistant", "socket-1", "actor-1", &"x".repeat(2500)).is_err()
+        );
     }
 }

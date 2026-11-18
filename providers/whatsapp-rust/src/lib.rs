@@ -323,6 +323,8 @@ impl Config {
             ["=/>status" | "=/>estado"]
                 | ["=/>status" | "=/>estado", "--global"]
                 | ["=/>menu" | "=/>menú"]
+                | ["=/>menu" | "=/>menú", _]
+                | ["=/>menu" | "=/>menú", _, _]
                 | ["=/>bot"]
                 | ["=/>credits" | "=/>creditos" | "=/>créditos"]
         );

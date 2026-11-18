@@ -212,6 +212,7 @@ impl WhatsAppControlBridge {
                 | "=/>role"
                 | "=/>roles"
                 | "=/>audit"
+                | "=/>matter"
                 | "=/>anti"
                 | "=/>antis"
                 | "=/>credits"
