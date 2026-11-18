@@ -91,6 +91,29 @@ Preserve socket isolation and persist/audit administrative changes atomically.
   histories. Operate from a single Git clone and shared Cargo build
   cache in the owner's one-terminal environment. Preserve sessions.
 
+## Verified-public-read exception (alpha; identity boundary)
+
+The earlier owner-only HMAC path remains exclusive for mutations.
+Incoming `from_me=false` events may enter a **different**
+HMAC-signed path only for `status/estado`, `menu/menú`
+(with one category), and argument-free `bot`.
+The signer must obtain actor and destination JIDs from the
+authenticated WhatsApp event and verify the linked client
+own PN/LID; never elevate an external sender to socket owner.
+The controller must verify signature, exact context, nonce/
+timestamp and replay, then use a **read-only** policy/menu
+dispatcher. Status is available when bot-off, while menu
+is silent. Any control/mutation/debug/global exposure by
+this path is forbidden. No arbitrary extension callbacks.
+
+The owner's self-chat has an independent `kind:self`
+activation setting. `kind:private` applies to external
+private chats only. Do not infer newsletter/channel
+identity from group/private and do not claim it works until
+its provider source is verified. Tests must include incoming
+group and external-private traffic plus attempted privilege
+escalation. `beta/stable` remain untouched.
+
 ## Owner update — activation commands and menu design (current alpha contract)
 
 This section supersedes the older 2026-11-17 statement that menus
