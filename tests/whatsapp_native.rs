@@ -144,9 +144,23 @@ fn duplicated_expired_and_malformed_events_fail_closed() {
     assert!(ingress.ingest(&expired).is_err());
     assert!(ingress.ingest(&message("", "=/>bot on")).is_err());
     assert!(ingress.ingest(&message("bad\nid", "=/>bot on")).is_err());
+    // Retired aliases are ignored only when well formed; malformed
+    // oversized frames must fail closed before command classification.
     assert!(ingress
-        .ingest(&message("a", &format!("=/>on{}", " ".repeat(4096))))
+        .ingest(&message("legacy-large", &format!("=/>on{}", " ".repeat(4096))))
         .is_err());
+    // The active command must be subject to the same hard input limit.
+    assert!(ingress
+        .ingest(&message(
+            "active-large",
+            &format!("=/>bot on{}", " ".repeat(4096)),
+        ))
+        .is_err());
+    // A rejected oversized frame cannot poison the replay store.
+    assert!(matches!(
+        ingress.ingest(&message("active-large", "=/>status")).unwrap(),
+        WhatsAppNativeOutcome::Dispatched(_),
+    ));
 }
 #[test]
 fn invalid_owner_identity_rejected_before_events() {
