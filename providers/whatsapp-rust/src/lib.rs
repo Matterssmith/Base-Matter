@@ -62,6 +62,7 @@ pub enum ControlAck {
     Applied,
     AppliedWithMessage(String),
     Duplicate,
+    Ignored,
 }
 
 #[derive(Deserialize)]
@@ -76,7 +77,7 @@ struct ControlAckWire {
 /// Interpret the signed-control IPC acknowledgment conservatively.
 /// A duplicate is acknowledged as a replay without claiming another effect.
 pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
-    if input.is_empty() || input.len() > 1024 {
+    if input.is_empty() || input.len() > 8192 {
         bail!("Invalid controller acknowledgment");
     }
     let response: ControlAckWire =
@@ -85,12 +86,13 @@ pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
         (true, "applied", None) => Ok(ControlAck::Applied),
         (true, "applied", Some(message))
             if !message.is_empty()
-                && message.len() <= 760
+                && message.len() <= 3800
                 && !message.chars().any(|c| c.is_control() && c != '\n') =>
         {
             Ok(ControlAck::AppliedWithMessage(message))
         }
         (true, "duplicate", None) => Ok(ControlAck::Duplicate),
+        (true, "ignored", None) => Ok(ControlAck::Ignored),
         _ => bail!("Controller denied the operation"),
     }
 }
