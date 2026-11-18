@@ -63,8 +63,13 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Base-Matter: política de comandos: {} (origen: {source:?}). El encendido del socket es independiente.",
-                    if enabled { "permitida" } else { "denegada" }
+                    "Base-Matter | Estado del chat: BOT {} (origen: {source:?}). {}",
+                    if enabled { "ACTIVADO" } else { "APAGADO" },
+                    if source == crate::activation::ActivationSource::PoweredOff {
+                        "El socket está apagado."
+                    } else {
+                        "La política del bot y el encendido del socket son independientes."
+                    }
                 )),
             ),
             Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Control {
@@ -74,6 +79,19 @@ impl WhatsAppControlIpc {
                 Some(format!(
                     "Base-Matter: socket {}. La política de comandos es independiente.",
                     if powered { "encendido" } else { "apagado" }
+                )),
+            ),
+            Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
+                scope, policy,
+            })) => (
+                ControlIpcOutcome::Applied,
+                Some(format!(
+                    "Base-Matter: política del bot para {scope}: {}. El socket conserva su encendido independiente.",
+                    match policy {
+                        Some(true) => "activada",
+                        Some(false) => "desactivada",
+                        None => "heredar",
+                    }
                 )),
             ),
             Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::GroupPolicyChanged {
@@ -94,8 +112,13 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Base-Matter: grupo {} (origen: {source:?}). Socket y política se controlan por separado.",
-                    if enabled { "habilitado" } else { "deshabilitado" }
+                    "Base-Matter | Estado del grupo: BOT {} (origen: {source:?}). {}",
+                    if enabled { "ACTIVADO" } else { "APAGADO" },
+                    if source == crate::activation::ActivationSource::PoweredOff {
+                        "El socket está apagado; una política de grupo no lo enciende."
+                    } else {
+                        "El bot respeta la política de este chat."
+                    }
                 )),
             ),
             Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::SocketRoleChanged {
@@ -110,6 +133,9 @@ impl WhatsAppControlIpc {
                     if changed { "actualizado" } else { "sin cambios" }
                 )),
             ),
+            Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)) => {
+                (ControlIpcOutcome::Ignored, None)
+            }
             Ok(WhatsAppBridgeOutcome::Dispatched(_)) => (ControlIpcOutcome::Applied, None),
             Ok(WhatsAppBridgeOutcome::Ignored) => (ControlIpcOutcome::Ignored, None),
             Ok(WhatsAppBridgeOutcome::Duplicate) => (ControlIpcOutcome::Duplicate, None),
@@ -118,7 +144,7 @@ impl WhatsAppControlIpc {
         let (outcome, message) = result;
         let validated = message.filter(|text| {
             !text.is_empty()
-                && text.len() <= 760
+                && text.len() <= 3800
                 && !text.chars().any(|c| c.is_control() && c != '\n')
         });
         (outcome, validated)
