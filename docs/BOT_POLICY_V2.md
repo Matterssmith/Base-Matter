@@ -9,9 +9,10 @@ Hecho por Lournyx Matterssmith [Lou-Nyx].
 
 ## Independent dimensions
 
-1. **Socket power** is operational. Only its authenticated session owner
-   can use `=/>on` and `=/>off` in their private self-chat. This does
-   not automatically enable bot messages.
+1. **Socket power** remains an internal operational gate, no longer a
+   separate WhatsApp command. `=/>bot on` and scoped variants wake it
+   atomically when needed. `=/>bot off` disables only its selected
+   chat/scope and never switches off other chats.
 2. **Chat bot policy** is a Boolean decision with inheritance. If the
    socket is off, the result is off regardless of configuration.
 3. **Bot binding/runtime** is independent. A policy can be enabled even
@@ -26,7 +27,7 @@ After the power gate, effective bot policy uses this precedence:
 ```text
 Exact chat override (verified group JID)
        ↓ otherwise
-Chat-kind default (group / private / channel)
+Chat-kind default (group / external private / channel / community notices)
        ↓ otherwise
 Socket-wide default (--global)
        ↓ otherwise
@@ -36,35 +37,53 @@ Off (deny)
 ```
 
 The current alpha implementation represents chat-kind defaults as
-internal, reserved `kind:group`, `kind:private`, `kind:channel`
+internal, reserved `kind:group`, `kind:private`, `kind:channel`, `kind:community`
 keys inside the existing audited activation store. These keys are
 never accepted from a chat as authenticated JIDs. Group overrides
 remain scoped to verified `@g.us` identities.
 
-## Implemented reserved commands in alpha
+## Current signed WhatsApp commands in alpha
 
 | Command | Effect |
 | --- | --- |
-| `=/>status`, `=/>estado` | Chat-specific effective bot policy; responds even when off |
-| `=/>status --global` | Raw socket power and kind/default policies, independently of socket power |
-| `=/>on`, `=/>off` | Power on/off socket, self-chat owner only |
-| `=/>bot` | Bot policy usage when that chat is enabled |
-| `=/>bot on/off/inherit` | Exact group override or private-kind setting in self-chat |
-| `=/>bot --global on/off/inherit` | Socket-wide default, owner only |
-| `=/>bot group/private/channel on/off/inherit` | Defaults for that kind, owner in self-chat |
-| `=/>bot grupo/privado/canal encender/apagar/heredar` | Explicit Spanish aliases for kinds and actions |
-| `=/>set` | Restricted configuration guide, self-chat owner |
-| `=/>set role` | Information only; actual rank changes fail closed until Vault |
-| `=/>menu`, `=/>menú` | Category menu when policy is enabled; uses Matterssmith default |
-| `=/>menu <category>` | Context-independent category selection, policy-gated |
-| `--debug` last argument | Owner-only redacted diagnostic after an authorized command |
+| `=/>status`, `=/>estado` | Effective state of current chat, always readable |
+| `=/>status --global` | Owner-only socket defaults and configured chat types |
+| `=/>bot on/off` | Enable/disable current authorized chat; power gate wakes atomically |
+| `=/>bot inherit` | Clear current chat exception and inherit its type |
+| `=/>bot --global on/off/inherit` | Owner-only socket fallback |
+| `=/>bot group/private/channel/community on/off/inherit` | Owner-only type defaults from self-chat |
+| `=/>bot comunidad/avisos encender/apagar/heredar` | Explicit Spanish aliases for announcement-group policy |
+| `=/>bot` | Guide to available policy scopes when chat is active |
+| `=/>menu`, `=/>menú` | Single compact global control menu, no categories |
+| `=/>set` | Owner-only configuration guidance |
+| `=/>set role` | Information only, actual grants denied without Vault |
+| `--debug` final modifier | Redacted owner-only technical diagnostics |
 
-`=/>help` and `=/>h` are retired and no longer provided as menu
-aliases. Socket-wide `roles` and `audit` remain owner-private read-only
-control functions. Legacy `=/>group status/on/off/inherit` is
-temporarily retained for migration; it does **not** power on the socket.
-The existing REGISTER and recovery commands are still bounded to
-previously defined preview/read-only contracts.
+**Removed from real WhatsApp ingress:** `=/>on`, `=/>off`, `=/>help`,
+`=/>h`, and `=/>menu <category>`. The core retains legacy
+in-process power APIs for compatibility tests; the verified WhatsApp
+provider/bridge reject obsolete chat commands. In particular,
+`=/>group on/off` is not another activation switch in live control.
+Use `=/>bot on/off` inside the group instead.
+
+**Scope safety:** exact group overrides > verified kind defaults >
+socket fallback where applicable. External groups and private chats
+still **default off** even if the socket fallback is on. `community`
+stores a separate policy for *announcement groups* but does not yet
+recognize WhatsApp announcement metadata: it must never activate
+unverified ordinary groups. Likewise channel settings require
+authenticated channel identity support before live application.
+
+**Styling:** all IPC replies use the same renderer from
+`src/control_style.rs`, including status, role refusals, audit and
+the compact menu. The external default files are
+`templates/matterssmith-control.txt` (frame and credits) and
+`templates/matterssmith-menu.txt` (single command list).
+The separate Rust provider reuses the **same** renderer for its
+direct REGISTER and community recovery previews. The host may
+select a bounded, validated replacement template per community;
+this is currently in-memory configuration, not yet an operator
+command or Vault-backed persistent setting.
 
 ### Silent off
 
@@ -74,13 +93,11 @@ current effective decision, including the separate socket power gate.
 Authenticated owner power/policy configuration remains possible so an
 off state can be recovered without opening a backdoor to Bot-Matter.
 
-At present the Rust WhatsApp HMAC bridge admits **only events verified
-as authored by the linked socket owner**. The `menu` and `status`
-protocol supports private self-chat and groups. Third-party private
-chat and channel identity assertions must be added as a new
-authenticated ingress contract before asserting that all people and
-chat kinds can access these commands. Do not forge `from_me` or
-extend the v1 owner signing identity to arbitrary actors.
+The HMAC bridge has separate owner-control and read-only ingress
+paths. Verified third-party group/private messages can query
+`status`, `menu` and `bot` help only, never change bot power or
+Vault roles. Channel and community-type detection remain unverified
+and must not be inferred from plain group JIDs.
 
 ### Debug
 
@@ -93,9 +110,9 @@ does not become authorized because `--debug` was supplied.
 
 ## Styles and automatic imports — not yet enabled
 
-The separate default Matterssmith theme is a Unicode heading, category
-tree and credits. It may be used in every admitted chat; categories
-identify their implemented commands and pending integrations.
+The default Matterssmith theme is a Unicode heading, short command
+list and credits. No categories. Both the control frame and menu
+are separate editable files, not embedded in bot handlers.
 `=/>set style` and `=/>set theme` should provide authenticated,
 versioned, scoped style persistence. Manual preview should come before
 publishing a style. Automatic adaptation to another bot's `#menu`
