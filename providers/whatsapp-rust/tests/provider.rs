@@ -85,6 +85,108 @@ fn creates_valid_signed_owner_control_only_for_private_self_chat() {
     fs::remove_dir_all(root).unwrap();
 }
 
+const VERIFIED_LID: &str = "987654321012345@lid";
+
+#[test]
+fn verified_client_accepts_self_chat_in_pn_or_lid_namespaces() {
+    let (vars, root) = fixture();
+    let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
+    for (chat, sender) in [
+        (OWNER, OWNER),
+        (VERIFIED_LID, VERIFIED_LID),
+        (OWNER, VERIFIED_LID),
+        (VERIFIED_LID, OWNER),
+    ] {
+        let mut message = event("=/>status");
+        message.chat_jid = chat;
+        message.sender_jid = sender;
+        let signed = c
+            .signed_verified_control(&message, Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .expect("verified private owner event should be signed");
+        assert_eq!(signed.chat_jid, OWNER);
+        assert_eq!(signed.owner_jid, OWNER);
+        assert_eq!(signed.text, "=/>status");
+        assert_eq!(signed.signature.len(), 64);
+    }
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn verified_client_rejects_wrong_phone_foreign_chat_and_forged_lid() {
+    let (vars, root) = fixture();
+    let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
+    let message = event("=/>on");
+    assert!(c
+        .signed_verified_control(&message, None, Some(VERIFIED_LID))
+        .is_err());
+    assert!(c
+        .signed_verified_control(
+            &message,
+            Some("999999999999@s.whatsapp.net"),
+            Some(VERIFIED_LID),
+        )
+        .is_err());
+
+    let mut forged = event("=/>on");
+    forged.chat_jid = "other@s.whatsapp.net";
+    assert!(c
+        .signed_verified_control(&forged, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+
+    forged.chat_jid = VERIFIED_LID;
+    forged.sender_jid = "other@s.whatsapp.net";
+    assert!(c
+        .signed_verified_control(&forged, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+
+    forged.sender_jid = VERIFIED_LID;
+    forged.from_me = false;
+    assert!(c
+        .signed_verified_control(&forged, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+
+    forged.from_me = true;
+    forged.is_group = true;
+    assert!(c
+        .signed_verified_control(&forged, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+
+    forged.is_group = false;
+    forged.text = "#ping";
+    assert!(c
+        .signed_verified_control(&forged, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn verified_client_allows_configured_lid_only_when_it_matches_session() {
+    let (mut vars, root) = fixture();
+    vars.insert("MATTER_WA_OWNER_JID".to_owned(), VERIFIED_LID.to_owned());
+    let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
+    let mut message = event("=/>menu");
+    message.chat_jid = VERIFIED_LID;
+    message.sender_jid = VERIFIED_LID;
+
+    assert!(c
+        .signed_verified_control(&message, Some(OWNER), None)
+        .is_err());
+    let signed = c
+        .signed_verified_control(&message, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .unwrap();
+    assert_eq!(signed.owner_jid, VERIFIED_LID);
+    assert_eq!(signed.chat_jid, VERIFIED_LID);
+    fs::remove_dir_all(root).unwrap();
+}
+
 #[test]
 fn signature_matches_rust_base_control_protocol_fixture() {
     let value = SignedFrame {
