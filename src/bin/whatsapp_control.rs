@@ -9,7 +9,7 @@ use matter_base::add_commands::{parse_add_args, AddIntent};
 use matter_base::control_style::{ControlTheme, ControlThemes};
 use matter_base::{
     activation::SocketActivationStore, control::ControlDispatcher, BotRegistry, CommandAuthorizer,
-    CommandInvocation, CommandRouter, ControlExtensionRegistry, InboundReplayStore, RoleStore,
+    CommandInvocation, CommandRouter, ControlExtensionRegistry, InboundReplayStore,
     WhatsAppBridgeConfig, WhatsAppControlBridge, WhatsAppControlIpc,
 };
 use std::{
@@ -201,15 +201,11 @@ fn main() -> Result<()> {
     }
     // Socket must already exist and belong to this authenticated host owner.
     activation.audit_history(&socket, &owner)?;
-    // Socket roles are separate from BotRegistry and ecosystem staff roles.
-    // SQLite is local test state, not encrypted remote Vault synchronization.
-    let roles_path = activation_path.with_file_name("socket_roles.db");
-    if let Ok(metadata) = fs::symlink_metadata(&roles_path) {
-        if !metadata.file_type().is_file() || metadata.file_type().is_symlink() {
-            bail!("Unsafe socket role database path");
-        }
-    }
-    let socket_roles = Arc::new(RoleStore::open(&roles_path)?);
+    // Vault-Matter is the ONLY authority for role grants.
+    // Never open a writable local socket role store in the live controller.
+    // Until an authenticated Vault reader is connected, all role
+    // assignments fail closed rather than pretending local persistence
+    // has been published remotely.
     let lock = activation_path.with_extension("controller.lock");
     let _lease = ExclusiveLock::acquire(lock)?;
     let replay = Arc::new(InboundReplayStore::open(&replay_path, replay_key)?);
@@ -296,7 +292,6 @@ fn main() -> Result<()> {
     })?;
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
-            .with_socket_roles(socket_roles)
             .with_control_extensions(extensions),
     );
     let bridge = Arc::new(WhatsAppControlBridge::new(
