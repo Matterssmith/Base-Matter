@@ -8,6 +8,24 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Fuente única de permisos (Vault-Matter)
+
+Los rangos de socket y grupo no se pueden escribir localmente en
+Base-Matter. El usuario dirige altas, cambios y revocaciones de
+rango a un canal **propio y autenticado de Vault-Matter** en WhatsApp,
+Telegram o Discord. No se aceptan mensajes reenviados o un nombre
+visible como prueba de autorización. El servicio Vault es la única
+autoridad, autentica cada actor, cifra las asignaciones y mantiene la
+persistencia del repositorio privado. Base consulta permisos como
+lector de solo lectura y deniega todo permiso no confirmado.
+
+**Hasta que exista el servicio y el verificador:**
+`=/>set role`, `=/>unset role`, `=/>role` y
+`=/>group role` se rechazan sin modificar SQLite. El
+`=/>roles` privado indica que falta la conexión con Vault.
+La identidad propietaria original puede seguir apagando el socket
+sin depender de un rango delegable.
+
 ## Controles en chat privado y grupos autenticados (alpha)
 
 El control remoto ya respondió en WhatsApp al propietario con `=/>status`
