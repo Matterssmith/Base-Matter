@@ -6,6 +6,7 @@ on:
     paths:
       - "providers/whatsapp-rust/**"
       - "src/**"
+      - "templates/**"
       - "Cargo.toml"
       - "Cargo.lock"
       - ".github/workflows/whatsapp-rust-ci.yml"
