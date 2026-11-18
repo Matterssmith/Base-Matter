@@ -1,3 +1,41 @@
+## 2026-11-18 — Pruebas de regresión ampliadas y migración de menú (alpha, revisión final pendiente)
+
+- Se corrigió el transporte IPC para diferenciar un resultado
+  `ignored` legítimo, que el proveedor no debe responder,
+  de una operación no autorizada o error de comunicación.
+- Se amplió el acuse del proveedor de 1024 a 8192 bytes,
+  con tamaño del mensaje validado hasta 3800 bytes y
+  rechazo de caracteres de control. Añadida regresión de
+  menús largos y límites inválidos. Sin aumentar el tamaño
+  máximo de frames de entrada ni desactivar HMAC/replay.
+- El nuevo `ControlTheme` presenta categorías y créditos
+  Matterssmith. `help/h` dejan de existir. `menu/menú`
+  es válido para chats autorizados con política habilitada;
+  `status/estado` se admite aun apagada.
+- `tests/bot_policy.rs` prueba estado apagado, configuración
+  predeterminada independiente del encendido, herencia,
+  aislamiento grupal, silencio y `--debug`. La prueba
+  `tests/whatsapp_bridge.rs` autentica y comprueba el
+  cambio `bot` y el estado grupal a través del puente HMAC.
+- El sufijo `--debug` se interpreta solo para `=/>`,
+  con comprobación de propietario y diagnóstico depurado.
+  Las operaciones REGISTER/recuperación mantienen su
+  manejo especial cuando se añade `--debug`.
+- Se actualizaron encabezados de código y se marcaron
+  apartados obsoletos de los README como históricos,
+  conservando el historial sin declarar esos controles
+  como actuales.
+- **Pruebas a ejecutar:** cargo fmt/check/test del núcleo
+  y del proveedor independiente en Debian. No se observó
+  CI sobre el SHA exacto. Estado live nuevo no validado;
+  no se ha modificado beta ni stable.
+- **Pendientes:** acceso read-only de terceros y canales,
+  Vault como servidor real de autorización, `set style`
+  persistente, importación visual `#menu` autorizada,
+  `--auto` supervisado, `self/selfmod/mod`,
+  descubrimiento automático del catálogo de comandos,
+  y el resto de comandos históricos. No afirmar completitud.
+
 ## 2026-11-18 — Nuevo modelo de activación del bot y menú contextual (alpha; compilación pendiente)
 
 - Evidencia real de WhatsApp proporcionada por el operador:
