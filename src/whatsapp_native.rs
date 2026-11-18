@@ -82,6 +82,15 @@ impl WhatsAppNativeIngress {
         if !event.text.starts_with("=/>") {
             return Ok(WhatsAppNativeOutcome::Ignored);
         }
+        // Check limits before classifying deprecated commands. Even an
+        // ignored alias must not bypass the malformed-message boundary.
+        if event.text.len() > 4096
+            || event.message_id.is_empty()
+            || event.message_id.len() > 256
+            || event.message_id.chars().any(char::is_control)
+        {
+            bail!("Invalid WhatsApp native control message");
+        }
         // Retired live toggle aliases are never forwarded, even from the
         // legitimate socket owner. Use =/>bot on/off and explicit scopes.
         if matches!(
@@ -89,13 +98,6 @@ impl WhatsAppNativeIngress {
             Some("=/>on" | "=/>off" | "=/>encender" | "=/>apagar")
         ) {
             return Ok(WhatsAppNativeOutcome::Ignored);
-        }
-        if event.text.len() > 4096
-            || event.message_id.is_empty()
-            || event.message_id.len() > 256
-            || event.message_id.chars().any(char::is_control)
-        {
-            bail!("Invalid WhatsApp native control message");
         }
         let now = OffsetDateTime::now_utc().unix_timestamp();
         if now.abs_diff(event.timestamp) > 120 {
