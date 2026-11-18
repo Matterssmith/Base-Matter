@@ -27,7 +27,14 @@ pub fn short_html_to_whatsapp(input: &str) -> Result<String> {
     let mut output = String::with_capacity(input.len());
     while !remaining.is_empty() {
         let mut found = false;
-        for (tag, marker) in [("b", "*"), ("strong", "*"), ("i", "_"), ("em", "_"), ("s", "~"), ("code", "`")] {
+        for (tag, marker) in [
+            ("b", "*"),
+            ("strong", "*"),
+            ("i", "_"),
+            ("em", "_"),
+            ("s", "~"),
+            ("code", "`"),
+        ] {
             let opening = format!("<{tag}>");
             let closing = format!("</{tag}>");
             if remaining.starts_with(&opening) {
@@ -112,13 +119,13 @@ pub fn native_menu_message(menu: &str) -> Result<wa::Message> {
                 ..Default::default()
             }),
             interactive_message: Some(
-                wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(
-                    Box::new(wa::message::interactive_message::NativeFlowMessage {
+                wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(Box::new(
+                    wa::message::interactive_message::NativeFlowMessage {
                         buttons,
                         message_version: Some(1),
                         ..Default::default()
-                    }),
-                ),
+                    },
+                )),
             ),
             ..Default::default()
         }),
@@ -131,10 +138,8 @@ pub fn native_menu_message(menu: &str) -> Result<wa::Message> {
 /// The event still passes through owner/public HMAC and replay verification.
 pub fn readonly_button_command(message: &wa::Message) -> Option<&'static str> {
     let response = message.interactive_response_message.as_option()?;
-    let wa::message::interactive_response_message::InteractiveResponseMessage::NativeFlowResponseMessage(native) =
-        response.interactive_response_message.as_ref()?
-    else {
-        return None;
+    let native = match response.interactive_response_message.as_ref()? {
+        wa::message::interactive_response_message::InteractiveResponseMessage::NativeFlowResponseMessage(native) => native,
     };
     let params = native.params_json.as_deref()?;
     if params.len() > 512 {

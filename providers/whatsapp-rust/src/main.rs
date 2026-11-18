@@ -373,7 +373,10 @@ async fn main() -> Result<()> {
     // Opt-in until a real phone has confirmed NativeFlow rendering.
     // No platform guessing: the same three read-only buttons are offered
     // to every verified recipient, or the original text is sent.
-    let native_buttons = matches!(std::env::var("MATTER_WA_NATIVE_BUTTONS").as_deref(), Ok("1"));
+    let native_buttons = matches!(
+        std::env::var("MATTER_WA_NATIVE_BUTTONS").as_deref(),
+        Ok("1")
+    );
     require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
     let database = config

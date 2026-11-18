@@ -1,3 +1,11 @@
+## Corrección de formato NativeFlow (alpha, 2026-11-18)
+
+El primer workflow del experimento `d532ef2` indicó solo diferencias
+de Rustfmt en los archivos nuevos y el `main.rs` modificado; aún no
+alcanzaba las pruebas. Se aplicaron las diferencias del log y se evitó
+un patrón potencialmente irrefutable en el lector de respuestas.
+Nuevo CI es obligatorio para verificar firma, botones y parser.
+
 ## Experimento NativeFlow y HTML de estilo (alpha, 2026-11-18)
 
 Para una prueba controlada de botones, ejecutar en la terminal del

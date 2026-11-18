@@ -1,3 +1,11 @@
+## 2026-11-18 — CI de NativeFlow: formato pendiente y reparación (alpha)
+
+Primera ejecución `44378651037`: el proveedor rechazó formato de
+`src/ui.rs`, `src/main.rs` y `tests/ui.rs`, antes de compilación.
+Se normalizaron los ocho bloques de Rustfmt y el match de respuestas.
+El núcleo Linux pasó su workflow independiente; falta proveedor con
+tests/clippy y Windows del SHA final. Revisión de README: 2/2.
+
 ## 2026-11-18 — Fase UI: botones Rust y HTML de estilo (alpha)
 
 - Identificada API real de `whatsapp-rust` 0.7.0:

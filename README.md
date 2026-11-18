@@ -20,6 +20,15 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Rustfmt: corrección de la fase de UI NativeFlow (alpha)
+
+El workflow independiente del proveedor para `d532ef2` se detuvo en
+`cargo fmt --check` por formato en `ui.rs`, `main.rs` y
+`tests/ui.rs`. Aplicados los cambios exactos de Rustfmt. El
+lector `InteractiveResponseMessage` utiliza una coincidencia exhaustiva
+sobre el único caso protobuf en vez de un patrón irrefutable con `else`.
+No se modifican sesiones ni alcances. Nuevo CI obligatorio.
+
 ## 2026-11-18 — Botones nativos experimentales y estilo HTML mínimo (alpha)
 
 - El proveedor independiente Rust ahora tiene un constructor de
