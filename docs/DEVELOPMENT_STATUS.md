@@ -1,3 +1,33 @@
+## 2026-11-18 — Corrección de aserción grupal (alpha, test Debian pendiente)
+
+- **Evidencia nueva:** el operador probó el commit
+  `b57f6c0`. `cargo test --test control_ipc --locked`
+  pasó 6/6; en la suite principal las suites mostradas
+  pasaron hasta `tests/group_control.rs`, que terminó
+  1/2 debido a una expectativa obsoleta.
+- **Fallo exacto:** la prueba
+  `group_control_rejects_nonowners_and_wrong_chat_scope`
+  exigía `is_err()` a `=/>status` del dueño dentro de
+  `120363111@g.us` con socket apagado. El nuevo contrato
+  permite consultar estado grupal aun cuando todo está
+  apagado; el resultado esperado es
+  `GroupStatus { enabled: false, source: PoweredOff }`.
+- **Acción:** corregido `tests/group_control.rs` para
+  validar la respuesta esperada y añadir una comprobación
+  separada de rechazo de `status` administrativo para
+  un remitente ajeno; no se debilita ninguna política.
+- **Verificación pendiente:** ejecutar
+  `cargo test --test group_control --locked`,
+  `cargo test --all-targets --locked` y
+  `cargo fmt --all -- --check` en el Debian real.
+  La suite del proveedor WhatsApp Rust ya había pasado
+  20 pruebas en la ejecución anterior.
+- Persisten las condiciones de publicación:
+  Vault-Matter como única autoridad de roles, ninguna
+  escritura local de roles en runtime, sesiones
+  protegidas y `beta/stable` intactas. Revisados ambos
+  README de Base-Matter.
+
 ## 2026-11-18 — Verificación Debian y corrección de expectativa IPC (alpha, segunda ejecución pendiente)
 
 1. **Evidencia real aportada por el operador:** `git pull`
