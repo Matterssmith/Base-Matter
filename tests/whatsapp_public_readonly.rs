@@ -146,12 +146,20 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
     assert!(matches!(
         bridge.ingest(&frame("pub-3", "=/>menu", READER, GROUP, false)).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
-            if command == "menu" && output.contains("Matterssmith")
+            if command == "menu" && output.contains("*Prefijo global:* `=/>`")
     ));
     assert!(matches!(
         bridge.ingest(&frame("pub-4", "=/>menu", READER, GROUP, false)).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
-            if command == "menu" && output.contains("=/>bot on/off")
+            if command == "menu" && output.contains("bot [ámbito] on|off|inherit") && !output.contains("Lournyx Matterssmith")
+    ));
+    assert!(matches!(
+        bridge
+            .ingest(&frame("pub-credits", "=/>credits", READER, GROUP, false))
+            .unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
+            if command == "credits"
+                && output.contains("Hecho por Lournyx Matterssmith [Lou-Nyx].")
     ));
     bridge
         .ingest(&frame(
