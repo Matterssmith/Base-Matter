@@ -178,7 +178,26 @@ impl Config {
         session_pn: Option<&str>,
         session_lid: Option<&str>,
     ) -> Result<Option<SignedFrame>> {
-        if !event.from_me || event.is_group || !event.text.starts_with("=/>") {
+        if !event.from_me || !event.text.starts_with("=/>") {
+            return Ok(None);
+        }
+        // A group command is an owner-authored, explicitly scoped control.
+        // No ordinary bot handler or third-party message is enabled here.
+        let command = event.text.split_whitespace().next().unwrap_or_default();
+        let allowed = if event.is_group {
+            matches!(
+                command,
+                "=/>group" | "=/>grupo" | "=/>menu" | "=/>help"
+                    | "=/>h" | "=/>start" | "=/>add" | "=/>add++"
+            )
+        } else {
+            matches!(
+                command,
+                "=/>on" | "=/>off" | "=/>status" | "=/>set"
+                    | "=/>unset" | "=/>roles" | "=/>audit"
+            )
+        };
+        if !allowed {
             return Ok(None);
         }
 
@@ -201,9 +220,20 @@ impl Config {
         let belongs_to_owner = |jid: &str| {
             jid == expected_pn.as_str() || verified_lid == Some(jid)
         };
-        if !belongs_to_owner(event.chat_jid)
-            || !belongs_to_owner(event.sender_jid)
-        {
+        if !belongs_to_owner(event.sender_jid) {
+            return Ok(None);
+        }
+        if event.is_group {
+            if !event.chat_jid.ends_with("@g.us")
+                || event.chat_jid.len() > 128
+                || !event
+                    .chat_jid
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"@._:-".contains(&b))
+            {
+                return Ok(None);
+            }
+        } else if !belongs_to_owner(event.chat_jid) {
             return Ok(None);
         }
 
@@ -218,7 +248,16 @@ impl Config {
             is_group: event.is_group,
             timestamp: event.timestamp,
         };
-        self.signed_control(&canonical)
+        let mut signed = self.signed_control(&canonical)?;
+        if event.is_group {
+            if let Some(frame) = signed.as_mut() {
+                // The group JID is derived from the authenticated WhatsApp
+                // callback and is covered by the HMAC signature.
+                frame.chat_jid = event.chat_jid.to_owned();
+                frame.signature = sign_frame(frame, &self.bridge_key)?;
+            }
+        }
+        Ok(signed)
     }
 
     /// Signs only recent, self-authored messages in the owner's own private
