@@ -1,3 +1,35 @@
+## 2026-11-18 — Real owner group control and scoped rank recovery (alpha; CI/live groups pending)
+
+- Operator confirmed **real** WhatsApp self-chat responses to
+  `=/>status`, `=/>on`, `=/>help` and `=/>menu`.
+  Prior provider PN/LID authorization fix is live-proven for private commands.
+- Source audit found an incorrect private/group split: the provider
+  silently ignored all group JIDs and the controller had no group context.
+- Added verified owner group signing and routing over the existing HMAC
+  protocol; bridge derives group scope exclusively from the signed
+  `chat_jid@...g.us`. Source remains authenticated PN/LID and `from_me`.
+- Private owner chat now permits only socket-wide settings; group
+  `menu/help/start/add/add++` and owner `group on/off/inherit/status`
+  are group-scoped. The group policy retains its independence from
+  socket power and normal bot handlers are still disabled.
+- Added socket/group role control over a dedicated RoleStore SQLite,
+  independent of BotRegistry and project staff. `owner` is nonassignable;
+  `user` is an implicit empty grant. Exclusive changes and immutable
+  audit are transactional, and PN/LID subjects must be numeric.
+  A role record does **not** confer control execution by itself.
+- New tests: group policy scopes, HMAC group frames and replays,
+  private/group allowlists, PN/LID owner signatures and local exclusive
+  role changes. CI and actual Debian `cargo test` for these SHAs not yet
+  observed; no promotion to beta/stable.
+- Private `Matterssmith/Vault-Matter` was inspected. Its manifest,
+  envelope schema and README exist, but no authenticated runtime
+  GitHub sync or recovery and no external key/binding provider have
+  been installed. Existing encrypted outbox cannot be treated as
+  complete remote role persistence. No role data were pushed in plaintext.
+- README root, provider README and instructions updated; other
+  requested legacy commands requiring bot binding and a real Vault sink
+  remain pending. Preserve WhatsApp sessions and user data.
+
 ## 2026-11-18 — WhatsApp Rust conectado; corrección PN/LID (alpha; prueba de respuesta pendiente)
 
 - Evidencia del operador: `cargo run` en una única terminal con `CARGO_TARGET_DIR` compartido completó compilación y obtuvo `WhatsApp session connected`.
