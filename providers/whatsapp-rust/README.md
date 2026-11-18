@@ -8,6 +8,14 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Verificación del proveedor Rust (alpha; 2026-11-18)
+
+GitHub Actions `44367046939` aprobó la verificación independiente del
+proveedor para `7de9a0d`, tras la corrección de formato del marco compartido.
+Queda una advertencia de Clippy del núcleo en las pruebas de antis, corregida
+en el siguiente checkpoint. Este resultado no prueba un reinicio real de
+sesión WhatsApp ni una moderación automática activa.
+
 ## Corrección de verificación Rust (alpha; 2026-11-18)
 
 El último CI (`6142c6c`) falló por formato de la plantilla compartida

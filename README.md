@@ -20,6 +20,13 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Corrección de tres advertencias Clippy en pruebas anti (alpha)
+
+- En `7de9a0d`, el CI Linux aprobó formato y alcanzó Clippy estricto, que rechazó tres comparaciones `assert_eq!(..., false)` en `tests/anti.rs`.
+- Sustituidas por `assert!(!...)` sin cambiar reglas de activación, credenciales, decisiones de autorización ni lógica anti. Se conservan las afirmaciones de protecciones apagadas por defecto.
+- El proveedor Rust pasó su workflow de verificación en `7de9a0d`. No implica moderación automática ni prueba de una sesión real.
+- La nueva revisión aún requiere CI completo Linux/Windows y prueba real de WhatsApp antes de promover a `beta` o `stable`.
+
 ## 2026-11-18 — Corrección de CI para antis y créditos (alpha; ejecución pendiente)
 
 - La ejecución de GitHub Actions del commit `6142c6c` detectó formato Rust pendiente en seis archivos, incluido el módulo de protecciones y la plantilla compartida.

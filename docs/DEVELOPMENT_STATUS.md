@@ -1,3 +1,16 @@
+## 2026-11-18 — Clippy estricta: tres aserciones anti (alpha)
+
+- Tras `7de9a0d`, GitHub Actions Linux aprobó `cargo fmt` y alcanzó
+  `cargo clippy --all-targets -- -D warnings`; Clippy informó exactamente
+  tres comparaciones booleanas con `false` en `tests/anti.rs`.
+- Corregidas mediante aserciones negativas equivalentes. No se relajó
+  el pipeline ni se activaron las reglas de moderación.
+- El workflow separado `44367046939` del proveedor `whatsapp-rust`
+  finalizó con éxito en `7de9a0d`. La verificación Linux/Windows
+  completa debe repetirse para el nuevo SHA.
+- README raíz y proveedor revisados (2/2) y actualizados (2/2).
+  Sin acceso ni alteración de sesiones del operador. Ramas beta/stable intactas.
+
 ## 2026-11-18 — Reparación de CI de antis/créditos en alpha (pendiente verificación)
 
 - Diagnóstico GitHub Actions sobre `6142c6c`: las comprobaciones de formato fallaron

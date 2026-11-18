@@ -19,8 +19,8 @@ fn args(values: &[&str]) -> Vec<String> {
 fn all_anti_rules_are_disabled_until_explicitly_configured() {
     let store = AntiStore::open(":memory:").unwrap();
     for rule in RULES {
-        assert_eq!(store.get_global(SOCKET, rule).unwrap().enabled, false);
-        assert_eq!(store.get(SOCKET, GROUP, rule).unwrap().enabled, false);
+        assert!(!store.get_global(SOCKET, rule).unwrap().enabled);
+        assert!(!store.get(SOCKET, GROUP, rule).unwrap().enabled);
         assert_eq!(
             store.get(SOCKET, GROUP, rule).unwrap().action,
             AntiAction::Warn
@@ -57,7 +57,7 @@ fn anti_status_means_whatsapp_group_status_not_list_all_antis() {
             .unwrap(),
         "status: on [warn]"
     );
-    assert_eq!(store.get(SOCKET, GROUP, "oneview").unwrap().enabled, false);
+    assert!(!store.get(SOCKET, GROUP, "oneview").unwrap().enabled);
     let global = store.command(SOCKET, None, &args(&["status"])).unwrap();
     assert_eq!(global, "status: off [warn]");
 }
