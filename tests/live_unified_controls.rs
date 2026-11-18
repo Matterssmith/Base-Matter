@@ -251,7 +251,12 @@ fn credits_are_explicit_and_do_not_turn_on_any_chat() {
             output: "Créditos:\nHecho por Lournyx Matterssmith [Lou-Nyx].".to_owned(),
         }
     );
-    assert!(!store.resolve_persisted("socket-alpha", None).unwrap().enabled);
+    assert!(
+        !store
+            .resolve_persisted("socket-alpha", None)
+            .unwrap()
+            .enabled
+    );
     assert!(control
         .dispatch("socket-alpha", "outsider", "other", None, "=/>credits")
         .is_err());
