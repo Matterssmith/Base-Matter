@@ -184,3 +184,38 @@ fn socket_wide_bot_on_alone_wakes_the_self_chat_not_all_external_chats() {
         DispatchResult::GroupStatus { enabled: true, .. },
     ));
 }
+
+#[test]
+fn community_announcement_policy_is_configurable_but_requires_verified_platform_type() {
+    let (control, store) = fixture();
+    assert_eq!(
+        command(&control, None, "=/>bot comunidad on").unwrap(),
+        DispatchResult::BotPolicyChanged {
+            scope: "community".into(),
+            policy: Some(true),
+        }
+    );
+    assert!(matches!(
+        command(&control, None, "=/>status --global").unwrap(),
+        DispatchResult::BotGlobalStatus {
+            community_policy: Some(true),
+            group_policy: None,
+            channel_policy: None,
+            ..
+        }
+    ));
+    // A WhatsApp announcement group still arrives as an ordinary group
+    // until authenticated community metadata is available. The new
+    // policy must not silently activate arbitrary groups.
+    assert!(matches!(
+        command(&control, Some("120363999@g.us"), "=/>status").unwrap(),
+        DispatchResult::GroupStatus {
+            enabled: false,
+            source: ActivationSource::None,
+            ..
+        }
+    ));
+    let (_, _, _, _, _, community) =
+        store.inspect_bot_defaults("socket-alpha", "owner").unwrap();
+    assert_eq!(community, Some(true));
+}
