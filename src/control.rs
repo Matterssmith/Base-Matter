@@ -6,6 +6,7 @@
 use crate::{
     activation::{ActivationSource, GlobalPolicy, SocketActivationStore},
     control_style::ControlThemes,
+    anti::{AntiStore, RULES as ANTI_RULES},
     BotRegistry, CommandRouter, ControlExtensionContext, ControlExtensionRegistry, RoleStore,
 };
 use anyhow::{anyhow, bail, Result};
@@ -83,6 +84,7 @@ pub struct ControlDispatcher {
     silent_when_disabled: bool,
     unified_live_controls: bool,
     public_menu: Option<Arc<ControlThemes>>,
+    group_antis: Option<Arc<AntiStore>>,
 }
 
 impl ControlDispatcher {
@@ -103,6 +105,7 @@ impl ControlDispatcher {
             silent_when_disabled: false,
             unified_live_controls: false,
             public_menu: None,
+            group_antis: None,
         }
     }
 
@@ -124,6 +127,7 @@ impl ControlDispatcher {
             silent_when_disabled: false,
             unified_live_controls: false,
             public_menu: None,
+            group_antis: None,
         }
     }
 
@@ -423,6 +427,14 @@ impl ControlDispatcher {
         }
     }
 
+    /// Installs durable, per-verified-group anti-rule configuration.
+    /// The dispatcher accepts only authenticated owner controls for writes.
+    /// Detection never grants authority to delete messages or remove users.
+    pub fn with_group_antis(mut self, store: Arc<AntiStore>) -> Self {
+        self.group_antis = Some(store);
+        self
+    }
+
     /// Install trusted, render-only public menu support. Never connect this
     /// entry point to arbitrary executable extensions or bot handlers.
     pub fn with_public_menu(mut self, themes: Arc<ControlThemes>) -> Self {
@@ -571,6 +583,40 @@ impl ControlDispatcher {
                 }
             }
             match tokens.as_slice() {
+                ["antis"] => {
+                    let group_id = group.ok_or_else(|| anyhow!("Antis requieren grupo verificado"))?;
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Solo el propietario del socket configura protecciones");
+                    }
+                    let store = self.group_antis.as_ref().ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
+                    let output = store.command(receiving_socket, group_id, "antis", &[])?;
+                    return Ok(DispatchResult::Extension { command: "antis".into(), output });
+                }
+                ["set", rule, "action" | "accion" | "acciones" | "accions", action]
+                    if ANTI_RULES.contains(rule) =>
+                {
+                    let group_id = group.ok_or_else(|| anyhow!("Configura antis dentro del grupo"))?;
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Solo el propietario del socket configura protecciones");
+                    }
+                    let store = self.group_antis.as_ref().ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
+                    let args = vec![(*rule).to_owned(), "action".to_owned(), (*action).to_owned()];
+                    let output = store.command(receiving_socket, group_id, "set", &args)?;
+                    return Ok(DispatchResult::Extension { command: "set".into(), output });
+                }
+                [rule, args @ ..] if ANTI_RULES.contains(rule) => {
+                    let group_id = group.ok_or_else(|| anyhow!("Antis requieren grupo verificado"))?;
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Solo el propietario del socket configura protecciones");
+                    }
+                    let store = self.group_antis.as_ref().ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
+                    let args = args.iter().map(|value| (*value).to_owned()).collect::<Vec<_>>();
+                    let output = store.command(receiving_socket, group_id, rule, &args)?;
+                    return Ok(DispatchResult::Extension { command: (*rule).to_owned(), output });
+                }
                 ["credits" | "creditos" | "créditos"] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
