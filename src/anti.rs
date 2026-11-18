@@ -11,11 +11,37 @@ use std::{fs, path::Path, sync::Mutex, time::Duration};
 /// Rules are independent and all deny-by-default (disabled) until enabled
 /// by the authenticated socket owner for the exact signed group.
 pub const RULES: &[&str] = &[
-    "antilink", "antilinkwa", "antilinktelegram", "antilinkdiscord",
-    "antilinkinstagram", "antilinkfacebook", "antilinktiktok",
-    "antilinkyoutube", "antilinkx", "antilinkshort", "antilinkphishing",
-    "antispam", "antiflood", "antimention", "antibot", "antimedia",
-    "antiviewonce", "antidelete", "anticall",
+    "antilink",
+    "antilinkwa",
+    "antilinktelegram",
+    "antilinkdiscord",
+    "antilinkinstagram",
+    "antilinkfacebook",
+    "antilinktiktok",
+    "antilinkyoutube",
+    "antilinkx",
+    "antilinkshort",
+    "antilinkphishing",
+    "antigroup",
+    "antichannel",
+    "antiviewonce",
+    "anticall",
+    "antisticker",
+    "antiimage",
+    "antivideo",
+    "antiaudio",
+    "antidocument",
+    "antigif",
+    "antilocation",
+    "anticontact",
+    "antipoll",
+    "antiforward",
+    "antispam",
+    "antiflood",
+    "antimention",
+    "antibot",
+    "antimedia",
+    "antidelete",
 ];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -73,8 +99,44 @@ fn valid_scope(socket: &str, group: &str) -> Result<()> {
     }
     Ok(())
 }
-fn canonical_rule(rule: &str) -> Result<&'static str> {
-    RULES.iter().copied().find(|value| *value == rule)
+/// Accept the grouped `=/>anti <rule>` syntax while keeping the earlier
+/// canonical database keys stable across upgrades.
+pub fn canonical_rule(rule: &str) -> Result<&'static str> {
+    let key = match rule {
+        "link" => "antilink",
+        "linkwa" | "whatsapp" => "antilinkwa",
+        "telegram" => "antilinktelegram",
+        "discord" => "antilinkdiscord",
+        "instagram" => "antilinkinstagram",
+        "facebook" => "antilinkfacebook",
+        "tiktok" => "antilinktiktok",
+        "youtube" => "antilinkyoutube",
+        "x" | "twitter" => "antilinkx",
+        "short" | "shortlink" => "antilinkshort",
+        "phishing" => "antilinkphishing",
+        "group" | "groups" | "invite" => "antigroup",
+        "channel" | "channels" => "antichannel",
+        "oneview" | "viewonce" | "once" => "antiviewonce",
+        "call" | "calls" => "anticall",
+        "sticker" | "stiker" | "stickers" => "antisticker",
+        "image" | "photo" | "picture" => "antiimage",
+        "movie" | "video" => "antivideo",
+        "audio" | "voice" => "antiaudio",
+        "document" | "file" => "antidocument",
+        "gif" => "antigif",
+        "location" => "antilocation",
+        "contact" => "anticontact",
+        "poll" => "antipoll",
+        "forward" => "antiforward",
+        "spam" => "antispam",
+        "flood" => "antiflood",
+        "mention" | "mentions" => "antimention",
+        "bot" => "antibot",
+        "media" => "antimedia",
+        "delete" => "antidelete",
+        other => other,
+    };
+    RULES.iter().copied().find(|value| *value == key)
         .ok_or_else(|| anyhow!("Protección desconocida"))
 }
 
@@ -185,44 +247,92 @@ impl AntiStore {
         Ok(selected)
     }
 
+    fn display(&self, socket: &str, group: &str, name: &str) -> Result<String> {
+        let canonical = canonical_rule(name)?;
+        let state = self.get(socket, group, canonical)?;
+        Ok(format!(
+            "{name}: {} [{}]; moderación automática no conectada.",
+            if state.enabled { "on" } else { "off" },
+            state.action.as_str()
+        ))
+    }
+
     pub fn command(&self, socket: &str, group: &str, verb: &str, args: &[String]) -> Result<String> {
         valid_scope(socket, group)?;
-        if verb == "antis" {
-            if !args.is_empty() { bail!("Uso: antis"); }
-            let mut entries = Vec::new();
-            for name in RULES {
-                let setting = self.get(socket, group, name)?;
-                entries.push(format!("{name}: {} [{}]", if setting.enabled { "on" } else { "off" }, setting.action.as_str()));
+        if matches!(verb, "anti" | "antis") {
+            match args {
+                [] => {
+                    let mut entries = Vec::new();
+                    for name in RULES {
+                        let display_name = name.strip_prefix("anti").unwrap_or(name);
+                        let state = self.get(socket, group, name)?;
+                        entries.push(format!(
+                            "{display_name}: {} [{}]",
+                            if state.enabled { "on" } else { "off" },
+                            state.action.as_str()
+                        ));
+                    }
+                    return Ok(format!(
+                        "Antis del grupo (todos apagados inicialmente; sin moderación conectada):\\n{}",
+                        entries.join("\\n")
+                    ));
+                }
+                [s] if s == "status" => {
+                    return self.command(socket, group, "anti", &[]);
+                }
+                [first, name] if first == "status" => {
+                    return self.display(socket, group, name);
+                }
+                [name] => {
+                    return self.display(socket, group, name);
+                }
+                [name, action] => {
+                    return self.change_rule(socket, group, name, action);
+                }
+                _ => bail!("Uso: anti [tipo] [status|on|off]"),
             }
-            return Ok(format!("Protecciones del grupo (sin moderación automática conectada):\n{}", entries.join("\n")));
         }
-        if verb == "set" {
+        if matches!(verb, "set" | "set-anti") {
             let [name, key, value] = args else {
-                bail!("Uso: set antilink action warn|delete|kick");
+                bail!("Uso: set anti <tipo> action warn|delete|kick");
             };
             if !matches!(key.as_str(), "action" | "accion" | "acciones" | "accions") {
                 bail!("Parámetro inválido: usa action");
             }
-            let action = AntiAction::parse(value)?;
-            let result = self.set(socket, group, name, None, Some(action))?;
-            return Ok(format!("{name}: acción {} configurada; aplicación real pendiente de adaptador admin verificado.", result.action.as_str()));
+            let selected = self.set(
+                socket,
+                group,
+                name,
+                None,
+                Some(AntiAction::parse(value)?),
+            )?;
+            let canonical = canonical_rule(name)?;
+            return Ok(format!(
+                "{}: acción {} configurada; sin moderación automática.",
+                canonical.strip_prefix("anti").unwrap_or(canonical),
+                selected.action.as_str()
+            ));
         }
-        let name = canonical_rule(verb)?;
         match args {
-            [] => {
-                let state = self.get(socket, group, name)?;
-                Ok(format!("{name}: {} [{}]; aplicación real pendiente.", if state.enabled { "on" } else { "off" }, state.action.as_str()))
-            }
-            [state] if state == "status" => {
-                let state = self.get(socket, group, name)?;
-                Ok(format!("{name}: {} [{}]; aplicación real pendiente.", if state.enabled { "on" } else { "off" }, state.action.as_str()))
-            }
-            [state] if matches!(state.as_str(), "on" | "off") => {
-                let updated = self.set(socket, group, name, Some(state == "on"), None)?;
-                Ok(format!("{name}: {} [{}]; configuración guardada, sin moderación automática.", if updated.enabled { "on" } else { "off" }, updated.action.as_str()))
-            }
-            _ => bail!("Uso: antilink on|off|status"),
+            [] => self.display(socket, group, verb),
+            [word] if word == "status" => self.display(socket, group, verb),
+            [word] => self.change_rule(socket, group, verb, word),
+            _ => bail!("Uso: anti [tipo] [status|on|off]"),
         }
+    }
+
+    fn change_rule(&self, socket: &str, group: &str, name: &str, action: &str) -> Result<String> {
+        if !matches!(action, "on" | "off") {
+            bail!("Usa status, on u off");
+        }
+        let selected = self.set(socket, group, name, Some(action == "on"), None)?;
+        let canonical = canonical_rule(name)?;
+        Ok(format!(
+            "{}: {} [{}]; regla guardada, moderación real no conectada.",
+            canonical.strip_prefix("anti").unwrap_or(canonical),
+            if selected.enabled { "on" } else { "off" },
+            selected.action.as_str()
+        ))
     }
 
     /// Text-only link classification. No chat mutations occur here.
