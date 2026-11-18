@@ -72,7 +72,12 @@ fn owner_enables_chat_and_socket_with_one_bot_command() {
             bot_instance_id: None,
         })
     );
-    assert!(activation.inspect_bot_defaults("socket-a", "owner").unwrap().0);
+    assert!(
+        activation
+            .inspect_bot_defaults("socket-a", "owner")
+            .unwrap()
+            .socket_powered
+    );
     assert_eq!(
         ingress.ingest(&message("c", "=/>bot off")).unwrap(),
         WhatsAppNativeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
