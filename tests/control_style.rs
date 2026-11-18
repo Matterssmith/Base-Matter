@@ -7,21 +7,28 @@
 use matter_base::control_style::{ControlTheme, ControlThemes};
 
 #[test]
-fn matterssmith_default_menu_has_categories_and_removes_help_h() {
+fn matterssmith_global_menu_is_compact_and_uses_real_newlines() {
     let style = ControlTheme::new("Matter", "base-matter", "✦").unwrap();
     let menu = style.render("menu").unwrap();
-    assert!(menu.contains("Bot ID: base-matter"));
-    assert!(menu.contains("꒦꒷✰"));
-    assert!(menu.contains("=/>menu group"));
-    assert!(menu.contains("=/>menu config"));
+    assert!(menu.starts_with("*꒦꒷✰"));
+    assert!(menu.contains("꧁✪⃢.✪"));
+    assert!(menu.contains("=/>on / =/>off"));
+    assert!(menu.contains("=/>status"));
+    assert!(menu.contains("=/>bot --global"));
     assert!(menu.contains("Lournyx Matterssmith [Lou-Nyx]"));
-    assert!(style.render("menu group").unwrap().contains("=/>start"));
-    assert!(style.render("menu mode").unwrap().contains("=/>bot"));
-    assert!(style.render("menu vault").unwrap().contains("Vault"));
+    assert!(menu.contains('\n'));
+    assert!(!menu.contains("\\n"));
+    assert!(!menu.contains("Categorías"));
+    assert!(!menu.contains("=/>menu group"));
+    assert!(!menu.contains("Bot ID:"));
+    assert!(style.render("menu group").is_err());
     assert!(style.render("help").is_err());
     assert!(style.render("h").is_err());
-    assert!(style.render("menu unsupported").is_err());
     assert!(style.render("start").is_err());
+
+    let status = style.decorate("BOT ACTIVADO").unwrap();
+    assert!(status.contains("BOT ACTIVADO"));
+    assert_eq!(style.decorate(&menu).unwrap(), menu);
 }
 
 #[test]
