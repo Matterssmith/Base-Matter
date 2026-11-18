@@ -6,6 +6,7 @@
  */
 pub mod recovery;
 pub mod rich_preview;
+pub mod rich_transport;
 pub mod ui;
 
 // One implementation and one set of template assets are shared with

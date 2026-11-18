@@ -1,3 +1,24 @@
+## 2026-11-18 — Integración compatible con trabajo paralelo Rich (alpha)
+
+Al comparar el HEAD se detectaron dos commits concurrentes
+`2dfc214` y `a6cbb19`, no presentes al inicio de esta tarea.
+Se verificó por comparación que el último incluía
+`rich_preview.rs`, tests, CLI offline y documentación; sus
+workflows Linux/Windows y proveedor estaban en verde.
+Se **preservó** ese trabajo y se descartó la implementación
+duplicada aún no publicada.
+
+Nueva capa independiente `rich_transport.rs` y tests,
+consumiendo el JSON offline existente: empaqueta un
+`wa::AIRichResponseMessage` sin suplantación de Meta AI.
+`MATTER_WA_RICH_HTML=1` opt-in, self-chat propietario
+verificado por HMAC, solo `=/>menu`. Fallo en transporte
+cae a NativeFlow/texto. No se afirma que un envío aceptado
+sea visible. No habilita grupos ni privilegios nuevos.
+CI y prueba en teléfono pendientes para el nuevo SHA.
+README raíz y proveedor auditados 2/2; sesiones, `beta`
+y `stable` intactas. No se adjuntó ni ejecutó `xd.zip`.
+
 ## 2026-11-18 — Alineación Rustfmt del prototipo offline (alpha)
 
 CI `44383479213` informó tres diferencias de Rustfmt en

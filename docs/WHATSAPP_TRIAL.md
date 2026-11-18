@@ -1,3 +1,31 @@
+## Prueba experimental RichResponse en self-chat — alpha 2026-11-18
+
+No cambia el menú predeterminado. `--rich-preview-html/json`
+continúan sin conexión, sin sesiones y sin enviar WhatsApp.
+Además, un ensayo separado puede **intentar** presentar la
+hoja en el chat del propio propietario; su compatibilidad no
+está demostrada y no funciona en grupos por diseño.
+
+Con una sola instancia autorizada, tras detener la anterior y
+actualizar `alpha` sin borrar la sesión:
+
+```bash
+cd /home/Sakura/Base-Matter
+export MATTER_WA_RICH_HTML=1
+export MATTER_WA_NATIVE_BUTTONS=1
+cargo run --locked
+```
+
+Enviar `=/>menu` en el self-chat. El proveedor intenta una
+respuesta RichResponse sin atribución falsa a Meta AI.
+Si el transporte la rechaza, prueba NativeFlow y finalmente
+texto. Si el servidor acepta el envío pero la app no lo
+renderiza, puede no verse nada: registrar el comportamiento
+del teléfono y revisar logs sin compartir secretos.
+Los grupos siguen usando solo NativeFlow/texto. Para desactivar
+la hoja: `export MATTER_WA_RICH_HTML=0` y reiniciar.
+**No afirmar soporte Android/iOS/Web ni producción.**
+
 ## Vista previa HTML local del menú original (alpha, 2026-11-18)
 
 Sin abrir sesión ni usar claves WhatsApp, el proveedor Rust permite

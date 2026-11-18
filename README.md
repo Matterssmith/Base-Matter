@@ -20,6 +20,28 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Extensión segura sobre la vista previa Rich (alpha)
+
+Se conservaron los commits paralelos de `alpha` con vista previa
+HTML/JSON offline y CI verde (`a6cbb19`). A partir de ellos, la
+implementación Rust añade un ensayo **separado**, opt-in y acotado al
+**chat propio**: `providers/whatsapp-rust/src/rich_transport.rs`
+envuelve el JSON generado por el módulo offline en el protobuf
+`AIRichResponseMessage`, sin fingir procedencia de Meta AI ni
+usar `botForwardedMessage`. El HTML procede exclusivamente del
+menú original escapado; no se importan archivos Go/JS ni juegos.
+
+`MATTER_WA_RICH_HTML=1` permite **intentar** la entrega RichResponse
+solo después de una autorización HMAC de `=/>menu` en el self-chat
+del propietario. Apagado por defecto. Error de envío -> botones
+NativeFlow, luego texto. Si WhatsApp recibe un mensaje que no puede
+mostrar, el programa no lo detecta: requiere prueba real. No
+declarar HTML compatible sin evidencias. `beta` y `stable`
+intactas; `Bot-Matter` sigue bloqueado. Tests de payload, origen,
+límites e IDs nuevos; CI del commit aún por verificar. READMEs
+revisados íntegramente 2/2.
+Ver [evaluación Rich](docs/WHATSAPP_RICH_HTML_COMPAT.md).
+
 ## 2026-11-18 — Rustfmt de pruebas Rich HTML (alpha)
 
 El primer CI para `2dfc214` encontró tres diferencias de Rustfmt

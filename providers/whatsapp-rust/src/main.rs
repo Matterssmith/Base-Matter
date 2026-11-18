@@ -17,6 +17,7 @@ use whatsapp_matter_rust_provider::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
     render_provider_control,
+    rich_transport::experimental_self_chat_rich_message,
     ui::{native_menu_message, readonly_button_command},
     Config, ControlAck, Event, SessionLease,
 };
@@ -403,6 +404,12 @@ async fn main() -> Result<()> {
         std::env::var("MATTER_WA_NATIVE_BUTTONS").as_deref(),
         Ok("1")
     );
+    // Unverified rich-HTML transport, explicitly enabled only for
+    // an authenticated owner's self-chat. No forged Meta AI envelope.
+    let rich_html_trial = matches!(
+        std::env::var("MATTER_WA_RICH_HTML").as_deref(),
+        Ok("1")
+    );
     require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
     let database = config
@@ -580,6 +587,23 @@ async fn main() -> Result<()> {
                                     }
                                 }
                             };
+                            if rich_html_trial
+                                && frame.from_me
+                                && frame.chat_jid == config.owner_jid
+                                && matches!(actual_command, "=/>menu" | "=/>menú")
+                            {
+                                if let Ok(message) = experimental_self_chat_rich_message(&response)
+                                {
+                                    if ctx.send_message(message).await.is_ok() {
+                                        return;
+                                    }
+                                }
+                                // A transport rejection falls back to NativeFlow/text;
+                                // accepted delivery still needs visual validation.
+                                eprintln!(
+                                    "Base-Matter: experimental HTML rejected; using native/text menu"
+                                );
+                            }
                             if native_buttons
                                 && matches!(actual_command, "=/>menu" | "=/>menú")
                             {

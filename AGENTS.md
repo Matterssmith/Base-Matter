@@ -1,5 +1,19 @@
 # Matterssmith — repository instructions
 
+## Invariante más reciente — ensayo RichResponse del propietario, solo self-chat
+
+El archivo `rich_preview.rs` y el CLI `--rich-preview-*` conservan
+su naturaleza offline. Como continuación separada, `rich_transport.rs`
+puede empaquetar el JSON validado como `wa::AIRichResponseMessage`,
+**sin** `botForwardedMessage`, `0@bot`, `forwardOrigin` ni
+`isForwarded` inventados. Solo se intenta enviar si el operador fijó
+`MATTER_WA_RICH_HTML=1`, el control HMAC ya fue autorizado y el
+mensaje es del propietario en su chat privado propio. No habilitar
+grupos, privados externos ni funciones administrativas por este modo.
+Ante error de envío, fallback NativeFlow/texto. Un envío aceptado no
+demuestra que el cliente renderice la hoja. No se declara soporte
+Android/iOS hasta la prueba manual. Mantener todo desactivado por defecto.
+
 ## Invariante adicional — compatibilidad de Rich HTML (alpha, 2026-11-18)
 
 Se revisaron ejemplos no confiables de Go/JS/HTML recibidos en

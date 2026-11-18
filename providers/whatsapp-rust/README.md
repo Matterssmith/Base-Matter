@@ -1,3 +1,24 @@
+## Ensayo RichResponse opt-in únicamente en el chat propio (alpha)
+
+Se conserva `rich_preview.rs` y sus comandos offline
+`--rich-preview-html` / `--rich-preview-json`. El módulo
+independiente `rich_transport.rs` empaqueta ese JSON como
+`AIRichResponseMessage` nativo, sin alterar los datos ni
+afirmar ser Meta AI. Sólo se intenta entregar tras recibir
+`=/>menu` del propietario autenticado en su self-chat y con
+`MATTER_WA_RICH_HTML=1`. En grupos o mensajes de terceros
+esta opción no se usa, aun si está activada. Default apagado.
+
+El proveedor hace fallback a NativeFlow o al menú original si
+`send_message` rechaza la operación; no detecta si el cliente
+ignora un envío aceptado. Es un **ensayo**, no HTML WhatsApp
+garantizado. El modo de prueba no ejecuta scripts de `xd.zip`,
+no atribuye origen Meta AI, no permite botones administrativos
+ni abre una segunda sesión. La vista previa local conserva sus
+botones deshabilitados; los únicos controles con interacción
+real continúan siendo los tres NativeFlow de solo lectura.
+Detalles: `../../docs/WHATSAPP_RICH_HTML_COMPAT.md`.
+
 ## Ajuste de formato del prototipo Rich (alpha)
 
 El verificador de `2dfc214` rechazó el formato de dos índices

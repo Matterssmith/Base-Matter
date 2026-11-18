@@ -1,7 +1,30 @@
 # Base-Matter — Compatibilidad de HTML enriquecido en WhatsApp
 
-**Estado:** investigación offline en `alpha`. No es una capacidad de envío
-HTML real y no habilita ninguna acción por defecto.
+**Estado:** vista previa offline validada en `alpha` y ensayo de
+transporte RichResponse de propietario **sin compatibilidad visual verificada**.
+El ensayo permanece desactivado por defecto.
+
+## Continuidad: intento RichResponse no suplantado (solo self-chat)
+
+El módulo `rich_preview.rs` sigue sin acceso a red: construye una
+vista HTML local con los botones de ejemplo deshabilitados y un esquema
+JSON para validar campos y límites. La nueva capa
+`rich_transport.rs` puede envolver ese esquema como
+`wa::AIRichResponseMessage` con ID aleatorio por mensaje, pero
+no incluye `botForwardedMessage`, `0@bot`, indicadores de
+reenviado o procedencia Meta AI inventada.
+
+`MATTER_WA_RICH_HTML=1` activa **únicamente una prueba** después
+de la autorización de `=/>menu` del dueño en su self-chat.
+No cambia la ruta de grupos ni externos, no concede funciones
+de administración y no abre sesiones adicionales. Si el
+transporte falla, intenta NativeFlow y después el texto.
+Si el cliente no lo renderiza después de aceptar el transporte,
+no existe señal fiable para detectar el fallo. Sigue sin
+demostrarse compatibilidad en Android/iOS/Web.
+
+No se copiaron los códigos sin licencia conocida ni los diseños
+de la otra marca aportada en el ZIP.
 
 ## Qué reveló el material facilitado
 
