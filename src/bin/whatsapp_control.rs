@@ -9,7 +9,7 @@ use matter_base::add_commands::{parse_add_args, AddIntent};
 use matter_base::control_style::{ControlTheme, ControlThemes};
 use matter_base::{
     activation::SocketActivationStore, control::ControlDispatcher, BotRegistry, CommandAuthorizer,
-    CommandInvocation, CommandRouter, ControlExtensionRegistry, InboundReplayStore,
+    CommandInvocation, CommandRouter, ControlExtensionRegistry, InboundReplayStore, RoleStore,
     WhatsAppBridgeConfig, WhatsAppControlBridge, WhatsAppControlIpc,
 };
 use std::{
@@ -201,6 +201,15 @@ fn main() -> Result<()> {
     }
     // Socket must already exist and belong to this authenticated host owner.
     activation.audit_history(&socket, &owner)?;
+    // Socket roles are separate from BotRegistry and ecosystem staff roles.
+    // SQLite is local test state, not encrypted remote Vault synchronization.
+    let roles_path = activation_path.with_file_name("socket_roles.db");
+    if let Ok(metadata) = fs::symlink_metadata(&roles_path) {
+        if !metadata.file_type().is_file() || metadata.file_type().is_symlink() {
+            bail!("Unsafe socket role database path");
+        }
+    }
+    let socket_roles = Arc::new(RoleStore::open(&roles_path)?);
     let lock = activation_path.with_extension("controller.lock");
     let _lease = ExclusiveLock::acquire(lock)?;
     let replay = Arc::new(InboundReplayStore::open(&replay_path, replay_key)?);
@@ -252,6 +261,20 @@ fn main() -> Result<()> {
             "Base-Matter: intención {kind} validada. Solo vista previa. Sin cambios en WhatsApp."
         ))
     })?;
+    extensions.register("roles", &[], |context, args| {
+        if context.group_id.is_some() || !args.is_empty() {
+            bail!("Role catalog is private socket configuration only");
+        }
+        Ok("Rangos del socket: owner (propietario real, no asignable), co-owner, admin, moderator, operator, trusted, member, restricted, banned, user (implícito).\\n=/>set role PN_O_LID RANGO\\n=/>unset role PN_O_LID RANGO\\nLos roles de administración del proyecto son independientes. Sin sincronización remota de Vault.".replace("\\n", "\n"))
+    })?;
+    let audit_store = Arc::clone(&activation);
+    extensions.register("audit", &[], move |context, args| {
+        if context.group_id.is_some() || !args.is_empty() {
+            bail!("Socket audit is private owner configuration only");
+        }
+        let records = audit_store.audit_history(context.socket_id, context.actor_id)?;
+        Ok(format!("Base-Matter: auditoría del socket, {} registros locales. Vault-Matter aún no sincronizado.", records.len()))
+    })?;
     let style = Arc::new(ControlThemes::new(ControlTheme::new(
         "Base-Matter",
         "base-matter",
@@ -273,6 +296,7 @@ fn main() -> Result<()> {
     })?;
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
+            .with_socket_roles(socket_roles)
             .with_control_extensions(extensions),
     );
     let bridge = Arc::new(WhatsAppControlBridge::new(
