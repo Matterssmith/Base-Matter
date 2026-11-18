@@ -98,7 +98,8 @@ impl WhatsAppControlBridge {
             || frame.socket_id != self.config.socket_id
             || frame.actor_id != self.config.owner_actor_id
             || frame.owner_jid != self.config.owner_jid
-            || frame.chat_jid != self.config.owner_jid
+            || (frame.chat_jid != self.config.owner_jid
+                && !valid_group_jid(&frame.chat_jid))
             || !frame.from_me
         {
             bail!("WhatsApp control identity denied");
@@ -152,15 +153,29 @@ impl WhatsAppControlBridge {
         {
             return Ok(WhatsAppBridgeOutcome::Duplicate);
         }
+        let group_id = if frame.chat_jid == self.config.owner_jid {
+            None
+        } else {
+            Some(frame.chat_jid.as_str())
+        };
         let outcome = self.control.dispatch(
             &self.config.socket_id,
             &self.config.owner_actor_id,
-            &self.config.owner_jid,
-            None,
+            &frame.chat_jid,
+            group_id,
             &frame.text,
         )?;
         Ok(WhatsAppBridgeOutcome::Dispatched(outcome))
     }
+}
+
+fn valid_group_jid(value: &str) -> bool {
+    value.ends_with("@g.us")
+        && !value.starts_with('@')
+        && value.len() <= 128
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"@._:-".contains(&byte))
 }
 
 fn validate_identifier(value: &str) -> Result<()> {
