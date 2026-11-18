@@ -50,6 +50,33 @@
   descubrimiento automático del catálogo de comandos,
   y el resto de comandos históricos. No afirmar completitud.
 
+## 2026-11-18 — Ingreso de consultas públicas PN/LID firmadas (alpha; compilación y dispositivo pendientes)
+
+- Añadida la ruta separada para `status/menu/bot` de otros
+  participantes en grupos y privados externos, limitada
+  a consultas. Firma HMAC vincula el JID real de remitente
+  de WhatsApp y el chat exacto; conserva la comprobación
+  de sesión PN/LID y ventana temporal. No permite
+  administración del socket, `--global`, `--debug`, rol
+  ni comandos del bot normal.
+- Se añadió `ControlDispatcher::dispatch_public_readonly`
+  con `ControlThemes` explícitamente render-only; la ruta
+  ordinaria owner sigue aislada. El chat propio usa
+  `kind:self`; el estado `kind:private` no lo afecta.
+- Pruebas nuevas: `tests/whatsapp_public_readonly.rs`,
+  regresiones de `tests/bot_policy.rs` y firma/denegación
+  pública en `providers/whatsapp-rust/tests/provider.rs`.
+  Es necesario ejecutarlas en Debian para confirmar
+  compilación y después comprobar la recepción real desde
+  otra cuenta autorizada del grupo.
+- Conserva la prohibición de copiar rangos locales como
+  fuente de verdad. Vault-Matter solo puede autorizar
+  cuando exista un lector autenticado; sigue sin conectar.
+- Canales y adaptación automática de temas/IA no están
+  implementados. No asumir que todos los usuarios de
+  privados PN/LID mixtos recibirán respuestas sin pruebas.
+  No se promueve a beta/stable.
+
 ## 2026-11-18 — Nuevo modelo de activación del bot y menú contextual (alpha; compilación pendiente)
 
 - Evidencia real de WhatsApp proporcionada por el operador:
