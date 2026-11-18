@@ -289,7 +289,8 @@ fn main() -> Result<()> {
     })?;
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
-            .with_control_extensions(extensions),
+            .with_control_extensions(extensions)
+            .with_silent_bot_commands(),
     );
     let bridge = Arc::new(WhatsAppControlBridge::new(
         WhatsAppBridgeConfig {
