@@ -31,7 +31,7 @@ fn make() -> (WhatsAppControlIpc, Arc<SocketActivationStore>) {
         Arc::new(BotRegistry::in_memory()),
         router,
         None,
-    ));
+    ).with_unified_live_controls());
     let bridge = Arc::new(
         WhatsAppControlBridge::new(
             WhatsAppBridgeConfig {
@@ -70,7 +70,7 @@ fn signed(id: &str, text: &str) -> Vec<u8> {
 #[test]
 fn authenticated_wire_changes_socket_only_once() {
     let (service, activation) = make();
-    let message = signed("one", "=/>on");
+    let message = signed("one", "=/>bot on");
     assert_eq!(service.dispatch(&message), ControlIpcOutcome::Applied);
     assert_eq!(service.dispatch(&message), ControlIpcOutcome::Duplicate);
     assert_eq!(
@@ -78,7 +78,7 @@ fn authenticated_wire_changes_socket_only_once() {
         ControlIpcOutcome::Applied
     );
     assert_eq!(
-        service.dispatch(&signed("three", "=/>off")),
+        service.dispatch(&signed("three", "=/>bot off")),
         ControlIpcOutcome::Applied
     );
     assert!(
@@ -96,12 +96,20 @@ fn invalid_frames_and_ping_are_denied_without_leaks() {
         service.dispatch(&vec![b'a'; 16385]),
         ControlIpcOutcome::Denied
     );
-    let mut forged = signed("one", "=/>on");
+    let mut forged = signed("one", "=/>bot on");
     let i = forged.iter().position(|byte| *byte == b'a').unwrap_or(0);
     forged[i] = b'z';
     assert_eq!(service.dispatch(&forged), ControlIpcOutcome::Denied);
     assert_eq!(
         service.dispatch(&signed("two", "=/>ping")),
+        ControlIpcOutcome::Denied
+    );
+    assert_eq!(
+        service.dispatch(&signed("old-on", "=/>on")),
+        ControlIpcOutcome::Denied
+    );
+    assert_eq!(
+        service.dispatch(&signed("old-off", "=/>off")),
         ControlIpcOutcome::Denied
     );
     assert_eq!(
@@ -127,7 +135,8 @@ fn external_private_default_does_not_disable_owner_self_chat_and_self_off_is_sil
             None,
         )
         .with_control_extensions(extensions)
-        .with_silent_bot_commands(),
+        .with_silent_bot_commands()
+        .with_unified_live_controls(),
     );
     let bridge = Arc::new(
         WhatsAppControlBridge::new(
@@ -155,10 +164,7 @@ fn external_private_default_does_not_disable_owner_self_chat_and_self_off_is_sil
         service.dispatch(&signed("b-1", "=/>bot --global on")),
         ControlIpcOutcome::Applied
     );
-    assert_eq!(
-        service.dispatch(&signed("p-1", "=/>on")),
-        ControlIpcOutcome::Applied
-    );
+
     assert_eq!(
         service.dispatch(&signed("m-2", "=/>menu")),
         ControlIpcOutcome::Applied
@@ -222,9 +228,9 @@ fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
         }
     });
     let frames = [
-        (signed("network-a", "=/>on"), "applied"),
-        (signed("network-a", "=/>on"), "duplicate"),
-        (signed("network-b", "=/>off"), "applied"),
+        (signed("network-a", "=/>bot on"), "applied"),
+        (signed("network-a", "=/>bot on"), "duplicate"),
+        (signed("network-b", "=/>bot off"), "applied"),
     ];
     for (frame, outcome) in frames {
         let mut client = TcpStream::connect(addr).unwrap();
@@ -240,7 +246,7 @@ fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
                 .as_str()
                 .is_some_and(|text| {
                     text.starts_with("*꒦꒷✰")
-                        && text.contains("Base-Matter: socket")
+                        && text.contains("Base-Matter: política del bot")
                         && text.contains("\n")
                         && !text.contains("\\n")
                 }));
