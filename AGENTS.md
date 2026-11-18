@@ -340,7 +340,7 @@ El proveedor de WhatsApp seleccionado es whatsapp-rust, ejecutado desde provider
 - Fase de aplicación separada: verificar admin de comunidad Y admin del grupo, consentimiento/autorización para cada mutación, aprobación específica del plan vigente, revisión de conflictos, auditoría transaccional, límites de tasa y recuperación. Permitir crear el grupo REGISTER si no existe; vincularlo a la comunidad con autorización explícita y sin duplicados.
 - Las DOS cuentas de confianza se deben configurar mediante identidad validada y participación aprobada; nunca inventar números, agregar ni promover usuarios sin verificar consentimientos y permisos de WhatsApp.
 - Los administradores existentes solo recibirán una solicitud moderada de enlaces de invitación, evitando menciones masivas, y solamente si la política del grupo lo autoriza. Esos enlaces se guardan cifrados, con caducidad, revocación y uso explícito para búsqueda de asistencia Matter. No publicar enlaces privados sin consentimiento.
-- Menú/help/h y diseño comunitario: separar componentes visuales reutilizables (encabezado, módulos, pie y créditos) de la lógica de autorización. Configurar tema por comunidad; mantener identidad y crédito Matterssmith.
+- Menú único y diseño comunitario: separar componentes visuales reutilizables (encabezado, cuerpo y pie corto sin atribución automática) de la lógica de autorización. Configurar tema por comunidad; mantener el crédito Matterssmith en código y en `=/>credits` exclusivamente.
 - NO anunciar que hay un escaneo o mutación real si el proveedor no confirma su resultado. Conservar pruebas y diferencias respecto a la biblioteca `whatsapp-rust`.
 
 ## Interoperabilidad con otros bots: #matter
