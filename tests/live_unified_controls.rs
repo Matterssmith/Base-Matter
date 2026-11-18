@@ -68,7 +68,10 @@ fn one_on_command_enables_bot_and_wakes_socket_atomically() {
             policy: Some(true),
         },
     );
-    assert!(store.inspect_bot_defaults("socket-alpha", "owner").unwrap().0);
+    assert!(store
+        .inspect_bot_defaults("socket-alpha", "owner")
+        .unwrap()
+        .socket_powered);
     assert!(matches!(
         command(&control, None, "=/>status").unwrap(),
         DispatchResult::Status {
@@ -91,7 +94,10 @@ fn one_on_command_enables_bot_and_wakes_socket_atomically() {
             policy: Some(false),
         }
     );
-    assert!(store.inspect_bot_defaults("socket-alpha", "owner").unwrap().0);
+    assert!(store
+        .inspect_bot_defaults("socket-alpha", "owner")
+        .unwrap()
+        .socket_powered);
     assert!(matches!(
         command(&control, None, "=/>status").unwrap(),
         DispatchResult::Status {
@@ -119,7 +125,10 @@ fn group_switch_does_not_disable_another_group() {
             policy: Some(true),
         },
     );
-    assert!(store.inspect_bot_defaults("socket-alpha", "owner").unwrap().0);
+    assert!(store
+        .inspect_bot_defaults("socket-alpha", "owner")
+        .unwrap()
+        .socket_powered);
     assert!(matches!(
         command(&control, a, "=/>status").unwrap(),
         DispatchResult::GroupStatus {
@@ -215,7 +224,8 @@ fn community_announcement_policy_is_configurable_but_requires_verified_platform_
             ..
         }
     ));
-    let (_, _, _, _, _, community) =
-        store.inspect_bot_defaults("socket-alpha", "owner").unwrap();
-    assert_eq!(community, Some(true));
+    let defaults = store.inspect_bot_defaults("socket-alpha", "owner").unwrap();
+    assert_eq!(defaults.community_policy, Some(true));
+    assert_eq!(defaults.group_policy, None);
+    assert_eq!(defaults.channel_policy, None);
 }
