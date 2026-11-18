@@ -253,6 +253,98 @@ impl RoleStore {
         Ok(())
     }
 
+    /// Idempotent trusted initialization of a role whose parent is None.
+    /// Existing roles with incompatible parent configuration fail closed.
+    pub fn ensure_root_role(&self, scope: &str, actor: &str, role: &str) -> Result<bool> {
+        validate_id(role)?;
+        let mut connection = self.lock()?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        require_owner(&tx, scope, actor)?;
+        let existing: Option<Option<String>> = tx
+            .query_row(
+                "SELECT parent_role FROM role_definitions WHERE scope_id=?1 AND role_id=?2",
+                params![scope, role],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if let Some(parent) = existing {
+            if parent.is_some() {
+                bail!("Existing role has incompatible inheritance");
+            }
+            return Ok(false);
+        }
+        let count: i64 = tx.query_row(
+            "SELECT COUNT(*) FROM role_definitions WHERE scope_id=?1",
+            params![scope],
+            |row| row.get(0),
+        )?;
+        if count >= MAX_ROLES_PER_SCOPE {
+            bail!("Role limit reached");
+        }
+        tx.execute(
+            "INSERT INTO role_definitions(scope_id,role_id,parent_role) VALUES(?1,?2,NULL)",
+            params![scope, role],
+        )?;
+        audit(&tx, scope, actor, "create_role", None, Some(role))?;
+        tx.commit()?;
+        Ok(true)
+    }
+
+    /// Exactly one explicit role per subject in a socket/group control scope.
+    /// None restores implicit user status: it leaves no grant record behind.
+    /// The transaction and audit are atomic, including role replacements.
+    pub fn set_exclusive_role(
+        &self,
+        scope: &str,
+        actor: &str,
+        subject: &str,
+        role: Option<&str>,
+    ) -> Result<bool> {
+        validate_id(subject)?;
+        if let Some(role) = role {
+            validate_id(role)?;
+        }
+        let mut connection = self.lock()?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        require_owner(&tx, scope, actor)?;
+        let mut existing_query = tx.prepare(
+            "SELECT role_id FROM role_grants WHERE scope_id=?1 AND user_id=?2 ORDER BY role_id",
+        )?;
+        let current = existing_query
+            .query_map(params![scope, subject], |row| row.get::<_, String>(0))?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        drop(existing_query);
+        let wanted = role.map(str::to_owned);
+        if current.len() == usize::from(wanted.is_some())
+            && current.first() == wanted.as_ref()
+        {
+            return Ok(false);
+        }
+        if let Some(role) = role {
+            let defined: bool = tx.query_row(
+                "SELECT EXISTS(SELECT 1 FROM role_definitions WHERE scope_id=?1 AND role_id=?2)",
+                params![scope, role],
+                |row| row.get(0),
+            )?;
+            if !defined {
+                bail!("Undefined control role");
+            }
+        }
+        tx.execute(
+            "DELETE FROM role_grants WHERE scope_id=?1 AND user_id=?2",
+            params![scope, subject],
+        )?;
+        if let Some(role) = role {
+            tx.execute(
+                "INSERT INTO role_grants(scope_id,user_id,role_id) VALUES(?1,?2,?3)",
+                params![scope, subject, role],
+            )?;
+        }
+        audit(&tx, scope, actor, "replace_role", Some(subject), role)?;
+        tx.commit()?;
+        Ok(true)
+    }
+
     pub fn grant(&self, scope: &str, actor: &str, subject: &str, role: &str) -> Result<bool> {
         validate_id(subject)?;
         validate_id(role)?;
