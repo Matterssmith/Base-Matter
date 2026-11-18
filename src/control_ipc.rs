@@ -86,12 +86,12 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Base-Matter | Estado del chat: BOT {} (origen: {source:?}). {}",
+                    "Estado del chat: BOT {} (origen: {source:?}). {}",
                     if enabled { "ACTIVADO" } else { "APAGADO" },
                     if source == crate::activation::ActivationSource::PoweredOff {
                         "El socket está apagado."
                     } else {
-                        "La política del bot y el encendido del socket son independientes."
+                        "La activación respeta la política de este chat."
                     }
                 )),
             ),
@@ -100,7 +100,7 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Base-Matter: socket {}. La política de comandos es independiente.",
+                    "Socket {}. La política de comandos es independiente.",
                     if powered { "encendido" } else { "apagado" }
                 )),
             ),
@@ -110,7 +110,7 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Base-Matter | Configuración global del socket\nSocket: {}\nPredeterminado: {}\nGrupos: {}\nPrivados externos: {}\nCanales: {}\nAvisos comunitarios: {} (requiere metadatos verificados)\nEstas políticas NO conceden rangos.",
+                    "Configuración global del socket\nSocket: {}\nPredeterminado: {}\nGrupos: {}\nPrivados externos: {}\nCanales: {}\nAvisos comunitarios: {} (requiere metadatos verificados)\nEstas políticas NO conceden rangos.",
                     if socket_powered { "ENCENDIDO" } else { "APAGADO" },
                     format_policy(default_policy),
                     format_surface_policy(group_policy),
@@ -124,7 +124,7 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Base-Matter: política del bot para {scope}: {}. El socket conserva su encendido independiente.",
+                    "Política del bot para {scope}: {}. ",
                     match policy {
                         Some(true) => "activada",
                         Some(false) => "desactivada",
@@ -137,7 +137,7 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Base-Matter: política de grupo {}. El encendido del socket es independiente.",
+                    "Política de grupo {}. ",
                     match policy {
                         Some(true) => "habilitada",
                         Some(false) => "deshabilitada",
@@ -150,7 +150,7 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Base-Matter | Estado del grupo: BOT {} (origen: {source:?}). {}",
+                    "Estado del grupo: BOT {} (origen: {source:?}). {}",
                     if enabled { "ACTIVADO" } else { "APAGADO" },
                     if source == crate::activation::ActivationSource::PoweredOff {
                         "El socket está apagado; una política de grupo no lo enciende."
@@ -166,7 +166,7 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Base-Matter: rango {} {} localmente. No concede permisos operativos todavía; Vault-Matter aún no sincronizado.",
+                    "Rango {} {} localmente. No concede permisos operativos todavía; Vault-Matter aún no sincronizado.",
                     role_id,
                     if changed { "actualizado" } else { "sin cambios" }
                 )),
