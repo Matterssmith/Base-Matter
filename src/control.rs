@@ -6,6 +6,7 @@
 use crate::{
     activation::{ActivationSource, GlobalPolicy, SocketActivationStore},
     BotRegistry, CommandRouter, ControlExtensionContext, ControlExtensionRegistry, RoleStore,
+    control_style::ControlThemes,
 };
 use anyhow::{anyhow, bail, Result};
 use std::sync::Arc;
@@ -77,6 +78,7 @@ pub struct ControlDispatcher {
     socket_roles: Option<Arc<RoleStore>>,
     extensions: Option<Arc<ControlExtensionRegistry>>,
     silent_when_disabled: bool,
+    public_menu: Option<Arc<ControlThemes>>,
 }
 
 impl ControlDispatcher {
@@ -95,6 +97,7 @@ impl ControlDispatcher {
             socket_roles: None,
             extensions: None,
             silent_when_disabled: false,
+            public_menu: None,
         }
     }
 
@@ -114,6 +117,7 @@ impl ControlDispatcher {
             socket_roles: None,
             extensions: None,
             silent_when_disabled: false,
+            public_menu: None,
         }
     }
 
@@ -290,6 +294,90 @@ impl ControlDispatcher {
         self
     }
 
+
+    /// A separate read-only entry point, not ordinary control dispatch.
+    /// The HMAC bridge must verify provider-origin sender and chat identities
+    /// before invoking this method. This API never grants roles, runs bot
+    /// handlers, invokes arbitrary extensions or edits activation policies.
+    pub fn dispatch_public_readonly(
+        &self,
+        socket: &str,
+        verified_sender: &str,
+        verified_chat: &str,
+        group: Option<&str>,
+        message: &str,
+    ) -> Result<DispatchResult> {
+        if verified_sender.is_empty()
+            || verified_sender.len() > 128
+            || verified_sender.chars().any(char::is_control)
+            || verified_chat.is_empty()
+            || verified_chat.len() > 128
+            || verified_chat.chars().any(char::is_control)
+            || group.is_some_and(|value| value != verified_chat)
+        {
+            bail!("Unauthenticated chat scope");
+        }
+        let kind = if group.is_some() { "group" } else { "private" };
+        let decision = self.bot_admission(socket, group, kind)?;
+        let parts: Vec<_> = message.split_whitespace().collect();
+        match parts.as_slice() {
+            ["=/>status" | "=/>estado"] => {
+                if let Some(group_id) = group {
+                    Ok(DispatchResult::GroupStatus {
+                        group_id: group_id.to_owned(),
+                        enabled: decision.decision.enabled,
+                        source: decision.decision.source,
+                    })
+                } else {
+                    Ok(DispatchResult::Status {
+                        socket_id: socket.to_owned(),
+                        enabled: decision.decision.enabled,
+                        source: decision.decision.source,
+                        bot_instance_id: None,
+                    })
+                }
+            }
+            ["=/>menu" | "=/>menú"] | ["=/>menu" | "=/>menú", _] => {
+                if !decision.decision.enabled {
+                    return Ok(DispatchResult::Inactive);
+                }
+                let theme = self
+                    .public_menu
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("Read-only menu is unavailable"))?;
+                let section = if parts.len() == 1 {
+                    "menu".to_owned()
+                } else {
+                    if parts[1].len() > 32 {
+                        bail!("Invalid public menu category");
+                    }
+                    format!("menu {}", parts[1])
+                };
+                let output = theme.render(group, &section)?;
+                Ok(DispatchResult::Extension {
+                    command: "menu".to_owned(),
+                    output,
+                })
+            }
+            ["=/>bot"] => {
+                if !decision.decision.enabled {
+                    return Ok(DispatchResult::Inactive);
+                }
+                Ok(DispatchResult::Extension {
+                    command: "bot".to_owned(),
+                    output: "BOT: =/>status consulta el estado de este chat. =/>menu muestra categorías solo cuando el bot está activo. La administración del socket y los rangos exige identidad autorizada.".to_owned(),
+                })
+            }
+            _ => bail!("Public chat cannot invoke administrative commands"),
+        }
+    }
+
+    /// Install trusted, render-only public menu support. Never connect this
+    /// entry point to arbitrary executable extensions or bot handlers.
+    pub fn with_public_menu(mut self, themes: Arc<ControlThemes>) -> Self {
+        self.public_menu = Some(themes);
+        self
+    }
 
     fn change_role(
         &self,
