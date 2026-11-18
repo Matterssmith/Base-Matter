@@ -1817,3 +1817,21 @@ to `matter` occurred.
   `916fdbbf61c7b6c1668f7d58f0c43df3eb323d09` is on origin/matter-beta.
   README re-review for this ledger-only commit: 1 found/reviewed, 0 updated,
   1 unchanged; no new documentation discrepancies. `git diff --check` passed.
+
+## 2026-11-17 — Compatibilidad de tests CLI y ruta Base-Matter
+
+- Situación observada por el operador: `cargo check --all-targets --locked`
+  y `cargo test --all-targets --locked` fallan localmente porque `env!`
+  exige `CARGO_BIN_EXE_whatsapp-matter-control` durante la compilación
+  de los tests `whatsapp_cli` y `whatsapp_process`.
+- Corrección propuesta: resolver la ruta con `option_env!` y una alternativa
+  de entorno de ejecución; mantener las pruebas contra el binario real.
+- Se actualizó la guía de dos terminales para `/home/Sakura/Base-Matter`.
+  La ruta de sesión esperada bajo `~/.local/share/base-matter/whatsapp-test`
+  no existe en el entorno comunicado; recuperar cualquier sesión anterior
+  solo tras localización y verificación, sin borrados ni regeneración.
+- Se revisaron el README raíz y el README de `providers/whatsapp-rust`;
+  el README raíz se actualizó para la verificación y el nombre real del repo.
+  El README del proveedor no requiere edición para esta corrección.
+- Verificación remota, pruebas CI y sesión viva: pendientes de comprobar
+  en el SHA exacto una vez publicados los cambios.

@@ -17,7 +17,13 @@ use std::{
 };
 use time::OffsetDateTime;
 
-const BIN: &str = env!("CARGO_BIN_EXE_whatsapp-matter-control");
+fn controller_binary() -> std::path::PathBuf {
+    option_env!("CARGO_BIN_EXE_whatsapp-matter-control")
+        .map(Into::into)
+        .or_else(|| std::env::var_os("CARGO_BIN_EXE_whatsapp-matter-control").map(Into::into))
+        .expect("Cargo did not supply the WhatsApp control binary for integration tests")
+}
+
 const OWNER_JID: &str = "5215512345678@s.whatsapp.net";
 const BRIDGE_KEY: [u8; 32] = [7; 32];
 
@@ -30,7 +36,7 @@ impl Drop for Running {
 }
 
 fn command(vars: &HashMap<String, String>, arg: &str) -> Command {
-    let mut command = Command::new(BIN);
+    let mut command = Command::new(controller_binary());
     command
         .arg(arg)
         .envs(vars)
