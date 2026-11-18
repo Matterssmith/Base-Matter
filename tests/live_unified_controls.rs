@@ -62,13 +62,13 @@ fn one_on_command_enables_bot_and_wakes_socket_atomically() {
         },
     );
     assert_eq!(
-        command(&control, None, "=/>on").unwrap(),
+        command(&control, None, "=/>bot on").unwrap(),
         DispatchResult::BotPolicyChanged {
             scope: "current".into(),
             policy: Some(true),
         },
     );
-    assert!(store.resolve_persisted("socket-alpha", None).unwrap().enabled);
+    assert!(store.inspect_bot_defaults("socket-alpha", "owner").unwrap().0);
     assert!(matches!(
         command(&control, None, "=/>status").unwrap(),
         DispatchResult::Status {
@@ -85,13 +85,13 @@ fn one_on_command_enables_bot_and_wakes_socket_atomically() {
         }
     );
     assert_eq!(
-        command(&control, None, "=/>off").unwrap(),
+        command(&control, None, "=/>bot off").unwrap(),
         DispatchResult::BotPolicyChanged {
             scope: "current".into(),
             policy: Some(false),
         }
     );
-    assert!(store.resolve_persisted("socket-alpha", None).unwrap().enabled);
+    assert!(store.inspect_bot_defaults("socket-alpha", "owner").unwrap().0);
     assert!(matches!(
         command(&control, None, "=/>status").unwrap(),
         DispatchResult::Status {
@@ -113,13 +113,13 @@ fn group_switch_does_not_disable_another_group() {
     let a = Some("120363111@g.us");
     let b = Some("120363222@g.us");
     assert_eq!(
-        command(&control, a, "=/>on").unwrap(),
+        command(&control, a, "=/>bot on").unwrap(),
         DispatchResult::BotPolicyChanged {
             scope: "current".into(),
             policy: Some(true),
         },
     );
-    assert!(store.resolve_persisted("socket-alpha", None).unwrap().enabled);
+    assert!(store.inspect_bot_defaults("socket-alpha", "owner").unwrap().0);
     assert!(matches!(
         command(&control, a, "=/>status").unwrap(),
         DispatchResult::GroupStatus {
@@ -137,7 +137,7 @@ fn group_switch_does_not_disable_another_group() {
         },
     ));
     command(&control, b, "=/>bot on").unwrap();
-    command(&control, a, "=/>off").unwrap();
+    command(&control, a, "=/>bot off").unwrap();
     assert!(matches!(
         command(&control, a, "=/>status").unwrap(),
         DispatchResult::GroupStatus { enabled: false, .. },
@@ -148,8 +148,10 @@ fn group_switch_does_not_disable_another_group() {
     ));
     assert!(command(&control, a, "=/>bot --global on").is_err());
     assert!(control
-        .dispatch("socket-alpha", "outsider", "owner-self", None, "=/>on")
+        .dispatch("socket-alpha", "outsider", "owner-self", None, "=/>bot on")
         .is_err());
+    assert!(command(&control, None, "=/>on").is_err());
+    assert!(command(&control, a, "=/>off").is_err());
 }
 
 #[test]
