@@ -39,7 +39,8 @@ fn fixture() -> WhatsAppControlBridge {
     let controller = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
             .with_public_menu(themes)
-            .with_silent_bot_commands(),
+            .with_silent_bot_commands()
+            .with_unified_live_controls(),
     );
     WhatsAppControlBridge::new(
         WhatsAppBridgeConfig {
@@ -114,7 +115,7 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive),
     );
     bridge
-        .ingest(&frame("own-1", "=/>on", "owner", OWNER_JID, true))
+        .ingest(&frame("own-1", "=/>bot on", "owner", OWNER_JID, true))
         .unwrap();
     bridge
         .ingest(&frame(
@@ -150,7 +151,7 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
     assert!(matches!(
         bridge.ingest(&frame("pub-4", "=/>menu", READER, GROUP, false)).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
-            if command == "menu" && output.contains("=/>on / =/>off")
+            if command == "menu" && output.contains("=/>bot on/off")
     ));
     bridge
         .ingest(&frame(
@@ -183,7 +184,7 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
 fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
     let bridge = fixture();
     bridge
-        .ingest(&frame("own-1", "=/>on", "owner", OWNER_JID, true))
+        .ingest(&frame("own-1", "=/>bot on", "owner", OWNER_JID, true))
         .unwrap();
     bridge
         .ingest(&frame(
@@ -241,6 +242,6 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
     let mut forged = frame("wrong-2", "=/>menu", READER, GROUP, false);
     forged.actor_id = "5215519999999@lid".into();
     assert!(bridge.ingest(&forged).is_err());
-    let impersonation = frame("wrong-3", "=/>on", "owner", GROUP, false);
+    let impersonation = frame("wrong-3", "=/>bot on", "owner", GROUP, false);
     assert!(bridge.ingest(&impersonation).is_err());
 }
