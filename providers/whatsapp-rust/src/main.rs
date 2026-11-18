@@ -42,7 +42,15 @@ async fn deliver(
         }
         parse_control_ack(&response)
     };
-    timeout(Duration::from_secs(4), transport).await?
+    let deadline = if frame.from_me
+        && frame.text.starts_with("=/>matter ")
+        && !frame.chat_jid.ends_with("@g.us")
+    {
+        Duration::from_secs(83)
+    } else {
+        Duration::from_secs(4)
+    };
+    timeout(deadline, transport).await?
 }
 
 async fn require_local_controller(address: std::net::SocketAddrV4) -> Result<()> {

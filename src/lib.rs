@@ -24,6 +24,7 @@ pub mod control;
 pub mod control_extensions;
 pub mod control_ipc;
 pub mod control_style;
+pub mod matter_ai;
 pub mod control_sync;
 pub mod core;
 pub mod events;

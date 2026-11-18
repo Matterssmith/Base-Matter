@@ -1,3 +1,22 @@
+## Matter AI por WhatsApp: comando privado de solo análisis (alpha)
+
+El propietario puede usar `matter status`, `matter ask` y
+`matter plan` a través del puente firmado existente. El
+proveedor solo acepta `matter` en su lista privada
+**cuando el mensaje procede de la cuenta autenticada**;
+no existe ruta pública ni de grupos. El controlador
+aplica además permisos de propietario y aislamiento de
+la ruta de extensiones. La consulta IA no es ejecución
+de shell ni modificación de GitHub.
+
+El controlador consume claves de entorno autorizadas
+(Claude preferente, Venice después, OpenAI alternativo),
+no claves de Aura Reed ni archivos de sesiones.
+El plazo de entrega IPC se amplía solo para consultas
+`matter`. Otras operaciones conservan 4 segundos.
+No hay garantía de respuesta externa hasta probar
+cuentas válidas. Ver `../../docs/MATTER_AI.md`.
+
 ## Normalización Rustfmt del transporte RichResponse (alpha)
 
 La comprobación inicial del commit `d8c3857` se detuvo

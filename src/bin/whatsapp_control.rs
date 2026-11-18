@@ -263,6 +263,12 @@ fn main() -> Result<()> {
             "Base-Matter: intención {kind} validada. Solo vista previa. Sin cambios en WhatsApp."
         ))
     })?;
+    extensions.register("matter", &[], |context, args| {
+        if context.group_id.is_some() {
+            bail!("Matter AI is private owner-only control");
+        }
+        matter_base::matter_ai::command(args)
+    })?;
     extensions.register("roles", &[], |context, args| {
         if context.group_id.is_some() || !args.is_empty() {
             bail!("Role catalog is private socket configuration only");

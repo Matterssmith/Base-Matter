@@ -236,6 +236,7 @@ impl Config {
                     | "=/>role"
                     | "=/>roles"
                     | "=/>audit"
+                    | "=/>matter"
                     | "=/>anti"
                     | "=/>antis"
                     | "=/>credits"

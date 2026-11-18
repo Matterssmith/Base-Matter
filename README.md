@@ -20,6 +20,35 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Matter AI: agente de programación por consulta (alpha)
+
+Se reservó el comando `matter` para programación asistida y
+**no** para alias de consola. El nuevo módulo Rust
+`src/matter_ai.rs` integra los formatos Claude Messages,
+Venice Chat Completions y OpenAI Responses en orden
+Claude > Venice > OpenAI, con claves/modelos **solo del entorno
+del controlador**. No se copió ningún secreto desde
+`jbeckforddev/Aura-Bot-2.0`: no se encontró una integración
+identificable de Claude/Venice en las rutas de IA verificadas.
+
+`matter ask`, `matter plan` y `matter status` son comandos
+del propietario autenticado en su privado, sin acceso a
+ejecución ni edición automática de archivos. El proveedor
+WhatsApp habilita únicamente el verbo privado y conserva
+HMAC/antirreplay; no hay acceso público ni en grupos.
+El IPC tiene un plazo de espera especial para peticiones IA.
+En ausencia de credenciales, la respuesta es explicativa y
+sin red. Sigue pendiente prueba real con API configurada.
+
+La categoría individual de `matter` no da poderes de
+administración ni sustituye el sandbox; las otras funciones
+solicitadas (`test`, sandbox, sistema, categorías, estilo)
+se validarán en commits separados antes de promover `beta`.
+Vault-Matter no está conectado de forma productiva:
+la lectura autenticada de roles continúa bloqueada.
+Detalle: [Matter AI](docs/MATTER_AI.md).
+Ambos README revisados, sin añadir créditos al menú.
+
 ## 2026-11-18 — Rustfmt del ensayo RichResponse (alpha)
 
 El primer CI del ensayo `d8c3857` detectó solo diferencias

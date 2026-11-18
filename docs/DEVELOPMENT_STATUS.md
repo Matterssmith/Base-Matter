@@ -1,3 +1,27 @@
+## 2026-11-18 — Integración Matter AI (alpha)
+
+- Reconocido el último cambio de propósito: `matter` ya no
+  es atajo de `sandbox` ni consola; será asistente de
+  programación. `eval` y `console` directos, `test`
+  directo, `sandbox test` aislado son comandos distintos.
+- Revisado Aura Reed/Aura-Bot-2.0 (master/test): no
+  se encontró proveedor Venice/Claude configurado en los
+  archivos de IA examinados. No se migran claves.
+- Nuevo `src/matter_ai.rs`: tres protocolos HTTPS
+  oficiales, elección automática Claude > Venice > OpenAI,
+  credenciales/modelos externos, sin edición ni ejecución,
+  respuestas acotadas, tests offline.
+- Extensión `matter` instalada únicamente en el
+  controlador privado; proveedor Rust permite esa palabra
+  solo en ámbito propietario PN/LID/HMAC, no en público
+  ni grupos. IPC dispone de tiempo especial.
+- Pendiente: confirmar CI y prueba WhatsApp con clave
+  válida, completar pruebas seguras para adjuntos, menú
+  modular y todas las restantes operaciones. Vault no
+  cuenta con lector autenticado, por tanto los roles
+  permanecen bloqueados. Sin promociones a beta.
+- README raíz y README de proveedor revisados 2/2.
+
 ## 2026-11-18 — Corrección de formato RichResponse (alpha)
 
 `d8c3857` inició dos workflows. Linux compiló la base,

@@ -1,5 +1,28 @@
 # Matterssmith — repository instructions
 
+## Contrato 2026-11-18 — `matter` es programación asistida
+
+El usuario reasignó `matter` desde su reserva anterior:
+ahora es un asistente tipo Codex que pregunta y propone
+planes, **no ejecuta comandos ni cambia archivos**.
+Nunca volver a registrarlo como alias del sandbox o consola.
+Se verificó `jbeckforddev/Aura-Bot-2.0` en master/test;
+no se encontró una integración Venice/Claude en los
+archivos consultados. No copiar ni publicar secretos de
+ese bot. Credenciales solo del servicio privado.
+
+Jerarquía de proveedores: Claude > Venice > OpenAI,
+según clave y modelo explícitos. El protocolo y los
+endpoints están en `src/matter_ai.rs`. API no equivale a
+permiso Vault, rol global o escritura GitHub. Solo PN/LID
+propio, contexto privado, HMAC y antirreplay autorizan
+el comando; las peticiones externas fallan cerrado.
+Sin prueba en cuenta real no declarar el agente listo.
+Los comandos directos `console`/`eval`/`test` y las
+alternativas `sandbox`/`sandbox test` son independientes.
+No incluir marcas personales ni créditos automáticos
+en respuestas o menús de Base-Matter.
+
 ## Invariante más reciente — ensayo RichResponse del propietario, solo self-chat
 
 El archivo `rich_preview.rs` y el CLI `--rich-preview-*` conservan
