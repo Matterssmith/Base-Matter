@@ -82,6 +82,14 @@ impl WhatsAppNativeIngress {
         if !event.text.starts_with("=/>") {
             return Ok(WhatsAppNativeOutcome::Ignored);
         }
+        // Retired live toggle aliases are never forwarded, even from the
+        // legitimate socket owner. Use =/>bot on/off and explicit scopes.
+        if matches!(
+            event.text.split_whitespace().next(),
+            Some("=/>on" | "=/>off" | "=/>encender" | "=/>apagar")
+        ) {
+            return Ok(WhatsAppNativeOutcome::Ignored);
+        }
         if event.text.len() > 4096
             || event.message_id.is_empty()
             || event.message_id.len() > 256
