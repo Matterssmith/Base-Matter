@@ -378,7 +378,7 @@ impl ControlDispatcher {
                     })
                 }
             }
-            ["=/>menu" | "=/>menú"] | ["=/>menu" | "=/>menú", _] => {
+            ["=/>menu" | "=/>menú"] => {
                 if !decision.decision.enabled {
                     return Ok(DispatchResult::Inactive);
                 }
@@ -386,15 +386,7 @@ impl ControlDispatcher {
                     .public_menu
                     .as_ref()
                     .ok_or_else(|| anyhow!("Read-only menu is unavailable"))?;
-                let section = if parts.len() == 1 {
-                    "menu".to_owned()
-                } else {
-                    if parts[1].len() > 32 {
-                        bail!("Invalid public menu category");
-                    }
-                    format!("menu {}", parts[1])
-                };
-                let output = theme.render(group, &section)?;
+                let output = theme.render(group, "menu")?;
                 Ok(DispatchResult::Extension {
                     command: "menu".to_owned(),
                     output,
