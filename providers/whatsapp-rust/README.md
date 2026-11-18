@@ -8,6 +8,23 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Ejecución en una sola terminal (alpha)
+
+La rama `alpha` incorpora `cargo run` desde la raíz de Base-Matter.
+El ejecutable `base-matter` inicia el controlador y este proveedor
+Rust como procesos independientes bajo una sola sesión de terminal,
+para evitar conflictos `libsqlite3-sys`. No usa Node ni QR.
+
+Cada ejecución utiliza una ruta privada y un puerto reservados según
+la rama Git: `alpha` usa 39821, `beta` 39822 y `stable` 39823.
+El lanzador solo existe por ahora en `alpha`; las ramas `beta` y
+`stable` requieren promoción y verificación por separado.
+Sin configuración previa pregunta únicamente el teléfono y conserva
+su SQLite y secretos para el siguiente arranque. Un JID derivado de
+un número no garantiza coincidencia con el LID autenticado y los
+comandos propios permanecen denegados ante cualquier discrepancia.
+Una conexión en pantalla no demuestra que se haya aplicado `=/>status`.
+
 ## Parámetros locales
 
 - MATTER_WA_PHONE: número para pairing code, 8–15 dígitos internacionales
