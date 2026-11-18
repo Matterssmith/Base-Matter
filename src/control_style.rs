@@ -42,6 +42,14 @@ impl ControlTheme {
     /// Render a verified, bounded reply. Refuse suspicious control chars;
     /// never reinterpret literal command text or authorize an operation.
     pub fn decorate(&self, body: &str) -> Result<String> {
+        // This check must precede the idempotent fast path as well:
+        // an already-themed payload is not exempt from transport bounds.
+        if body.is_empty()
+            || body.len() > 3800
+            || body.chars().any(|c| c.is_control() && c != '\n')
+        {
+            bail!("Invalid control response");
+        }
         // Repeated rendering of a preformatted menu/preview must be
         // idempotent even for an authorized, non-default theme.
         let (prefix, suffix) = self
@@ -59,11 +67,8 @@ impl ControlTheme {
         {
             return Ok(body.to_owned());
         }
-        if body.is_empty()
-            || body.len() > 3200
-            || body.chars().any(|c| c.is_control() && c != '\n')
-        {
-            bail!("Invalid control response");
+        if body.len() > 3200 {
+            bail!("Control body exceeds template allowance");
         }
         let result = self.template
             .replace("{{TITLE}}", &self.title)
