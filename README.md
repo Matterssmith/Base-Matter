@@ -20,6 +20,28 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Selección de plantilla por chat para todos los comandos (alpha; pruebas Debian pendientes)
+
+Se corrigió la selección de diseño: `ControlThemes` ahora ofrece
+`decorate(verified_group, response)` y el IPC selecciona la plantilla
+de cada grupo **solo después de validar el HMAC** de la petición.
+Se comparte el mismo registro de estilos entre `menu`, `status`,
+`bot on/off/inherit`, auditoría y demás respuestas de control.
+
+El proveedor Rust conserva las respuestas que el IPC ya formateó,
+incluidas las plantillas personalizadas: únicamente aplica el
+diseño predeterminado a sus respuestas propias de REGISTER, recuperación
+o acuses sin contenido del IPC. Las plantillas siguen almacenadas en
+`templates/matterssmith-control.txt` y
+`templates/matterssmith-menu.txt`; las credenciales y roles no
+se copian al registro de temas.
+
+Nueva regresión en `tests/whatsapp_theme_scopes.rs`: verifica que
+una plantilla de grupo distinta se utilice en estado y cambios de
+activación sin doble encabezado ni texto literal `\\n`.
+**No se ha ejecutado todavía Cargo en Debian para estos commits.**
+No hay promoción a beta ni stable.
+
 ## Control global Matterssmith — contrato vigente (alpha; pruebas posteriores pendientes)
 
 El comando de activación para WhatsApp es **`=/>bot on/off`**, no
