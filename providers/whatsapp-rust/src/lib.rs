@@ -8,6 +8,9 @@ pub mod recovery;
 
 // One implementation and one set of template assets are shared with
 // Base-Matter. The provider remains a standalone Rust package.
+// The standalone provider invokes only the common decorator; the
+// shared core module also defines the unused scoped registry and menu.
+#[allow(dead_code)]
 #[path = "../../../src/control_style.rs"]
 mod shared_control_style;
 
