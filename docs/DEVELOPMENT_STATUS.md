@@ -1,3 +1,20 @@
+## 2026-11-18 — Vault-Matter metadata alignment and encrypted role regression (alpha; no live sync)
+
+- The authenticated private Vault-Matter repository remains separate from
+  Base-Matter. Renamed manifest display metadata to `Vault-Matter` and
+  corrected the Base-Matter GitHub link, preserving vault ID/schema and
+  ciphertext format. Updated the Vault README with strict encrypted
+  explicit-role persistence, CAS and externally supplied key requirements.
+- Added `tests/socket_vault_outbox.rs`: local-only fake sink + ephemeral
+  test encryption verifies a non-default PN role produces an encrypted
+  envelope and reverting to implicit `user` produces an empty-grant
+  encrypted snapshot. No production data or keys were shared.
+- Runtime still does not enqueue live changes or publish to GitHub; the
+  authenticated Vault transport and remote recovery must be implemented
+  and tested before any real role persistence is claimed.
+- CI, lint, root/provider tests and real WhatsApp group messages are
+  pending external verification on Debian. No promotion to beta/stable.
+
 ## 2026-11-18 — Real owner group control and scoped rank recovery (alpha; CI/live groups pending)
 
 - Operator confirmed **real** WhatsApp self-chat responses to
