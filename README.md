@@ -20,6 +20,20 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Consumidor residual de `BotDefaultPolicies` (alpha)
+
+El operador volvió a ejecutar Clippy estricto y encontró un fallo
+de compilación de `tests/whatsapp_bridge.rs:111`: la prueba leía
+`.unwrap().0` después de que `inspect_bot_defaults()`
+cambiara de tupla a la estructura `BotDefaultPolicies`.
+
+Se sustituyó la referencia por `.socket_powered` y se normalizó
+el formato del `assert!`. No cambia el comportamiento del puente,
+la política de activación, las sesiones ni la persistencia.
+La corrección está publicada exclusivamente en `alpha`;
+las pruebas y Clippy de este commit siguen pendientes de nueva
+ejecución en Debian.
+
 ## 2026-11-18 — Estructura de políticas para Clippy estricto (alpha)
 
 El operador confirmó `cargo test --all-targets --locked` sin errores
