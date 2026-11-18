@@ -1,3 +1,12 @@
+## Ajuste de Clippy para el experimento NativeFlow (alpha)
+
+En la revisión `d6dd6f1`, las pruebas nativas y el convertidor de
+HTML breve terminaron en verde. Clippy detectó exclusivamente el
+`..Default::default()` redundante del cuerpo protobuf y un patrón
+de coincidencia irrefutable. Corregidos sin modificar botones,
+lógica de firma HMAC o interfaz de sesiones. Nuevas pruebas CI
+pendientes antes de ensayar Android/iOS.
+
 ## Corrección de formato NativeFlow (alpha, 2026-11-18)
 
 El primer workflow del experimento `d532ef2` indicó solo diferencias

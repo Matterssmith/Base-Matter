@@ -1,3 +1,13 @@
+## 2026-11-18 — Corrección estricta de Clippy en NativeFlow (alpha)
+
+`44379206555` pasó compilación, tests offline y tres pruebas de
+`tests/ui.rs`: NativeFlow, clics de solo lectura y rechazo de HTML
+ejecutable. La fase Clippy detectó dos rechazos de estilo:
+`needless_update` en Body y `infallible_destructuring_match` en
+respuesta interactiva. Ajustados sin relajar lint.
+READMEs raíz y proveedor auditados 2/2; nueva revisión CI exigida,
+sin cambios en sesiones, default ni autorización administrativa.
+
 ## 2026-11-18 — CI de NativeFlow: formato pendiente y reparación (alpha)
 
 Primera ejecución `44378651037`: el proveedor rechazó formato de

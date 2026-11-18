@@ -7,6 +7,7 @@
 use anyhow::{bail, Result};
 use buffa::MessageField;
 use whatsapp_rust::prelude::wa;
+use wa::message::interactive_response_message::InteractiveResponseMessage as NativeResponse;
 
 const MAX_MENU_BYTES: usize = 3200;
 const BUTTONS: [(&str, &str, &str); 3] = [
@@ -112,7 +113,6 @@ pub fn native_menu_message(menu: &str) -> Result<wa::Message> {
         interactive_message: MessageField::some(wa::message::InteractiveMessage {
             body: MessageField::some(wa::message::interactive_message::Body {
                 text: Some(menu.to_owned()),
-                ..Default::default()
             }),
             footer: MessageField::some(wa::message::interactive_message::Footer {
                 text: Some(short_html_to_whatsapp("<i>Botones de consulta</i>")?),
@@ -138,9 +138,8 @@ pub fn native_menu_message(menu: &str) -> Result<wa::Message> {
 /// The event still passes through owner/public HMAC and replay verification.
 pub fn readonly_button_command(message: &wa::Message) -> Option<&'static str> {
     let response = message.interactive_response_message.as_option()?;
-    let native = match response.interactive_response_message.as_ref()? {
-        wa::message::interactive_response_message::InteractiveResponseMessage::NativeFlowResponseMessage(native) => native,
-    };
+    let NativeResponse::NativeFlowResponseMessage(native) =
+        response.interactive_response_message.as_ref()?;
     let params = native.params_json.as_deref()?;
     if params.len() > 512 {
         return None;

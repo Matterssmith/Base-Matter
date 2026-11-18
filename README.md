@@ -20,6 +20,16 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Clippy del proveedor NativeFlow (alpha)
+
+El CI `44379206555` sobre `d6dd6f1` pasó formato, compilación y
+las 3 pruebas nuevas de botones/HTML junto con el resto del proveedor.
+Solo falló Clippy por una actualización innecesaria de `Body` y un
+`match` irrefutable de respuesta NativeFlow. Se retiró la actualización
+sobrante y se sustituyó por el `let` deconstructivo tipado.
+No cambian IDs, permisos, mensajes, sesiones ni el opt-in. Pendiente
+CI del siguiente SHA. README revisados 2/2.
+
 ## 2026-11-18 — Rustfmt: corrección de la fase de UI NativeFlow (alpha)
 
 El workflow independiente del proveedor para `d532ef2` se detuvo en
