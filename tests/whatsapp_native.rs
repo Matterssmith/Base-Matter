@@ -29,7 +29,7 @@ fn fixture() -> (WhatsAppNativeIngress, Arc<SocketActivationStore>) {
         Arc::new(BotRegistry::in_memory()),
         router,
         None,
-    ));
+    ).with_unified_live_controls());
     let ingress = WhatsAppNativeIngress::new(
         WhatsAppNativeConfig {
             socket_id: "socket-a".into(),
@@ -54,35 +54,38 @@ fn message<'a>(id: &'a str, text: &'a str) -> WhatsAppNativeMessage<'a> {
     }
 }
 #[test]
-fn owner_can_toggle_socket_without_enabling_bot_policy() {
+fn owner_enables_chat_and_socket_with_one_bot_command() {
     let (ingress, activation) = fixture();
     assert_eq!(
-        ingress.ingest(&message("a", "=/>on")).unwrap(),
-        WhatsAppNativeOutcome::Dispatched(DispatchResult::Control {
-            socket_id: "socket-a".into(),
-            powered: true
+        ingress.ingest(&message("a", "=/>bot on")).unwrap(),
+        WhatsAppNativeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
+            scope: "current".into(),
+            policy: Some(true),
         })
     );
     assert_eq!(
         ingress.ingest(&message("b", "=/>status")).unwrap(),
         WhatsAppNativeOutcome::Dispatched(DispatchResult::Status {
             socket_id: "socket-a".into(),
-            enabled: false,
-            source: ActivationSource::None,
-            bot_instance_id: None
+            enabled: true,
+            source: ActivationSource::Group,
+            bot_instance_id: None,
         })
     );
-    assert!(
-        !activation
-            .resolve_persisted("socket-a", None)
-            .unwrap()
-            .enabled
+    assert!(activation.inspect_bot_defaults("socket-a", "owner").unwrap().0);
+    assert_eq!(
+        ingress.ingest(&message("c", "=/>bot off")).unwrap(),
+        WhatsAppNativeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
+            scope: "current".into(),
+            policy: Some(false),
+        })
     );
 }
+
 #[test]
 fn rejects_outsider_group_different_chat_and_self_fanout() {
     let (ingress, activation) = fixture();
-    let mut value = message("a", "=/>on");
+    let mut value = message("a", "=/>bot on");
     value.from_me = false;
     assert_eq!(
         ingress.ingest(&value).unwrap(),
@@ -116,7 +119,7 @@ fn rejects_outsider_group_different_chat_and_self_fanout() {
 #[test]
 fn ping_and_legacy_aliases_never_reach_control() {
     let (ingress, _) = fixture();
-    for text in ["#ping", "=on", "/>on", "#menu", "hello"] {
+    for text in ["#ping", "=on", "/>on", "=/>on", "=/>off", "#menu", "hello"] {
         assert_eq!(
             ingress.ingest(&message("a", text)).unwrap(),
             WhatsAppNativeOutcome::Ignored
@@ -127,7 +130,7 @@ fn ping_and_legacy_aliases_never_reach_control() {
 #[test]
 fn duplicated_expired_and_malformed_events_fail_closed() {
     let (ingress, _) = fixture();
-    let valid = message("one", "=/>on");
+    let valid = message("one", "=/>bot on");
     assert!(matches!(
         ingress.ingest(&valid).unwrap(),
         WhatsAppNativeOutcome::Dispatched(_)
@@ -136,11 +139,11 @@ fn duplicated_expired_and_malformed_events_fail_closed() {
         ingress.ingest(&valid).unwrap(),
         WhatsAppNativeOutcome::Duplicate
     );
-    let mut expired = message("two", "=/>off");
+    let mut expired = message("two", "=/>bot off");
     expired.timestamp -= 600;
     assert!(ingress.ingest(&expired).is_err());
-    assert!(ingress.ingest(&message("", "=/>on")).is_err());
-    assert!(ingress.ingest(&message("bad\nid", "=/>on")).is_err());
+    assert!(ingress.ingest(&message("", "=/>bot on")).is_err());
+    assert!(ingress.ingest(&message("bad\nid", "=/>bot on")).is_err());
     assert!(ingress
         .ingest(&message("a", &format!("=/>on{}", " ".repeat(4096))))
         .is_err());
