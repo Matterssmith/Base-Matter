@@ -8,6 +8,18 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Revisión del ingreso nativo (alpha; suite completa pendiente)
+
+La suite Base identificó un caso donde `=/>on` retirado y
+demasiado largo se ignoraba antes de validar el límite de entrada.
+Se reordenó la validación en `src/whatsapp_native.rs`. El
+proveedor independiente continúa firmando solo los comandos
+autorizados y no recupera los alias antiguos. La prueba nueva
+comprueba también un `=/>bot on` excesivo y que un rechazo
+no consuma el identificador de replay. No modificar sesiones
+WhatsApp, archivos SQLite ni el `Cargo.lock` local.
+La nueva ejecución del proveedor aún no está confirmada.
+
 ## Validación por fases en Debian (alpha)
 
 La última suite reportada del **núcleo** se detuvo por
