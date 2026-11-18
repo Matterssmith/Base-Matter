@@ -311,6 +311,7 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
     for text in [
         "=/>status",
         "=/>estado",
+        "=/>status --global",
         "=/>menu",
         "=/>menú",
         "=/>bot",
@@ -331,7 +332,6 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         );
     }
     for text in [
-        "=/>status --global",
         "=/>status --debug",
         "=/>group on",
         "=/>bot on",

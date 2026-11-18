@@ -1,3 +1,12 @@
+## 2026-11-18 — Corrección de la prueba de `status --global` público
+
+El CI del proveedor sobre `ce57169` compiló y pasó 15/16 pruebas
+`tests/provider.rs`; la restante aún esperaba ignorar `status --global`
+de un lector externo. Ahora esa consulta se firma pero el controlador
+siempre devuelve una negativa de privacidad; nunca expone políticas
+ni acepta cambios del socket. Actualizada la prueba y solicitada
+verificación nueva sobre el SHA exacto.
+
 ## 2026-11-18 — Menú original y lectura contextual / global (alpha)
 
 El proveedor `whatsapp-rust` conserva el mensaje original de Matterssmith en

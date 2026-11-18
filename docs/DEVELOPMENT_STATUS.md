@@ -1,3 +1,14 @@
+## 2026-11-18 — Ajuste de suite independiente del proveedor (alpha)
+
+El CI `ce57169` completó satisfactoriamente todo el núcleo Linux.
+La suite de whatsapp-rust falló en una expectativa vieja:
+`incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority`
+asumía que el proveedor descartaba `status --global` de terceros.
+El contrato actual permite firmarlo y devuelve rechazo informativo
+sin datos privados del socket. El test fue alineado; se mantienen
+los límites de firma, ámbito, replay y permisos. Pendiente nuevo CI.
+READMEs raíz y proveedor auditados y actualizados (2/2).
+
 ## 2026-11-18 — Original Matterssmith / status de lectura (alpha)
 
 - Restaurada `templates/matterssmith-menu.txt` con la estética exacta

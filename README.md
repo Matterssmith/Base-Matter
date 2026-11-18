@@ -20,6 +20,17 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Regresión del proveedor tras el menú original (alpha)
+
+- GitHub Actions del primer cambio `ce57169`: núcleo Linux en verde
+  (rustfmt, check, tests, docs, Clippy y auditoría). El proveedor compila,
+  pero un caso de `tests/provider.rs` exigía incorrectamente que el lector
+  externo no pudiera firmar `status --global`.
+- La nueva interfaz solo permite firmar esa lectura inocua: el controlador
+  devuelve "información privada del propietario" y no las políticas reales.
+  Actualizada la prueba para confirmar esta separación. Sin nuevos permisos
+  de escritura ni modificación de sesiones. Pendiente CI de esta revisión.
+
 ## 2026-11-18 — Restitución del menú original y corrección de `status` (alpha)
 
 - Se restituye el mensaje visual aportado por la propietaria: encabezado
