@@ -124,7 +124,7 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Política del bot para {scope}: {}. ",
+                    "Política del bot para {scope}: {}.",
                     match policy {
                         Some(true) => "activada",
                         Some(false) => "desactivada",
@@ -137,7 +137,7 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Política de grupo {}. ",
+                    "Política de grupo {}.",
                     match policy {
                         Some(true) => "habilitada",
                         Some(false) => "deshabilitada",
