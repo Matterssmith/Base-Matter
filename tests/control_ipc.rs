@@ -110,7 +110,7 @@ fn invalid_frames_and_ping_are_denied_without_leaks() {
     );
 }
 #[test]
-fn disabled_chat_menu_is_silent_but_status_and_reactivation_work() {
+fn external_private_default_does_not_disable_owner_self_chat_and_self_off_is_silent() {
     use matter_base::ControlExtensionRegistry;
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket-a", "alice").unwrap();
@@ -163,16 +163,40 @@ fn disabled_chat_menu_is_silent_but_status_and_reactivation_work() {
         service.dispatch(&signed("m-2", "=/>menu")),
         ControlIpcOutcome::Applied
     );
+    // "private" is the default for *external* private chats only.
+    // It must not disable the paired owner's self-chat control surface.
     assert_eq!(
         service.dispatch(&signed("b-2", "=/>bot private off")),
         ControlIpcOutcome::Applied
     );
     assert_eq!(
         service.dispatch(&signed("m-3", "=/>menu")),
-        ControlIpcOutcome::Ignored
+        ControlIpcOutcome::Applied
     );
     assert_eq!(
         service.dispatch(&signed("s-2", "=/>status")),
+        ControlIpcOutcome::Applied
+    );
+    // An explicit self-chat override CAN disable its ordinary menu.
+    assert_eq!(
+        service.dispatch(&signed("b-3", "=/>bot off")),
+        ControlIpcOutcome::Applied
+    );
+    assert_eq!(
+        service.dispatch(&signed("m-4", "=/>menu")),
+        ControlIpcOutcome::Ignored
+    );
+    // Status and inherited recovery stay reachable while self-chat is off.
+    assert_eq!(
+        service.dispatch(&signed("s-3", "=/>status")),
+        ControlIpcOutcome::Applied
+    );
+    assert_eq!(
+        service.dispatch(&signed("b-4", "=/>bot inherit")),
+        ControlIpcOutcome::Applied
+    );
+    assert_eq!(
+        service.dispatch(&signed("m-5", "=/>menu")),
         ControlIpcOutcome::Applied
     );
 }
