@@ -35,6 +35,13 @@ pub enum DispatchResult {
         scope: String,
         policy: Option<bool>,
     },
+    BotGlobalStatus {
+        socket_powered: bool,
+        default_policy: Option<bool>,
+        group_policy: Option<bool>,
+        private_policy: Option<bool>,
+        channel_policy: Option<bool>,
+    },
     RoleChanged {
         bot_instance_id: String,
         user_id: String,
@@ -367,6 +374,12 @@ impl ControlDispatcher {
             DispatchResult::BotPolicyChanged { scope, policy } => {
                 format!("Política {scope}: {policy:?}")
             }
+            DispatchResult::BotGlobalStatus {
+                socket_powered, default_policy,
+                group_policy, private_policy, channel_policy,
+            } => format!(
+                "Socket={socket_powered}; defecto={default_policy:?}; grupos={group_policy:?}; privados={private_policy:?}; canales={channel_policy:?}"
+            ),
             DispatchResult::GroupPolicyChanged { policy, .. } => {
                 format!("Política de grupo: {policy:?}")
             }
@@ -427,16 +440,14 @@ impl ControlDispatcher {
                     });
                 }
                 ["status" | "estado", "--global"] | ["status" | "estado", "--global", "--debug"] => {
-                    let admission =
-                        self.activation.admission(receiving_socket, None, self.global_policy)?;
-                    if admission.owner_id != actor {
-                        bail!("Socket owner authorization denied");
-                    }
-                    return Ok(DispatchResult::Status {
-                        socket_id: receiving_socket.to_owned(),
-                        enabled: admission.decision.enabled,
-                        source: admission.decision.source,
-                        bot_instance_id: admission.bot_instance_id,
+                    let (socket_powered, default_policy, group_policy, private_policy, channel_policy) =
+                        self.activation.inspect_bot_defaults(receiving_socket, actor)?;
+                    return Ok(DispatchResult::BotGlobalStatus {
+                        socket_powered,
+                        default_policy,
+                        group_policy,
+                        private_policy,
+                        channel_policy,
                     });
                 }
                 ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
