@@ -12,7 +12,8 @@ fn matterssmith_global_menu_is_compact_and_uses_real_newlines() {
     let menu = style.render("menu").unwrap();
     assert!(menu.starts_with("*꒦꒷✰"));
     assert!(menu.contains("꧁✪⃢.✪"));
-    assert!(menu.contains("=/>on / =/>off"));
+    assert!(menu.contains("=/>bot on/off"));
+    assert!(!menu.contains("=/>on / =/>off"));
     assert!(menu.contains("=/>status"));
     assert!(menu.contains("=/>bot --global"));
     assert!(menu.contains("Lournyx Matterssmith [Lou-Nyx]"));
@@ -25,6 +26,18 @@ fn matterssmith_global_menu_is_compact_and_uses_real_newlines() {
     assert!(style.render("help").is_err());
     assert!(style.render("h").is_err());
     assert!(style.render("start").is_err());
+
+    // Templates are separately editable and cannot remove required attribution.
+    let custom = "*{{TITLE}}* {{ACCENT}}\n{{BODY}}\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].\n";
+    let changed = ControlTheme::new("Matter", "base-matter", "✦")
+        .unwrap()
+        .with_template(custom)
+        .unwrap();
+    assert!(changed.decorate("BOT ACTIVADO").unwrap().contains("Matter"));
+    assert!(ControlTheme::new("Matter", "base-matter", "✦")
+        .unwrap()
+        .with_template("{{BODY}}")
+        .is_err());
 
     let status = style.decorate("BOT ACTIVADO").unwrap();
     assert!(status.contains("BOT ACTIVADO"));
