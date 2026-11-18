@@ -1,5 +1,5 @@
 /*
- * Base-Matter — reusable Matterssmith category menu and scoped visual styling.
+ * Base-Matter — versionable Matterssmith control templates independent of command logic.
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
@@ -13,6 +13,7 @@ pub struct ControlTheme {
     pub title: String,
     pub bot_id: String,
     pub accent: String,
+    template: String,
 }
 
 impl ControlTheme {
@@ -26,58 +27,67 @@ impl ControlTheme {
             title: title.to_owned(),
             bot_id: bot_id.to_owned(),
             accent: accent.to_owned(),
+            template: include_str!("../templates/matterssmith-control.txt").to_owned(),
         })
     }
 
-    /// Shared visual shell for every control response.
-    /// Uses actual line breaks, never the literal characters backslash+n.
-    /// Idempotent so the menu can pass through the IPC formatter unchanged.
+    /// The layout lives in a separate UTF-8 file, not in command handlers.
+    /// An authorized host may replace it per scope after validation.
+    pub fn with_template(mut self, source: &str) -> Result<Self> {
+        validate_template(source)?;
+        self.template = source.to_owned();
+        Ok(self)
+    }
+
+    /// Render a verified, bounded reply. Refuse suspicious control chars;
+    /// never reinterpret literal command text or authorize an operation.
     pub fn decorate(&self, body: &str) -> Result<String> {
-        const HEADER: &str = "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*";
-        if body.starts_with(HEADER) {
+        const DEFAULT_HEADER: &str = "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*";
+        const CREDIT: &str = "Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].";
+        if body.starts_with(DEFAULT_HEADER) && body.ends_with(CREDIT) {
             return Ok(body.to_owned());
         }
         if body.is_empty()
-            || body.len() > 3500
+            || body.len() > 3200
             || body.chars().any(|c| c.is_control() && c != '\n')
         {
             bail!("Invalid control response");
         }
-        let result = format!(
-            "{HEADER}\n꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡 ۞₪»̶⟩\n*{}* · {}\n\n╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹\n{}\n╰───────────⟨ 🌀\n\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].",
-            self.title, self.accent, body
-        );
+        let result = self.template
+            .replace("{{TITLE}}", &self.title)
+            .replace("{{ACCENT}}", &self.accent)
+            .replace("{{BODY}}", body.trim_end_matches('\n'));
         if result.len() > 3800 {
             bail!("Themed control reply exceeds transport limit");
         }
         Ok(result)
     }
 
-    /// One compact global control menu. The example menu's decoration is
-    /// reused, not its category taxonomy, external links or bot commands.
+    /// Global menu has no categories. Its content is also a separate file.
     pub fn render(&self, section: &str) -> Result<String> {
         if section != "menu" {
             bail!("Global control has no menu categories");
         }
-        let body = concat!(
-            "💬 𝗖𝗼𝗺𝗮𝗻𝗱𝗼𝘀 𝗱𝗲 𝗰𝗼𝗻𝘁𝗿𝗼𝗹\n",
-            "╭─💠 𝗕𝗮𝘀𝗲-𝗠𝗮𝘁𝘁𝗲𝗿\n",
-            "│·♪·╠[ ◉ =/>status — Estado de este chat\n",
-            "│·♪·╠[ ⓘ =/>status --global — Configuración general [propietario]\n",
-            "│·♪·╠[ ✦ =/>on / =/>off — Bot en este chat [propietario]\n",
-            "│·♪·╠[ ◉ =/>bot — Información de activación\n",
-            "│·♪·╠[ ♧ =/>bot inherit — Heredar política [propietario]\n",
-            "│·♪·╠[ ⚙︎ =/>bot --global on/off — Base del socket [propietario]\n",
-            "│·♪·╠[ ✧ =/>bot group/private/channel on/off — Tipos [propietario]\n",
-            "│·♪·╠[ ♛ =/>set — Configuraciones [propietario]\n",
-            "│·♪·╠[ ◈ =/>roles — Vault-Matter [solo consulta]\n",
-            "│·♪·╚[ ⴵ =/>audit — Auditoría [propietario]\n",
-            "╰───────────⟨ 🌀\n",
-            "📌 El menú se muestra si este chat tiene el bot activado.\n",
-            "📌 =/>status responde incluso si está apagado."
-        );
-        self.decorate(body)
+        self.decorate(include_str!("../templates/matterssmith-menu.txt"))
     }
+}
+
+/// Validate the format itself before storing or rendering it. The footer
+/// attribution is mandatory and a user template cannot inject controls.
+fn validate_template(source: &str) -> Result<()> {
+    const CREDIT: &str = "Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].";
+    if source.is_empty()
+        || source.len() > 1500
+        || source.chars().any(|c| c.is_control() && c != '\n')
+        || !source.contains("{{BODY}}")
+        || !source.contains("{{TITLE}}")
+        || !source.contains("{{ACCENT}}")
+        || source.matches("{{BODY}}").count() != 1
+        || !source.contains(CREDIT)
+    {
+        bail!("Invalid control template");
+    }
+    Ok(())
 }
 
 /// Presentation only. The trusted host must authorize writes to this registry;
