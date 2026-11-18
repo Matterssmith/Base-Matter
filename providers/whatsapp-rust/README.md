@@ -18,6 +18,27 @@ tematizadas o la vinculación por pairing code. La suite del proveedor
 no falló; simplemente no llegó a ejecutarse en ese intento porque
 `set -e` detuvo el bloque en Clippy. Falta repetir ambas suites.
 
+## Menú compacto y comando de créditos (alpha; pruebas reales pendientes)
+
+El proveedor Rust permite `=/>credits`, `=/>creditos` y
+`=/>créditos` con la misma autenticación y verificación HMAC que
+los demás controles. Para remitentes ajenos solo se permite lectura.
+Los mensajes normales heredan el marco común corto, sin un footer
+automático de autor ni nombres duplicados. La atribución completa
+permanece en el código y se muestra exclusivamente mediante
+el comando de créditos.
+
+Referencias estudiadas: Aura-Bot-2.0 usa mensajes enriquecidos,
+miniaturas y, en comandos concretos, una vista HTML experimental
+(`FOAHtmlPrimitiveDemoDONOTUSE`). El ZIP YoSoyYo incluye
+`nativeFlowMessage` y botones `quick_reply` / `cta_url`.
+Ninguno ofrece una detección fiable del sistema operativo del destinatario.
+**No se envían aún botones HTML ni versiones forzadas Android/iOS**
+desde este proveedor; implementar eso sin detección fiable rompería
+el requisito de no mostrar una variante equivocada. El transporte
+Rust, el pairing code, los archivos SQLite y el control de sesión
+permanecen sin modificaciones.
+
 ## Ajuste posterior a Clippy del núcleo (alpha)
 
 La nueva compilación de Clippy encontró una referencia posicional
