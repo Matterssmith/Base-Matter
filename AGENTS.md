@@ -4,6 +4,36 @@ Read `docs/DEVELOPMENT_STATUS.md`, the root README and architecture before work.
 Inspect actual code, Git status, branch, ignored files and applicable nested instructions.
 Do not assume a past report is current. Preserve useful existing implementations.
 
+## Contrato prioritario del propietario — 2026-11-18 (sustituye comandos anteriores)
+
+- En WhatsApp, **solo `=/>bot on/off/inherit`** gestiona la activación. Retirar
+  `=/>on/off` de proveedor, puente, ayuda y menús; el gate de power queda
+  interno. `bot on` activa en una transacción la política autorizada y el
+  gate operativo, sin necesitar una segunda acción; `bot off` nunca apaga
+  chats ajenos. Los viejos APIs de power del núcleo son compatibilidad,
+  **nunca comandos de WhatsApp**.
+- `=/>bot on/off` es el chat exacto; `=/>bot --global on/off` es la política
+  por defecto del socket; `=/>bot group/private/channel/community on/off`
+  son políticas por tipo. Comunidad significa *grupo de avisos* y **solo**
+  debe aplicarse cuando el proveedor atestigüe el tipo mediante metadatos;
+  nunca asumirlo a partir de la terminación `@g.us`. Canales también
+  requieren identidad de proveedor verificada. Ámbitos externos apagados
+  por defecto, estado `=/>status` siempre disponible.
+- Menú global **sin categorías**. Tomar el marco, símbolos y espaciado
+  del ejemplo del propietario, NO importar sus categorías ni comandos `#`.
+  Los diseños viven en `templates/matterssmith-control.txt` y
+  `templates/matterssmith-menu.txt`, fuera de manejadores de comandos.
+  Cada respuesta, incluidas las operaciones REGISTER y vistas previas
+  de WhatsApp, debe pasar por el renderizador compartido de
+  `src/control_style.rs` con `\n` reales. Permitir sustitución controlada
+  por alcance sin modificar seguridad, rutas ni handlers.
+- Roles: Vault-Matter sigue siendo autoridad exclusiva; sin lector remoto
+  autenticado, no existe ninguna concesión operativa de rango local.
+- Publicar cambios primero en alpha. Promover a beta únicamente revisiones
+  concretas con compilación, pruebas y uso real verificados; beta→stable
+  después de estabilidad repetible. Las ramas ya divergen: no hacer merges
+  ciegos ni sobrescribir sus commits propios.
+
 ## Identity
 
 Preserve the project's visual identity and existing credits. Where credits apply:
