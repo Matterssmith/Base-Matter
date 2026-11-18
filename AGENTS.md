@@ -57,6 +57,40 @@ independent of network connection. Powered-off sockets execute no normal command
 Policy precedence when powered on: Group > Socket > Global > None (deny).
 Preserve socket isolation and persist/audit administrative changes atomically.
 
+## Owner correction — real group operations and encrypted socket roles (2026-11-17)
+
+- A real WhatsApp `=/>status`, `=/>on`, `=/>help` and `=/>menu`
+  round-trip was observed in the self-chat after PN/LID correction.
+  This proves the private owner bridge works, not group functionality.
+- WhatsApp private self-chat accepts **only socket-wide configuration**:
+  power, status, socket-role changes, read-only role catalog and audit.
+  Menus, commands targeting groups/communities, recovery previews and
+  normal bot functionality must not be handled in private.
+- WhatsApp group events need a **verified actual group JID and sender**
+  from the authenticated Rust connection and authenticated HMAC binding.
+  Owner-only `=/>group status/on/off/inherit`, `=/>group role`,
+  menus and appropriately scoped preview commands are being integrated
+  in alpha; never accept a text-supplied group ID as authority.
+- Only the real socket owner can change power and group policy. A global
+  project owner, `co-owner` or `staff` label is **not** a bypass.
+  Project-level ranks, per-bot ranks and per-socket/per-group ranks are
+  separate security namespaces; do not infer one from another.
+- Socket/group ranks: `owner` is the immutable validated socket owner;
+  other available ranks are `co-owner`, `admin`, `moderator`,
+  `operator`, `trusted`, `member`, `restricted`, `banned`.
+  `user` remains implicit and never creates a role-grant entry.
+  All changes must be owner-authorized, audited and persisted.
+- A local SQLite role record is **not** GitHub durability. Before
+  claiming Vault-Matter integration, implement verified encrypted
+  role snapshot publication and recovery through an authenticated
+  GitHub/Vault provider with CAS, key isolation and audit. No plaintext
+  roles or secrets in Git, and no WhatsApp session files in Vault.
+  Fail closed on inaccessible Vault; do not fabricate successful sync.
+- Alpha is for regressions and trials; promote isolated, verified
+  changes by review to beta then stable, never bulk-merge divergent
+  histories. Operate from a single Git clone and shared Cargo build
+  cache in the owner's one-terminal environment. Preserve sessions.
+
 ## Current hard constraints — owner clarification 2026-11-17
 
 - Every \`*-Matter\` repository is part of the Matter ecosystem; Bot-Matter
