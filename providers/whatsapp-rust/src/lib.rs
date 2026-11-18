@@ -311,7 +311,10 @@ impl Config {
         let parts: Vec<_> = event.text.split_whitespace().collect();
         let allowed = matches!(
             parts.as_slice(),
-            ["=/>status" | "=/>estado"] | ["=/>menu" | "=/>menú"] | ["=/>bot"] | ["=/>credits" | "=/>creditos" | "=/>créditos"]
+            ["=/>status" | "=/>estado"]
+                | ["=/>menu" | "=/>menú"]
+                | ["=/>bot"]
+                | ["=/>credits" | "=/>creditos" | "=/>créditos"]
         );
         if !allowed {
             return Ok(None);
