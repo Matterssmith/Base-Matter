@@ -1,16 +1,11 @@
-💬 𝗖𝗼𝗺𝗮𝗻𝗱𝗼𝘀 𝗱𝗲 𝗰𝗼𝗻𝘁𝗿𝗼𝗹
+*Prefijo global:* `=/>`
 
-│·♪·╠[ ◉ =/>status — Estado de este chat
-│·♪·╠[ ⓘ =/>status --global — Configuración del socket [propietario]
-│·♪·╠[ ✦ =/>bot on/off — Activar o apagar este chat [propietario]
-│·♪·╠[ ♧ =/>bot inherit — Restaurar herencia [propietario]
-│·♪·╠[ ⚙︎ =/>bot --global on/off — Predeterminado [propietario]
-│·♪·╠[ ♧ =/>bot group on/off — Grupos [propietario]
-│·♪·╠[ ♙ =/>bot private on/off — Privados externos [propietario]
-│·♪·╠[ ☷ =/>bot channel on/off — Canales [requiere identidad verificada]
-│·♪·╠[ ♧ =/>bot community on/off — Avisos comunitarios [requiere metadatos]
-│·♪·╠[ ♛ =/>set — Configuración [propietario]
-│·♪·╠[ ◈ =/>roles — Vault-Matter [solo lectura]
-│·♪·╚[ ⴵ =/>audit — Auditoría [propietario]
+│ ◉ status [--global] — Estado y políticas
+│ ✦ bot [ámbito] on|off|inherit — Activación
+│   Ámbito: --global · group · private · channel · community
+│ ⚙ set — Ajustes [propietario]
+│ ◈ roles — Rangos Vault [consulta]
+│ ⴵ audit — Auditoría [propietario]
+│ ♧ credits — Créditos
 
-💠 =/>status funciona incluso cuando el bot está apagado.
+*Control:* propietario del socket · chats externos apagados por defecto.
