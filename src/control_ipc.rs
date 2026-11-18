@@ -76,6 +76,28 @@ impl WhatsAppControlIpc {
                     if powered { "encendido" } else { "apagado" }
                 )),
             ),
+            Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::GroupPolicyChanged {
+                policy, ..
+            })) => (
+                ControlIpcOutcome::Applied,
+                Some(format!(
+                    "Base-Matter: política de grupo {}. El encendido del socket es independiente.",
+                    match policy {
+                        Some(true) => "habilitada",
+                        Some(false) => "deshabilitada",
+                        None => "heredada",
+                    }
+                )),
+            ),
+            Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::GroupStatus {
+                enabled, source, ..
+            })) => (
+                ControlIpcOutcome::Applied,
+                Some(format!(
+                    "Base-Matter: grupo {} (origen: {source:?}). Socket y política se controlan por separado.",
+                    if enabled { "habilitado" } else { "deshabilitado" }
+                )),
+            ),
             Ok(WhatsAppBridgeOutcome::Dispatched(_)) => (ControlIpcOutcome::Applied, None),
             Ok(WhatsAppBridgeOutcome::Ignored) => (ControlIpcOutcome::Ignored, None),
             Ok(WhatsAppBridgeOutcome::Duplicate) => (ControlIpcOutcome::Duplicate, None),
