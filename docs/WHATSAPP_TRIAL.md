@@ -1,5 +1,43 @@
 # Prueba WhatsApp Rust de Base-Matter — pairing code
 
+## Procedimiento vigente en alpha: una sola terminal
+
+```bash
+cd /home/Sakura/Base-Matter
+source "$HOME/.config/matterssmith/rust-env.sh"
+git status --short --branch
+git pull --ff-only origin alpha
+cargo test --all-targets --locked
+cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --all-targets
+cargo run
+```
+
+No volver a generar `runtime.env` ni borrar SQLite, llaves o locks
+para probar las correcciones. El lanzador `cargo run` gestiona los
+dos procesos Rust bajo una sola terminal y usa `CARGO_TARGET_DIR`.
+Las instrucciones de dos terminales incluidas más abajo documentan
+únicamente la ejecución manual anterior; no son necesarias en alpha.
+
+**En privado propio:** `=/>status`, `=/>on`, `=/>off`,
+`=/>roles`, `=/>audit`, `=/>set role PN_O_LID RANGO`.
+Solo configuración general del socket.
+
+**En grupo real con el número autorizado como remitente:**
+`=/>group status`, `=/>group on`, `=/>group off`,
+`=/>group inherit`, `=/>group role PN_O_LID RANGO`,
+`=/>menu`, `=/>help`, `=/>start`, `=/>add++` y
+`=/>add` (vistos buenos y fases descritos en el README).
+
+El encendido del socket es distinto de la política grupal. La
+asignación de un rango del socket es solo local hasta instalar el
+cifrado y sincronización autenticada a Vault-Matter. Ningún otro
+miembro recibe acceso implícito al control por un alias o por su
+rango local. Para dar por completa la prueba hay que observar una
+respuesta en un grupo con JID autenticado y probar denegaciones de
+terceros y grupos ajenos.
+
+# Prueba WhatsApp Rust de Base-Matter — pairing code
+
 Este procedimiento se puede ejecutar desde la rama `beta` con
 una cuenta secundaria propia autorizada. Es una prueba, **no una
 certificación de estabilidad**. Solo se usa Rust y vinculación por código.
