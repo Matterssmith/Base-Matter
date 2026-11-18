@@ -315,9 +315,7 @@ impl RoleStore {
             .collect::<rusqlite::Result<Vec<_>>>()?;
         drop(existing_query);
         let wanted = role.map(str::to_owned);
-        if current.len() == usize::from(wanted.is_some())
-            && current.first() == wanted.as_ref()
-        {
+        if current.len() == usize::from(wanted.is_some()) && current.first() == wanted.as_ref() {
             return Ok(false);
         }
         if let Some(role) = role {

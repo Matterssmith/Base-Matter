@@ -508,7 +508,8 @@ impl SocketActivationStore {
     ) -> Result<(bool, Option<bool>, Option<bool>, Option<bool>, Option<bool>)> {
         validate(socket)?;
         validate(actor)?;
-        let c = self.connection
+        let c = self
+            .connection
             .lock()
             .map_err(|_| anyhow!("Activation lock poisoned"))?;
         require_owner(&c, socket, actor)?;
@@ -520,11 +521,13 @@ impl SocketActivationStore {
         let mut kinds = [None; 3];
         for (index, mode) in ["group", "private", "channel"].iter().enumerate() {
             let key = format!("kind:{mode}");
-            let stored: Option<i64> = c.query_row(
-                "SELECT policy FROM activation_groups WHERE socket_id=?1 AND group_id=?2",
-                params![socket, key],
-                |row| row.get(0),
-            ).optional()?;
+            let stored: Option<i64> = c
+                .query_row(
+                    "SELECT policy FROM activation_groups WHERE socket_id=?1 AND group_id=?2",
+                    params![socket, key],
+                    |row| row.get(0),
+                )
+                .optional()?;
             kinds[index] = stored.map(decode_policy).transpose()?;
         }
         Ok((

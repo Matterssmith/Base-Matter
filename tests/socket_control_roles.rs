@@ -23,15 +23,10 @@ fn fixture(path: &std::path::Path) -> (ControlDispatcher, Arc<RoleStore>) {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("wa-alpha", "socket-owner").unwrap();
     let roles = Arc::new(RoleStore::open(path).unwrap());
-    let router =
-        Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
-    let dispatcher = ControlDispatcher::new(
-        activation,
-        Arc::new(BotRegistry::in_memory()),
-        router,
-        None,
-    )
-    .with_socket_roles(Arc::clone(&roles));
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
+    let dispatcher =
+        ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
+            .with_socket_roles(Arc::clone(&roles));
     (dispatcher, roles)
 }
 
@@ -132,7 +127,9 @@ fn group_roles_are_separate_from_socket_roles_and_other_groups() {
             "=/>group role pn:5215512345678 trusted",
         )
         .unwrap();
-    assert!(roles.export_snapshot("socket:wa-alpha", "socket-owner").is_err());
+    assert!(roles
+        .export_snapshot("socket:wa-alpha", "socket-owner")
+        .is_err());
     assert!(control
         .dispatch(
             "wa-alpha",

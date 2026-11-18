@@ -5,8 +5,8 @@
  */
 use crate::{
     activation::{ActivationSource, GlobalPolicy, SocketActivationStore},
-    BotRegistry, CommandRouter, ControlExtensionContext, ControlExtensionRegistry, RoleStore,
     control_style::ControlThemes,
+    BotRegistry, CommandRouter, ControlExtensionContext, ControlExtensionRegistry, RoleStore,
 };
 use anyhow::{anyhow, bail, Result};
 use std::sync::Arc;
@@ -145,14 +145,22 @@ impl ControlDispatcher {
         grant: bool,
     ) -> Result<DispatchResult> {
         const SOCKET_ROLES: &[&str] = &[
-            "co-owner", "admin", "moderator", "operator",
-            "trusted", "member", "restricted", "banned",
+            "co-owner",
+            "admin",
+            "moderator",
+            "operator",
+            "trusted",
+            "member",
+            "restricted",
+            "banned",
         ];
         let registry = self
             .socket_roles
             .as_ref()
             .ok_or_else(|| anyhow!("Socket role controller is not configured"))?;
-        let admission = self.activation.admission(socket, None, self.global_policy)?;
+        let admission = self
+            .activation
+            .admission(socket, None, self.global_policy)?;
         if admission.owner_id != actor {
             bail!("Socket owner authorization denied");
         }
@@ -216,7 +224,6 @@ impl ControlDispatcher {
         })
     }
 
-
     /// Read one effective bot policy. Exact group-chat overrides win over
     /// the kind default, followed by socket and configured global policy.
     /// Kind keys are private internal identifiers, never trusted chat IDs.
@@ -226,7 +233,9 @@ impl ControlDispatcher {
         group: Option<&str>,
         kind: &str,
     ) -> Result<crate::activation::SocketAdmission> {
-        let direct = self.activation.admission(socket, group, self.global_policy)?;
+        let direct = self
+            .activation
+            .admission(socket, group, self.global_policy)?;
         if matches!(
             direct.decision.source,
             ActivationSource::Group | ActivationSource::PoweredOff
@@ -237,8 +246,9 @@ impl ControlDispatcher {
             bail!("Unsupported bot chat type");
         }
         let key = format!("kind:{kind}");
-        let kind_admission =
-            self.activation.admission(socket, Some(&key), self.global_policy)?;
+        let kind_admission = self
+            .activation
+            .admission(socket, Some(&key), self.global_policy)?;
         if kind_admission.decision.source == ActivationSource::Group {
             Ok(kind_admission)
         } else if matches!(kind, "group" | "private" | "channel") {
@@ -265,7 +275,9 @@ impl ControlDispatcher {
         scope: &str,
         policy: Option<bool>,
     ) -> Result<DispatchResult> {
-        let admission = self.activation.admission(socket, None, self.global_policy)?;
+        let admission = self
+            .activation
+            .admission(socket, None, self.global_policy)?;
         if admission.owner_id != actor {
             bail!("Socket owner authorization denied");
         }
@@ -284,7 +296,8 @@ impl ControlDispatcher {
             "group" | "private" | "channel" => format!("kind:{scope}"),
             _ => bail!("Unsupported bot policy scope"),
         };
-        self.activation.set_group_policy(socket, actor, &key, policy)?;
+        self.activation
+            .set_group_policy(socket, actor, &key, policy)?;
         Ok(DispatchResult::BotPolicyChanged {
             scope: scope.to_owned(),
             policy,
@@ -303,7 +316,6 @@ impl ControlDispatcher {
         self.silent_when_disabled = true;
         self
     }
-
 
     /// A separate read-only entry point, not ordinary control dispatch.
     /// The HMAC bridge must verify provider-origin sender and chat identities
@@ -452,12 +464,8 @@ impl ControlDispatcher {
         } else {
             (message, false)
         };
-        let outcome = self.dispatch_inner(
-            receiving_socket, actor, source, group, statement,
-        )?;
-        if !debug || !statement.starts_with("=/>")
-            || matches!(&outcome, DispatchResult::Inactive)
-        {
+        let outcome = self.dispatch_inner(receiving_socket, actor, source, group, statement)?;
+        if !debug || !statement.starts_with("=/>") || matches!(&outcome, DispatchResult::Inactive) {
             return Ok(outcome);
         }
         let kind = if group.is_some() { "group" } else { "self" };
@@ -541,9 +549,17 @@ impl ControlDispatcher {
                         bot_instance_id: admission.bot_instance_id,
                     });
                 }
-                ["status" | "estado", "--global"] | ["status" | "estado", "--global", "--debug"] => {
-                    let (socket_powered, default_policy, group_policy, private_policy, channel_policy) =
-                        self.activation.inspect_bot_defaults(receiving_socket, actor)?;
+                ["status" | "estado", "--global"]
+                | ["status" | "estado", "--global", "--debug"] => {
+                    let (
+                        socket_powered,
+                        default_policy,
+                        group_policy,
+                        private_policy,
+                        channel_policy,
+                    ) = self
+                        .activation
+                        .inspect_bot_defaults(receiving_socket, actor)?;
                     return Ok(DispatchResult::BotGlobalStatus {
                         socket_powered,
                         default_policy,
@@ -555,7 +571,8 @@ impl ControlDispatcher {
                 ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
                 | ["bot", "--global", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
                 | ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar", "--global"]
-                | ["bot", "group" | "private" | "channel" | "grupo" | "privado" | "canal", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"] => {
+                | ["bot", "group" | "private" | "channel" | "grupo" | "privado" | "canal", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"] =>
+                {
                     let action = if tokens.last() == Some(&"--global") {
                         tokens[1]
                     } else {
@@ -582,7 +599,12 @@ impl ControlDispatcher {
                         }
                     };
                     return self.change_bot_policy(
-                        receiving_socket, actor, group, kind, scope, policy,
+                        receiving_socket,
+                        actor,
+                        group,
+                        kind,
+                        scope,
+                        policy,
                     );
                 }
                 ["bot"] | ["bot", "--global"] => {
@@ -602,9 +624,9 @@ impl ControlDispatcher {
                     if group.is_some() {
                         bail!("Configuration is private owner control");
                     }
-                    let admission = self.activation.admission(
-                        receiving_socket, None, self.global_policy
-                    )?;
+                    let admission =
+                        self.activation
+                            .admission(receiving_socket, None, self.global_policy)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }
@@ -645,16 +667,23 @@ impl ControlDispatcher {
                         anyhow!("Group role control requires an authenticated group chat")
                     })?;
                     return self.change_socket_role(
-                        receiving_socket, actor, Some(group_id), user, role, true
+                        receiving_socket,
+                        actor,
+                        Some(group_id),
+                        user,
+                        role,
+                        true,
                     );
                 }
                 ["group" | "grupo", "status" | "estado"] => {
                     let group_id = group.ok_or_else(|| {
                         anyhow!("Group status requires an authenticated group chat")
                     })?;
-                    let admission = self
-                        .activation
-                        .admission(receiving_socket, Some(group_id), self.global_policy)?;
+                    let admission = self.activation.admission(
+                        receiving_socket,
+                        Some(group_id),
+                        self.global_policy,
+                    )?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }
@@ -680,7 +709,9 @@ impl ControlDispatcher {
                     if group.is_some() {
                         bail!("Targeted socket status requires private owner chat");
                     }
-                    let admission = self.activation.admission(socket, None, self.global_policy)?;
+                    let admission = self
+                        .activation
+                        .admission(socket, None, self.global_policy)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }

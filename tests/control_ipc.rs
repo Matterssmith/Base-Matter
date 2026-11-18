@@ -114,11 +114,11 @@ fn external_private_default_does_not_disable_owner_self_chat_and_self_off_is_sil
     use matter_base::ControlExtensionRegistry;
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket-a", "alice").unwrap();
-    let router = Arc::new(
-        CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap(),
-    );
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
     let extensions = Arc::new(ControlExtensionRegistry::new());
-    extensions.register("menu", &[], |_, _| Ok("menu".to_owned())).unwrap();
+    extensions
+        .register("menu", &[], |_, _| Ok("menu".to_owned()))
+        .unwrap();
     let control = Arc::new(
         ControlDispatcher::new(
             Arc::clone(&activation),

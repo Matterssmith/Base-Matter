@@ -100,12 +100,10 @@ impl WhatsAppControlBridge {
         // requests bound to a real WhatsApp group or sender's private chat.
         let is_owner = frame.from_me
             && frame.actor_id == self.config.owner_actor_id
-            && (frame.chat_jid == self.config.owner_jid
-                || valid_group_jid(&frame.chat_jid));
+            && (frame.chat_jid == self.config.owner_jid || valid_group_jid(&frame.chat_jid));
         let is_public_reader = !frame.from_me
             && valid_user_jid(&frame.actor_id)
-            && (valid_group_jid(&frame.chat_jid)
-                || frame.chat_jid == frame.actor_id);
+            && (valid_group_jid(&frame.chat_jid) || frame.chat_jid == frame.actor_id);
         if frame.version != VERSION
             || frame.socket_id != self.config.socket_id
             || frame.owner_jid != self.config.owner_jid
@@ -171,9 +169,10 @@ impl WhatsAppControlBridge {
                 group_id,
                 &frame.text,
             )?;
-            if !self.replay.claim(
-                "whatsapp", &self.config.socket_id, &frame.message_id
-            )? {
+            if !self
+                .replay
+                .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
+            {
                 return Ok(WhatsAppBridgeOutcome::Duplicate);
             }
             return Ok(WhatsAppBridgeOutcome::Dispatched(outcome));
@@ -182,18 +181,33 @@ impl WhatsAppControlBridge {
         if group_id.is_some() {
             if !matches!(
                 verb,
-                "=/>group" | "=/>grupo" | "=/>menu" | "=/>menú"
-                    | "=/>status" | "=/>estado" | "=/>bot"
-                    | "=/>start" | "=/>add" | "=/>add++"
+                "=/>group"
+                    | "=/>grupo"
+                    | "=/>menu"
+                    | "=/>menú"
+                    | "=/>status"
+                    | "=/>estado"
+                    | "=/>bot"
+                    | "=/>start"
+                    | "=/>add"
+                    | "=/>add++"
             ) {
                 bail!("Only group-scoped controls are available in groups");
             }
         } else if !matches!(
             verb,
-            "=/>on" | "=/>off" | "=/>status" | "=/>estado"
-                | "=/>bot" | "=/>menu" | "=/>menú"
-                | "=/>set" | "=/>unset" | "=/>role"
-                | "=/>roles" | "=/>audit"
+            "=/>on"
+                | "=/>off"
+                | "=/>status"
+                | "=/>estado"
+                | "=/>bot"
+                | "=/>menu"
+                | "=/>menú"
+                | "=/>set"
+                | "=/>unset"
+                | "=/>role"
+                | "=/>roles"
+                | "=/>audit"
         ) {
             bail!("Private chat is reserved for socket configuration");
         }
@@ -219,8 +233,7 @@ fn valid_user_jid(value: &str) -> bool {
         .strip_suffix("@s.whatsapp.net")
         .or_else(|| value.strip_suffix("@lid"));
     account.is_some_and(|digits| {
-        (8..=20).contains(&digits.len())
-            && digits.bytes().all(|byte| byte.is_ascii_digit())
+        (8..=20).contains(&digits.len()) && digits.bytes().all(|byte| byte.is_ascii_digit())
     })
 }
 

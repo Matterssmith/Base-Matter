@@ -275,7 +275,13 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
     incoming.is_group = true;
     incoming.chat_jid = "120363111222333@g.us";
     incoming.sender_jid = public_id;
-    for text in ["=/>status", "=/>estado", "=/>menu", "=/>menú group", "=/>bot"] {
+    for text in [
+        "=/>status",
+        "=/>estado",
+        "=/>menu",
+        "=/>menú group",
+        "=/>bot",
+    ] {
         incoming.text = text;
         let signed = config
             .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
@@ -285,7 +291,10 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         assert_eq!(signed.chat_jid, incoming.chat_jid);
         assert!(!signed.from_me);
         assert_eq!(signed.owner_jid, OWNER);
-        assert_eq!(signed.signature, sign_frame(&signed, &config.bridge_key).unwrap());
+        assert_eq!(
+            signed.signature,
+            sign_frame(&signed, &config.bridge_key).unwrap()
+        );
     }
     for text in [
         "=/>status --global",
@@ -419,9 +428,7 @@ fn old_or_malformed_control_events_are_rejected() {
 fn provider_binary() -> std::path::PathBuf {
     option_env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider")
         .map(Into::into)
-        .or_else(|| {
-            std::env::var_os("CARGO_BIN_EXE_whatsapp-matter-rust-provider").map(Into::into)
-        })
+        .or_else(|| std::env::var_os("CARGO_BIN_EXE_whatsapp-matter-rust-provider").map(Into::into))
         .expect("Cargo did not supply the WhatsApp Rust provider binary")
 }
 
@@ -472,7 +479,6 @@ fn controller_ack_distinguishes_applied_and_duplicate_without_false_success() {
     );
     for invalid in [
         br#"{"ok":false,"outcome":"denied"}"#.as_slice(),
-
         br#"{"ok":true,"outcome":"denied"}"#,
         br#"{"ok":false,"outcome":"applied"}"#,
         br#"{"ok":true,"outcome":"duplicate","message":"bad"}"#,
@@ -500,9 +506,7 @@ fn long_category_menu_ack_is_bounded_and_does_not_accept_control_characters() {
     let wire = serde_json::to_vec(&value).unwrap();
     assert_eq!(
         parse_control_ack(&wire).unwrap(),
-        ControlAck::AppliedWithMessage(
-            value["message"].as_str().unwrap().to_owned()
-        )
+        ControlAck::AppliedWithMessage(value["message"].as_str().unwrap().to_owned())
     );
     let too_long = serde_json::json!({
         "ok": true, "outcome": "applied", "message": "X".repeat(3801)

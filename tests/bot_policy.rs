@@ -8,8 +8,7 @@ use anyhow::{bail, Result};
 use matter_base::{
     activation::{ActivationSource, SocketActivationStore},
     control::{ControlDispatcher, DispatchResult},
-    BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter,
-    ControlExtensionRegistry,
+    BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter, ControlExtensionRegistry,
 };
 use std::sync::Arc;
 
@@ -23,9 +22,7 @@ impl CommandAuthorizer for DenyBot {
 fn fixture() -> (ControlDispatcher, Arc<SocketActivationStore>) {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("wa-alpha", "owner").unwrap();
-    let commands = Arc::new(
-        CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap(),
-    );
+    let commands = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
     let extensions = Arc::new(ControlExtensionRegistry::new());
     extensions
         .register("menu", &[], |_, _| Ok("menu test".to_owned()))
@@ -43,18 +40,8 @@ fn fixture() -> (ControlDispatcher, Arc<SocketActivationStore>) {
     )
 }
 
-fn dispatch(
-    c: &ControlDispatcher,
-    group: Option<&str>,
-    command: &str,
-) -> Result<DispatchResult> {
-    c.dispatch(
-        "wa-alpha",
-        "owner",
-        group.unwrap_or("self"),
-        group,
-        command,
-    )
+fn dispatch(c: &ControlDispatcher, group: Option<&str>, command: &str) -> Result<DispatchResult> {
+    c.dispatch("wa-alpha", "owner", group.unwrap_or("self"), group, command)
 }
 
 #[test]
@@ -92,7 +79,10 @@ fn status_works_while_off_and_global_defaults_are_not_masked_by_power() {
     );
     dispatch(&c, None, "=/>on").unwrap();
     // Global fallback does not silently enable all external group chats.
-    assert_eq!(dispatch(&c, group, "=/>menu").unwrap(), DispatchResult::Inactive);
+    assert_eq!(
+        dispatch(&c, group, "=/>menu").unwrap(),
+        DispatchResult::Inactive
+    );
     dispatch(&c, None, "=/>bot group on").unwrap();
     assert!(matches!(
         dispatch(&c, group, "=/>menu").unwrap(),
@@ -154,14 +144,24 @@ fn kind_defaults_and_exact_group_overrides_inherit_correctly() {
     ));
     assert!(matches!(
         dispatch(&c, None, "=/>status").unwrap(),
-        DispatchResult::Status { enabled: true, source: ActivationSource::Socket, .. }
+        DispatchResult::Status {
+            enabled: true,
+            source: ActivationSource::Socket,
+            ..
+        }
     ));
     assert!(matches!(
         dispatch(&c, None, "=/>status --global").unwrap(),
-        DispatchResult::BotGlobalStatus { private_policy: Some(false), .. }
+        DispatchResult::BotGlobalStatus {
+            private_policy: Some(false),
+            ..
+        }
     ));
     dispatch(&c, None, "=/>bot off").unwrap();
-    assert_eq!(dispatch(&c, None, "=/>menu").unwrap(), DispatchResult::Inactive);
+    assert_eq!(
+        dispatch(&c, None, "=/>menu").unwrap(),
+        DispatchResult::Inactive
+    );
     dispatch(&c, None, "=/>bot inherit").unwrap();
     assert!(matches!(
         dispatch(&c, None, "=/>menu").unwrap(),

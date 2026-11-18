@@ -10,9 +10,8 @@ use matter_base::{
     activation::{ActivationSource, SocketActivationStore},
     control::{ControlDispatcher, DispatchResult},
     control_style::{ControlTheme, ControlThemes},
-    BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter,
-    InboundReplayStore, WhatsAppBridgeConfig, WhatsAppBridgeOutcome,
-    WhatsAppControlBridge, WhatsAppControlFrame,
+    BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter, InboundReplayStore,
+    WhatsAppBridgeConfig, WhatsAppBridgeOutcome, WhatsAppControlBridge, WhatsAppControlFrame,
 };
 use sha2::Sha256;
 use std::sync::Arc;
@@ -38,11 +37,9 @@ fn fixture() -> WhatsAppControlBridge {
         ControlTheme::new("Matterssmith", "base-matter", "✦").unwrap(),
     ));
     let controller = Arc::new(
-        ControlDispatcher::new(
-            activation, Arc::new(BotRegistry::in_memory()), router, None,
-        )
-        .with_public_menu(themes)
-        .with_silent_bot_commands(),
+        ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
+            .with_public_menu(themes)
+            .with_silent_bot_commands(),
     );
     WhatsAppControlBridge::new(
         WhatsAppBridgeConfig {
@@ -53,7 +50,8 @@ fn fixture() -> WhatsAppControlBridge {
         KEY,
         Arc::new(InboundReplayStore::in_memory([9u8; 32]).unwrap()),
         controller,
-    ).unwrap()
+    )
+    .unwrap()
 }
 
 fn sign(frame: &mut WhatsAppControlFrame) {
@@ -76,9 +74,7 @@ fn sign(frame: &mut WhatsAppControlFrame) {
     frame.signature = hex::encode(mac.finalize().into_bytes());
 }
 
-fn frame(id: &str, text: &str, actor: &str, chat: &str, from_me: bool)
-    -> WhatsAppControlFrame
-{
+fn frame(id: &str, text: &str, actor: &str, chat: &str, from_me: bool) -> WhatsAppControlFrame {
     let mut value = WhatsAppControlFrame {
         version: 1,
         socket_id: "socket-1".into(),
@@ -107,20 +103,45 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
             source: ActivationSource::PoweredOff,
         }),
     );
-    assert_eq!(bridge.ingest(&pending).unwrap(), WhatsAppBridgeOutcome::Duplicate);
     assert_eq!(
-        bridge.ingest(&frame("pub-2", "=/>menu", READER, GROUP, false)).unwrap(),
+        bridge.ingest(&pending).unwrap(),
+        WhatsAppBridgeOutcome::Duplicate
+    );
+    assert_eq!(
+        bridge
+            .ingest(&frame("pub-2", "=/>menu", READER, GROUP, false))
+            .unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive),
     );
-    bridge.ingest(&frame("own-1", "=/>on", "owner", OWNER_JID, true)).unwrap();
-    bridge.ingest(&frame("own-2", "=/>bot --global on", "owner", OWNER_JID, true)).unwrap();
+    bridge
+        .ingest(&frame("own-1", "=/>on", "owner", OWNER_JID, true))
+        .unwrap();
+    bridge
+        .ingest(&frame(
+            "own-2",
+            "=/>bot --global on",
+            "owner",
+            OWNER_JID,
+            true,
+        ))
+        .unwrap();
     // External groups stay disabled until the owner explicitly enables
     // the group kind, regardless of the socket-global fallback.
     assert_eq!(
-        bridge.ingest(&frame("pub-early", "=/>menu", READER, GROUP, false)).unwrap(),
+        bridge
+            .ingest(&frame("pub-early", "=/>menu", READER, GROUP, false))
+            .unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive),
     );
-    bridge.ingest(&frame("own-kind", "=/>bot group on", "owner", OWNER_JID, true)).unwrap();
+    bridge
+        .ingest(&frame(
+            "own-kind",
+            "=/>bot group on",
+            "owner",
+            OWNER_JID,
+            true,
+        ))
+        .unwrap();
     assert!(matches!(
         bridge.ingest(&frame("pub-3", "=/>menu", READER, GROUP, false)).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
@@ -131,13 +152,25 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
             if command == "menu" && output.contains("=/>group")
     ));
-    bridge.ingest(&frame("own-3", "=/>bot group off", "owner", OWNER_JID, true)).unwrap();
+    bridge
+        .ingest(&frame(
+            "own-3",
+            "=/>bot group off",
+            "owner",
+            OWNER_JID,
+            true,
+        ))
+        .unwrap();
     assert_eq!(
-        bridge.ingest(&frame("pub-5", "=/>menu", READER, GROUP, false)).unwrap(),
+        bridge
+            .ingest(&frame("pub-5", "=/>menu", READER, GROUP, false))
+            .unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive),
     );
     assert_eq!(
-        bridge.ingest(&frame("pub-6", "=/>estado", READER, GROUP, false)).unwrap(),
+        bridge
+            .ingest(&frame("pub-6", "=/>estado", READER, GROUP, false))
+            .unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::GroupStatus {
             group_id: GROUP.into(),
             enabled: false,
@@ -149,8 +182,18 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
 #[test]
 fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
     let bridge = fixture();
-    bridge.ingest(&frame("own-1", "=/>on", "owner", OWNER_JID, true)).unwrap();
-    bridge.ingest(&frame("own-2", "=/>bot --global on", "owner", OWNER_JID, true)).unwrap();
+    bridge
+        .ingest(&frame("own-1", "=/>on", "owner", OWNER_JID, true))
+        .unwrap();
+    bridge
+        .ingest(&frame(
+            "own-2",
+            "=/>bot --global on",
+            "owner",
+            OWNER_JID,
+            true,
+        ))
+        .unwrap();
     let incoming = frame("pub-private", "=/>status", READER, READER, false);
     assert_eq!(
         bridge.ingest(&incoming).unwrap(),
@@ -161,7 +204,15 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
             bot_instance_id: None,
         }),
     );
-    bridge.ingest(&frame("own-priv", "=/>bot private on", "owner", OWNER_JID, true)).unwrap();
+    bridge
+        .ingest(&frame(
+            "own-priv",
+            "=/>bot private on",
+            "owner",
+            OWNER_JID,
+            true,
+        ))
+        .unwrap();
     assert!(matches!(
         bridge.ingest(&frame("pub-private-2", "=/>menu", READER, READER, false)).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, .. })
@@ -177,7 +228,10 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
         "=/>set role 5215512345678 admin",
         "=/>roles",
         "=/>menu other extra",
-    ].iter().enumerate() {
+    ]
+    .iter()
+    .enumerate()
+    {
         let test = frame(&format!("denied-{index}"), text, READER, READER, false);
         assert!(bridge.ingest(&test).is_err(), "must reject {text}");
     }

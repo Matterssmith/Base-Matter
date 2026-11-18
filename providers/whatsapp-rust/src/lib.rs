@@ -189,17 +189,32 @@ impl Config {
         let allowed = if event.is_group {
             matches!(
                 command,
-                "=/>group" | "=/>grupo" | "=/>menu" | "=/>menú"
-                    | "=/>status" | "=/>estado" | "=/>bot"
-                    | "=/>start" | "=/>add" | "=/>add++"
+                "=/>group"
+                    | "=/>grupo"
+                    | "=/>menu"
+                    | "=/>menú"
+                    | "=/>status"
+                    | "=/>estado"
+                    | "=/>bot"
+                    | "=/>start"
+                    | "=/>add"
+                    | "=/>add++"
             )
         } else {
             matches!(
                 command,
-                "=/>on" | "=/>off" | "=/>status" | "=/>estado"
-                    | "=/>bot" | "=/>menu" | "=/>menú"
-                    | "=/>set" | "=/>unset" | "=/>role"
-                    | "=/>roles" | "=/>audit"
+                "=/>on"
+                    | "=/>off"
+                    | "=/>status"
+                    | "=/>estado"
+                    | "=/>bot"
+                    | "=/>menu"
+                    | "=/>menú"
+                    | "=/>set"
+                    | "=/>unset"
+                    | "=/>role"
+                    | "=/>roles"
+                    | "=/>audit"
             )
         };
         if !allowed {
@@ -212,19 +227,14 @@ impl Config {
         if session_pn != Some(expected_pn.as_str()) {
             bail!("Authenticated WhatsApp account does not match pairing owner");
         }
-        let verified_lid = session_lid.filter(|jid| {
-            jid.ends_with("@lid") && !jid.starts_with('@') && jid.len() <= 128
-        });
+        let verified_lid = session_lid
+            .filter(|jid| jid.ends_with("@lid") && !jid.starts_with('@') && jid.len() <= 128);
         // A preconfigured LID must itself match this session's verified LID.
-        if self.owner_jid != expected_pn
-            && Some(self.owner_jid.as_str()) != verified_lid
-        {
+        if self.owner_jid != expected_pn && Some(self.owner_jid.as_str()) != verified_lid {
             bail!("Configured WhatsApp owner differs from authenticated account");
         }
 
-        let belongs_to_owner = |jid: &str| {
-            jid == expected_pn.as_str() || verified_lid == Some(jid)
-        };
+        let belongs_to_owner = |jid: &str| jid == expected_pn.as_str() || verified_lid == Some(jid);
         if !belongs_to_owner(event.sender_jid) {
             return Ok(None);
         }
@@ -296,8 +306,7 @@ impl Config {
                 .strip_suffix("@s.whatsapp.net")
                 .or_else(|| value.strip_suffix("@lid"))
                 .is_some_and(|account| {
-                    (8..=20).contains(&account.len())
-                        && account.bytes().all(|b| b.is_ascii_digit())
+                    (8..=20).contains(&account.len()) && account.bytes().all(|b| b.is_ascii_digit())
                 })
         };
         if !valid_sender(event.sender_jid) {
@@ -305,9 +314,10 @@ impl Config {
         }
         let valid_group = event.chat_jid.ends_with("@g.us")
             && event.chat_jid.len() <= 128
-            && event.chat_jid.bytes().all(|b| {
-                b.is_ascii_alphanumeric() || b"@._:-".contains(&b)
-            });
+            && event
+                .chat_jid
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"@._:-".contains(&b));
         if event.is_group {
             if !valid_group {
                 return Ok(None);
@@ -318,8 +328,7 @@ impl Config {
         }
         let own_pn = format!("{}@s.whatsapp.net", self.phone);
         if session_pn != Some(own_pn.as_str())
-            || (self.owner_jid != own_pn
-                && Some(self.owner_jid.as_str()) != session_lid)
+            || (self.owner_jid != own_pn && Some(self.owner_jid.as_str()) != session_lid)
         {
             bail!("Authenticated WhatsApp session identity mismatch");
         }

@@ -47,9 +47,7 @@ impl ControlTheme {
             self.title, self.accent, self.bot_id
         );
         if category.is_none() {
-            output.push_str(
-                "💬 Selecciona una categoría de Base-Matter.\\n\\n╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀\\n"
-            );
+            output.push_str("💬 Selecciona una categoría de Base-Matter.\\n\\n╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀\\n");
             for (symbol, label, slug) in [
                 ("✪", "Principal", "main"),
                 ("⚙︎", "Configuración", "config"),
@@ -63,15 +61,11 @@ impl ControlTheme {
                 ("⚙︎", "Sistema", "system"),
                 ("✧", "Todo lo disponible", "all"),
             ] {
-                output.push_str(&format!(
-                    "│·♪·╠[ {symbol} · {label} [=/>menu {slug}]\\n"
-                ));
+                output.push_str(&format!("│·♪·╠[ {symbol} · {label} [=/>menu {slug}]\\n"));
             }
+            output.push_str("╰───────────⟨ 🌀\\n\\n💠 Instrucciones: =/>menu <categoría>\\n");
             output.push_str(
-                "╰───────────⟨ 🌀\\n\\n💠 Instrucciones: =/>menu <categoría>\\n"
-            );
-            output.push_str(
-                "El menú se muestra en chats habilitados. =/>status siempre informa el estado.\\n"
+                "El menú se muestra en chats habilitados. =/>status siempre informa el estado.\\n",
             );
         } else {
             let entries: &[(&str, &str)] = match category.unwrap_or_default() {
@@ -83,7 +77,10 @@ impl ControlTheme {
                 ],
                 "config" | "configuracion" | "configuración" => &[
                     ("=/>set", "Opciones de configuración"),
-                    ("=/>bot --global on/off", "Predeterminado del socket [privado]"),
+                    (
+                        "=/>bot --global on/off",
+                        "Predeterminado del socket [privado]",
+                    ),
                     ("=/>bot group/private/channel on/off", "Por tipo [privado]"),
                     ("=/>set role", "Vault-Matter [aún no conectado]"),
                 ],
@@ -96,7 +93,10 @@ impl ControlTheme {
                     ("=/>add++", "Recuperación [vista previa]"),
                 ],
                 "mode" | "modo" => &[
-                    ("=/>bot --global on/off/inherit", "Base del socket [privado]"),
+                    (
+                        "=/>bot --global on/off/inherit",
+                        "Base del socket [privado]",
+                    ),
                     ("=/>bot group/private/channel on/off", "Tipos [privado]"),
                     ("=/>bot on/off/inherit", "Chat actual"),
                     ("=/>status", "Consultar sin activar el bot"),

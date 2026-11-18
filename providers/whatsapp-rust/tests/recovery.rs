@@ -90,9 +90,7 @@ fn provider_binary() -> std::path::PathBuf {
     // from the integration test's runtime environment.
     option_env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider")
         .map(Into::into)
-        .or_else(|| {
-            std::env::var_os("CARGO_BIN_EXE_whatsapp-matter-rust-provider").map(Into::into)
-        })
+        .or_else(|| std::env::var_os("CARGO_BIN_EXE_whatsapp-matter-rust-provider").map(Into::into))
         .expect("Cargo did not supply the WhatsApp Rust provider binary")
 }
 

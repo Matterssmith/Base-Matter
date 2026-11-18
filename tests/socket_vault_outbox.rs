@@ -41,14 +41,17 @@ fn changed_nondefault_socket_role_is_encrypted_and_user_revert_removes_grant() {
     let outbox = EncryptedControlOutbox::in_memory().unwrap();
     let sink = CapturingEncryptedSink::default();
     roles
-        .set_exclusive_role("socket:wa-alpha", "owner", "pn:5215512345678", Some("admin"))
+        .set_exclusive_role(
+            "socket:wa-alpha",
+            "owner",
+            "pn:5215512345678",
+            Some("admin"),
+        )
         .unwrap();
     assert!(outbox
         .enqueue_role_snapshot(&roles, "owner", &manager, "socket:wa-alpha")
         .unwrap());
-    assert!(outbox
-        .flush(&sink, "socket:wa-alpha", "roles")
-        .unwrap());
+    assert!(outbox.flush(&sink, "socket:wa-alpha", "roles").unwrap());
     let encrypted = sink.last.lock().unwrap().clone().unwrap();
     let wire = serde_json::to_string(&encrypted).unwrap();
     assert!(!wire.contains("5215512345678"));
@@ -66,9 +69,7 @@ fn changed_nondefault_socket_role_is_encrypted_and_user_revert_removes_grant() {
     assert!(outbox
         .enqueue_role_snapshot(&roles, "owner", &manager, "socket:wa-alpha")
         .unwrap());
-    assert!(outbox
-        .flush(&sink, "socket:wa-alpha", "roles")
-        .unwrap());
+    assert!(outbox.flush(&sink, "socket:wa-alpha", "roles").unwrap());
     let after = sink.last.lock().unwrap().clone().unwrap();
     let restored: serde_json::Value =
         serde_json::from_slice(&decrypt(&after, &key).unwrap()).unwrap();

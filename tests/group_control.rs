@@ -22,9 +22,7 @@ impl CommandAuthorizer for DenyBot {
 fn fixture() -> (ControlDispatcher, Arc<SocketActivationStore>) {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("wa-alpha", "socket-owner").unwrap();
-    let router = Arc::new(
-        CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap(),
-    );
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
     (
         ControlDispatcher::new(
             Arc::clone(&activation),
@@ -74,14 +72,18 @@ fn group_policy_is_independent_from_private_socket_power() {
     control
         .dispatch("wa-alpha", "socket-owner", "self", None, "=/>on")
         .unwrap();
-    assert!(activation
-        .resolve("wa-alpha", Some("120363111@g.us"), None)
-        .unwrap()
-        .enabled);
-    assert!(!activation
-        .resolve("wa-alpha", Some("120363222@g.us"), None)
-        .unwrap()
-        .enabled);
+    assert!(
+        activation
+            .resolve("wa-alpha", Some("120363111@g.us"), None)
+            .unwrap()
+            .enabled
+    );
+    assert!(
+        !activation
+            .resolve("wa-alpha", Some("120363222@g.us"), None)
+            .unwrap()
+            .enabled
+    );
     assert_eq!(
         control
             .dispatch(
@@ -97,10 +99,12 @@ fn group_policy_is_independent_from_private_socket_power() {
             policy: Some(false),
         }
     );
-    assert!(!activation
-        .resolve("wa-alpha", Some("120363111@g.us"), None)
-        .unwrap()
-        .enabled);
+    assert!(
+        !activation
+            .resolve("wa-alpha", Some("120363111@g.us"), None)
+            .unwrap()
+            .enabled
+    );
     assert_eq!(
         control
             .dispatch(
