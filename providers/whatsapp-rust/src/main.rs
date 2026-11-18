@@ -421,8 +421,12 @@ async fn main() -> Result<()> {
             let config = Arc::clone(&config);
             async move {
                 let source = &ctx.info.source;
-                let chat = source.chat.to_string();
-                let sender = source.sender.to_string();
+                // Match across PN/LID with the linked client's verified
+                // identities, stripping the per-device suffix on all JIDs.
+                let chat = source.chat.to_non_ad_string();
+                let sender = source.sender.to_non_ad_string();
+                let own_pn = ctx.client.pn().map(|jid| jid.to_non_ad_string());
+                let own_lid = ctx.client.lid().map(|jid| jid.to_non_ad_string());
                 let data = Event {
                     chat_jid: &chat,
                     sender_jid: &sender,
@@ -432,19 +436,25 @@ async fn main() -> Result<()> {
                     is_group: source.is_group,
                     timestamp: ctx.info.timestamp.timestamp(),
                 };
-                // Keep owner-only authorization. Report a generic JID/LID
-                // mismatch instead of silently dropping self-authored controls.
-                if data.from_me
-                    && !data.is_group
-                    && data.text.starts_with("=/>")
-                    && (data.chat_jid != config.owner_jid
-                        || data.sender_jid != config.owner_jid)
-                {
-                    eprintln!(
-                        "Base-Matter: outgoing control ignored (verified PN/LID owner mapping required; identifiers hidden)"
-                    );
+                let verified = config.signed_verified_control(
+                    &data,
+                    own_pn.as_deref(),
+                    own_lid.as_deref(),
+                );
+                // Log rejections without leaking phone numbers, LIDs,
+                // message bodies, sessions or cryptographic keys.
+                if data.from_me && !data.is_group && data.text.starts_with("=/>") {
+                    match &verified {
+                        Ok(None) => eprintln!(
+                            "Base-Matter: self-chat control ignored (not this account's private chat)"
+                        ),
+                        Err(_) => eprintln!(
+                            "Base-Matter: self-chat control denied (connected account identity mismatch or invalid event)"
+                        ),
+                        Ok(Some(_)) => {}
+                    }
                 }
-                match config.signed_control(&data) {
+                match verified {
                     Ok(Some(frame)) => match deliver(config.bridge_addr, &frame).await {
                         Ok(ack @ (ControlAck::Applied | ControlAck::AppliedWithMessage(_))) => {
                             println!("Base-Matter owner control applied");
