@@ -78,6 +78,7 @@ pub struct ControlDispatcher {
     socket_roles: Option<Arc<RoleStore>>,
     extensions: Option<Arc<ControlExtensionRegistry>>,
     silent_when_disabled: bool,
+    unified_live_controls: bool,
     public_menu: Option<Arc<ControlThemes>>,
 }
 
@@ -97,6 +98,7 @@ impl ControlDispatcher {
             socket_roles: None,
             extensions: None,
             silent_when_disabled: false,
+            unified_live_controls: false,
             public_menu: None,
         }
     }
@@ -117,6 +119,7 @@ impl ControlDispatcher {
             socket_roles: None,
             extensions: None,
             silent_when_disabled: false,
+            unified_live_controls: false,
             public_menu: None,
         }
     }
@@ -283,7 +286,11 @@ impl ControlDispatcher {
         }
         let key = match scope {
             "global" => {
-                self.activation.set_socket_policy(socket, actor, policy)?;
+                if self.unified_live_controls {
+                    self.activation.set_live_bot_policy(socket, actor, None, policy)?;
+                } else {
+                    self.activation.set_socket_policy(socket, actor, policy)?;
+                }
                 return Ok(DispatchResult::BotPolicyChanged {
                     scope: "socket-global".into(),
                     policy,
@@ -296,8 +303,11 @@ impl ControlDispatcher {
             "group" | "private" | "channel" => format!("kind:{scope}"),
             _ => bail!("Unsupported bot policy scope"),
         };
-        self.activation
-            .set_group_policy(socket, actor, &key, policy)?;
+        if self.unified_live_controls {
+            self.activation.set_live_bot_policy(socket, actor, Some(&key), policy)?;
+        } else {
+            self.activation.set_group_policy(socket, actor, &key, policy)?;
+        }
         Ok(DispatchResult::BotPolicyChanged {
             scope: scope.to_owned(),
             policy,
@@ -314,6 +324,15 @@ impl ControlDispatcher {
     /// unless a transport explicitly enables this setting.
     pub fn with_silent_bot_commands(mut self) -> Self {
         self.silent_when_disabled = true;
+        self
+    }
+
+    /// For the actual WhatsApp controller, =/>on/off and =/>bot on/off
+    /// share one per-chat policy. Enabling wakes the operational socket
+    /// atomically, so the owner never needs two activation commands.
+    /// Core compatibility tests retain their earlier independent power API.
+    pub fn with_unified_live_controls(mut self) -> Self {
+        self.unified_live_controls = true;
         self
     }
 
@@ -529,6 +548,23 @@ impl ControlDispatcher {
         {
             let tokens: Vec<_> = body.split_whitespace().collect();
             let kind = if group.is_some() { "group" } else { "self" };
+            if self.unified_live_controls {
+                // =/>on/off are true aliases for =/>bot on/off in WhatsApp.
+                // This branch runs before legacy core power dispatch.
+                match tokens.as_slice() {
+                    ["on" | "encender"] => {
+                        return self.change_bot_policy(
+                            receiving_socket, actor, group, kind, "current", Some(true)
+                        );
+                    }
+                    ["off" | "apagar"] => {
+                        return self.change_bot_policy(
+                            receiving_socket, actor, group, kind, "current", Some(false)
+                        );
+                    }
+                    _ => {}
+                }
+            }
             match tokens.as_slice() {
                 ["status" | "estado"] | ["status" | "estado", "--debug"] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
@@ -655,8 +691,14 @@ impl ControlDispatcher {
                         "off" | "apagar" => Some(false),
                         _ => None,
                     };
-                    self.activation
-                        .set_group_policy(receiving_socket, actor, group_id, policy)?;
+                    if self.unified_live_controls {
+                        self.activation.set_live_bot_policy(
+                            receiving_socket, actor, Some(group_id), policy
+                        )?;
+                    } else {
+                        self.activation
+                            .set_group_policy(receiving_socket, actor, group_id, policy)?;
+                    }
                     return Ok(DispatchResult::GroupPolicyChanged {
                         group_id: group_id.to_owned(),
                         policy,
