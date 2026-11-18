@@ -261,7 +261,9 @@ fn main() -> Result<()> {
         if context.group_id.is_some() || !args.is_empty() {
             bail!("Role catalog is private socket configuration only");
         }
-        Ok("Rangos del socket: owner (propietario real, no asignable), co-owner, admin, moderator, operator, trusted, member, restricted, banned, user (implícito).\\n=/>set role PN_O_LID RANGO\\n=/>unset role PN_O_LID RANGO\\nLos roles de administración del proyecto son independientes. Sin sincronización remota de Vault.".replace("\\n", "\n"))
+        Ok(
+            "Rangos de Vault-Matter: owner (propietario real del socket), co-owner, admin, moderator, operator, trusted, member, restricted, banned. user es implícito.\\nEstado: sin lector autenticado de Vault-Matter; cambios de roles BLOQUEADOS. No existe copia local.".replace("\\n", "\n")
+        )
     })?;
     let audit_store = Arc::clone(&activation);
     extensions.register("audit", &[], move |context, args| {
