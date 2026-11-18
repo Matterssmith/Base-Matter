@@ -171,7 +171,7 @@ fn verified_client_allows_configured_lid_only_when_it_matches_session() {
     let (mut vars, root) = fixture();
     vars.insert("MATTER_WA_OWNER_JID".to_owned(), VERIFIED_LID.to_owned());
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
-    let mut message = event("=/>menu");
+    let mut message = event("=/>status");
     message.chat_jid = VERIFIED_LID;
     message.sender_jid = VERIFIED_LID;
 
@@ -184,6 +184,13 @@ fn verified_client_allows_configured_lid_only_when_it_matches_session() {
         .unwrap();
     assert_eq!(signed.owner_jid, VERIFIED_LID);
     assert_eq!(signed.chat_jid, VERIFIED_LID);
+
+    // Group-only help/menu must never acquire private socket authority.
+    message.text = "=/>menu";
+    assert!(c
+        .signed_verified_control(&message, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
     fs::remove_dir_all(root).unwrap();
 }
 
