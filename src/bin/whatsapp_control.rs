@@ -6,6 +6,7 @@
  */
 use anyhow::{anyhow, bail, Result};
 use matter_base::add_commands::{parse_add_args, AddIntent};
+use matter_base::anti::AntiStore;
 use matter_base::control_style::{ControlTheme, ControlThemes};
 use matter_base::{
     activation::SocketActivationStore, control::ControlDispatcher, BotRegistry, CommandAuthorizer,
@@ -210,6 +211,9 @@ fn main() -> Result<()> {
     let _lease = ExclusiveLock::acquire(lock)?;
     let replay = Arc::new(InboundReplayStore::open(&replay_path, replay_key)?);
     let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot))?);
+    // Isolated from activation, replay and WhatsApp session SQLite databases.
+    // A missing anti database is created privately with every rule disabled.
+    let antis = Arc::new(AntiStore::open(activation_path.with_extension("anti.sqlite"))?);
     let extensions = Arc::new(ControlExtensionRegistry::new());
     // A signed, socket-owner-authorized request for live provider discovery.
     // Mutations are intentionally unsupported in this alpha checkpoint.
@@ -285,6 +289,7 @@ fn main() -> Result<()> {
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
             .with_control_extensions(extensions)
+            .with_group_antis(antis)
             .with_public_menu(Arc::clone(&style))
             .with_silent_bot_commands()
             .with_unified_live_controls(),
