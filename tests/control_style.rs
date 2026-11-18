@@ -59,14 +59,21 @@ fn community_styles_are_independent_and_untrusted_fields_fail_closed() {
             ControlTheme::new("Register", "community-one", "✦").unwrap(),
         )
         .unwrap();
-    assert!(registry
-        .render(Some("community-1@g.us"), "menu")
-        .unwrap()
-        .contains("community-one"));
-    assert!(registry
-        .render(Some("community-2@g.us"), "menu")
-        .unwrap()
-        .contains("*Base* · *"));
+    // The global menu no longer displays bot IDs: those are metadata,
+    // not part of its customizable Matterssmith visual template.
+    let first = registry.render(Some("community-1@g.us"), "menu").unwrap();
+    let second = registry.render(Some("community-2@g.us"), "menu").unwrap();
+    assert!(first.contains("*Register* · ✦"));
+    assert!(second.contains("*Base* · *"));
+    assert_ne!(first, second);
+    assert!(!first.contains("community-one"));
+    // Customizations must also be used for status, not only the menu.
+    let status = registry
+        .decorate(Some("community-1@g.us"), "BOT ACTIVADO")
+        .unwrap();
+    assert!(status.contains("*Register* · ✦"));
+    assert!(status.contains("BOT ACTIVADO"));
+    assert!(!status.contains("*Base* · *"));
     assert!(ControlTheme::new("Unsafe\ncommand", "id", "*").is_err());
     assert!(registry.render(Some("../foreign"), "menu").is_err());
 }
