@@ -189,9 +189,7 @@ impl Config {
             bail!("Authenticated WhatsApp account does not match pairing owner");
         }
         let verified_lid = session_lid.filter(|jid| {
-            jid.ends_with("@lid")
-                && !jid.starts_with('@')
-                && jid.len() <= 128
+            jid.ends_with("@lid") && !jid.starts_with('@') && jid.len() <= 128
         });
         // A preconfigured LID must itself match this session's verified LID.
         if self.owner_jid != expected_pn
@@ -201,7 +199,7 @@ impl Config {
         }
 
         let belongs_to_owner = |jid: &str| {
-            jid == expected_pn || verified_lid == Some(jid)
+            jid == expected_pn.as_str() || verified_lid == Some(jid)
         };
         if !belongs_to_owner(event.chat_jid)
             || !belongs_to_owner(event.sender_jid)
