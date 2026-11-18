@@ -299,7 +299,7 @@ fn main() -> Result<()> {
         replay,
         dispatcher,
     )?);
-    let service = WhatsAppControlIpc::new(bridge).with_theme(default_theme);
+    let service = WhatsAppControlIpc::new(bridge).with_themes(Arc::clone(&style));
     println!("Base-Matter owner control listening on local loopback.");
     service.serve(bind)
 }
