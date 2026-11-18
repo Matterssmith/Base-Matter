@@ -5,7 +5,7 @@
 set -euo pipefail
 setup() {
     umask 077
-    local directory="$HOME/.local/share/base-matter/whatsapp-test"
+    local directory="${MATTER_WA_STATE_DIR:-$HOME/.local/share/base-matter/whatsapp-test}"
     local config="$directory/runtime.env"
     if [[ -L "$directory" || -L "$config" ]]; then
         printf 'Refusing symlink in private session path.\n' >&2
@@ -49,16 +49,25 @@ setup() {
         printf 'Phone must have 8 to 15 international digits.\n' >&2
         return 1
     fi
-    read -r -p "Your private JID [$phone@s.whatsapp.net]: " jid
-    if [[ -z "$jid" ]]; then jid="$phone@s.whatsapp.net"; fi
+    if [[ "${MATTER_WA_SIMPLE_SETUP:-0}" == "1" ]]; then
+        jid="$phone@s.whatsapp.net"
+        socket="wa-${MATTER_WA_BRANCH:-test}"
+        owner="owner-${MATTER_WA_BRANCH:-test}"
+        printf 'Using a provisional phone JID. Linked-device LID identities may need verified adjustment.\n'
+    else
+        read -r -p "Your private JID [$phone@s.whatsapp.net]: " jid
+        if [[ -z "$jid" ]]; then jid="$phone@s.whatsapp.net"; fi
+    fi
     if [[ ! "$jid" =~ ^[A-Za-z0-9._:-]+@(s[.]whatsapp[.]net|lid)$ ]]; then
         printf 'Private JID must use @s.whatsapp.net or @lid.\n' >&2
         return 1
     fi
-    read -r -p 'Internal socket name [wa-test-1]: ' socket
-    if [[ -z "$socket" ]]; then socket="wa-test-1"; fi
-    read -r -p 'Internal socket owner [owner-test]: ' owner
-    if [[ -z "$owner" ]]; then owner="owner-test"; fi
+    if [[ "${MATTER_WA_SIMPLE_SETUP:-0}" != "1" ]]; then
+        read -r -p 'Internal socket name [wa-test-1]: ' socket
+        if [[ -z "$socket" ]]; then socket="wa-test-1"; fi
+        read -r -p 'Internal socket owner [owner-test]: ' owner
+        if [[ -z "$owner" ]]; then owner="owner-test"; fi
+    fi
     if [[ ! "$socket" =~ ^[A-Za-z0-9._:-]{1,128}$ ||
           ! "$owner" =~ ^[A-Za-z0-9._:-]{1,128}$ ]]; then
         printf 'Invalid socket or owner ID.\n' >&2
@@ -78,7 +87,7 @@ setup() {
         printf 'export MATTER_WA_OWNER_JID=%q\n' "$jid"
         printf 'export MATTER_WA_SOCKET_ID=%q\n' "$socket"
         printf 'export MATTER_WA_OWNER_ID=%q\n' "$owner"
-        printf 'export MATTER_WA_BRIDGE_ADDR=%q\n' '127.0.0.1:39819'
+        printf 'export MATTER_WA_BRIDGE_ADDR=%q\n' "127.0.0.1:${MATTER_WA_PORT:-39819}"
         printf 'export MATTER_WA_BRIDGE_KEY_HEX=%q\n' "$transport_key"
         printf 'export MATTER_WA_REPLAY_KEY_HEX=%q\n' "$replay_key"
         printf 'export MATTER_WA_RECOVERY_KEY_HEX=%q\n' "$recovery_key"
