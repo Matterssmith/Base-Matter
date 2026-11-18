@@ -148,15 +148,15 @@ fn real_controller_process_preserves_replay_and_recovers_after_abrupt_stop() {
     let server = start(&vars, &addr);
     assert!(!command(&vars, "--check").status().unwrap().success());
     assert_eq!(
-        deliver(&addr, &signed("first", "=/>on"))["outcome"],
+        deliver(&addr, &signed("first", "=/>bot on"))["outcome"],
         "applied"
     );
     assert_eq!(
-        deliver(&addr, &signed("first", "=/>on"))["outcome"],
+        deliver(&addr, &signed("first", "=/>bot on"))["outcome"],
         "duplicate"
     );
     assert_eq!(
-        deliver(&addr, &signed("second", "=/>off"))["outcome"],
+        deliver(&addr, &signed("second", "=/>bot off"))["outcome"],
         "applied"
     );
     drop(server);
@@ -168,15 +168,15 @@ fn real_controller_process_preserves_replay_and_recovers_after_abrupt_stop() {
     let server = start(&vars, &addr);
     // Replays from before the restart remain rejected by persisted SQLite.
     assert_eq!(
-        deliver(&addr, &signed("first", "=/>on"))["outcome"],
+        deliver(&addr, &signed("first", "=/>bot on"))["outcome"],
         "duplicate"
     );
     assert_eq!(
-        deliver(&addr, &signed("third", "=/>on"))["outcome"],
+        deliver(&addr, &signed("third", "=/>bot on"))["outcome"],
         "applied"
     );
     assert_eq!(
-        deliver(&addr, &signed("fourth", "=/>off"))["outcome"],
+        deliver(&addr, &signed("fourth", "=/>bot off"))["outcome"],
         "applied"
     );
     assert!(!command(&vars, "--check").status().unwrap().success());
