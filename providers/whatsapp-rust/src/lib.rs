@@ -267,6 +267,92 @@ impl Config {
         Ok(signed)
     }
 
+    /// Sign incoming, strictly READ-ONLY chat requests.
+    /// The callback must supply real sender and destination JIDs, never
+    /// sender IDs typed by a person in a WhatsApp message.
+    /// This method cannot sign group power, socket roles, or any mutations.
+    pub fn signed_public_readonly(
+        &self,
+        event: &Event<'_>,
+        session_pn: Option<&str>,
+        session_lid: Option<&str>,
+    ) -> Result<Option<SignedFrame>> {
+        if event.from_me || !event.text.starts_with("=/>") {
+            return Ok(None);
+        }
+        let parts: Vec<_> = event.text.split_whitespace().collect();
+        let allowed = matches!(
+            parts.as_slice(),
+            ["=/>status" | "=/>estado"]
+                | ["=/>menu" | "=/>menú"]
+                | ["=/>menu" | "=/>menú", _]
+                | ["=/>bot"]
+        );
+        if !allowed {
+            return Ok(None);
+        }
+        let valid_sender = |value: &str| {
+            value
+                .strip_suffix("@s.whatsapp.net")
+                .or_else(|| value.strip_suffix("@lid"))
+                .is_some_and(|account| {
+                    (8..=20).contains(&account.len())
+                        && account.bytes().all(|b| b.is_ascii_digit())
+                })
+        };
+        if !valid_sender(event.sender_jid) {
+            return Ok(None);
+        }
+        let valid_group = event.chat_jid.ends_with("@g.us")
+            && event.chat_jid.len() <= 128
+            && event.chat_jid.bytes().all(|b| {
+                b.is_ascii_alphanumeric() || b"@._:-".contains(&b)
+            });
+        if event.is_group {
+            if !valid_group {
+                return Ok(None);
+            }
+        } else if event.chat_jid != event.sender_jid {
+            // No unverified LID/PN identity linking for third parties.
+            return Ok(None);
+        }
+        let own_pn = format!("{}@s.whatsapp.net", self.phone);
+        if session_pn != Some(own_pn.as_str())
+            || (self.owner_jid != own_pn
+                && Some(self.owner_jid.as_str()) != session_lid)
+        {
+            bail!("Authenticated WhatsApp session identity mismatch");
+        }
+        if event.message_id.is_empty()
+            || event.message_id.len() > 256
+            || event.message_id.chars().any(char::is_control)
+            || event.text.is_empty()
+            || event.text.len() > 4096
+        {
+            bail!("Invalid readonly WhatsApp event");
+        }
+        let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
+        if now.abs_diff(event.timestamp) > 120 {
+            bail!("Expired readonly WhatsApp event");
+        }
+        let mut frame = SignedFrame {
+            version: 1,
+            socket_id: self.socket_id.clone(),
+            // For readonly ingress actor_id is the verified sender JID,
+            // never the privileged configured socket-owner actor ID.
+            actor_id: event.sender_jid.to_owned(),
+            owner_jid: self.owner_jid.clone(),
+            chat_jid: event.chat_jid.to_owned(),
+            message_id: event.message_id.to_owned(),
+            text: event.text.to_owned(),
+            from_me: false,
+            timestamp: event.timestamp,
+            signature: String::new(),
+        };
+        frame.signature = sign_frame(&frame, &self.bridge_key)?;
+        Ok(Some(frame))
+    }
+
     /// Signs only recent, self-authored messages in the owner's own private
     /// chat. All identifiers come from the trusted whatsapp-rust callback.
     pub fn signed_control(&self, event: &Event<'_>) -> Result<Option<SignedFrame>> {
