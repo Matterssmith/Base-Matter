@@ -88,20 +88,24 @@ impl ControlTheme {
     }
 }
 
-/// Validate the format itself before storing or rendering it. The footer
-/// attribution is mandatory and a user template cannot inject controls.
+/// Validate the user-visible frame. Credits live only in source files
+/// and the explicit =/>credits command, never in automatic footers.
+/// TITLE and ACCENT are optional customization fields, not mandatory brands.
 fn validate_template(source: &str) -> Result<()> {
-    const CREDIT: &str = "Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].";
     if source.is_empty()
         || source.len() > 1500
         || source.chars().any(|c| c.is_control() && c != '\n')
-        || !source.contains("{{BODY}}")
-        || !source.contains("{{TITLE}}")
-        || !source.contains("{{ACCENT}}")
         || source.matches("{{BODY}}").count() != 1
-        || !source.contains(CREDIT)
+        || source.contains("Créditos:")
+        || source.contains("Lournyx Matterssmith")
     {
         bail!("Invalid control template");
+    }
+    let (prefix, suffix) = source
+        .split_once("{{BODY}}")
+        .ok_or_else(|| anyhow!("Invalid control template"))?;
+    if prefix.trim().is_empty() || suffix.trim().is_empty() {
+        bail!("Control frame must enclose the body");
     }
     Ok(())
 }
