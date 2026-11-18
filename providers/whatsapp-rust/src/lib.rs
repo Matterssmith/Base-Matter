@@ -6,6 +6,18 @@
  */
 pub mod recovery;
 
+// One implementation and one set of template assets are shared with
+// Base-Matter. The provider remains a standalone Rust package.
+#[path = "../../../src/control_style.rs"]
+mod shared_control_style;
+
+/// Render provider-side REGISTER/recovery replies through the exact same
+/// validated Matterssmith template as all IPC control responses.
+pub fn render_provider_control(body: &str) -> Result<String> {
+    shared_control_style::ControlTheme::new("Base-Matter", "base-matter", "✦")?
+        .decorate(body)
+}
+
 use anyhow::{anyhow, bail, Result};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
