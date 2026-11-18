@@ -67,7 +67,7 @@ fn creates_valid_signed_owner_control_only_for_private_self_chat() {
     assert_eq!(frame.owner_jid, OWNER);
     assert_eq!(frame.text, "=/>status");
     assert_eq!(frame.signature.len(), 64);
-    let mut bad = event("=/>on");
+    let mut bad = event("=/>bot on");
     bad.from_me = false;
     assert!(c.signed_control(&bad).unwrap().is_none());
     bad.from_me = true;
@@ -116,7 +116,7 @@ fn verified_client_accepts_self_chat_in_pn_or_lid_namespaces() {
 fn verified_client_rejects_wrong_phone_foreign_chat_and_forged_lid() {
     let (vars, root) = fixture();
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
-    let message = event("=/>on");
+    let message = event("=/>bot on");
     assert!(c
         .signed_verified_control(&message, None, Some(VERIFIED_LID))
         .is_err());
@@ -128,7 +128,7 @@ fn verified_client_rejects_wrong_phone_foreign_chat_and_forged_lid() {
         )
         .is_err());
 
-    let mut forged = event("=/>on");
+    let mut forged = event("=/>bot on");
     forged.chat_jid = "other@s.whatsapp.net";
     assert!(c
         .signed_verified_control(&forged, Some(OWNER), Some(VERIFIED_LID))
@@ -200,7 +200,7 @@ fn verified_owner_group_controls_are_signed_for_exact_group_jid() {
     let (vars, root) = fixture();
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
     let group = "120363123456789@g.us";
-    let mut event = event("=/>group on");
+    let mut event = event("=/>bot on");
     event.chat_jid = group;
     event.sender_jid = VERIFIED_LID;
     event.is_group = true;
@@ -221,7 +221,7 @@ fn verified_owner_group_controls_are_signed_for_exact_group_jid() {
         .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
         .unwrap()
         .is_none());
-    event.text = "=/>group on";
+    event.text = "=/>bot on";
     event.sender_jid = "foreign@s.whatsapp.net";
     assert!(c
         .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
@@ -246,7 +246,7 @@ fn verified_owner_group_controls_are_signed_for_exact_group_jid() {
 fn verified_private_owner_chat_does_not_sign_group_only_commands() {
     let (vars, root) = fixture();
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
-    for command in ["=/>help", "=/>h", "=/>start", "=/>add++", "=/>group on"] {
+    for command in ["=/>help", "=/>h", "=/>on", "=/>off", "=/>start", "=/>add++", "=/>group on"] {
         assert!(c
             .signed_verified_control(&event(command), Some(OWNER), Some(VERIFIED_LID))
             .unwrap()
@@ -417,10 +417,10 @@ fn exclusive_session_lock_never_removes_sqlite_file() {
 fn old_or_malformed_control_events_are_rejected() {
     let (vars, root) = fixture();
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
-    let mut old = event("=/>off");
+    let mut old = event("=/>bot off");
     old.timestamp -= 500;
     assert!(c.signed_control(&old).is_err());
-    let mut invalid = event("=/>on");
+    let mut invalid = event("=/>bot on");
     invalid.message_id = "";
     assert!(c.signed_control(&invalid).is_err());
     fs::remove_dir_all(root).unwrap();
