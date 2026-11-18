@@ -158,6 +158,53 @@ fn no_normal_bot_dispatch_ping_qr_or_legacy_global_aliases() {
 }
 
 #[test]
+fn signed_owner_group_controls_are_scoped_and_replayed_once() {
+    let (bridge, activation) = fixture();
+    let mut group = frame("group-1", "=/>group on");
+    group.chat_jid = "12036312345@g.us".into();
+    sign(&mut group, &SECRET);
+    assert_eq!(
+        bridge.ingest(&group).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::GroupPolicyChanged {
+            group_id: group.chat_jid.clone(),
+            policy: Some(true),
+        })
+    );
+    assert_eq!(
+        bridge.ingest(&group).unwrap(),
+        WhatsAppBridgeOutcome::Duplicate
+    );
+    let mut status = frame("group-2", "=/>group status");
+    status.chat_jid = group.chat_jid.clone();
+    sign(&mut status, &SECRET);
+    assert_eq!(
+        bridge.ingest(&status).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::GroupStatus {
+            group_id: status.chat_jid.clone(),
+            enabled: false,
+            source: matter_base::activation::ActivationSource::PoweredOff,
+        })
+    );
+    assert!(!activation
+        .resolve("socket-1", Some(&group.chat_jid), None)
+        .unwrap()
+        .enabled);
+    let mut global_on = frame("group-3", "=/>on");
+    global_on.chat_jid = group.chat_jid.clone();
+    sign(&mut global_on, &SECRET);
+    assert!(bridge.ingest(&global_on).is_err());
+    assert!(bridge.ingest(&frame("private-menu", "=/>menu")).is_err());
+    let mut unknown = frame("group-4", "=/>group on");
+    unknown.chat_jid = "foreign@s.whatsapp.net".into();
+    sign(&mut unknown, &SECRET);
+    assert!(bridge.ingest(&unknown).is_err());
+    let mut forged = group.clone();
+    forged.message_id = "group-5".into();
+    forged.signature = "00".repeat(32);
+    assert!(bridge.ingest(&forged).is_err());
+}
+
+#[test]
 fn rejects_forged_signatures_cross_socket_and_sender() {
     let (bridge, activation) = fixture();
     let mut value = frame("id1", "=/>on");
