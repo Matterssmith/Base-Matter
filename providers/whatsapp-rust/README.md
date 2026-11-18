@@ -8,6 +8,16 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Clippy: segundo consumidor del snapshot (alpha)
+
+En la nueva verificación de `alpha`, Clippy del núcleo se detuvo
+en `tests/whatsapp_native.rs:82`, que aún accedía al campo
+posicional `.0` de `inspect_bot_defaults`. Se reemplazó por
+`.socket_powered`, sin alterar la autenticación, las respuestas
+tematizadas o la vinculación por pairing code. La suite del proveedor
+no falló; simplemente no llegó a ejecutarse en ese intento porque
+`set -e` detuvo el bloque en Clippy. Falta repetir ambas suites.
+
 ## Ajuste posterior a Clippy del núcleo (alpha)
 
 La nueva compilación de Clippy encontró una referencia posicional
