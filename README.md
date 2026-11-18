@@ -20,6 +20,16 @@ width="100%"
 
 ---
 
+### Seguridad del renderizador y avisos
+
+La plantilla no puede omitir los créditos o el marcador del cuerpo.
+Las respuestas, incluso si parecen ya formateadas, se someten
+a límite de tamaño y rechazo de caracteres de control.
+Los avisos comunitarios y canales siguen deshabilitados en
+la admisión real salvo identificación explícita y verificada
+de la plataforma. La política `community` no activa
+automáticamente un grupo `@g.us` ordinario.
+
 ## 2026-11-18 — Selección de plantilla por chat para todos los comandos (alpha; pruebas Debian pendientes)
 
 Se corrigió la selección de diseño: `ControlThemes` ahora ofrece
