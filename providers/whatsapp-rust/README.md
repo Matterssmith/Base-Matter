@@ -8,6 +8,19 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Distinción en la suite Base: consulta grupal con bot apagado
+
+La regresión siguiente, tras aprobar `control_ipc`, estaba
+en `tests/group_control.rs`: la prueba rechazaba
+`=/>status` desde un grupo del propietario. Se ajustó
+la expectativa para exigir estado grupal `PoweredOff`
+cuando el socket está apagado, sin permitir operaciones
+administrativas de un participante externo. El proveedor
+WhatsApp no necesita cambios para este caso; su suite
+independiente ya había aprobado 20 pruebas.
+La suite Base debe volver a ejecutarse para validar la
+corrección antes de continuar con WhatsApp real.
+
 ## Resultado de compilación del proveedor (Debian, 2026-11-18)
 
 El operador informó `cargo test --manifest-path
