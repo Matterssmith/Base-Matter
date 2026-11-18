@@ -81,6 +81,20 @@ impl WhatsAppControlIpc {
                     if powered { "encendido" } else { "apagado" }
                 )),
             ),
+            Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotGlobalStatus {
+                socket_powered, default_policy, group_policy,
+                private_policy, channel_policy,
+            })) => (
+                ControlIpcOutcome::Applied,
+                Some(format!(
+                    "Base-Matter | Configuración global del socket\\nSocket: {}\\nPredeterminado: {}\\nGrupos: {}\\nPrivados externos: {}\\nCanales: {}\\nEstas políticas NO son roles ni encienden el socket.",
+                    if socket_powered { "ENCENDIDO" } else { "APAGADO" },
+                    format_policy(default_policy),
+                    format_policy(group_policy),
+                    format_policy(private_policy),
+                    format_policy(channel_policy),
+                )),
+            ),
             Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
                 scope, policy,
             })) => (
@@ -202,5 +216,13 @@ impl WhatsAppControlIpc {
         Ok(())
     }
 }
+fn format_policy(value: Option<bool>) -> &'static str {
+    match value {
+        Some(true) => "activado",
+        Some(false) => "apagado",
+        None => "heredar (sin valor específico)",
+    }
+}
+
 // Créditos:
 // Hecho por Lournyx Matterssmith [Lou-Nyx].
