@@ -194,7 +194,7 @@ impl Config {
             matches!(
                 command,
                 "=/>on" | "=/>off" | "=/>status" | "=/>set"
-                    | "=/>unset" | "=/>roles" | "=/>audit"
+                    | "=/>unset" | "=/>role" | "=/>roles" | "=/>audit"
             )
         };
         if !allowed {
