@@ -266,6 +266,72 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
 }
 
 #[test]
+fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() {
+    let (vars, root) = fixture();
+    let config = Config::from_reader(|key| vars.get(key).cloned()).unwrap();
+    let public_id = "987654321012346@lid";
+    let mut incoming = event("=/>status");
+    incoming.from_me = false;
+    incoming.is_group = true;
+    incoming.chat_jid = "120363111222333@g.us";
+    incoming.sender_jid = public_id;
+    for text in ["=/>status", "=/>estado", "=/>menu", "=/>menú group", "=/>bot"] {
+        incoming.text = text;
+        let signed = config
+            .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .expect("read-only public command should be signed");
+        assert_eq!(signed.actor_id, public_id);
+        assert_eq!(signed.chat_jid, incoming.chat_jid);
+        assert!(!signed.from_me);
+        assert_eq!(signed.owner_jid, OWNER);
+        assert_eq!(signed.signature, sign_frame(&signed, &config.bridge_key).unwrap());
+    }
+    for text in [
+        "=/>status --global",
+        "=/>status --debug",
+        "=/>group on",
+        "=/>bot on",
+        "=/>set role 12345678901 admin",
+        "=/>menu config extra",
+        "#ping",
+    ] {
+        incoming.text = text;
+        assert!(config
+            .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .is_none());
+    }
+    incoming.text = "=/>status";
+    assert!(config
+        .signed_public_readonly(&incoming, None, Some(VERIFIED_LID))
+        .is_err());
+    incoming.sender_jid = "someone@s.whatsapp.net";
+    assert!(config
+        .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+    incoming.sender_jid = public_id;
+    incoming.chat_jid = "other@s.whatsapp.net";
+    assert!(config
+        .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+    incoming.chat_jid = public_id;
+    incoming.is_group = false;
+    assert!(config
+        .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_some());
+    incoming.chat_jid = "another@s.whatsapp.net";
+    assert!(config
+        .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn signature_matches_rust_base_control_protocol_fixture() {
     let value = SignedFrame {
         version: 1,
