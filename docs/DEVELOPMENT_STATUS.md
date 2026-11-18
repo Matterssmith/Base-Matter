@@ -1,3 +1,32 @@
+## 2026-11-18 — Regresión de estilo detectada en Debian (alpha)
+
+- **Evidencia:** operador sincronizó hasta `19b5fc6`;
+  `cargo check --all-targets --locked` pasó. La suite
+  `cargo test --all-targets --locked` pasó hasta
+  `tests/control_style.rs`, donde 1/2 casos falló en
+  `assert!(...contains("community-one"))`.
+- **Diagnóstico confirmado en código:** `community-one` era el
+  `bot_id` de `ControlTheme::new` y el esquema de plantilla
+  predeterminado contiene `{{TITLE}}`, `{{ACCENT}}`,
+  `{{BODY}}`, pero no el identificador de bot. El nuevo
+  menú global no presenta ese metadato a usuarios.
+- **Corrección publicada:** `tests/control_style.rs` ya
+  verifica el título visual particular de un grupo, el
+  tema predeterminado de otro y la aplicación del diseño
+  particular en mensajes de estado. El núcleo no cambió
+  para satisfacer una expectativa obsoleta.
+- **Pendiente real:** el operador tiene cambios locales de
+  `cargo fmt` en archivos rastreados y el archivo
+  `providers/whatsapp-rust/Cargo.lock` sin seguimiento.
+  Guardar el formato rastreado en un stash **sin -u**,
+  avanzar alpha con fast-forward y reformatear nuevamente;
+  mantener el stash como respaldo y el `Cargo.lock`
+  intacto. Ejecutar primero `cargo test --test control_style
+  --locked`, después suite Base, proveedor y Clippy.
+  No hay resultados CI del nuevo SHA ni verificación live.
+- **Promoción:** `beta/stable` sin cambios; no subir
+  cambios incompletos desde el servidor.
+  
 ## 2026-11-18 — Endurecimiento de temas y avisos (alpha; recompilación pendiente)
 
 - `ControlTheme::decorate` valida tamaño y caracteres de
