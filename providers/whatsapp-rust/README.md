@@ -8,6 +8,27 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Pruebas offline del binario y recuperación (alpha)
+
+La suite del proveedor se ejecuta de forma independiente al núcleo:
+
+```bash
+cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --all-targets
+```
+
+`tests/recovery.rs` resuelve el ejecutable
+`whatsapp-matter-rust-provider` mediante
+`option_env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider")` y,
+en su ausencia, `std::env::var_os` durante la prueba. La prueba
+invoca realmente `--recovery-verify`, rechaza la clave equivocada
+y rutas inseguras, y verifica que la sesión SQLite no se abre.
+No crea una nueva vinculación de WhatsApp ni borra las sesiones.
+
+`tests/provider.rs` utiliza el mismo mecanismo para `--check`.
+Su prueba del JID `@lid` usa `=/>status` en privado, y confirma
+que `=/>menu` se ignora en ese ámbito. Pruebas de compilación
+y ejecución en el servidor: pendientes tras esta corrección.
+
 ## Fuente única de permisos (Vault-Matter)
 
 Los rangos de socket y grupo no se pueden escribir localmente en
