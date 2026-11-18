@@ -36,6 +36,29 @@ Telegram and Discord adapters are not release-qualified. See
 [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
 
+## 2026-11-18 — Prueba grupal: status es lectura, incluso con socket apagado
+
+El operador confirmó en Debian que las **6 pruebas de
+`tests/control_ipc.rs`** pasaron tras separar correctamente
+`kind:self` de `kind:private`. La suite principal avanzó
+hasta `tests/group_control.rs`, con 1 prueba aprobada y 1
+regresión antigua: el test todavía esperaba un error al enviar
+`=/>status` desde un grupo con el propietario autenticado.
+
+El contrato vigente exige lo contrario: **status del chat actual
+siempre responde**, independientemente del estado operativo del
+socket y del bot. Se actualizó el test para comprobar
+`DispatchResult::GroupStatus { enabled: false,
+source: PoweredOff }`, manteniendo **el rechazo de status
+en el dispatcher administrativo para actores ajenos**.
+Los usuarios externos tienen su propia ruta pública,
+firmada, limitada a consultas y sin autoridad del dueño.
+
+No se ha alterado el funcionamiento del controlador.
+`tests/group_control.rs` y la suite completa todavía
+requieren verificación en Debian para este nuevo commit;
+`beta` y `stable` siguen sin modificaciones.
+
 ## 2026-11-18 — Corrección de prueba IPC: privado externo ≠ chat propio
 
 La verificación Debian del commit `46ffe7d` completó `cargo check
