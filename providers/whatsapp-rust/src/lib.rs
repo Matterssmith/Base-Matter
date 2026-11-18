@@ -245,7 +245,9 @@ impl Config {
             message_id: event.message_id,
             text: event.text,
             from_me: event.from_me,
-            is_group: event.is_group,
+            // Scope was verified above. Reuse the legacy private signer
+            // before replacing chat_jid with the signed group destination.
+            is_group: false,
             timestamp: event.timestamp,
         };
         let mut signed = self.signed_control(&canonical)?;
