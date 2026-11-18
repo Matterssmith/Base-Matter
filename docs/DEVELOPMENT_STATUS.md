@@ -1,3 +1,30 @@
+## 2026-11-18 — Cambio de arquitectura: Vault-Matter autoridad única de roles
+
+- Solicitud expresa: Base-Matter solo lectura de rangos; Vault-Matter
+  conserva toda la escritura y es la fuente única. Un rol que no esté
+  registrado/autorizado en Vault no debe funcionar.
+- WhatsApp/Telegram/Discord serán adaptadores autenticados para
+  solicitudes de administración a Vault, no réplicas ni bases paralelas.
+  Vault valida identidad, guarda una revisión cifrada y confirma la
+  persistencia antes de responder éxito; Base consume un contrato de
+  autorización autenticado, con denegación por ausencia, fallo,
+  caducidad o revocación.
+- Mitigación inmediata en alpha: retirado del ejecutable vivo
+  `whatsapp-matter-control` el `RoleStore` local y su cableado.
+  El código experimental de RoleStore continúa para pruebas offline,
+  pero **no es fuente de permisos** y no se carga al procesar comandos
+  WhatsApp. Los cambios de rango se rechazan hasta tener Vault real.
+- Nuevo documento `docs/VAULT_ROLE_AUTHORITY.md` define separación
+  de funciones, contrato de solo lectura, escrituras por gateways,
+  revisión, auditoría, cifrado, recuperación y fail-closed.
+- La política operativa local de encendido de socket y grupo continúa
+  separada de los rangos. Esto NO significa que Base pueda asignar
+  rangos o disponer de claves de escritura de Vault.
+- Pendientes: servicio Rust de Vault, seguridad de los adaptadores,
+  firma de decisiones, origen confiable de claves, escritura cifrada
+  autenticada del repositorio, consulta verificada, revocaciones,
+  pruebas offline y de WhatsApp real. Aún no promover a beta/stable.
+
 ## 2026-11-18 — Vault-Matter metadata alignment and encrypted role regression (alpha; no live sync)
 
 - The authenticated private Vault-Matter repository remains separate from
