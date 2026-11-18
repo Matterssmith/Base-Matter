@@ -1,5 +1,33 @@
 # Matter-Vault integration evidence
 
+## 2026-11-18 — Vault-Matter identity and scoped role roadmap
+
+The real private repository is now named `Matterssmith/Vault-Matter`
+(branch `matter`). Its `vault/manifest.json` was updated to name
+Vault-Matter and reference `https://github.com/Matterssmith/Base-Matter`;
+its README explicitly documents encrypted socket/group role persistence.
+No production grants, encryption master keys or platform credentials were
+created or uploaded.
+
+The alpha controller now holds socket/group grants in an independent
+locally persistent `RoleStore`. `user` has no explicit grant; setting a
+new rank replaces the prior grant transactionally. The existing Base
+`EncryptedControlOutbox::enqueue_role_snapshot` encrypts role snapshots
+using XChaCha20-Poly1305 and zeroizes the plaintext; the new regression
+test `tests/socket_vault_outbox.rs` exercises this with an in-memory
+test key and fake sink, confirming the remote envelope contains no
+plaintext subject identifier and that a return to `user` removes grants.
+
+**Not implemented / not safe to claim:** verified remote GitHub
+publication via a least-privilege authenticated sink, provider binding and
+key loading, revision CAS, remote read/decrypt/recovery, conflict and
+revocation handling, automated enqueue after each live role mutation.
+A local acknowledgment from WhatsApp says `Vault-Matter aún no
+sincronizado`. Do not publish assignments in clear or generate synthetic
+production keys just to satisfy a release check.
+
+# Matter-Vault integration evidence
+
 The actual private repository was fetched over the environment's existing SSH
 access and inspected at `072c60a288d0773020f3460a639e77f84bd76c4c` on `matter`.
 The GitHub connector returned 404; SSH access succeeded. No Vault records,
