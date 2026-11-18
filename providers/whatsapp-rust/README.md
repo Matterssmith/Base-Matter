@@ -8,6 +8,27 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Contrato WhatsApp actual: un solo comando y una sola plantilla (alpha)
+
+Los comandos `=/>on/off` se han retirado del proveedor y del puente
+firmado. Usar solo `=/>bot on/off` en el chat autorizado; habilitar
+despierta el socket sin un encendido adicional. Para predeterminados
+usar `--global` o los alcances `group/private/channel/community`
+en el chat propio. La variante `community` corresponde a avisos
+comunitarios: no se aplica a grupos ordinarios sin metadatos de tipo.
+
+El proveedor **reutiliza `src/control_style.rs`** para decorar también
+respuestas directas REGISTER, recuperación y vistas previas. Ambos
+procesos comparten las plantillas editables de la raíz:
+`templates/matterssmith-control.txt` y
+`templates/matterssmith-menu.txt`. No copiar diseños dentro de los
+manejadores. El menú único no tiene subcategorías. El salto de línea
+es un carácter real, jamás texto literal `\n`.
+
+Esta revisión está publicada solo en alpha, pendiente de pruebas
+reales en Debian; los 20 tests del proveedor informados previamente
+corresponden al commit anterior `dfd9dab`, no certifican este cambio.
+
 ## Distinción en la suite Base: consulta grupal con bot apagado
 
 La regresión siguiente, tras aprobar `control_ipc`, estaba
