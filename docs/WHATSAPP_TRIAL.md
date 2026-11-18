@@ -1,3 +1,23 @@
+## Actualización alpha — menú corto y créditos
+
+La rama `alpha` muestra ahora un único marco corto de
+control, sin dos títulos o footer de autor. La lista del menú
+incluye `Prefijo global: =/>` solo una vez. Las entradas
+`status [--global]` y `bot [ámbito] on|off|inherit`
+son **notación abreviada**, no comandos sin prefijo.
+
+En WhatsApp continúas enviando `=/>status`, `=/>status --global`,
+`=/>bot on`, `=/>bot --global off` o `=/>bot group on`
+según el alcance autorizado. Para ver la firma del proyecto,
+envía `=/>credits`. El comando es de solo lectura.
+
+Se examinó el estilo HTML experimental de Aura y los
+botones del ZIP YoSoyYo. No se ha conectado ningún
+envío de HTML ejecutable ni selección automática Android/iPhone
+a WhatsApp-Matter Rust: requieren soporte real de cliente
+y una señal de dispositivo fiable. El menú actual siempre
+viaja como una sola respuesta segura de texto.
+
 # Prueba WhatsApp Rust de Base-Matter — pairing code
 
 ## Contrato vigente: bot único y plantilla Matterssmith (alpha)
