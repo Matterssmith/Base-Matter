@@ -87,6 +87,16 @@ pub struct AntiStore {
     db: Mutex<Connection>,
 }
 
+fn valid_socket(socket: &str) -> Result<()> {
+    if socket.is_empty()
+        || socket.len() > 128
+        || !socket.bytes().all(|c| c.is_ascii_alphanumeric() || b"._:-".contains(&c))
+    {
+        bail!("Socket inválido");
+    }
+    Ok(())
+}
+
 fn valid_scope(socket: &str, group: &str) -> Result<()> {
     if socket.is_empty()
         || socket.len() > 128
@@ -181,6 +191,13 @@ impl AntiStore {
                action TEXT NOT NULL CHECK(action IN ('warn','delete','kick')),
                PRIMARY KEY(socket_id, group_jid, rule)
              );
+             CREATE TABLE IF NOT EXISTS socket_anti_defaults (
+               socket_id TEXT NOT NULL,
+               rule TEXT NOT NULL,
+               enabled INTEGER NOT NULL CHECK(enabled IN (0,1)),
+               action TEXT NOT NULL CHECK(action IN ('warn','delete','kick')),
+               PRIMARY KEY(socket_id, rule)
+             );
              CREATE TABLE IF NOT EXISTS group_anti_audit (
                id INTEGER PRIMARY KEY,
                socket_id TEXT NOT NULL,
@@ -193,145 +210,186 @@ impl AntiStore {
         Ok(Self { db: Mutex::new(db) })
     }
 
+    /// Effective setting: explicit group rule > socket default > disabled/warn.
     pub fn get(&self, socket: &str, group: &str, name: &str) -> Result<AntiRule> {
         valid_scope(socket, group)?;
         let rule = canonical_rule(name)?;
+        let group_value = {
+            let db = self.db.lock().map_err(|_| anyhow!("Protecciones no disponibles"))?;
+            db.query_row(
+                "SELECT enabled, action FROM group_anti_rules
+                 WHERE socket_id=?1 AND group_jid=?2 AND rule=?3",
+                params![socket, group, rule],
+                |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)),
+            )
+            .optional()?
+        };
+        if let Some(value) = group_value {
+            return Self::decode(value);
+        }
+        self.get_global(socket, rule)
+    }
+
+    fn decode(row: (i64, String)) -> Result<AntiRule> {
+        if row.0 != 0 && row.0 != 1 {
+            bail!("Estado persistido inválido");
+        }
+        Ok(AntiRule {
+            enabled: row.0 == 1,
+            action: AntiAction::parse(&row.1)?,
+        })
+    }
+
+    pub fn get_global(&self, socket: &str, name: &str) -> Result<AntiRule> {
+        valid_socket(socket)?;
+        let rule = canonical_rule(name)?;
         let db = self.db.lock().map_err(|_| anyhow!("Protecciones no disponibles"))?;
         let row = db.query_row(
-            "SELECT enabled, action FROM group_anti_rules
-             WHERE socket_id=?1 AND group_jid=?2 AND rule=?3",
-            params![socket, group, rule],
+            "SELECT enabled, action FROM socket_anti_defaults
+             WHERE socket_id=?1 AND rule=?2",
+            params![socket, rule],
             |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)),
         ).optional()?;
         match row {
-            Some((enabled, action)) => {
-                let action = AntiAction::parse(&action)?;
-                Ok(AntiRule { enabled: enabled == 1, action })
-            }
+            Some(value) => Self::decode(value),
             None => Ok(AntiRule { enabled: false, action: AntiAction::Warn }),
         }
     }
 
-    fn set(&self, socket: &str, group: &str, name: &str, enabled: Option<bool>, action: Option<AntiAction>) -> Result<AntiRule> {
-        valid_scope(socket, group)?;
+    /// Writes are atomic with an immutable, bounded audit entry.
+    fn set(&self, socket: &str, group: Option<&str>, name: &str, enabled: Option<bool>, action: Option<AntiAction>) -> Result<AntiRule> {
+        valid_socket(socket)?;
+        if let Some(group) = group {
+            valid_scope(socket, group)?;
+        }
         let rule = canonical_rule(name)?;
-        let mut db = self.db.lock().map_err(|_| anyhow!("Protecciones no disponibles"))?;
-        let tx = db.transaction()?;
-        let old = tx.query_row(
-            "SELECT enabled, action FROM group_anti_rules WHERE socket_id=?1 AND group_jid=?2 AND rule=?3",
-            params![socket, group, rule],
-            |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)),
-        ).optional()?;
-        let old_enabled = old.as_ref().is_some_and(|v| v.0 == 1);
-        let old_action = match old {
-            Some((_, value)) => AntiAction::parse(&value)?,
-            None => AntiAction::Warn,
+        let previous = if let Some(group) = group {
+            self.get(socket, group, name)?
+        } else {
+            self.get_global(socket, name)?
         };
         let selected = AntiRule {
-            enabled: enabled.unwrap_or(old_enabled),
-            action: action.unwrap_or(old_action),
+            enabled: enabled.unwrap_or(previous.enabled),
+            action: action.unwrap_or(previous.action),
         };
-        tx.execute(
-            "INSERT INTO group_anti_rules(socket_id,group_jid,rule,enabled,action)
-             VALUES(?1,?2,?3,?4,?5)
-             ON CONFLICT(socket_id,group_jid,rule)
-             DO UPDATE SET enabled=excluded.enabled, action=excluded.action",
-            params![socket, group, rule, i64::from(selected.enabled), selected.action.as_str()],
-        )?;
+        let mut db = self.db.lock().map_err(|_| anyhow!("Protecciones no disponibles"))?;
+        let tx = db.transaction()?;
+        if let Some(group) = group {
+            tx.execute(
+                "INSERT INTO group_anti_rules(socket_id,group_jid,rule,enabled,action)
+                 VALUES(?1,?2,?3,?4,?5)
+                 ON CONFLICT(socket_id,group_jid,rule)
+                 DO UPDATE SET enabled=excluded.enabled, action=excluded.action",
+                params![socket, group, rule, i64::from(selected.enabled), selected.action.as_str()],
+            )?;
+        } else {
+            tx.execute(
+                "INSERT INTO socket_anti_defaults(socket_id,rule,enabled,action)
+                 VALUES(?1,?2,?3,?4)
+                 ON CONFLICT(socket_id,rule)
+                 DO UPDATE SET enabled=excluded.enabled, action=excluded.action",
+                params![socket, rule, i64::from(selected.enabled), selected.action.as_str()],
+            )?;
+        }
         tx.execute(
             "INSERT INTO group_anti_audit(socket_id,group_jid,rule,operation)
              VALUES(?1,?2,?3,?4)",
-            params![socket, group, rule, format!("enabled={};action={}", selected.enabled, selected.action.as_str())],
+            params![
+                socket,
+                group.unwrap_or("@global"),
+                rule,
+                format!("enabled={};action={}", selected.enabled, selected.action.as_str())
+            ],
         )?;
         tx.commit()?;
         Ok(selected)
     }
 
-    fn display(&self, socket: &str, group: &str, name: &str) -> Result<String> {
-        let canonical = canonical_rule(name)?;
-        let state = self.get(socket, group, canonical)?;
+    /// Revert just one group rule to its socket default.
+    pub fn inherit(&self, socket: &str, group: &str, name: &str) -> Result<AntiRule> {
+        valid_scope(socket, group)?;
+        let rule = canonical_rule(name)?;
+        let mut db = self.db.lock().map_err(|_| anyhow!("Protecciones no disponibles"))?;
+        let tx = db.transaction()?;
+        tx.execute(
+            "DELETE FROM group_anti_rules WHERE socket_id=?1 AND group_jid=?2 AND rule=?3",
+            params![socket, group, rule],
+        )?;
+        tx.execute(
+            "INSERT INTO group_anti_audit(socket_id,group_jid,rule,operation)
+             VALUES(?1,?2,?3,'inherit')",
+            params![socket, group, rule],
+        )?;
+        tx.commit()?;
+        drop(db);
+        self.get_global(socket, rule)
+    }
+
+    fn display(&self, socket: &str, group: Option<&str>, name: &str) -> Result<String> {
+        let rule = canonical_rule(name)?;
+        let setting = match group {
+            Some(group) => self.get(socket, group, rule)?,
+            None => self.get_global(socket, rule)?,
+        };
         Ok(format!(
-            "{name}: {} [{}]; moderación automática no conectada.",
-            if state.enabled { "on" } else { "off" },
-            state.action.as_str()
+            "{}: {} [{}]",
+            rule.strip_prefix("anti").unwrap_or(rule),
+            if setting.enabled { "on" } else { "off" },
+            setting.action.as_str(),
         ))
     }
 
-    pub fn command(&self, socket: &str, group: &str, verb: &str, args: &[String]) -> Result<String> {
-        valid_scope(socket, group)?;
-        if matches!(verb, "anti" | "antis") {
-            match args {
-                [] => {
-                    let mut entries = Vec::new();
-                    for name in RULES {
-                        let display_name = name.strip_prefix("anti").unwrap_or(name);
-                        let state = self.get(socket, group, name)?;
-                        entries.push(format!(
-                            "{display_name}: {} [{}]",
-                            if state.enabled { "on" } else { "off" },
-                            state.action.as_str()
-                        ));
-                    }
-                    return Ok(format!(
-                        "Antis del grupo (todos apagados inicialmente; sin moderación conectada):\\n{}",
-                        entries.join("\\n")
-                    ));
-                }
-                [s] if s == "status" => {
-                    return self.command(socket, group, "anti", &[]);
-                }
-                [first, name] if first == "status" => {
-                    return self.display(socket, group, name);
-                }
-                [name] => {
-                    return self.display(socket, group, name);
-                }
-                [name, action] => {
-                    return self.change_rule(socket, group, name, action);
-                }
-                _ => bail!("Uso: anti [tipo] [status|on|off]"),
-            }
+    fn all_status(&self, socket: &str, group: Option<&str>) -> Result<String> {
+        let mut lines = Vec::with_capacity(RULES.len());
+        for rule in RULES {
+            lines.push(self.display(socket, group, rule)?);
         }
-        if matches!(verb, "set" | "set-anti") {
-            let [name, key, value] = args else {
-                bail!("Uso: set anti <tipo> action warn|delete|kick");
-            };
-            if !matches!(key.as_str(), "action" | "accion" | "acciones" | "accions") {
-                bail!("Parámetro inválido: usa action");
-            }
-            let selected = self.set(
-                socket,
-                group,
-                name,
-                None,
-                Some(AntiAction::parse(value)?),
-            )?;
-            let canonical = canonical_rule(name)?;
-            return Ok(format!(
-                "{}: acción {} configurada; sin moderación automática.",
-                canonical.strip_prefix("anti").unwrap_or(canonical),
-                selected.action.as_str()
-            ));
+        let scope = if group.is_some() { "grupo" } else { "socket global" };
+        Ok(format!(
+            "Antis del {scope} (solo configuración; moderación automática no conectada):\n{}",
+            lines.join("\n")
+        ))
+    }
+
+    /// Group context uses Some(group), socket-global configuration uses None.
+    /// No command in this parser may authorize its own caller.
+    pub fn command(&self, socket: &str, group: Option<&str>, args: &[String]) -> Result<String> {
+        valid_socket(socket)?;
+        if let Some(group) = group {
+            valid_scope(socket, group)?;
         }
         match args {
-            [] => self.display(socket, group, verb),
-            [word] if word == "status" => self.display(socket, group, verb),
-            [word] => self.change_rule(socket, group, verb, word),
-            _ => bail!("Uso: anti [tipo] [status|on|off]"),
+            [] => self.all_status(socket, group),
+            [word] if word == "status" => self.all_status(socket, group),
+            [name] => self.display(socket, group, name),
+            [name, word] if word == "status" => self.display(socket, group, name),
+            [name, word] if matches!(word.as_str(), "on" | "off") => {
+                let result = self.set(socket, group, name, Some(word == "on"), None)?;
+                Ok(format!(
+                    "{}: {} [{}]; configuración guardada, sin moderación automática.",
+                    canonical_rule(name)?.strip_prefix("anti").unwrap_or(name),
+                    if result.enabled { "on" } else { "off" },
+                    result.action.as_str(),
+                ))
+            }
+            [name, word] if word == "inherit" && group.is_some() => {
+                let result = self.inherit(socket, group.expect("checked scope"), name)?;
+                Ok(format!(
+                    "{}: heredado [{}]; configuración guardada.",
+                    canonical_rule(name)?.strip_prefix("anti").unwrap_or(name),
+                    result.action.as_str(),
+                ))
+            }
+            _ => bail!("Uso: anti [tipo] [status|on|off|inherit]"),
         }
     }
 
-    fn change_rule(&self, socket: &str, group: &str, name: &str, action: &str) -> Result<String> {
-        if !matches!(action, "on" | "off") {
-            bail!("Usa status, on u off");
-        }
-        let selected = self.set(socket, group, name, Some(action == "on"), None)?;
-        let canonical = canonical_rule(name)?;
+    pub fn set_action(&self, socket: &str, group: Option<&str>, name: &str, action: &str) -> Result<String> {
+        let selected = self.set(socket, group, name, None, Some(AntiAction::parse(action)?))?;
         Ok(format!(
-            "{}: {} [{}]; regla guardada, moderación real no conectada.",
-            canonical.strip_prefix("anti").unwrap_or(canonical),
-            if selected.enabled { "on" } else { "off" },
-            selected.action.as_str()
+            "{}: acción {} guardada; moderación automática pendiente.",
+            canonical_rule(name)?.strip_prefix("anti").unwrap_or(name),
+            selected.action.as_str(),
         ))
     }
 
