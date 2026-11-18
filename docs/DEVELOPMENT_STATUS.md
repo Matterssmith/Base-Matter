@@ -1,3 +1,37 @@
+## 2026-11-18 — Limpieza de menú y separación de créditos (alpha)
+
+1. **Prueba previa:** el operador confirmó todo el conjunto Base,
+   Clippy estricto y 21 pruebas del proveedor; publicó el commit
+   `61b45ee` (formato Rust). No se deben confundir esas
+   comprobaciones con los nuevos commits visuales.
+2. **Cambios en GitHub alpha:** reemplazadas las dos plantillas
+   de presentación. Un marco corto, sin título Matterssmith/
+   Base-Matter repetido ni footer de créditos; prefijo global
+   `=/>` solo una vez en menú; variantes `status [--global]`
+   y `bot [ámbito] on|off|inherit` agrupadas. Sin categorías.
+3. **Nuevo control de lectura:** `=/>credits` y aliases
+   `creditos/créditos`, autorizado por el núcleo y por los
+   filtros del puente HMAC/proveedor Rust. Fuera del propietario,
+   solo es visible con política de bot activada. No cambia
+   roles, sesiones, conexiones ni políticas de activación.
+4. **Validaciones de código:** validador de plantillas conserva
+   límite, rechazo de controles y marco `{{BODY}}`; `TITLE`
+   y `ACCENT` son opcionales para conservar temas de grupo.
+   Nuevas expectativas en las pruebas del menú, IPC, estilos
+   comunitarios, proveedor y lectura pública.
+5. **Referencia externa:** revisión de Aura y del ZIP YoSoyYo.
+   Aura incorpora una vista HTML experimental y botones nativos
+   mediante su implementación TypeScript/Baileys; el ZIP usa
+   `quick_reply`/`cta_url`. La heurística Android/iPhone del
+   ZIP se basa en prefijos/longitud de IDs y no constituye
+   identificación fiable. No copiar código Node ni inferir SO.
+6. **Pendientes reales:** ejecutar Rustfmt, Clippy y tests en
+   Debian sobre el SHA de esta revisión, comprobar créditos
+   y menú en WhatsApp real, investigar envío nativo de botones
+   con un indicador de compatibilidad verificable. No hay
+   garantía de incrustar HTML de Android en iOS o de identificar
+   automáticamente su plataforma. `beta/stable` intactas.
+
 ## 2026-11-18 — Segunda referencia posicional al snapshot de políticas (alpha)
 
 1. **Resultado Debian:** `cargo clippy --all-targets --locked
