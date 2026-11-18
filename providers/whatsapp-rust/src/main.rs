@@ -508,7 +508,7 @@ async fn main() -> Result<()> {
                                     || actual_command.starts_with("=/>add++ snapshot "))
                             {
                                 format!(
-                                    "{response}\\n[DEBUG] plataforma=WhatsApp; contexto={};                                      identidad=verificada; transporte=HMAC; secretos=ocultos",
+                                    "{response}\n[DEBUG] plataforma=WhatsApp; contexto={};                                      identidad=verificada; transporte=HMAC; secretos=ocultos",
                                     if data.is_group { "grupo" } else { "privado" }
                                 )
                             } else {
