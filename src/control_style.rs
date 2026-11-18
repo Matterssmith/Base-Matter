@@ -44,7 +44,7 @@ impl ControlTheme {
     pub fn decorate(&self, body: &str) -> Result<String> {
         const DEFAULT_HEADER: &str = "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*";
         const CREDIT: &str = "Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].";
-        if body.starts_with(DEFAULT_HEADER) && body.ends_with(CREDIT) {
+        if body.starts_with(DEFAULT_HEADER) && body.trim_end().ends_with(CREDIT) {
             return Ok(body.to_owned());
         }
         if body.is_empty()
