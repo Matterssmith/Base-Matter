@@ -147,17 +147,33 @@ impl WhatsAppControlBridge {
         if !frame.text.starts_with("=/>") {
             return Ok(WhatsAppBridgeOutcome::Ignored);
         }
+        let group_id = if frame.chat_jid == self.config.owner_jid {
+            None
+        } else {
+            Some(frame.chat_jid.as_str())
+        };
+        let verb = frame.text.split_whitespace().next().unwrap_or_default();
+        if group_id.is_some() {
+            if !matches!(
+                verb,
+                "=/>group" | "=/>grupo" | "=/>menu" | "=/>help"
+                    | "=/>h" | "=/>start" | "=/>add" | "=/>add++"
+            ) {
+                bail!("Only group-scoped controls are available in groups");
+            }
+        } else if !matches!(
+            verb,
+            "=/>on" | "=/>off" | "=/>status" | "=/>set"
+                | "=/>unset" | "=/>roles" | "=/>audit"
+        ) {
+            bail!("Private chat is reserved for socket configuration");
+        }
         if !self
             .replay
             .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
         {
             return Ok(WhatsAppBridgeOutcome::Duplicate);
         }
-        let group_id = if frame.chat_jid == self.config.owner_jid {
-            None
-        } else {
-            Some(frame.chat_jid.as_str())
-        };
         let outcome = self.control.dispatch(
             &self.config.socket_id,
             &self.config.owner_actor_id,
