@@ -44,9 +44,7 @@ impl ControlTheme {
     pub fn decorate(&self, body: &str) -> Result<String> {
         // This check must precede the idempotent fast path as well:
         // an already-themed payload is not exempt from transport bounds.
-        if body.is_empty()
-            || body.len() > 3800
-            || body.chars().any(|c| c.is_control() && c != '\n')
+        if body.is_empty() || body.len() > 3800 || body.chars().any(|c| c.is_control() && c != '\n')
         {
             bail!("Invalid control response");
         }
@@ -70,7 +68,8 @@ impl ControlTheme {
         if body.len() > 3200 {
             bail!("Control body exceeds template allowance");
         }
-        let result = self.template
+        let result = self
+            .template
             .replace("{{TITLE}}", &self.title)
             .replace("{{ACCENT}}", &self.accent)
             .replace("{{BODY}}", body.trim_end_matches('\n'));

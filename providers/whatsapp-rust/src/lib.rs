@@ -17,8 +17,7 @@ mod shared_control_style;
 /// Render provider-side REGISTER/recovery replies through the exact same
 /// validated Matterssmith template as all IPC control responses.
 pub fn render_provider_control(body: &str) -> Result<String> {
-    shared_control_style::ControlTheme::new("Base-Matter", "base-matter", "✦")?
-        .decorate(body)
+    shared_control_style::ControlTheme::new("Base-Matter", "base-matter", "✦")?.decorate(body)
 }
 
 use anyhow::{anyhow, bail, Result};
@@ -306,9 +305,7 @@ impl Config {
         let parts: Vec<_> = event.text.split_whitespace().collect();
         let allowed = matches!(
             parts.as_slice(),
-            ["=/>status" | "=/>estado"]
-                | ["=/>menu" | "=/>menú"]
-                | ["=/>bot"]
+            ["=/>status" | "=/>estado"] | ["=/>menu" | "=/>menú"] | ["=/>bot"]
         );
         if !allowed {
             return Ok(None);

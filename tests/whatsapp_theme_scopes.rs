@@ -71,10 +71,7 @@ fn send(addr: std::net::SocketAddr, bytes: &[u8]) -> serde_json::Value {
 fn customized_group_template_formats_status_bot_on_and_off_without_copying_roles() {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket-test", "owner").unwrap();
-    let router = Arc::new(CommandRouter::new(
-        vec!["#".to_owned()],
-        Arc::new(DenyBot),
-    ).unwrap());
+    let router = Arc::new(CommandRouter::new(vec!["#".to_owned()], Arc::new(DenyBot)).unwrap());
     let themes = Arc::new(ControlThemes::new(
         ControlTheme::new("Base-Matter", "base-matter", "✦").unwrap(),
     ));
@@ -89,26 +86,24 @@ fn customized_group_template_formats_status_bot_on_and_off_without_copying_roles
         .unwrap();
     themes.set_community(GROUP, group_theme).unwrap();
     let control = Arc::new(
-        ControlDispatcher::new(
-            activation,
-            Arc::new(BotRegistry::in_memory()),
-            router,
-            None,
-        )
-        .with_public_menu(Arc::clone(&themes))
-        .with_unified_live_controls()
-        .with_silent_bot_commands(),
+        ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
+            .with_public_menu(Arc::clone(&themes))
+            .with_unified_live_controls()
+            .with_silent_bot_commands(),
     );
-    let bridge = Arc::new(WhatsAppControlBridge::new(
-        WhatsAppBridgeConfig {
-            socket_id: "socket-test".into(),
-            owner_actor_id: "owner".into(),
-            owner_jid: JID.into(),
-        },
-        KEY,
-        Arc::new(InboundReplayStore::in_memory([8; 32]).unwrap()),
-        control,
-    ).unwrap());
+    let bridge = Arc::new(
+        WhatsAppControlBridge::new(
+            WhatsAppBridgeConfig {
+                socket_id: "socket-test".into(),
+                owner_actor_id: "owner".into(),
+                owner_jid: JID.into(),
+            },
+            KEY,
+            Arc::new(InboundReplayStore::in_memory([8; 32]).unwrap()),
+            control,
+        )
+        .unwrap(),
+    );
     let ipc = WhatsAppControlIpc::new(bridge).with_themes(themes);
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let addr = listener.local_addr().unwrap();

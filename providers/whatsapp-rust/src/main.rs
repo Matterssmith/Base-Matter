@@ -12,11 +12,11 @@ use tokio::{
     time::{timeout, Duration},
 };
 use whatsapp_matter_rust_provider::{
-    parse_control_ack, render_provider_control,
+    parse_control_ack,
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
-    Config, ControlAck, Event, SessionLease,
+    render_provider_control, Config, ControlAck, Event, SessionLease,
 };
 use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*};
 

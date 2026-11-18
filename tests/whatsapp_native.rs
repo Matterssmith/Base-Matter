@@ -24,12 +24,15 @@ fn fixture() -> (WhatsAppNativeIngress, Arc<SocketActivationStore>) {
     activation.provision("socket-a", "owner").unwrap();
     activation.provision("socket-b", "other").unwrap();
     let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
-    let dispatcher = Arc::new(ControlDispatcher::new(
-        activation.clone(),
-        Arc::new(BotRegistry::in_memory()),
-        router,
-        None,
-    ).with_unified_live_controls());
+    let dispatcher = Arc::new(
+        ControlDispatcher::new(
+            activation.clone(),
+            Arc::new(BotRegistry::in_memory()),
+            router,
+            None,
+        )
+        .with_unified_live_controls(),
+    );
     let ingress = WhatsAppNativeIngress::new(
         WhatsAppNativeConfig {
             socket_id: "socket-a".into(),
@@ -152,7 +155,10 @@ fn duplicated_expired_and_malformed_events_fail_closed() {
     // Retired aliases are ignored only when well formed; malformed
     // oversized frames must fail closed before command classification.
     assert!(ingress
-        .ingest(&message("legacy-large", &format!("=/>on{}", " ".repeat(4096))))
+        .ingest(&message(
+            "legacy-large",
+            &format!("=/>on{}", " ".repeat(4096))
+        ))
         .is_err());
     // The active command must be subject to the same hard input limit.
     assert!(ingress
@@ -163,7 +169,9 @@ fn duplicated_expired_and_malformed_events_fail_closed() {
         .is_err());
     // A rejected oversized frame cannot poison the replay store.
     assert!(matches!(
-        ingress.ingest(&message("active-large", "=/>status")).unwrap(),
+        ingress
+            .ingest(&message("active-large", "=/>status"))
+            .unwrap(),
         WhatsAppNativeOutcome::Dispatched(_),
     ));
 }

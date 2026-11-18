@@ -402,7 +402,15 @@ impl SocketActivationStore {
                     params![socket, group],
                 )?;
             }
-            audit(&tx, socket, actor, "group_policy", Some(group), policy, None)?;
+            audit(
+                &tx,
+                socket,
+                actor,
+                "group_policy",
+                Some(group),
+                policy,
+                None,
+            )?;
         } else {
             tx.execute(
                 "UPDATE activation_sockets SET policy=?2 WHERE socket_id=?1",
@@ -574,11 +582,7 @@ impl SocketActivationStore {
     /// Only the verified socket owner may inspect these settings. The
     /// synthetic kind keys are internal configuration scopes, not group
     /// JIDs and never confer role permissions.
-    pub fn inspect_bot_defaults(
-        &self,
-        socket: &str,
-        actor: &str,
-    ) -> Result<BotDefaultPolicies> {
+    pub fn inspect_bot_defaults(&self, socket: &str, actor: &str) -> Result<BotDefaultPolicies> {
         validate(socket)?;
         validate(actor)?;
         let c = self
@@ -592,7 +596,10 @@ impl SocketActivationStore {
             |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
         let mut kinds = [None; 4];
-        for (index, mode) in ["group", "private", "channel", "community"].iter().enumerate() {
+        for (index, mode) in ["group", "private", "channel", "community"]
+            .iter()
+            .enumerate()
+        {
             let key = format!("kind:{mode}");
             let stored: Option<i64> = c
                 .query_row(

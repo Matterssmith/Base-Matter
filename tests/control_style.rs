@@ -28,7 +28,8 @@ fn matterssmith_global_menu_is_compact_and_uses_real_newlines() {
     assert!(style.render("start").is_err());
 
     // Templates are separately editable and cannot remove required attribution.
-    let custom = "*{{TITLE}}* {{ACCENT}}\n{{BODY}}\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].\n";
+    let custom =
+        "*{{TITLE}}* {{ACCENT}}\n{{BODY}}\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].\n";
     let changed = ControlTheme::new("Matter", "base-matter", "✦")
         .unwrap()
         .with_template(custom)
@@ -36,8 +37,12 @@ fn matterssmith_global_menu_is_compact_and_uses_real_newlines() {
     assert!(changed.decorate("BOT ACTIVADO").unwrap().contains("Matter"));
     let custom_response = changed.decorate("BOT ACTIVADO").unwrap();
     assert_eq!(changed.decorate(&custom_response).unwrap(), custom_response);
-    assert!(changed.decorate(&format!("{custom_response}\u{0000}")).is_err());
-    assert!(changed.decorate(&format!("{custom_response}{}", "X".repeat(3900))).is_err());
+    assert!(changed
+        .decorate(&format!("{custom_response}\u{0000}"))
+        .is_err());
+    assert!(changed
+        .decorate(&format!("{custom_response}{}", "X".repeat(3900)))
+        .is_err());
     assert!(ControlTheme::new("Matter", "base-matter", "✦")
         .unwrap()
         .with_template("{{BODY}}")
@@ -47,7 +52,9 @@ fn matterssmith_global_menu_is_compact_and_uses_real_newlines() {
     assert!(status.contains("BOT ACTIVADO"));
     assert_eq!(style.decorate(&menu).unwrap(), menu);
     assert!(style.decorate(&format!("{menu}\u{0000}")).is_err());
-    assert!(style.decorate(&format!("{menu}{}", "X".repeat(3900))).is_err());
+    assert!(style
+        .decorate(&format!("{menu}{}", "X".repeat(3900)))
+        .is_err());
 }
 
 #[test]

@@ -62,8 +62,9 @@ fn event<'a>(text: &'a str) -> Event<'a> {
 #[test]
 fn standalone_provider_uses_exact_same_external_matterssmith_template() {
     let text = whatsapp_matter_rust_provider::render_provider_control(
-        "REGISTER: solo lectura, sin cambios en grupos."
-    ).unwrap();
+        "REGISTER: solo lectura, sin cambios en grupos.",
+    )
+    .unwrap();
     assert!(text.starts_with("*꒦꒷✰"));
     assert!(text.contains("╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹"));
     assert!(text.contains("REGISTER: solo lectura"));
@@ -263,7 +264,15 @@ fn verified_owner_group_controls_are_signed_for_exact_group_jid() {
 fn verified_private_owner_chat_does_not_sign_group_only_commands() {
     let (vars, root) = fixture();
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
-    for command in ["=/>help", "=/>h", "=/>on", "=/>off", "=/>start", "=/>add++", "=/>group on"] {
+    for command in [
+        "=/>help",
+        "=/>h",
+        "=/>on",
+        "=/>off",
+        "=/>start",
+        "=/>add++",
+        "=/>group on",
+    ] {
         assert!(c
             .signed_verified_control(&event(command), Some(OWNER), Some(VERIFIED_LID))
             .unwrap()
@@ -273,7 +282,14 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
         .signed_verified_control(&event("=/>status"), Some(OWNER), Some(VERIFIED_LID))
         .unwrap()
         .is_some());
-    for allowed in ["=/>menu", "=/>menú", "=/>bot", "=/>bot on", "=/>bot off", "=/>estado"] {
+    for allowed in [
+        "=/>menu",
+        "=/>menú",
+        "=/>bot",
+        "=/>bot on",
+        "=/>bot off",
+        "=/>estado",
+    ] {
         assert!(c
             .signed_verified_control(&event(allowed), Some(OWNER), Some(VERIFIED_LID))
             .unwrap()
@@ -292,13 +308,7 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
     incoming.is_group = true;
     incoming.chat_jid = "120363111222333@g.us";
     incoming.sender_jid = public_id;
-    for text in [
-        "=/>status",
-        "=/>estado",
-        "=/>menu",
-        "=/>menú",
-        "=/>bot",
-    ] {
+    for text in ["=/>status", "=/>estado", "=/>menu", "=/>menú", "=/>bot"] {
         incoming.text = text;
         let signed = config
             .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))

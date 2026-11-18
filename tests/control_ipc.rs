@@ -26,12 +26,15 @@ fn make() -> (WhatsAppControlIpc, Arc<SocketActivationStore>) {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket-a", "alice").unwrap();
     let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
-    let dispatch = Arc::new(ControlDispatcher::new(
-        activation.clone(),
-        Arc::new(BotRegistry::in_memory()),
-        router,
-        None,
-    ).with_unified_live_controls());
+    let dispatch = Arc::new(
+        ControlDispatcher::new(
+            activation.clone(),
+            Arc::new(BotRegistry::in_memory()),
+            router,
+            None,
+        )
+        .with_unified_live_controls(),
+    );
     let bridge = Arc::new(
         WhatsAppControlBridge::new(
             WhatsAppBridgeConfig {
@@ -242,14 +245,12 @@ fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
         assert_eq!(response["ok"], true);
         assert_eq!(response["outcome"], outcome);
         if outcome == "applied" {
-            assert!(response["message"]
-                .as_str()
-                .is_some_and(|text| {
-                    text.starts_with("*꒦꒷✰")
-                        && text.contains("Base-Matter: política del bot")
-                        && text.contains("\n")
-                        && !text.contains("\\n")
-                }));
+            assert!(response["message"].as_str().is_some_and(|text| {
+                text.starts_with("*꒦꒷✰")
+                    && text.contains("Base-Matter: política del bot")
+                    && text.contains("\n")
+                    && !text.contains("\\n")
+            }));
         } else {
             assert!(response.get("message").is_none());
         }

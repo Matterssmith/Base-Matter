@@ -194,7 +194,9 @@ impl WhatsAppControlIpc {
         // A menu preformatted through that registry is idempotent.
         let validated = message
             .and_then(|body| {
-                self.themes.decorate(authenticated_group.as_deref(), &body).ok()
+                self.themes
+                    .decorate(authenticated_group.as_deref(), &body)
+                    .ok()
             })
             .filter(|body| {
                 !body.is_empty()

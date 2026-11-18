@@ -291,7 +291,8 @@ impl ControlDispatcher {
                     bail!("Socket-wide defaults require the owner's private chat");
                 }
                 if self.unified_live_controls {
-                    self.activation.set_live_bot_policy(socket, actor, None, policy)?;
+                    self.activation
+                        .set_live_bot_policy(socket, actor, None, policy)?;
                 } else {
                     self.activation.set_socket_policy(socket, actor, policy)?;
                 }
@@ -308,9 +309,11 @@ impl ControlDispatcher {
             _ => bail!("Unsupported bot policy scope"),
         };
         if self.unified_live_controls {
-            self.activation.set_live_bot_policy(socket, actor, Some(&key), policy)?;
+            self.activation
+                .set_live_bot_policy(socket, actor, Some(&key), policy)?;
         } else {
-            self.activation.set_group_policy(socket, actor, &key, policy)?;
+            self.activation
+                .set_group_policy(socket, actor, &key, policy)?;
         }
         Ok(DispatchResult::BotPolicyChanged {
             scope: scope.to_owned(),
@@ -549,7 +552,8 @@ impl ControlDispatcher {
                 // WhatsApp. The sole live toggle is =/>bot on/off.
                 match tokens.as_slice() {
                     ["on" | "off" | "encender" | "apagar", ..]
-                    | ["group" | "grupo", "on" | "off" | "encender" | "apagar" | "inherit" | "heredar"] => {
+                    | ["group" | "grupo", "on" | "off" | "encender" | "apagar" | "inherit" | "heredar"] =>
+                    {
                         bail!("Use =/>bot on/off/inherit with an authorized scope");
                     }
                     _ => {}
@@ -592,7 +596,8 @@ impl ControlDispatcher {
                 ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
                 | ["bot", "--global", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
                 | ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar", "--global"]
-                | ["bot", "group" | "private" | "channel" | "community" | "announcements" | "grupo" | "privado" | "canal" | "comunidad" | "avisos", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"] =>
+                | ["bot", "group" | "private" | "channel" | "community" | "announcements" | "grupo"
+                | "privado" | "canal" | "comunidad" | "avisos", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"] =>
                 {
                     let action = if tokens.last() == Some(&"--global") {
                         tokens[1]
@@ -679,11 +684,18 @@ impl ControlDispatcher {
                     };
                     if self.unified_live_controls {
                         self.activation.set_live_bot_policy(
-                            receiving_socket, actor, Some(group_id), policy
+                            receiving_socket,
+                            actor,
+                            Some(group_id),
+                            policy,
                         )?;
                     } else {
-                        self.activation
-                            .set_group_policy(receiving_socket, actor, group_id, policy)?;
+                        self.activation.set_group_policy(
+                            receiving_socket,
+                            actor,
+                            group_id,
+                            policy,
+                        )?;
                     }
                     return Ok(DispatchResult::GroupPolicyChanged {
                         group_id: group_id.to_owned(),

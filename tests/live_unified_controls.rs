@@ -22,8 +22,7 @@ impl CommandAuthorizer for DenyBot {
 fn fixture() -> (ControlDispatcher, Arc<SocketActivationStore>) {
     let store = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     store.provision("socket-alpha", "owner").unwrap();
-    let router =
-        Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
     let control = ControlDispatcher::new(
         Arc::clone(&store),
         Arc::new(BotRegistry::in_memory()),
@@ -35,11 +34,7 @@ fn fixture() -> (ControlDispatcher, Arc<SocketActivationStore>) {
     (control, store)
 }
 
-fn command(
-    control: &ControlDispatcher,
-    group: Option<&str>,
-    text: &str,
-) -> Result<DispatchResult> {
+fn command(control: &ControlDispatcher, group: Option<&str>, text: &str) -> Result<DispatchResult> {
     control.dispatch(
         "socket-alpha",
         "owner",
@@ -68,10 +63,12 @@ fn one_on_command_enables_bot_and_wakes_socket_atomically() {
             policy: Some(true),
         },
     );
-    assert!(store
-        .inspect_bot_defaults("socket-alpha", "owner")
-        .unwrap()
-        .socket_powered);
+    assert!(
+        store
+            .inspect_bot_defaults("socket-alpha", "owner")
+            .unwrap()
+            .socket_powered
+    );
     assert!(matches!(
         command(&control, None, "=/>status").unwrap(),
         DispatchResult::Status {
@@ -94,10 +91,12 @@ fn one_on_command_enables_bot_and_wakes_socket_atomically() {
             policy: Some(false),
         }
     );
-    assert!(store
-        .inspect_bot_defaults("socket-alpha", "owner")
-        .unwrap()
-        .socket_powered);
+    assert!(
+        store
+            .inspect_bot_defaults("socket-alpha", "owner")
+            .unwrap()
+            .socket_powered
+    );
     assert!(matches!(
         command(&control, None, "=/>status").unwrap(),
         DispatchResult::Status {
@@ -125,10 +124,12 @@ fn group_switch_does_not_disable_another_group() {
             policy: Some(true),
         },
     );
-    assert!(store
-        .inspect_bot_defaults("socket-alpha", "owner")
-        .unwrap()
-        .socket_powered);
+    assert!(
+        store
+            .inspect_bot_defaults("socket-alpha", "owner")
+            .unwrap()
+            .socket_powered
+    );
     assert!(matches!(
         command(&control, a, "=/>status").unwrap(),
         DispatchResult::GroupStatus {
@@ -173,7 +174,12 @@ fn socket_wide_bot_on_alone_wakes_the_self_chat_not_all_external_chats() {
             policy: Some(true),
         },
     );
-    assert!(store.resolve_persisted("socket-alpha", None).unwrap().enabled);
+    assert!(
+        store
+            .resolve_persisted("socket-alpha", None)
+            .unwrap()
+            .enabled
+    );
     assert!(matches!(
         command(&control, None, "=/>status").unwrap(),
         DispatchResult::Status { enabled: true, .. },

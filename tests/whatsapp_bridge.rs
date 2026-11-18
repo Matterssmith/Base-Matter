@@ -31,12 +31,15 @@ fn fixture() -> (WhatsAppControlBridge, Arc<SocketActivationStore>) {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket-1", "owner").unwrap();
     let router = Arc::new(CommandRouter::new(vec!["#".to_owned()], Arc::new(DenyBot)).unwrap());
-    let control = Arc::new(ControlDispatcher::new(
-        Arc::clone(&activation),
-        Arc::new(BotRegistry::in_memory()),
-        router,
-        None,
-    ).with_unified_live_controls());
+    let control = Arc::new(
+        ControlDispatcher::new(
+            Arc::clone(&activation),
+            Arc::new(BotRegistry::in_memory()),
+            router,
+            None,
+        )
+        .with_unified_live_controls(),
+    );
     let replay = Arc::new(InboundReplayStore::in_memory([9; 32]).unwrap());
     let bridge = WhatsAppControlBridge::new(
         WhatsAppBridgeConfig {
@@ -167,7 +170,10 @@ fn signed_owner_group_bot_controls_are_scoped_and_replayed_once() {
             policy: Some(true),
         })
     );
-    assert_eq!(bridge.ingest(&group).unwrap(), WhatsAppBridgeOutcome::Duplicate);
+    assert_eq!(
+        bridge.ingest(&group).unwrap(),
+        WhatsAppBridgeOutcome::Duplicate
+    );
     let mut status = frame("group-2", "=/>status");
     status.chat_jid = group.chat_jid.clone();
     sign(&mut status, &SECRET);
@@ -179,7 +185,12 @@ fn signed_owner_group_bot_controls_are_scoped_and_replayed_once() {
             source: matter_base::activation::ActivationSource::Group,
         })
     );
-    assert!(activation.resolve("socket-1", Some(&group.chat_jid), None).unwrap().enabled);
+    assert!(
+        activation
+            .resolve("socket-1", Some(&group.chat_jid), None)
+            .unwrap()
+            .enabled
+    );
     let mut global_on = frame("group-3", "=/>bot --global on");
     global_on.chat_jid = group.chat_jid.clone();
     sign(&mut global_on, &SECRET);
