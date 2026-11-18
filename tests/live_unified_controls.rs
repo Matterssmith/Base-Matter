@@ -235,3 +235,24 @@ fn community_announcement_policy_is_configurable_but_requires_verified_platform_
     assert_eq!(defaults.group_policy, None);
     assert_eq!(defaults.channel_policy, None);
 }
+
+#[test]
+fn credits_are_explicit_and_do_not_turn_on_any_chat() {
+    let (control, store) = fixture();
+    let credits = DispatchResult::Extension {
+        command: "credits".to_owned(),
+        output: "Créditos:\nHecho por Lournyx Matterssmith [Lou-Nyx].".to_owned(),
+    };
+    assert_eq!(command(&control, None, "=/>credits").unwrap(), credits);
+    assert_eq!(
+        command(&control, Some("120363111@g.us"), "=/>creditos").unwrap(),
+        DispatchResult::Extension {
+            command: "credits".to_owned(),
+            output: "Créditos:\nHecho por Lournyx Matterssmith [Lou-Nyx].".to_owned(),
+        }
+    );
+    assert!(!store.resolve_persisted("socket-alpha", None).unwrap().enabled);
+    assert!(control
+        .dispatch("socket-alpha", "outsider", "other", None, "=/>credits")
+        .is_err());
+}
