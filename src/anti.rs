@@ -24,6 +24,7 @@ pub const RULES: &[&str] = &[
     "antilinkphishing",
     "antigroup",
     "antichannel",
+    "antistatus",
     "antiviewonce",
     "anticall",
     "antisticker",
@@ -126,6 +127,9 @@ pub fn canonical_rule(rule: &str) -> Result<&'static str> {
         "phishing" => "antilinkphishing",
         "group" | "groups" | "invite" => "antigroup",
         "channel" | "channels" => "antichannel",
+        // WhatsApp Group Status (ephemeral updates to a specific group),
+        // not the command used to list this module's configuration.
+        "status" | "groupstatus" | "group-status" | "estados" => "antistatus",
         "oneview" | "viewonce" | "once" => "antiviewonce",
         "call" | "calls" => "anticall",
         "sticker" | "stiker" | "stickers" => "antisticker",
@@ -360,7 +364,8 @@ impl AntiStore {
         }
         match args {
             [] => self.all_status(socket, group),
-            [word] if word == "status" => self.all_status(socket, group),
+            // A bare `anti status` is the WhatsApp group-status filter.
+            // The only all-rules inventory is the argument-free `anti`.
             [name] => self.display(socket, group, name),
             [name, word] if word == "status" => self.display(socket, group, name),
             [name, word] if matches!(word.as_str(), "on" | "off") => {
