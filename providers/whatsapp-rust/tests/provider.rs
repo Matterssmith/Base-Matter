@@ -60,6 +60,23 @@ fn event<'a>(text: &'a str) -> Event<'a> {
 }
 
 #[test]
+fn standalone_provider_uses_exact_same_external_matterssmith_template() {
+    let text = whatsapp_matter_rust_provider::render_provider_control(
+        "REGISTER: solo lectura, sin cambios en grupos."
+    ).unwrap();
+    assert!(text.starts_with("*꒦꒷✰"));
+    assert!(text.contains("╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹"));
+    assert!(text.contains("REGISTER: solo lectura"));
+    assert!(text.contains('\n'));
+    assert!(!text.contains("\\n"));
+    assert!(text.contains("Lournyx Matterssmith [Lou-Nyx]"));
+    assert_eq!(
+        whatsapp_matter_rust_provider::render_provider_control(&text).unwrap(),
+        text
+    );
+}
+
+#[test]
 fn creates_valid_signed_owner_control_only_for_private_self_chat() {
     let (vars, root) = fixture();
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
@@ -256,7 +273,7 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
         .signed_verified_control(&event("=/>status"), Some(OWNER), Some(VERIFIED_LID))
         .unwrap()
         .is_some());
-    for allowed in ["=/>menu", "=/>menú", "=/>bot", "=/>estado"] {
+    for allowed in ["=/>menu", "=/>menú", "=/>bot", "=/>bot on", "=/>bot off", "=/>estado"] {
         assert!(c
             .signed_verified_control(&event(allowed), Some(OWNER), Some(VERIFIED_LID))
             .unwrap()
