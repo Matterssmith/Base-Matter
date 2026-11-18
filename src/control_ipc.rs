@@ -95,16 +95,17 @@ impl WhatsAppControlIpc {
             ),
             Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotGlobalStatus {
                 socket_powered, default_policy, group_policy,
-                private_policy, channel_policy,
+                private_policy, channel_policy, community_policy,
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Base-Matter | Configuración global del socket\nSocket: {}\nPredeterminado: {}\nGrupos: {}\nPrivados externos: {}\nCanales: {}\nEstas políticas NO son roles ni encienden el socket.",
+                    "Base-Matter | Configuración global del socket\nSocket: {}\nPredeterminado: {}\nGrupos: {}\nPrivados externos: {}\nCanales: {}\nAvisos comunitarios: {} (requiere metadatos verificados)\nEstas políticas NO conceden rangos.",
                     if socket_powered { "ENCENDIDO" } else { "APAGADO" },
                     format_policy(default_policy),
                     format_surface_policy(group_policy),
                     format_surface_policy(private_policy),
                     format_surface_policy(channel_policy),
+                    format_surface_policy(community_policy),
                 )),
             ),
             Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
