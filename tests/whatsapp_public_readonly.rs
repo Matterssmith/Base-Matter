@@ -114,6 +114,13 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
     );
     bridge.ingest(&frame("own-1", "=/>on", "owner", OWNER_JID, true)).unwrap();
     bridge.ingest(&frame("own-2", "=/>bot --global on", "owner", OWNER_JID, true)).unwrap();
+    // External groups stay disabled until the owner explicitly enables
+    // the group kind, regardless of the socket-global fallback.
+    assert_eq!(
+        bridge.ingest(&frame("pub-early", "=/>menu", READER, GROUP, false)).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive),
+    );
+    bridge.ingest(&frame("own-kind", "=/>bot group on", "owner", OWNER_JID, true)).unwrap();
     assert!(matches!(
         bridge.ingest(&frame("pub-3", "=/>menu", READER, GROUP, false)).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
@@ -149,11 +156,17 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
         bridge.ingest(&incoming).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Status {
             socket_id: "socket-1".into(),
-            enabled: true,
-            source: ActivationSource::Socket,
+            enabled: false,
+            source: ActivationSource::None,
             bot_instance_id: None,
         }),
     );
+    bridge.ingest(&frame("own-priv", "=/>bot private on", "owner", OWNER_JID, true)).unwrap();
+    assert!(matches!(
+        bridge.ingest(&frame("pub-private-2", "=/>menu", READER, READER, false)).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, .. })
+            if command == "menu"
+    ));
     for (index, text) in [
         "=/>on",
         "=/>off",
