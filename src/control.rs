@@ -241,6 +241,16 @@ impl ControlDispatcher {
             self.activation.admission(socket, Some(&key), self.global_policy)?;
         if kind_admission.decision.source == ActivationSource::Group {
             Ok(kind_admission)
+        } else if matches!(kind, "group" | "private" | "channel") {
+            // External chat surfaces fail closed by default. The socket-wide
+            // fallback never silently enables every group, stranger DM, or
+            // channel. A verified owner must explicitly permit that kind
+            // or the exact group. Only the self-chat inherits socket-wide
+            // policy automatically.
+            let mut denied = direct;
+            denied.decision.enabled = false;
+            denied.decision.source = ActivationSource::None;
+            Ok(denied)
         } else {
             Ok(direct)
         }
