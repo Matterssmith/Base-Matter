@@ -36,6 +36,51 @@ Telegram and Discord adapters are not release-qualified. See
 [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
 
+## 2026-11-18 — Control de bot por contexto (alpha, pruebas pendientes)
+
+**Actualización de la prueba real:** en WhatsApp, el dueño observó
+`=/>help` y `=/>group on/status` responder dentro de un grupo real.
+`PoweredOff` se observó porque `=/>off` había apagado el socket:
+activar un grupo nunca enciende automáticamente ese socket.
+
+Este checkpoint cambia el control de acceso, sin iniciar Bot-Matter:
+
+- `=/>status` y `=/>estado`: estado efectivo del chat actual,
+  disponible aunque el bot esté deshabilitado;
+  `=/>status --global`: configuración del socket y valores
+  predeterminados de grupos, privados y canales, incluso si el
+  socket operativo está apagado.
+- `=/>bot on/off/inherit`: excepción del chat actual;
+  `=/>bot group/private/channel on/off/inherit`: valores por tipo
+  (configuración del dueño en privado);
+  `=/>bot --global on/off/inherit` o `=/>bot on/off --global`:
+  predeterminado para los chats del mismo socket.
+  El encendido del socket sigue siendo `=/>on/off`, separado.
+- `=/>menu` y `=/>menú`: nuevo tema independiente Matterssmith
+  con categorías. Se muestra en contextos habilitados. Los
+  comandos normales y el menú no responden cuando están
+  deshabilitados. `=/>help` y `=/>h` se retiran.
+- `=/>set`: explicación de configuración. `=/>set role` solo
+  explica la autoridad de Vault, sin crear asignaciones locales.
+  El modificador final `--debug` muestra detalles técnicos
+  depurados al propietario sin cambiar permisos.
+- El `ControlDispatcher` genérico conserva sus extensiones
+  owner-only de antes, aun con socket apagado. La política de
+  silencio se aplica exclusivamente al controlador de chat
+  WhatsApp mediante una opción explícita de construcción.
+
+**Alcance real de alpha:** el puente de WhatsApp sigue aceptando
+únicamente eventos propios del dueño verificados por PN/LID.
+No afirma que los mensajes de terceros, chats privados externos
+o canales ya puedan usar `status/menu`: requieren una nueva
+versión autenticada de ingreso con identidad individual.
+`=/>set style/theme`, importación de `#menu` ajeno, selección
+automática por IA y `self/selfmod/mod` con rangos delegados
+siguen **pendientes**, sin permisos implícitos de Vault.
+El `Cargo.lock` separado del proveedor debe revisarse para una
+compilación reproducible; no borrar el archivo de sesión.
+Ver [contrato de política por chat](docs/BOT_POLICY_V2.md).
+
 ## 2026-11-18 — Verificación del proveedor WhatsApp Rust
 
 Las pruebas generales de `cargo test --all-targets --locked` de Base-Matter
