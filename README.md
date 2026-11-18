@@ -36,6 +36,30 @@ Telegram and Discord adapters are not release-qualified. See
 [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
 
+## Single-terminal WhatsApp development trial (alpha)
+
+The original WhatsApp Rust pairing implementation was recovered from
+`Matter-Base-matter-1.zip` and historical `src/providers/whatsapp/mod.rs`.
+That reference had one-process startup and a temporary `#ping` reply.
+The production control prefix remains `=/>`; `#ping` is not restored.
+
+On the `alpha` checkout, `cargo run` now starts a local Rust
+controller and the separate Rust WhatsApp provider in one terminal,
+without merging their incompatible SQLite dependency graphs.
+If no branch-specific configuration exists, it requests a phone number
+once and generates private credentials. Each branch is reserved its own
+configuration/session path under
+`~/.local/share/base-matter/branches/<branch>/whatsapp-test/`
+and a distinct loopback port. Only this `alpha` checkpoint currently
+contains the launcher; do not assume `beta` or `stable` do.
+
+The initial `@s.whatsapp.net` owner identity is provisional: WhatsApp
+may supply a linked-device `@lid` identity. The provider emits a generic
+rejection diagnostic without leaking JIDs, and authorization continues
+to fail closed until a verified mapping is configured. No existing
+session is overwritten or erased. Live message receipt and reconnect
+testing are still required prior to beta promotion.
+
 ## Responsibilities and boundaries
 
 Matter-Base is intended to host reusable Rust capabilities consumed through
