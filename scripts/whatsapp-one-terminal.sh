@@ -77,7 +77,7 @@ run() {
     # Reuse the same Cargo artifacts across all checkouts/branches.
     # An absolute CARGO_TARGET_DIR makes the launch path unambiguous.
     if [[ -n "${CARGO_TARGET_DIR:-}" && "${CARGO_TARGET_DIR}" != /* ]]; then
-        printf 'CARGO_TARGET_DIR must be an absolute path.\\n' >&2
+        printf 'CARGO_TARGET_DIR must be an absolute path.\n' >&2
         return 1
     fi
     cargo build --locked --bin whatsapp-matter-control
