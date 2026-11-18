@@ -279,7 +279,7 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>status",
         "=/>estado",
         "=/>menu",
-        "=/>menú group",
+        "=/>menú",
         "=/>bot",
     ] {
         incoming.text = text;
@@ -302,6 +302,7 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>group on",
         "=/>bot on",
         "=/>set role 12345678901 admin",
+        "=/>menu group",
         "=/>menu config extra",
         "#ping",
     ] {
