@@ -583,39 +583,87 @@ impl ControlDispatcher {
                 }
             }
             match tokens.as_slice() {
-                ["antis"] => {
-                    let group_id = group.ok_or_else(|| anyhow!("Antis requieren grupo verificado"))?;
+                ["anti" | "antis", values @ ..] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
                         bail!("Solo el propietario del socket configura protecciones");
                     }
-                    let store = self.group_antis.as_ref().ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
-                    let output = store.command(receiving_socket, group_id, "antis", &[])?;
-                    return Ok(DispatchResult::Extension { command: "antis".into(), output });
+                    let store = self.group_antis.as_ref()
+                        .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
+                    let global = values.first() == Some(&"--global");
+                    if global && group.is_some() {
+                        bail!("Los valores globales se consultan en el chat privado del propietario");
+                    }
+                    let scope = if global {
+                        None
+                    } else {
+                        Some(group.ok_or_else(|| anyhow!("Antis requieren grupo verificado"))?)
+                    };
+                    let args = values.iter().skip(usize::from(global))
+                        .map(|s| (*s).to_owned()).collect::<Vec<_>>();
+                    let output = store.command(receiving_socket, scope, &args)?;
+                    return Ok(DispatchResult::Extension {
+                        command: "anti".to_owned(),
+                        output,
+                    });
+                }
+                ["set", "anti", values @ ..] => {
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Solo el propietario del socket configura protecciones");
+                    }
+                    let store = self.group_antis.as_ref()
+                        .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
+                    let global = values.first() == Some(&"--global");
+                    if global && group.is_some() {
+                        bail!("Los valores globales se configuran en el chat privado");
+                    }
+                    let scope = if global {
+                        None
+                    } else {
+                        Some(group.ok_or_else(|| anyhow!("Protecciones requieren grupo verificado"))?)
+                    };
+                    let values = if global { &values[1..] } else { values };
+                    let [name, "action" | "accion" | "acciones" | "accions", action] = values else {
+                        bail!("Uso: set anti [--global] <tipo> action warn|delete|kick");
+                    };
+                    let output = store.set_action(receiving_socket, scope, name, action)?;
+                    return Ok(DispatchResult::Extension {
+                        command: "set".to_owned(),
+                        output,
+                    });
                 }
                 ["set", rule, "action" | "accion" | "acciones" | "accions", action]
                     if ANTI_RULES.contains(rule) =>
                 {
-                    let group_id = group.ok_or_else(|| anyhow!("Configura antis dentro del grupo"))?;
+                    let group_id = group.ok_or_else(|| anyhow!("Protecciones requieren grupo verificado"))?;
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
                         bail!("Solo el propietario del socket configura protecciones");
                     }
-                    let store = self.group_antis.as_ref().ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
-                    let args = vec![(*rule).to_owned(), "action".to_owned(), (*action).to_owned()];
-                    let output = store.command(receiving_socket, group_id, "set", &args)?;
-                    return Ok(DispatchResult::Extension { command: "set".into(), output });
+                    let store = self.group_antis.as_ref()
+                        .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
+                    let output = store.set_action(receiving_socket, Some(group_id), rule, action)?;
+                    return Ok(DispatchResult::Extension {
+                        command: "set".to_owned(),
+                        output,
+                    });
                 }
-                [rule, args @ ..] if ANTI_RULES.contains(rule) => {
-                    let group_id = group.ok_or_else(|| anyhow!("Antis requieren grupo verificado"))?;
+                [rule, values @ ..] if ANTI_RULES.contains(rule) => {
+                    let group_id = group.ok_or_else(|| anyhow!("Protecciones requieren grupo verificado"))?;
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
                         bail!("Solo el propietario del socket configura protecciones");
                     }
-                    let store = self.group_antis.as_ref().ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
-                    let args = args.iter().map(|value| (*value).to_owned()).collect::<Vec<_>>();
-                    let output = store.command(receiving_socket, group_id, rule, &args)?;
-                    return Ok(DispatchResult::Extension { command: (*rule).to_owned(), output });
+                    let store = self.group_antis.as_ref()
+                        .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
+                    let mut args = vec![(*rule).to_owned()];
+                    args.extend(values.iter().map(|s| (*s).to_owned()));
+                    let output = store.command(receiving_socket, Some(group_id), &args)?;
+                    return Ok(DispatchResult::Extension {
+                        command: "anti".to_owned(),
+                        output,
+                    });
                 }
                 ["credits" | "creditos" | "créditos"] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
