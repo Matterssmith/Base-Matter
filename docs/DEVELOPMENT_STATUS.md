@@ -1,3 +1,41 @@
+## 2026-11-18 — Contrato final del propietario: bot-only y temas externos (alpha; tests pendientes)
+
+1. **Implementado en alpha:** se retiran `=/>on/off` de la
+   firma del proveedor, del puente HMAC y de la ruta nativa
+   WhatsApp. La interfaz pública de activación es
+   `=/>bot on/off/inherit` con `--global`, `group`,
+   `private`, `channel` y `community`/`avisos`.
+   La función `set_live_bot_policy` actualiza el valor elegido
+   y despierta el socket en la **misma transacción** al activar.
+   Apagar un chat no desconecta el resto de grupos.
+2. **Plantillas desacopladas:** añadidos
+   `templates/matterssmith-control.txt` y
+   `templates/matterssmith-menu.txt`. `ControlTheme::decorate`
+   y `with_template` validan tamaño, marcador de contenido,
+   caracteres de control y créditos. El controlador IPC aplica
+   la misma plantilla a todas sus respuestas; el proveedor
+   Rust importa exactamente el mismo renderizador para REGISTER
+   y vistas previas de recuperación. Menú sin categorías.
+3. **Alcances:** los grupos y privados externos siguen
+   apagados hasta habilitación explícita. `kind:community`
+   guarda el predeterminado para grupos de avisos, pero no
+   se aplica en WhatsApp hasta tener metadatos autenticados.
+   Los canales también precisan identificación específica.
+4. **Pruebas actualizadas:** `live_unified_controls`,
+   `control_style`, `control_ipc`, `whatsapp_bridge`,
+   `whatsapp_native`, `whatsapp_process`,
+   `whatsapp_public_readonly` y provider. Falta ejecutar
+   las suites completas en Debian y corregir regresiones
+   que aparezcan; no declarar 100% sobre este commit.
+5. **Ramas:** `alpha`, `beta` y `stable` existen, pero
+   sus historiales divergen. Se requiere promoción selectiva
+   por PR al pasar pruebas y una prueba real en WhatsApp.
+   No se modificó Vault-Matter, la sesión ni las ramas
+   beta/stable. Los roles siguen bloqueados sin su autoridad.
+6. **README revisados** (raíz y proveedor), instrucciones
+   y guía del ensayo WhatsApp. Créditos mantenidos:
+   Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-18 — Corrección de aserción grupal (alpha, test Debian pendiente)
 
 - **Evidencia nueva:** el operador probó el commit
