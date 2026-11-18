@@ -106,6 +106,8 @@ fn kind_defaults_and_exact_group_overrides_inherit_correctly() {
     let (c, _) = fixture();
     let group = Some("120363555@g.us");
     dispatch(&c, None, "=/>on").unwrap();
+    // Owner self-chat inherits the socket global, never external private.
+    dispatch(&c, None, "=/>bot --global on").unwrap();
     assert_eq!(
         dispatch(&c, None, "=/>bot group off").unwrap(),
         DispatchResult::BotPolicyChanged {
@@ -141,10 +143,26 @@ fn kind_defaults_and_exact_group_overrides_inherit_correctly() {
         DispatchResult::Extension { .. }
     ));
     dispatch(&c, None, "=/>bot private off").unwrap();
-    assert_eq!(dispatch(&c, None, "=/>menu").unwrap(), DispatchResult::Inactive);
+    // Disabling *external* private chats does not disable the
+    // owner's own configuration chat.
+    assert!(matches!(
+        dispatch(&c, None, "=/>menu").unwrap(),
+        DispatchResult::Extension { .. }
+    ));
     assert!(matches!(
         dispatch(&c, None, "=/>status").unwrap(),
-        DispatchResult::Status { enabled: false, .. }
+        DispatchResult::Status { enabled: true, source: ActivationSource::Socket, .. }
+    ));
+    assert!(matches!(
+        dispatch(&c, None, "=/>status --global").unwrap(),
+        DispatchResult::BotGlobalStatus { private_policy: Some(false), .. }
+    ));
+    dispatch(&c, None, "=/>bot off").unwrap();
+    assert_eq!(dispatch(&c, None, "=/>menu").unwrap(), DispatchResult::Inactive);
+    dispatch(&c, None, "=/>bot inherit").unwrap();
+    assert!(matches!(
+        dispatch(&c, None, "=/>menu").unwrap(),
+        DispatchResult::Extension { .. }
     ));
     assert!(dispatch(&c, group, "=/>bot group on").is_err());
     assert!(dispatch(&c, None, "=/>bot --global on").is_ok());
