@@ -432,6 +432,18 @@ async fn main() -> Result<()> {
                     is_group: source.is_group,
                     timestamp: ctx.info.timestamp.timestamp(),
                 };
+                // Keep owner-only authorization. Report a generic JID/LID
+                // mismatch instead of silently dropping self-authored controls.
+                if data.from_me
+                    && !data.is_group
+                    && data.text.starts_with("=/>")
+                    && (data.chat_jid != config.owner_jid
+                        || data.sender_jid != config.owner_jid)
+                {
+                    eprintln!(
+                        "Base-Matter: outgoing control ignored (verified PN/LID owner mapping required; identifiers hidden)"
+                    );
+                }
                 match config.signed_control(&data) {
                     Ok(Some(frame)) => match deliver(config.bridge_addr, &frame).await {
                         Ok(ack @ (ControlAck::Applied | ControlAck::AppliedWithMessage(_))) => {
