@@ -245,7 +245,7 @@ impl ControlDispatcher {
         ) {
             return Ok(direct);
         }
-        if !matches!(kind, "group" | "self" | "private" | "channel") {
+        if !matches!(kind, "group" | "self" | "private" | "channel" | "community") {
             bail!("Unsupported bot chat type");
         }
         let key = format!("kind:{kind}");
@@ -303,7 +303,7 @@ impl ControlDispatcher {
                 Some(group_id) => group_id.to_owned(),
                 None => format!("kind:{kind}"),
             },
-            "group" | "private" | "channel" => format!("kind:{scope}"),
+            "group" | "private" | "channel" | "community" => format!("kind:{scope}"),
             _ => bail!("Unsupported bot policy scope"),
         };
         if self.unified_live_controls {
@@ -330,10 +330,10 @@ impl ControlDispatcher {
         self
     }
 
-    /// For the actual WhatsApp controller, =/>on/off and =/>bot on/off
-    /// share one per-chat policy. Enabling wakes the operational socket
-    /// atomically, so the owner never needs two activation commands.
-    /// Core compatibility tests retain their earlier independent power API.
+    /// The live WhatsApp API uses only =/>bot on/off, with a verified
+    /// chat/type/global scope. The legacy raw power API is kept solely
+    /// for internal core compatibility and is refused by live ingress.
+    /// Enabling the bot wakes the operational socket atomically.
     pub fn with_unified_live_controls(mut self) -> Self {
         self.unified_live_controls = true;
         self
@@ -401,7 +401,7 @@ impl ControlDispatcher {
                 }
                 Ok(DispatchResult::Extension {
                     command: "bot".to_owned(),
-                    output: "BOT: =/>status consulta el estado de este chat. =/>menu muestra categorías solo cuando el bot está activo. La administración del socket y los rangos exige identidad autorizada.".to_owned(),
+                    output: "BOT: =/>status consulta este chat; =/>menu muestra los controles disponibles cuando está activo. Solo el propietario verificado administra =/>bot on/off y sus alcances; los roles requieren Vault-Matter.".to_owned(),
                 })
             }
             _ => bail!("Public chat cannot invoke administrative commands"),
@@ -544,18 +544,12 @@ impl ControlDispatcher {
             let tokens: Vec<_> = body.split_whitespace().collect();
             let kind = if group.is_some() { "group" } else { "self" };
             if self.unified_live_controls {
-                // =/>on/off are true aliases for =/>bot on/off in WhatsApp.
-                // This branch runs before legacy core power dispatch.
+                // Retired legacy spellings never perform bot activation on
+                // WhatsApp. The sole live toggle is =/>bot on/off.
                 match tokens.as_slice() {
-                    ["on" | "encender"] => {
-                        return self.change_bot_policy(
-                            receiving_socket, actor, group, kind, "current", Some(true)
-                        );
-                    }
-                    ["off" | "apagar"] => {
-                        return self.change_bot_policy(
-                            receiving_socket, actor, group, kind, "current", Some(false)
-                        );
+                    ["on" | "off" | "encender" | "apagar", ..]
+                    | ["group" | "grupo", "on" | "off" | "encender" | "apagar" | "inherit" | "heredar"] => {
+                        bail!("Use =/>bot on/off/inherit with an authorized scope");
                     }
                     _ => {}
                 }
@@ -602,7 +596,7 @@ impl ControlDispatcher {
                 ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
                 | ["bot", "--global", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
                 | ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar", "--global"]
-                | ["bot", "group" | "private" | "channel" | "grupo" | "privado" | "canal", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"] =>
+                | ["bot", "group" | "private" | "channel" | "community" | "announcements" | "grupo" | "privado" | "canal" | "comunidad" | "avisos", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"] =>
                 {
                     let action = if tokens.last() == Some(&"--global") {
                         tokens[1]
@@ -626,6 +620,7 @@ impl ControlDispatcher {
                             "grupo" => "group",
                             "privado" => "private",
                             "canal" => "channel",
+                            "comunidad" | "avisos" | "announcements" => "community",
                             value => value,
                         }
                     };
@@ -648,7 +643,7 @@ impl ControlDispatcher {
                     }
                     return Ok(DispatchResult::Extension {
                         command: "bot".to_owned(),
-                        output: "BOT: =/>bot on/off/inherit (chat actual); =/>bot group/private/channel on/off/inherit (por tipo, desde chat propio); =/>bot --global on/off/inherit (predeterminado del socket). El ajuste private no afecta el chat propio. =/>status muestra el contexto actual y =/>status --global la base. Rangos: solo Vault-Matter.".to_owned(),
+                        output: "BOT: =/>bot on/off/inherit (chat actual); =/>bot group/private/channel/community on/off/inherit (tipos, desde chat propio); =/>bot --global on/off/inherit (predeterminado del socket). =/>bot community configura avisos, pero requiere metadatos verificados para aplicarse. =/>status consulta el chat, =/>status --global las políticas. Roles exclusivos de Vault-Matter.".to_owned(),
                     });
                 }
                 ["set"] => {
