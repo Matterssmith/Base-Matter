@@ -37,6 +37,18 @@ pub(crate) struct SocketAdmission {
     pub bot_instance_id: Option<String>,
 }
 
+/// Owner-scoped snapshot of bot defaults. Explicit field names prevent
+/// mistakes between socket power and the policies of different chat types.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BotDefaultPolicies {
+    pub socket_powered: bool,
+    pub default_policy: Option<bool>,
+    pub group_policy: Option<bool>,
+    pub private_policy: Option<bool>,
+    pub channel_policy: Option<bool>,
+    pub community_policy: Option<bool>,
+}
+
 /// Persistent policy storage, not a network socket manager. The trusted
 /// application provisions socket IDs/owners after authenticating their creation.
 /// Every mutation and audit read checks the stored owner in the same transaction.
@@ -566,14 +578,7 @@ impl SocketActivationStore {
         &self,
         socket: &str,
         actor: &str,
-    ) -> Result<(
-        bool,
-        Option<bool>,
-        Option<bool>,
-        Option<bool>,
-        Option<bool>,
-        Option<bool>,
-    )> {
+    ) -> Result<BotDefaultPolicies> {
         validate(socket)?;
         validate(actor)?;
         let c = self
@@ -598,14 +603,14 @@ impl SocketActivationStore {
                 .optional()?;
             kinds[index] = stored.map(decode_policy).transpose()?;
         }
-        Ok((
-            decode_policy(power)?,
-            socket_policy.map(decode_policy).transpose()?,
-            kinds[0],
-            kinds[1],
-            kinds[2],
-            kinds[3],
-        ))
+        Ok(BotDefaultPolicies {
+            socket_powered: decode_policy(power)?,
+            default_policy: socket_policy.map(decode_policy).transpose()?,
+            group_policy: kinds[0],
+            private_policy: kinds[1],
+            channel_policy: kinds[2],
+            community_policy: kinds[3],
+        })
     }
 
     pub fn audit_history(&self, socket: &str, actor: &str) -> Result<Vec<ActivationAuditRecord>> {
