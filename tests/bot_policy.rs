@@ -71,6 +71,7 @@ fn status_works_while_off_and_global_defaults_are_not_masked_by_power() {
             group_policy: None,
             private_policy: None,
             channel_policy: None,
+            community_policy: None,
         },
     );
     assert_eq!(
