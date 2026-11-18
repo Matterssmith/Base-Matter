@@ -8,6 +8,19 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Resultado de compilación del proveedor (Debian, 2026-11-18)
+
+El operador informó `cargo test --manifest-path
+providers/whatsapp-rust/Cargo.toml --all-targets` con
+**20 pruebas aprobadas y ninguna fallida**: una prueba del
+binario principal, quince del protocolo/proveedor, tres de
+recuperación y una de REGISTER. El defecto que persiste es una
+expectativa en la suite **Base**, no en este proveedor:
+`=/>bot private off` debe deshabilitar privados externos,
+sin afectar al chat propio del dueño. La prueba IPC ya fue
+alineada con esa separación, pero necesita ejecución Debian.
+No eliminar `Cargo.lock`, sesiones, llaves ni caché compilada.
+
 ## Lectura pública autenticada sin rangos ni control de socket (alpha; pruebas pendientes)
 
 En un grupo, el proveedor puede firmar `status/menu/bot` procedentes
