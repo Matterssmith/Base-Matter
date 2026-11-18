@@ -1,3 +1,24 @@
+## 2026-11-18 — Segunda referencia posicional al snapshot de políticas (alpha)
+
+1. **Resultado Debian:** `cargo clippy --all-targets --locked
+   -- -D warnings` detuvo la compilación en
+   `tests/whatsapp_native.rs:82` con `E0609`, porque la prueba
+   aún utilizaba `.0` sobre `BotDefaultPolicies`.
+2. **Cambio en GitHub alpha:** la prueba consulta el campo
+   `socket_powered`. El método, modelo de datos, política
+   de autorización y flujo de WhatsApp no se modificaron.
+3. **Auditoría estática:** comprobados los consumidores en
+   `src/control.rs`, `tests/live_unified_controls.rs`,
+   `tests/whatsapp_bridge.rs`, `tests/whatsapp_native.rs`
+   y otros módulos de control / pruebas de seguridad. Sin
+   otras referencias posicionales encontradas en los inspeccionados.
+4. **Pendiente:** repetir Clippy estricto en Base y proveedor,
+   pruebas completas, verificador de README y `rustfmt`.
+   El SHA de esta corrección no tiene ejecución CI confirmada.
+   Preservar stash, parches y `providers/whatsapp-rust/Cargo.lock`.
+5. **Promoción:** `beta` y `stable` sin cambios. No promover
+   revisiones cuyo Clippy o pruebas no estén verificados.
+
 ## 2026-11-18 — Referencia residual en prueba WhatsApp Bridge (alpha)
 
 1. El operador ejecutó Clippy después de migrar
