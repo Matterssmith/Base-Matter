@@ -20,6 +20,47 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Menú global compacto, créditos explícitos y referencias Aura/YoSoyYo (alpha)
+
+Tras la validación local íntegra del operador en `61b45ee`
+(Clippy estricto, suite Base, 21 pruebas del proveedor Rust y auditoría),
+se implementó una nueva revisión visual en `alpha`, **aún sin
+compilación Debian ni prueba de recepción real de este cambio**.
+
+- La plantilla `templates/matterssmith-control.txt` contiene un solo
+  marco corto de control. Ya no imprime el nombre Matterssmith, Base-Matter
+  ni un pie de autor en cada mensaje.
+- `templates/matterssmith-menu.txt` presenta `=/>` una sola vez como
+  prefijo global. Agrupa `status [--global]` y
+  `bot [ámbito] on|off|inherit` en una línea por comando, sin categorías
+  ni instrucciones duplicadas. Las variantes siguen ejecutándose como
+  comandos completos al enviarse a WhatsApp.
+- La atribución permanece intacta en fuentes y README. Solo
+  `=/>credits` (o `=/>creditos`) muestra los créditos al solicitarlos.
+  El controlador autoriza la lectura del propietario incluso con el bot
+  apagado; terceros solo pueden consultar cuando su chat está activado.
+  Los filtros HMAC de Base y el proveedor Rust permiten únicamente ese
+  nuevo comando de lectura; no conceden permisos.
+- `ControlTheme::with_template` conserva los campos de personalización
+  `{{TITLE}}` y `{{ACCENT}}` cuando un tema los solicita, pero deja
+  de obligarlos en la plantilla común. Rechaza un pie automático de
+  créditos y sigue exigiendo un marco válido alrededor de `{{BODY}}`.
+- Inspección de `jbeckforddev/Aura-Bot-2.0` (lectura): el menú Aura
+  utiliza metadatos de miniatura y un mensaje enriquecido; otros
+  comandos usan el tipo experimental `FOAHtmlPrimitiveDemoDONOTUSE`.
+  El ZIP proporcionado `YoSoyYo-BaseV3.2-ofc.zip` incluye
+  `interactiveMessage/nativeFlowMessage` con botones
+  `quick_reply/cta_url` y una heurística del SO a partir del ID,
+  **no una prueba fiable Android/iPhone**.
+  No se copió Node, Baileys, contenido HTML ejecutable ni botones
+  experimentales al runtime Rust.
+- Pendiente: ejecutar `cargo fmt --all`, Clippy estricto,
+  suites completas y prueba de visualización real en Android/iPhone.
+  No hay clasificación de SO autenticada en `whatsapp-rust` 0.7.0;
+  no anunciar botones separados por plataforma hasta disponer de
+  un mecanismo fiable y una recepción confirmada. Sin promoción
+  a `beta` ni `stable`.
+
 ## 2026-11-18 — Seguimiento de Clippy: segunda referencia posicional (alpha)
 
 Tras actualizar `alpha` hasta `810c445`, la compilación estricta
