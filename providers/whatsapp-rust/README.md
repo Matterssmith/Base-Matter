@@ -1,3 +1,15 @@
+## 2026-11-18 — Matter AI: solo broker Vault y permiso del titular
+
+El controlador `matter` sigue limitado al propietario autenticado
+en su chat privado PN/LID, con HMAC y antirreplay. No se reutilizan
+claves de IA obtenidas de Aura ni otros repositorios; Base-Matter
+no acepta claves API directas. Solo un gateway Unix con ruta y UID
+esperado configurados puede responder, tras verificar permisos y aplicar
+la política del titular en cada solicitud. El cliente rechaza respuestas
+sin `policy_applied=true`, `grant_id` y revisión positiva.
+El gateway productivo **aún no existe**; no anunciar capacidad
+de IA en vivo como verificada. Ver `../../docs/MATTER_AI.md`.
+
 ## Matter AI por WhatsApp: comando privado de solo análisis (alpha)
 
 El propietario puede usar `matter status`, `matter ask` y

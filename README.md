@@ -20,6 +20,30 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Uso de IA limitado por licencias de sus titulares (alpha)
+
+`matter` cambia a un **cliente del futuro broker Vault-Matter**: ya
+no recibe claves de Claude, Venice, OpenAI, Alya ni repositorios externos.
+Las credenciales deben aprovisionarse **exclusivamente en Vault**, cifradas
+y mediante autorización explícita de cada titular. El acceso al repositorio
+de un tercero no concede uso de su clave ni permiso para compartirla.
+
+La petición exige `policy_required=true`. La respuesta exige `approved`,
+`policy_applied`, `grant_id`, revisión positiva, capacidad coincidente
+y nonce correspondiente. La ruta Unix y el UID esperado del servicio se
+configuran por separado. En ausencia de un broker con comprobaciones reales,
+**no se hace ninguna llamada a IA**. Toda licencia deberá incluir sus
+límites como instrucciones que el modelo recibe *en cada petición*;
+Vault debe imponer las mismas restricciones por código, sin delegar
+la autorización al modelo. `matter` no ejecuta código ni administra roles.
+
+Vault-Matter rama `matter`, commit `427b169`, incorpora la plantilla
+`vault/ai/AI_READ_FIRST.md`, el esquema de concesiones
+`schemas/ai-usage-grant.schema.json` y el contrato cifrado de credenciales.
+Se revisaron README principal y del proveedor, y se conservó su
+contenido anterior como historial. Consulte `docs/MATTER_AI.md`.
+No se promueve a beta mientras falten CI/gateway y prueba real.
+
 ## 2026-11-18 — Matter AI: agente de programación por consulta (alpha)
 
 Se reservó el comando `matter` para programación asistida y

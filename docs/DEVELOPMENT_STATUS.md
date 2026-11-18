@@ -1,3 +1,21 @@
+## 2026-11-18 — Contrato de uso externo de IA y consentimiento (alpha)
+
+- Vault-Matter `matter` en commit `427b169`: concesiones
+  revocables del titular, texto obligatorio que leerá cada modelo,
+  política de datos/cuotas y tipos de credenciales cifradas.
+- Nuevo `src/vault_ai.rs` con broker Unix, ruta/UID esperados,
+  nonce, límites y recibo de política; sin claves en Base-Matter.
+- `src/matter_ai.rs` pasa a consulta del broker; no ejecuta
+  comandos, cambia roles ni escribe repositorios. Extensión
+  WhatsApp `matter` permanece privada para el dueño del socket.
+- En ausencia de broker y autorización comprobada se deniega.
+  El servidor Vault, descifrado de claves, verificación real del
+  dueño de la API y comprobaciones de modelos aún **no existen**.
+- La revisión `d4ead81` falló CI de núcleo por rustfmt;
+  el nuevo código sustituye ese módulo y requerirá validación.
+- README principal y proveedor revisados íntegramente (2/2).
+  No modificar beta ni stable sin pruebas verdes.
+
 ## 2026-11-18 — Integración Matter AI (alpha)
 
 - Reconocido el último cambio de propósito: `matter` ya no

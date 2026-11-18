@@ -1,5 +1,26 @@
 # Matterssmith — repository instructions
 
+## Contrato de permisos de IA concedidos por titulares — 2026-11-18
+
+Cada clave externa pertenece al titular de la API. Su disponibilidad
+en un repositorio compartido o una sesión GitHub **no autoriza su uso**.
+Obtener consentimiento específico, alcance, modelos, cuotas, datos
+permitidos y vencimiento. Vault-Matter conservará credenciales
+cifradas únicamente y aplicará esas condiciones por código antes
+de invocar modelos; además pondrá las restricciones del titular en
+las instrucciones prioritarias de la IA para **cada llamada**.
+No publicar credenciales ni en código, README, mensajes o logs.
+
+Base-Matter no debe manejar claves directas ni invocar APIs con
+fallos de Vault: usar solo `src/vault_ai.rs` con Unix socket y
+`MATTER_VAULT_AI_UID` del broker de confianza. Rechazar mensajes
+sin `policy_applied=true`, concesión válida, revisión positiva
+y capacidad exacta. El broker y el verificador de licencias
+no están desplegados, por tanto se falla cerrado. Los
+permisos del modelo no autorizan ejecución directa, sandbox,
+roles, acceso a dispositivos ni publicación de código.
+No añadir créditos ni marca personal al menú de Base-Matter.
+
 ## Contrato 2026-11-18 — `matter` es programación asistida
 
 El usuario reasignó `matter` desde su reserva anterior:

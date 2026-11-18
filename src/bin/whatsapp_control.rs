@@ -267,7 +267,7 @@ fn main() -> Result<()> {
         if context.group_id.is_some() {
             bail!("Matter AI is private owner-only control");
         }
-        matter_base::matter_ai::command(args)
+        matter_base::matter_ai::command(context.socket_id, context.actor_id, args)
     })?;
     extensions.register("roles", &[], |context, args| {
         if context.group_id.is_some() || !args.is_empty() {
