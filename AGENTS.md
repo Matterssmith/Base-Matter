@@ -1,5 +1,31 @@
 # Matterssmith — repository instructions
 
+## Invariante vigente de interfaz — 2026-11-18
+
+- Los créditos `Hecho por Lournyx Matterssmith [Lou-Nyx].`
+  siguen en todos los códigos y documentos correspondientes,
+  **nunca** como pie automático de cada respuesta WhatsApp.
+  El único comando visible de atribución es `=/>credits`
+  (alias `creditos` y `créditos`), sin añadir autoridad
+  a lectores externos.
+- El menú único presenta el prefijo global `=/>` una sola vez;
+  las variantes comparten una entrada abreviada
+  (`status [--global]`, `bot [ámbito] on|off|inherit`).
+  El marco común no repite los títulos Matterssmith/Base-Matter.
+- El tema por chat puede usar `{{TITLE}}` y `{{ACCENT}}`
+  de forma opcional, pero el marco base debe continuar sin ambos
+  títulos. `{{BODY}}` es obligatorio, único y acotado.
+- HTML incrustado no es equivalente a HTML web normal:
+  Aura usa tipos experimentales no validados para Rust/iOS.
+  No enviar scripts no confiables en mensajes ni convertir
+  a Node. No inferir Android/iPhone por IDs de mensajes;
+  usar una señal autenticada y compatibilidad probada
+  antes de seleccionar botones por dispositivo.
+- Esta revisión es solo `alpha`. Repetir Rustfmt/Clippy/tests
+  en Debian y probar el menú en WhatsApp antes de promover.
+
+# Matterssmith — repository instructions
+
 Read `docs/DEVELOPMENT_STATUS.md`, the root README and architecture before work.
 Inspect actual code, Git status, branch, ignored files and applicable nested instructions.
 Do not assume a past report is current. Preserve useful existing implementations.
