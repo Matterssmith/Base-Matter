@@ -8,6 +8,16 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Ajuste posterior a Clippy del núcleo (alpha)
+
+La nueva compilación de Clippy encontró una referencia posicional
+antigua en la prueba del puente `tests/whatsapp_bridge.rs`.
+La referencia fue actualizada a `BotDefaultPolicies::socket_powered`;
+el proveedor WhatsApp Rust no requiere cambios de protocolo ni
+de sesión para este ajuste. La suite independiente de 21 pruebas
+estaba aprobada en la ejecución anterior, no en el nuevo SHA.
+Las verificaciones estrictas restantes deben repetirse.
+
 ## Resultado comunicado del proveedor Rust — 2026-11-18
 
 El operador ejecutó la suite independiente del proveedor después
