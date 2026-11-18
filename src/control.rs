@@ -337,6 +337,64 @@ impl ControlDispatcher {
         group: Option<&str>,
         message: &str,
     ) -> Result<DispatchResult> {
+        // Debug is an opt-in *rendering* of an already authorized effect.
+        // Strip it before command parsing; never grant permissions via flags.
+        let (statement, debug) = match message.strip_suffix(" --debug") {
+            Some(statement) => (statement, true),
+            None => (message, false),
+        };
+        let outcome = self.dispatch_inner(
+            receiving_socket, actor, source, group, statement,
+        )?;
+        if !debug || !statement.starts_with("=/>")
+            || matches!(&outcome, DispatchResult::Inactive)
+        {
+            return Ok(outcome);
+        }
+        let kind = if group.is_some() { "group" } else { "private" };
+        let admission = self.bot_admission(receiving_socket, group, kind)?;
+        if admission.owner_id != actor {
+            bail!("Technical diagnostics require the authenticated socket owner");
+        }
+        let summary = match &outcome {
+            DispatchResult::Status { enabled, source, .. }
+            | DispatchResult::GroupStatus { enabled, source, .. } => {
+                format!("BOT {} (origen: {source:?})", if *enabled { "ACTIVADO" } else { "APAGADO" })
+            }
+            DispatchResult::Control { powered, .. } => {
+                format!("Socket {}", if *powered { "encendido" } else { "apagado" })
+            }
+            DispatchResult::BotPolicyChanged { scope, policy } => {
+                format!("Política {scope}: {policy:?}")
+            }
+            DispatchResult::GroupPolicyChanged { policy, .. } => {
+                format!("Política de grupo: {policy:?}")
+            }
+            DispatchResult::Extension { output, .. } => output.clone(),
+            _ => "Control autenticado completado".to_owned(),
+        };
+        let detail = format!(
+            "\n[DEBUG] entrada=firmada; actor=propietario; contexto={kind};              origen_politica={:?}; bot_habilitado={}; vault_roles=solo-lectura/no-conectado;              secretos=ocultos",
+            admission.decision.source, admission.decision.enabled
+        );
+        let output = format!("{summary}{detail}");
+        if output.len() > 4096 {
+            bail!("Diagnostic response exceeds limit");
+        }
+        Ok(DispatchResult::Extension {
+            command: "debug".to_owned(),
+            output,
+        })
+    }
+
+    fn dispatch_inner(
+        &self,
+        receiving_socket: &str,
+        actor: &str,
+        source: &str,
+        group: Option<&str>,
+        message: &str,
+    ) -> Result<DispatchResult> {
         if message.len() > 16 * 1024 {
             bail!("Message exceeds size limit");
         }
