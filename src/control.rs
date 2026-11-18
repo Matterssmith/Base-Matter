@@ -31,6 +31,10 @@ pub enum DispatchResult {
         enabled: bool,
         source: ActivationSource,
     },
+    BotPolicyChanged {
+        scope: String,
+        policy: Option<bool>,
+    },
     RoleChanged {
         bot_instance_id: String,
         user_id: String,
@@ -198,6 +202,71 @@ impl ControlDispatcher {
         })
     }
 
+
+    /// Read one effective bot policy. Exact group-chat overrides win over
+    /// the kind default, followed by socket and configured global policy.
+    /// Kind keys are private internal identifiers, never trusted chat IDs.
+    fn bot_admission(
+        &self,
+        socket: &str,
+        group: Option<&str>,
+        kind: &str,
+    ) -> Result<crate::activation::SocketAdmission> {
+        let direct = self.activation.admission(socket, group, self.global_policy)?;
+        if matches!(
+            direct.decision.source,
+            ActivationSource::Group | ActivationSource::PoweredOff
+        ) {
+            return Ok(direct);
+        }
+        if !matches!(kind, "group" | "private" | "channel") {
+            bail!("Unsupported bot chat type");
+        }
+        let key = format!("kind:{kind}");
+        let kind_admission =
+            self.activation.admission(socket, Some(&key), self.global_policy)?;
+        if kind_admission.decision.source == ActivationSource::Group {
+            Ok(kind_admission)
+        } else {
+            Ok(direct)
+        }
+    }
+
+    fn change_bot_policy(
+        &self,
+        socket: &str,
+        actor: &str,
+        group: Option<&str>,
+        kind: &str,
+        scope: &str,
+        policy: Option<bool>,
+    ) -> Result<DispatchResult> {
+        let admission = self.activation.admission(socket, None, self.global_policy)?;
+        if admission.owner_id != actor {
+            bail!("Socket owner authorization denied");
+        }
+        let key = match scope {
+            "global" => {
+                self.activation.set_socket_policy(socket, actor, policy)?;
+                return Ok(DispatchResult::BotPolicyChanged {
+                    scope: "socket-global".into(),
+                    policy,
+                });
+            }
+            "current" => match group {
+                Some(group_id) => group_id.to_owned(),
+                None => format!("kind:{kind}"),
+            },
+            "group" | "private" | "channel" => format!("kind:{scope}"),
+            _ => bail!("Unsupported bot policy scope"),
+        };
+        self.activation.set_group_policy(socket, actor, &key, policy)?;
+        Ok(DispatchResult::BotPolicyChanged {
+            scope: scope.to_owned(),
+            policy,
+        })
+    }
+
     pub fn with_control_extensions(mut self, registry: Arc<ControlExtensionRegistry>) -> Self {
         self.extensions = Some(registry);
         self
@@ -266,7 +335,100 @@ impl ControlDispatcher {
             .or_else(|| message.strip_prefix('='))
         {
             let tokens: Vec<_> = body.split_whitespace().collect();
+            let kind = if group.is_some() { "group" } else { "private" };
             match tokens.as_slice() {
+                ["status"] | ["status", "--debug"] => {
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    if let Some(group_id) = group {
+                        return Ok(DispatchResult::GroupStatus {
+                            group_id: group_id.to_owned(),
+                            enabled: admission.decision.enabled,
+                            source: admission.decision.source,
+                        });
+                    }
+                    return Ok(DispatchResult::Status {
+                        socket_id: receiving_socket.to_owned(),
+                        enabled: admission.decision.enabled,
+                        source: admission.decision.source,
+                        bot_instance_id: admission.bot_instance_id,
+                    });
+                }
+                ["status", "--global"] | ["status", "--global", "--debug"] => {
+                    let admission =
+                        self.activation.admission(receiving_socket, None, self.global_policy)?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    return Ok(DispatchResult::Status {
+                        socket_id: receiving_socket.to_owned(),
+                        enabled: admission.decision.enabled,
+                        source: admission.decision.source,
+                        bot_instance_id: admission.bot_instance_id,
+                    });
+                }
+                ["bot", "on" | "off" | "inherit"]
+                | ["bot", "--global", "on" | "off" | "inherit"]
+                | ["bot", "group" | "private" | "channel", "on" | "off" | "inherit"] => {
+                    let action = tokens[tokens.len() - 1];
+                    let policy = match action {
+                        "on" => Some(true),
+                        "off" => Some(false),
+                        _ => None,
+                    };
+                    let scope = if tokens.len() == 2 {
+                        "current"
+                    } else if tokens[1] == "--global" {
+                        "global"
+                    } else {
+                        if group.is_some() {
+                            bail!("Kind-wide policy changes require private owner chat");
+                        }
+                        tokens[1]
+                    };
+                    return self.change_bot_policy(
+                        receiving_socket, actor, group, kind, scope, policy,
+                    );
+                }
+                ["bot"] | ["bot", "--global"] => {
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    if !admission.decision.enabled {
+                        return Ok(DispatchResult::Inactive);
+                    }
+                    return Ok(DispatchResult::Extension {
+                        command: "bot".to_owned(),
+                        output: "BOT: =/>bot on/off/inherit (chat actual); =/>bot group/private/channel on/off/inherit (por tipo, en privado); =/>bot --global on/off/inherit (predeterminado del socket). =/>status muestra el estado actual y =/>status --global la configuración base. Los roles son exclusivos de Vault-Matter.".to_owned(),
+                    });
+                }
+                ["set"] => {
+                    if group.is_some() {
+                        bail!("Configuration is private owner control");
+                    }
+                    let admission = self.activation.admission(
+                        receiving_socket, None, self.global_policy
+                    )?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    return Ok(DispatchResult::Extension {
+                        command: "set".to_owned(),
+                        output: "SET: =/>set role <identidad> <rango> requiere Vault-Matter (no disponible). =/>set style/theme: ajuste visual pendiente. Las políticas del bot se configuran con =/>bot. --debug no concede permisos.".to_owned(),
+                    });
+                }
+                ["set", "role"] => {
+                    if group.is_some() {
+                        bail!("Role administration requires private owner chat");
+                    }
+                    return Ok(DispatchResult::Extension {
+                        command: "set".to_owned(),
+                        output: "SET ROLE: administración exclusiva de Vault-Matter; sin conexión autenticada no se permiten modificaciones. Las identidades deben verificarse antes de asignar rangos.".to_owned(),
+                    });
+                }
                 ["group" | "grupo", "on" | "encender"]
                 | ["group" | "grupo", "off" | "apagar"]
                 | ["group" | "grupo", "inherit" | "heredar"] => {
@@ -321,21 +483,16 @@ impl ControlDispatcher {
                         powered,
                     });
                 }
-                ["status"] | ["status", _] => {
+                ["status", socket] if socket != &"--debug" && socket != &"--global" => {
                     if group.is_some() {
-                        bail!("Global socket status is private configuration only");
+                        bail!("Targeted socket status requires private owner chat");
                     }
-                    let socket = tokens.get(1).copied().unwrap_or(receiving_socket);
-                    // One consistent snapshot: owner, binding, and effective
-                    // activation policy. No role or bot binding is required.
-                    let admission = self
-                        .activation
-                        .admission(socket, None, self.global_policy)?;
+                    let admission = self.activation.admission(socket, None, self.global_policy)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }
                     return Ok(DispatchResult::Status {
-                        socket_id: socket.to_owned(),
+                        socket_id: (*socket).to_owned(),
                         enabled: admission.decision.enabled,
                         source: admission.decision.source,
                         bot_instance_id: admission.bot_instance_id,
@@ -360,11 +517,16 @@ impl ControlDispatcher {
                     return self.change_role(receiving_socket, actor, user, role, false);
                 }
                 [command, args @ ..] if canonical_global_prefix => {
-                    let admission =
-                        self.activation
-                            .admission(receiving_socket, None, self.global_policy)?;
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
+                    }
+                    // A disabled bot sends no reply for menu and other
+                    // nonessential operations. Status remains available.
+                    if !admission.decision.enabled
+                        && !matches!(*command, "roles" | "audit")
+                    {
+                        return Ok(DispatchResult::Inactive);
                     }
                     let registry = self
                         .extensions
