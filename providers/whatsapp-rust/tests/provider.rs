@@ -188,6 +188,70 @@ fn verified_client_allows_configured_lid_only_when_it_matches_session() {
 }
 
 #[test]
+fn verified_owner_group_controls_are_signed_for_exact_group_jid() {
+    let (vars, root) = fixture();
+    let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
+    let group = "120363123456789@g.us";
+    let mut event = event("=/>group on");
+    event.chat_jid = group;
+    event.sender_jid = VERIFIED_LID;
+    event.is_group = true;
+    let frame = c
+        .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .expect("group owner control should be delivered");
+    assert_eq!(frame.chat_jid, group);
+    assert_eq!(frame.owner_jid, OWNER);
+    assert_eq!(frame.signature, sign_frame(&frame, &c.bridge_key).unwrap());
+    event.text = "=/>menu";
+    assert!(c
+        .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_some());
+    event.text = "=/>on";
+    assert!(c
+        .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+    event.text = "=/>group on";
+    event.sender_jid = "foreign@s.whatsapp.net";
+    assert!(c
+        .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+    event.sender_jid = OWNER;
+    event.from_me = false;
+    assert!(c
+        .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+    event.from_me = true;
+    event.chat_jid = "other@s.whatsapp.net";
+    assert!(c
+        .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn verified_private_owner_chat_does_not_sign_group_only_commands() {
+    let (vars, root) = fixture();
+    let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
+    for command in ["=/>menu", "=/>help", "=/>h", "=/>start", "=/>add++", "=/>group on"] {
+        assert!(c
+            .signed_verified_control(&event(command), Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .is_none());
+    }
+    assert!(c
+        .signed_verified_control(&event("=/>status"), Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_some());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn signature_matches_rust_base_control_protocol_fixture() {
     let value = SignedFrame {
         version: 1,
