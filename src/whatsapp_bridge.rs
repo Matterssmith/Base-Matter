@@ -164,7 +164,7 @@ impl WhatsAppControlBridge {
         } else if !matches!(
             verb,
             "=/>on" | "=/>off" | "=/>status" | "=/>set"
-                | "=/>unset" | "=/>roles" | "=/>audit"
+                | "=/>unset" | "=/>role" | "=/>roles" | "=/>audit"
         ) {
             bail!("Private chat is reserved for socket configuration");
         }
