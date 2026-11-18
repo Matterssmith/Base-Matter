@@ -20,6 +20,27 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Estructura de políticas para Clippy estricto (alpha)
+
+El operador confirmó `cargo test --all-targets --locked` sin errores
+en las suites visibles, incluida la conexión WhatsApp, los controles,
+el menú temático y los comandos `=/>bot on/off`. El proveedor
+independiente pasó **21 pruebas** (1 + 16 + 3 + 1). La fase de
+`cargo clippy --all-targets --locked -- -D warnings` se detuvo
+por `clippy::type_complexity` en `src/activation.rs`: el método
+`inspect_bot_defaults` devolvía una tupla de seis elementos.
+
+Se reemplazó por `BotDefaultPolicies`, con seis campos
+explícitos: `socket_powered`, `default_policy`,
+`group_policy`, `private_policy`, `channel_policy`
+y `community_policy`. `src/control.rs` y la regresión
+`tests/live_unified_controls.rs` se ajustaron para consultar
+los campos nombrados, sin cambios de almacenamiento ni seguridad.
+
+**Pendiente:** volver a ejecutar Clippy estricto y pruebas en Debian
+para este commit, ya que todavía no está verificado. `beta/stable`
+permanecen intactas.
+
 ## 2026-11-18 — Ingreso WhatsApp nativo: validar tamaño antes de alias retirados (alpha)
 
 El operador confirmó las suites de Base-Matter hasta `tests/whatsapp_native.rs`.
