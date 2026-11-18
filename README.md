@@ -36,6 +36,30 @@ Telegram and Discord adapters are not release-qualified. See
 [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
 
+## Vault-Matter: única autoridad de roles (decisión actual)
+
+**Cambio de arquitectura:** los rangos del socket/grupo NO pertenecen a
+Base-Matter ni a su SQLite local. La autoridad exclusiva es
+`Vault-Matter`; Base-Matter realiza únicamente consultas autenticadas,
+de lectura, asociadas a la identidad verificada del actor y al ámbito
+exacto. Si Vault no confirma un permiso vigente, el permiso se deniega.
+
+WhatsApp, Telegram y Discord pueden ser puertas de administración
+de Vault, pero no almacenes ni autoridades independientes. Solo el
+servicio de Vault valida la orden, registra la operación, cifra el
+estado y publica en su repositorio privado usando permisos de escritura
+propios. Base nunca posee una credencial GitHub de escritura de Vault.
+El rango `user` es implícito. Roles de proyecto, bots, socket y grupo
+son espacios de autorización separados.
+
+**Alpha operativo:** se deshabilitó la instalación del antiguo
+`RoleStore` local en el controlador WhatsApp. Los comandos de
+asignación de rango siguen **bloqueados** hasta disponer de un lector
+autenticado de Vault; no hay escrituras locales alternativas. El
+control real del propietario sobre encendido y política de grupos se
+mantiene separado de los rangos delegados. Ver
+[contrato Vault como única autoridad](docs/VAULT_ROLE_AUTHORITY.md).
+
 ## WhatsApp private/group scopes and socket roles (alpha test contract)
 
 A successful real-device self-chat `=/>status` followed by `=/>on`,
