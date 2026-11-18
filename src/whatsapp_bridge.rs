@@ -156,16 +156,18 @@ impl WhatsAppControlBridge {
         if group_id.is_some() {
             if !matches!(
                 verb,
-                "=/>group" | "=/>grupo" | "=/>menu" | "=/>status"
-                    | "=/>bot" | "=/>start" | "=/>add" | "=/>add++"
+                "=/>group" | "=/>grupo" | "=/>menu" | "=/>menú"
+                    | "=/>status" | "=/>estado" | "=/>bot"
+                    | "=/>start" | "=/>add" | "=/>add++"
             ) {
                 bail!("Only group-scoped controls are available in groups");
             }
         } else if !matches!(
             verb,
-            "=/>on" | "=/>off" | "=/>status" | "=/>bot"
-                | "=/>menu" | "=/>set" | "=/>unset"
-                | "=/>role" | "=/>roles" | "=/>audit"
+            "=/>on" | "=/>off" | "=/>status" | "=/>estado"
+                | "=/>bot" | "=/>menu" | "=/>menú"
+                | "=/>set" | "=/>unset" | "=/>role"
+                | "=/>roles" | "=/>audit"
         ) {
             bail!("Private chat is reserved for socket configuration");
         }
