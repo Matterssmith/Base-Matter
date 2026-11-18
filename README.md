@@ -36,6 +36,27 @@ Telegram and Discord adapters are not release-qualified. See
 [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
 
+## 2026-11-18 — Corrección de prueba IPC: privado externo ≠ chat propio
+
+La verificación Debian del commit `46ffe7d` completó `cargo check
+--all-targets --locked` y la suite independiente del proveedor
+WhatsApp Rust (20 pruebas aprobadas). La suite de Base se detuvo en
+`tests/control_ipc.rs::disabled_chat_menu_is_silent_but_status_and_reactivation_work`:
+el caso esperaba `Ignored` tras `=/>bot private off`, pero el
+controlador devolvió correctamente `Applied` al mostrar `=/>menu`
+en el **chat propio del propietario**. La política `kind:private`
+rige únicamente privados **externos** y nunca desactiva `kind:self`.
+
+Se corrigió la regresión para exigir el comportamiento real:
+`bot private off` no afecta al chat propio, mientras
+`bot off` ejecutado en él sí silencia el menú;
+`status` sigue respondiendo y `bot inherit` restaura
+su política heredada. Ninguna validación de permisos, almacén
+de Vault, sesión o proveedor se relajó. Reejecutar primero
+`cargo test --test control_ipc --locked` y después toda la
+suite; **el resultado de esta revisión aún no está confirmado**
+en Debian.
+
 ## Protección predeterminada de chats externos (alpha)
 
 Los grupos, canales y chats privados externos quedan **apagados por
