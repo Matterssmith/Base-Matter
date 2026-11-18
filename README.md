@@ -36,6 +36,58 @@ Telegram and Discord adapters are not release-qualified. See
 [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
 
+## WhatsApp private/group scopes and socket roles (alpha test contract)
+
+A successful real-device self-chat `=/>status` followed by `=/>on`,
+`=/>help` and `=/>menu` confirmed that PN/LID owner identity and the
+HMAC response round trip work. The previous behavior incorrectly exposed
+group-oriented menus in the private self-chat and ignored every group.
+
+- **Private self-chat** is reserved for owner-authorized **socket-wide**
+  settings: `=/>status`, `=/>on`, `=/>off`,
+  `=/>set role <PN/LID> <rank>`, `=/>role <PN/LID> <rank>`,
+  `=/>unset role <PN/LID> <rank>`, `=/>roles`, `=/>audit`.
+  It no longer executes `menu/help/start/add/add++`.
+- **Authenticated group chats** handle group-scoped owner operations:
+  `=/>group status`, `=/>group on`, `=/>group off`,
+  `=/>group inherit`, `=/>group role <PN/LID> <rank>`,
+  `=/>menu`, `=/>help`, `=/>h`; the existing `start`, `add`,
+  `add++` remain read-only/previews or explicitly constrained actions.
+  Spanish aliases `=/>grupo encender/apagar/heredar/estado/rango`
+  are supported.
+- Group command ingress requires an outgoing authenticated event from the
+  paired socket owner, a real `@g.us` chat, verified PN/LID sender and
+  an HMAC-signed group JID. The controller derives the group scope from
+  that signed JID, not user-supplied text. Third-party group commands,
+  standard bot handlers and automatic delegate execution remain blocked.
+  A socket must be powered separately from any group policy.
+- **Socket ranks** are independent of project owner/co-owner/staff
+  and bot-level grants. Test ranks are `co-owner`, `admin`,
+  `moderator`, `operator`, `trusted`, `member`,
+  `restricted`, `banned`. The real socket `owner` is not
+  assignable using a role command. `user` is implicit and never stored
+  as an explicit grant. Only the verified socket owner can change grants.
+  In alpha these are locally durable SQLite grants and do **not**
+  yet confer group command delegation or bot execution.
+- **Vault-Matter remains incomplete.** The private
+  `Matterssmith/Vault-Matter` repository contains an encrypted-envelope
+  schema and metadata. Base has `EncryptedControlOutbox` and
+  `RoleStore::export_snapshot` for authenticated encryption, but no
+  installed production key provider, GitHub App writer, remote CAS/
+  recovery, or reliable encrypted role synchronization. No plaintext
+  assignments, WhatsApp sessions, master keys or GitHub credentials may
+  be pushed to any repository. A successful local role change is not
+  proof that the remote Vault received it.
+- Earlier requested `bots`, `bot use`, `bot default`,
+  `group use`, group bot inheritance, `config set/get` and
+  delegated administration require separately implemented and verified
+  bot registry, group binding and Vault transport; they are **not**
+  advertised as functioning by this alpha checkpoint.
+
+Promote this subsystem from `alpha` to `beta`, then `stable`,
+only after relevant CI and live group/owner regression tests pass.
+A live WhatsApp connection is not proof of production safety.
+
 ## Single-terminal WhatsApp development trial (alpha)
 
 ### Authenticated self-chat PN/LID owner mapping (alpha)
