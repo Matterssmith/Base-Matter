@@ -181,7 +181,7 @@ impl WhatsAppControlBridge {
         if group_id.is_some() {
             if !matches!(
                 verb,
-                "=/>group"
+                "=/>on" | "=/>off" | "=/>group"
                     | "=/>grupo"
                     | "=/>menu"
                     | "=/>menú"
