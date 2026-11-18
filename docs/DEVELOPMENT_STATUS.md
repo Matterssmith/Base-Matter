@@ -50,6 +50,22 @@
   descubrimiento automático del catálogo de comandos,
   y el resto de comandos históricos. No afirmar completitud.
 
+## 2026-11-18 — Default-deny para grupos/privados externos/canales (alpha)
+
+- Endurecida `bot_admission`: aunque la política
+  `--global` esté encendida, un grupo, privado externo
+  o canal sin política explícita de su tipo se considera
+  apagado. La excepción precisa de grupo sigue teniendo
+  prioridad. `inherit` retorna al tipo y ausencia implica
+  denegar. La auto-conversación conserva `kind:self`.
+- Ajustadas las pruebas de grupos HMAC, privados externos
+  y políticas por tipo para verificar el bloqueo por defecto.
+  `status --global` indica explícitamente los valores
+  externos deshabilitados que no han sido configurados.
+- El usuario debe ejecutar Cargo y una prueba real de
+  terceros; no afirmar que las nuevas lecturas públicas
+  funcionan en WhatsApp hasta recibir ese resultado.
+
 ## 2026-11-18 — Ingreso de consultas públicas PN/LID firmadas (alpha; compilación y dispositivo pendientes)
 
 - Añadida la ruta separada para `status/menu/bot` de otros
