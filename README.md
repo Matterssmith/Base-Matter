@@ -938,7 +938,7 @@ encendido/apagado y extensiones autorizadas. Nunca devuelve estos datos
 en un rechazo ni un replay. El proveedor verificará ese campo antes de
 enviarlo al chat; el cambio no altera la firma HMAC de entrada.
 
-## Menús globales visibles desde WhatsApp (alpha)
+## Archivo histórico — Menús anteriores de WhatsApp (sustituidos por menú categorizado)
 
 Las extensiones `=/>menu`, `=/>help` y `=/>h` usan el renderizador
 Rust de `ControlTheme`, tras validar el propietario del socket por HMAC.
