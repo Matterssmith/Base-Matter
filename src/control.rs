@@ -456,8 +456,13 @@ impl ControlDispatcher {
                 }
                 ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
                 | ["bot", "--global", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
+                | ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar", "--global"]
                 | ["bot", "group" | "private" | "channel" | "grupo" | "privado" | "canal", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"] => {
-                    let action = tokens[tokens.len() - 1];
+                    let action = if tokens.last() == Some(&"--global") {
+                        tokens[1]
+                    } else {
+                        tokens[tokens.len() - 1]
+                    };
                     let policy = match action {
                         "on" | "encender" => Some(true),
                         "off" | "apagar" => Some(false),
@@ -465,7 +470,7 @@ impl ControlDispatcher {
                     };
                     let scope = if tokens.len() == 2 {
                         "current"
-                    } else if tokens[1] == "--global" {
+                    } else if tokens[1] == "--global" || tokens.last() == Some(&"--global") {
                         "global"
                     } else {
                         if group.is_some() {
