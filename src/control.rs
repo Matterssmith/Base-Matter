@@ -286,6 +286,9 @@ impl ControlDispatcher {
         }
         let key = match scope {
             "global" => {
+                if self.unified_live_controls && group.is_some() {
+                    bail!("Socket-wide defaults require the owner's private chat");
+                }
                 if self.unified_live_controls {
                     self.activation.set_live_bot_policy(socket, actor, None, policy)?;
                 } else {
