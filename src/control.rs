@@ -229,7 +229,7 @@ impl ControlDispatcher {
         ) {
             return Ok(direct);
         }
-        if !matches!(kind, "group" | "private" | "channel") {
+        if !matches!(kind, "group" | "self" | "private" | "channel") {
             bail!("Unsupported bot chat type");
         }
         let key = format!("kind:{kind}");
@@ -362,7 +362,7 @@ impl ControlDispatcher {
         {
             return Ok(outcome);
         }
-        let kind = if group.is_some() { "group" } else { "private" };
+        let kind = if group.is_some() { "group" } else { "self" };
         let admission = self.bot_admission(receiving_socket, group, kind)?;
         if admission.owner_id != actor {
             bail!("Technical diagnostics require the authenticated socket owner");
@@ -422,7 +422,7 @@ impl ControlDispatcher {
             .or_else(|| message.strip_prefix('='))
         {
             let tokens: Vec<_> = body.split_whitespace().collect();
-            let kind = if group.is_some() { "group" } else { "private" };
+            let kind = if group.is_some() { "group" } else { "self" };
             match tokens.as_slice() {
                 ["status" | "estado"] | ["status" | "estado", "--debug"] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
@@ -497,7 +497,7 @@ impl ControlDispatcher {
                     }
                     return Ok(DispatchResult::Extension {
                         command: "bot".to_owned(),
-                        output: "BOT: =/>bot on/off/inherit (chat actual); =/>bot group/private/channel on/off/inherit (por tipo, en privado); =/>bot --global on/off/inherit (predeterminado del socket). =/>status muestra el estado actual y =/>status --global la configuración base. Los roles son exclusivos de Vault-Matter.".to_owned(),
+                        output: "BOT: =/>bot on/off/inherit (chat actual); =/>bot group/private/channel on/off/inherit (por tipo, desde chat propio); =/>bot --global on/off/inherit (predeterminado del socket). El ajuste private no afecta el chat propio. =/>status muestra el contexto actual y =/>status --global la base. Rangos: solo Vault-Matter.".to_owned(),
                     });
                 }
                 ["set"] => {
