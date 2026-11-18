@@ -38,6 +38,23 @@ verified stage assessment.
 
 ## Single-terminal WhatsApp development trial (alpha)
 
+### Authenticated self-chat PN/LID owner mapping (alpha)
+
+The WhatsApp Rust 0.7 API exposes the linked client's own PN/LID values
+through `client.pn()` and `client.lid()`. The provider now compares its
+configured pairing phone against the authenticated PN, checks that the
+self-chat sender and destination match that same account in either namespace,
+and signs a canonical owner frame for the HMAC controller. A foreign chat,
+incoming message, group, or unverified identity remains denied. Devices
+may add suffixes such as `:device`, which are stripped using the upstream
+`Jid::to_non_ad_string()` API. No new keys or SQLite session are generated.
+
+To test a linked alpha session after updating the repo, stop the current
+foreground `cargo run` with Ctrl+C, use `git pull --ff-only origin alpha`,
+then `cargo run` again. From the authenticated phone's "message yourself"
+chat, send `=/>status` and `=/>menu`. The first live response still needs
+verification in Debian; offline unit tests do not establish delivery.
+
 ### Low-disk single-clone development
 
 Use one Git checkout instead of cloning alpha, beta and stable into separate
