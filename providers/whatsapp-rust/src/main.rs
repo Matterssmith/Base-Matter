@@ -33,8 +33,8 @@ async fn deliver(
         stream.write_all(&body).await?;
         stream.shutdown().await?;
         let mut response = Vec::new();
-        stream.take(1025).read_to_end(&mut response).await?;
-        if response.len() > 1024 {
+        stream.take(8193).read_to_end(&mut response).await?;
+        if response.len() > 8192 {
             bail!("Invalid bridge reply length");
         }
         parse_control_ack(&response)
@@ -504,6 +504,9 @@ async fn main() -> Result<()> {
                         }
                         Ok(ControlAck::Duplicate) => {
                             println!("Base-Matter duplicate control ignored (no new effect)");
+                        }
+                        Ok(ControlAck::Ignored) => {
+                            // Bot disabled in this chat: intentionally silent.
                         }
                         Err(_) => {
                             eprintln!("Base-Matter owner control denied or unreachable");
