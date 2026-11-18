@@ -291,7 +291,7 @@ fn rejects_forged_signatures_cross_socket_and_sender() {
     sign(&mut value, &SECRET);
     assert!(bridge.ingest(&value).is_err());
     let mut value = frame("id3", "=/>bot on");
-    value.chat_jid = "123@g.us".into();
+    value.chat_jid = "invalid/group@g.us".into();
     sign(&mut value, &SECRET);
     assert!(bridge.ingest(&value).is_err());
     let mut value = frame("id4", "=/>bot on");
