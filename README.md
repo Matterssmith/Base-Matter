@@ -36,6 +36,22 @@ Telegram and Discord adapters are not release-qualified. See
 [the development status](docs/DEVELOPMENT_STATUS.md) for the
 verified stage assessment.
 
+## Protección predeterminada de chats externos (alpha)
+
+Los grupos, canales y chats privados externos quedan **apagados por
+defecto**. Un `=/>bot --global on` NO activa automáticamente todos
+los grupos ni conversaciones de otras personas. Cada tipo debe
+habilitarse expresamente con `=/>bot group on` o
+`=/>bot private on`, o mediante una excepción de grupo autenticada.
+El chat propio del dueño está aislado de los valores `private`.
+Una política de grupo con `inherit` vuelve al tipo de chat; si
+el tipo está sin habilitar, prevalece apagado.
+
+`=/>status --global` presenta las políticas ausentes para tipos
+externos como "apagado por defecto", no como un permiso implícito.
+Los rangos siguen perteneciendo exclusivamente a Vault-Matter;
+estas políticas de encendido no son asignaciones de roles.
+
 ## 2026-11-18 — Consultas públicas verificadas, sin control administrativo (alpha; ensayo Debian pendiente)
 
 Se amplió el puente HMAC Rust para aceptar **solo lecturas públicas**
