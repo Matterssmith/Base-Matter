@@ -1,52 +1,61 @@
 # Prueba WhatsApp Rust de Base-Matter — pairing code
 
-## Nuevos comandos de activación por contexto (alpha, pruebas pendientes)
+## Contrato vigente: bot único y plantilla Matterssmith (alpha)
 
-Los comandos `help/h` fueron eliminados. En un chat autenticado
-del propietario, `=/>status` informa el estado de política del bot
-en ese chat incluso cuando está desactivado. `=/>status --global`
-consulta el predeterminado del socket (y valores por grupo,
-privado y canal) aunque el socket esté apagado.
+En WhatsApp **no existe `=/>on/off`**. `=/>bot on` habilita el chat
+y despierta el socket automáticamente en una transacción. `=/>bot off`
+deshabilita exclusivamente ese chat; no apaga otros grupos.
+El menú global tiene una lista corta, sin categorías.
 
-**Primero en el chat propio:**
+El diseño está separado del código en
+`templates/matterssmith-control.txt` y `templates/matterssmith-menu.txt`.
+Todas las respuestas del controlador y las vistas previas del
+proveedor Rust pasan por el mismo renderizador. Se usan saltos de línea
+reales, no secuencias literales `\n`.
+
+**En tu propio chat:**
 
 ```text
-=/>status --global
-=/>on
-=/>bot --global on
-=/>bot group on
 =/>status
+=/>bot on
 =/>menu
-=/>menu mode
-=/>status --debug
+=/>status --global
 ```
 
-**Después en un grupo autorizado:**
+**En un solo grupo de pruebas:**
 
 ```text
 =/>status
+=/>bot on
 =/>menu
 =/>bot off
 =/>status
 =/>menu
 =/>bot inherit
-=/>status
-=/>menu
 ```
 
-El `menu` enviado mientras esté apagada la política grupal
-**no debe recibir respuesta**. `status` sí responde. Si
-`status` indica `PoweredOff`, el socket operativo está apagado
-y debe encenderse desde el chat propio con `=/>on`.
+Tras `bot off`, `menu` no responde; `status` sigue funcionando.
+Otro participante solo puede consultar `status/menu` si el chat está
+habilitado; no debe poder modificar políticas.
 
-No usar mensajes de otros participantes como prueba de ingreso
-público: esta versión del puente solo autentica `from_me`
-del propietario. El ingreso de terceros, canales y privados
-externos, así como `self/selfmod/mod` con Vault-Matter, requiere
-nuevas implementaciones y pruebas. No cambiar sesión, DB, pairing
-ni llaves para ejecutar esta revisión.
-Ver `docs/BOT_POLICY_V2.md`.
+**Desde el chat propio, por alcance:**
 
+```text
+=/>bot --global on
+=/>bot group on
+=/>bot private on
+=/>bot channel on
+=/>bot community on
+```
+
+`group` y `private` afectan a todos los chats de ese tipo: no usarlos
+para probar un grupo individual. `community` guarda la política de
+avisos comunitarios y `channel` la de canales, pero **no se aplican**
+hasta recibir una clasificación verificada del proveedor.
+Los rangos de Vault-Matter continúan bloqueados sin autoridad remota.
+
+Las instrucciones históricas posteriores son referencias de diagnóstico;
+no vuelvas a usar los comandos retirados `=/>on/off` ni menús con categorías.
 ## Procedimiento vigente en alpha: una sola terminal
 
 ```bash
@@ -65,24 +74,10 @@ dos procesos Rust bajo una sola terminal y usa `CARGO_TARGET_DIR`.
 Las instrucciones de dos terminales incluidas más abajo documentan
 únicamente la ejecución manual anterior; no son necesarias en alpha.
 
-**En privado propio:** `=/>status`, `=/>on`, `=/>off`,
-`=/>roles`, `=/>audit`, `=/>set role PN_O_LID RANGO`.
-Solo configuración general del socket.
-
-**En grupo real con el número autorizado como remitente:**
-`=/>group status`, `=/>group on`, `=/>group off`,
-`=/>group inherit`, `=/>group role PN_O_LID RANGO`,
-`=/>menu`, `=/>help`, `=/>start`, `=/>add++` y
-`=/>add` (vistos buenos y fases descritos en el README).
-
-El encendido del socket es distinto de la política grupal. La
-asignación de un rango del socket es solo local hasta instalar el
-cifrado y sincronización autenticada a Vault-Matter. Ningún otro
-miembro recibe acceso implícito al control por un alias o por su
-rango local. Para dar por completa la prueba hay que observar una
-respuesta en un grupo con JID autenticado y probar denegaciones de
-terceros y grupos ajenos.
-
+**Control actual:** `=/>status`, `=/>bot on/off/inherit` y `=/>menu`
+en el chat verificado; `=/>status --global`, `=/>bot --global`,
+`=/>bot group/private/channel/community`, `=/>roles` y `=/>audit`
+solo en el chat propio. `=/>set role` exige Vault-Matter remoto.
 # Prueba WhatsApp Rust de Base-Matter — pairing code
 
 Este procedimiento se puede ejecutar desde la rama `beta` con
