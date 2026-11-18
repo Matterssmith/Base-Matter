@@ -566,7 +566,14 @@ impl SocketActivationStore {
         &self,
         socket: &str,
         actor: &str,
-    ) -> Result<(bool, Option<bool>, Option<bool>, Option<bool>, Option<bool>)> {
+    ) -> Result<(
+        bool,
+        Option<bool>,
+        Option<bool>,
+        Option<bool>,
+        Option<bool>,
+        Option<bool>,
+    )> {
         validate(socket)?;
         validate(actor)?;
         let c = self
@@ -579,8 +586,8 @@ impl SocketActivationStore {
             [socket],
             |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
-        let mut kinds = [None; 3];
-        for (index, mode) in ["group", "private", "channel"].iter().enumerate() {
+        let mut kinds = [None; 4];
+        for (index, mode) in ["group", "private", "channel", "community"].iter().enumerate() {
             let key = format!("kind:{mode}");
             let stored: Option<i64> = c
                 .query_row(
@@ -597,6 +604,7 @@ impl SocketActivationStore {
             kinds[0],
             kinds[1],
             kinds[2],
+            kinds[3],
         ))
     }
 
