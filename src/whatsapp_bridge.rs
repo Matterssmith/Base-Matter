@@ -54,8 +54,8 @@ pub enum WhatsAppBridgeOutcome {
     Dispatched(DispatchResult),
 }
 
-/// Accepts only authenticated, owner-origin, private, globally reserved
-/// commands. No Bot-Matter handlers or QR/ping fallback are reachable.
+/// Accepts only authenticated, owner-origin, scope-bound controls in
+/// private self-chat or verified groups. No Bot-Matter handlers, QR or ping.
 pub struct WhatsAppControlBridge {
     config: WhatsAppBridgeConfig,
     key: Zeroizing<[u8; 32]>,
