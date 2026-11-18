@@ -185,12 +185,13 @@ fn verified_client_allows_configured_lid_only_when_it_matches_session() {
     assert_eq!(signed.owner_jid, VERIFIED_LID);
     assert_eq!(signed.chat_jid, VERIFIED_LID);
 
-    // Group-only help/menu must never acquire private socket authority.
+    // Menu is available in the authenticated private context, subject
+    // to the controller's effective bot activation policy.
     message.text = "=/>menu";
     assert!(c
         .signed_verified_control(&message, Some(OWNER), Some(VERIFIED_LID))
         .unwrap()
-        .is_none());
+        .is_some());
     fs::remove_dir_all(root).unwrap();
 }
 
@@ -245,7 +246,7 @@ fn verified_owner_group_controls_are_signed_for_exact_group_jid() {
 fn verified_private_owner_chat_does_not_sign_group_only_commands() {
     let (vars, root) = fixture();
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
-    for command in ["=/>menu", "=/>help", "=/>h", "=/>start", "=/>add++", "=/>group on"] {
+    for command in ["=/>help", "=/>h", "=/>start", "=/>add++", "=/>group on"] {
         assert!(c
             .signed_verified_control(&event(command), Some(OWNER), Some(VERIFIED_LID))
             .unwrap()
@@ -255,6 +256,12 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
         .signed_verified_control(&event("=/>status"), Some(OWNER), Some(VERIFIED_LID))
         .unwrap()
         .is_some());
+    for allowed in ["=/>menu", "=/>menú", "=/>bot", "=/>estado"] {
+        assert!(c
+            .signed_verified_control(&event(allowed), Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .is_some());
+    }
     fs::remove_dir_all(root).unwrap();
 }
 
@@ -390,12 +397,16 @@ fn controller_ack_distinguishes_applied_and_duplicate_without_false_success() {
         ControlAck::Duplicate
     );
     assert_eq!(
+        parse_control_ack(br#"{"ok":true,"outcome":"ignored"}"#).unwrap(),
+        ControlAck::Ignored
+    );
+    assert_eq!(
         parse_control_ack(br#"{"ok":true,"outcome":"applied","message":"Estado"}"#).unwrap(),
         ControlAck::AppliedWithMessage("Estado".to_owned())
     );
     for invalid in [
         br#"{"ok":false,"outcome":"denied"}"#.as_slice(),
-        br#"{"ok":true,"outcome":"ignored"}"#,
+
         br#"{"ok":true,"outcome":"denied"}"#,
         br#"{"ok":false,"outcome":"applied"}"#,
         br#"{"ok":true,"outcome":"duplicate","message":"bad"}"#,
