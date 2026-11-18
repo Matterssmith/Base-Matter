@@ -142,10 +142,29 @@ fn group_control_rejects_nonowners_and_wrong_chat_scope() {
             "=/>on",
         )
         .is_err());
+    // Status is intentionally visible to the authenticated socket owner
+    // in the current group even while the bot/socket is off.
+    assert_eq!(
+        control
+            .dispatch(
+                "wa-alpha",
+                "socket-owner",
+                "120363111@g.us",
+                Some("120363111@g.us"),
+                "=/>status",
+            )
+            .unwrap(),
+        DispatchResult::GroupStatus {
+            group_id: "120363111@g.us".into(),
+            enabled: false,
+            source: ActivationSource::PoweredOff,
+        }
+    );
+    // Status never grants an outsider access to owner-only dispatch.
     assert!(control
         .dispatch(
             "wa-alpha",
-            "socket-owner",
+            "intruder",
             "120363111@g.us",
             Some("120363111@g.us"),
             "=/>status",
