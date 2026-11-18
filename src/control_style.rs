@@ -27,15 +27,17 @@ impl ControlTheme {
             title: title.to_owned(),
             bot_id: bot_id.to_owned(),
             accent: accent.to_owned(),
-            template: include_str!("../templates/matterssmith-control.txt").to_owned(),
+            template: include_str!("../templates/matterssmith-control.txt")
+                .replace("\r\n", "\n"),
         })
     }
 
     /// The layout lives in a separate UTF-8 file, not in command handlers.
     /// An authorized host may replace it per scope after validation.
     pub fn with_template(mut self, source: &str) -> Result<Self> {
-        validate_template(source)?;
-        self.template = source.to_owned();
+        let normalized = source.replace("\r\n", "\n");
+        validate_template(&normalized)?;
+        self.template = normalized;
         Ok(self)
     }
 
@@ -84,7 +86,11 @@ impl ControlTheme {
         if section != "menu" {
             bail!("Global control has no menu categories");
         }
-        self.decorate(include_str!("../templates/matterssmith-menu.txt"))
+        // Git working trees on Windows may use CRLF. Normalize trusted
+        // static templates before enforcing WhatsApp's control-char bounds.
+        self.decorate(
+            &include_str!("../templates/matterssmith-menu.txt").replace("\r\n", "\n"),
+        )
     }
 }
 
