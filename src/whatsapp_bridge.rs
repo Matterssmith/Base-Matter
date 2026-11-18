@@ -191,6 +191,9 @@ impl WhatsAppControlBridge {
                     | "=/>start"
                     | "=/>add"
                     | "=/>add++"
+                    | "=/>credits"
+                    | "=/>creditos"
+                    | "=/>créditos"
             ) {
                 bail!("Only group-scoped controls are available in groups");
             }
@@ -206,6 +209,9 @@ impl WhatsAppControlBridge {
                 | "=/>role"
                 | "=/>roles"
                 | "=/>audit"
+                | "=/>credits"
+                | "=/>creditos"
+                | "=/>créditos"
         ) {
             bail!("Private chat is reserved for socket configuration");
         }
