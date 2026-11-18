@@ -1,3 +1,17 @@
+## 2026-11-18 — Revisión final de contratos IPC; esperar pruebas reales de Debian
+
+- Añadida `tests/control_ipc.rs::disabled_chat_menu_is_silent_but_status_and_reactivation_work`:
+  firma HMAC, menú ignorado sin respuesta, status permitido, encendido de socket y activación
+  de política `bot --global`, nuevo silencio al desactivar el tipo privado.
+- Se mantuvo el catálogo de estilos Matterssmith sin copiar el enlace, nombre ni
+  comandos de otro bot. La gestión persistente del tema, importación de
+  `#menu`, IA `--auto` y capacidades Vault todavía están pendientes.
+- CI exacto aún no disponible mediante estado GitHub; pruebas pendientes de
+  ejecutar con `cargo fmt`, `cargo check` y `cargo test` en Debian.
+  `alpha` no está calificada para promoción.
+- Revisión documental: README raíz, README del proveedor, instrucciones
+  y guías de trial revisados; se conservaron apartados históricos etiquetados.
+
 ## 2026-11-18 — Pruebas de regresión ampliadas y migración de menú (alpha, revisión final pendiente)
 
 - Se corrigió el transporte IPC para diferenciar un resultado
