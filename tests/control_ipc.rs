@@ -110,6 +110,74 @@ fn invalid_frames_and_ping_are_denied_without_leaks() {
     );
 }
 #[test]
+fn disabled_chat_menu_is_silent_but_status_and_reactivation_work() {
+    use matter_base::ControlExtensionRegistry;
+    let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
+    activation.provision("socket-a", "alice").unwrap();
+    let router = Arc::new(
+        CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap(),
+    );
+    let extensions = Arc::new(ControlExtensionRegistry::new());
+    extensions.register("menu", &[], |_, _| Ok("menu".to_owned())).unwrap();
+    let control = Arc::new(
+        ControlDispatcher::new(
+            Arc::clone(&activation),
+            Arc::new(BotRegistry::in_memory()),
+            router,
+            None,
+        )
+        .with_control_extensions(extensions)
+        .with_silent_bot_commands(),
+    );
+    let bridge = Arc::new(
+        WhatsAppControlBridge::new(
+            WhatsAppBridgeConfig {
+                socket_id: "socket-a".into(),
+                owner_actor_id: "alice".into(),
+                owner_jid: JID.into(),
+            },
+            KEY,
+            Arc::new(InboundReplayStore::in_memory([8; 32]).unwrap()),
+            control,
+        )
+        .unwrap(),
+    );
+    let service = WhatsAppControlIpc::new(bridge);
+    assert_eq!(
+        service.dispatch(&signed("m-1", "=/>menu")),
+        ControlIpcOutcome::Ignored
+    );
+    assert_eq!(
+        service.dispatch(&signed("s-1", "=/>status")),
+        ControlIpcOutcome::Applied
+    );
+    assert_eq!(
+        service.dispatch(&signed("b-1", "=/>bot --global on")),
+        ControlIpcOutcome::Applied
+    );
+    assert_eq!(
+        service.dispatch(&signed("p-1", "=/>on")),
+        ControlIpcOutcome::Applied
+    );
+    assert_eq!(
+        service.dispatch(&signed("m-2", "=/>menu")),
+        ControlIpcOutcome::Applied
+    );
+    assert_eq!(
+        service.dispatch(&signed("b-2", "=/>bot private off")),
+        ControlIpcOutcome::Applied
+    );
+    assert_eq!(
+        service.dispatch(&signed("m-3", "=/>menu")),
+        ControlIpcOutcome::Ignored
+    );
+    assert_eq!(
+        service.dispatch(&signed("s-2", "=/>status")),
+        ControlIpcOutcome::Applied
+    );
+}
+
+#[test]
 fn cannot_bind_public_network_address() {
     let (service, _) = make();
     assert!(service.serve("0.0.0.0:12345".parse().unwrap()).is_err());
