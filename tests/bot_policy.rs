@@ -91,6 +91,9 @@ fn status_works_while_off_and_global_defaults_are_not_masked_by_power() {
         DispatchResult::Inactive,
     );
     dispatch(&c, None, "=/>on").unwrap();
+    // Global fallback does not silently enable all external group chats.
+    assert_eq!(dispatch(&c, group, "=/>menu").unwrap(), DispatchResult::Inactive);
+    dispatch(&c, None, "=/>bot group on").unwrap();
     assert!(matches!(
         dispatch(&c, group, "=/>menu").unwrap(),
         DispatchResult::Extension { .. }
