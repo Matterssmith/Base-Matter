@@ -424,6 +424,31 @@ fn controller_ack_distinguishes_applied_and_duplicate_without_false_success() {
 }
 
 #[test]
+fn long_category_menu_ack_is_bounded_and_does_not_accept_control_characters() {
+    let menu = "✦ Menú Matterssmith\\n".repeat(70);
+    assert!(menu.len() > 1024);
+    assert!(menu.len() < 3800);
+    let value = serde_json::json!({
+        "ok": true, "outcome": "applied", "message": menu
+    });
+    let wire = serde_json::to_vec(&value).unwrap();
+    assert_eq!(
+        parse_control_ack(&wire).unwrap(),
+        ControlAck::AppliedWithMessage(
+            value["message"].as_str().unwrap().to_owned()
+        )
+    );
+    let too_long = serde_json::json!({
+        "ok": true, "outcome": "applied", "message": "X".repeat(3801)
+    });
+    assert!(parse_control_ack(&serde_json::to_vec(&too_long).unwrap()).is_err());
+    let unsafe_text = serde_json::json!({
+        "ok": true, "outcome": "applied", "message": "hello\\u{0000}"
+    });
+    assert!(parse_control_ack(&serde_json::to_vec(&unsafe_text).unwrap()).is_err());
+}
+
+#[test]
 fn legacy_session_lock_is_not_silently_stolen() {
     let (vars, root) = fixture();
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
