@@ -8,6 +8,19 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Corrección de identidad PN/LID autenticada (alpha)
+
+La sesión vinculada se identifica ahora mediante `ctx.client.pn()` y
+`ctx.client.lid()` de whatsapp-rust 0.7.0. Solo se aceptan mensajes
+`=/>` propios en chat privado cuya identidad de chat y remitente
+coincidan con PN o LID verificados del cliente, con JIDs de dispositivo
+normalizados. El PN autenticado debe coincidir con el número configurado
+y el JID del propietario debe ser uno de esos identificadores. El puente
+HMAC conserva el JID canónico del propietario. Siguen denegados chats
+ajenos, grupos, mensajes entrantes y prefijos antiguos `#ping`.
+No es necesario regenerar la sesión ni el archivo `runtime.env`.
+La prueba de recepción y respuesta real sigue pendiente.
+
 ## Ejecución en una sola terminal (alpha)
 
 Para ahorrar espacio en Debian, utilizar **un solo clon Git** y exportar
