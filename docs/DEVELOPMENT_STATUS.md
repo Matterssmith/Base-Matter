@@ -1,3 +1,34 @@
+## 2026-11-18 — Plantillas seleccionadas en todos los controles (alpha; validación pendiente)
+
+1. **Implementado:** el registro `ControlThemes` expone una selección
+   común y aplica `decorate` por chat. `WhatsAppControlIpc`
+   recibe el `Arc<ControlThemes>` compartido con el menú.
+   El identificador de grupo se obtiene del marco firmado
+   **después** de una validación `Applied`; nunca es tomado
+   de un mensaje sin autenticar para decidir su presentación.
+2. **Proveedor Rust:** las respuestas ya compuestas por IPC se
+   entregan sin aplicar nuevamente la plantilla general.
+   Los informes REGISTER/recuperación que crea el proveedor
+   sí usan el renderizador compartido. Esto evita marcos
+   duplicados y conserva el tema personalizado del grupo.
+3. **Prueba incorporada:** `tests/whatsapp_theme_scopes.rs`
+   comprueba diseño de grupo en `status`, `bot on` y
+   `bot off`. El tema predeterminado preserva el estilo
+   del propietario y no copia categorías del bot de ejemplo.
+4. **Pruebas y resultados:** cambios publicados en `alpha`.
+   Los últimos `cargo check/test/fmt` informados en verde
+   correspondían a `dfd9dab`, **antes** de este lote.
+   La compilación del lote actual y la prueba en WhatsApp
+   real **no están verificadas**. Sin promoción a `beta/stable`.
+5. **Pendientes:** compilar y corregir las pruebas en Debian;
+   comprobar otro grupo y un tercero, revisar el tamaño
+   de respuestas especiales, fijar `Cargo.lock` del proveedor,
+   conectar lector autenticado de Vault-Matter y verificar
+   metadatos de canales/comunidades antes de habilitarlos.
+
+Revisados README raíz y README del proveedor, documentación
+de política y guía de prueba. Créditos conservados.
+
 ## 2026-11-18 — Contrato final del propietario: bot-only y temas externos (alpha; tests pendientes)
 
 1. **Implementado en alpha:** se retiran `=/>on/off` de la
