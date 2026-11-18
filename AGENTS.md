@@ -91,6 +91,45 @@ Preserve socket isolation and persist/audit administrative changes atomically.
   histories. Operate from a single Git clone and shared Cargo build
   cache in the owner's one-terminal environment. Preserve sessions.
 
+## Owner update — activation commands and menu design (current alpha contract)
+
+This section supersedes the older 2026-11-17 statement that menus
+must be group-only and that help/h remain valid. The user now requires:
+- `=/>status` as the **effective current-chat bot policy** even
+  while disabled; `=/>status --global` reports actual default
+  policy and socket power independently. The socket is not the bot.
+- `=/>bot on/off/inherit` for the chat, bot defaults for
+  `group/private/channel` in owner-private configuration,
+  `=/>bot --global on/off` for the entire socket's fallback.
+  Specific chat > kind > socket global > deny, with socket power
+  always a separate outer gate.
+- `=/>menu` in any authenticated, bot-enabled context, with
+  a distinct Matterssmith Unicode theme and categorized entries.
+  `=/>help` and `=/>h` are retired. When the bot is disabled,
+  menu and normal commands are silent; status and the authenticated
+  owner's necessary recovery/configuration actions remain available.
+- `=/>set` without arguments describes configuration;
+  `=/>set role` never performs local grants. Translation aliases
+  must be explicitly mapped, not arbitrary text matches. The
+  optional final `--debug` may expose safe technical context to
+  the verified owner but never secrets, raw identities or role data.
+- `--global` specifies a **policy scope**, not a role.
+  `mod` is a group-moderation authorization requirement,
+  `self` is socket-owner plus explicitly Vault-authorized delegates,
+  and `selfmod` requires both capabilities. None are implicit
+  authority; delegated execution requires a verified Vault reader.
+- `=/>set style/theme`, explicitly approved `#menu`
+  visual adaptation and AI-backed `--auto` are future
+  capabilities. Do not copy commands, users, source
+  identities, third-party links, tokens or permissions from
+  another bot's message; preview before applying.
+- `menu/status` for external actors and WhatsApp channels requires
+  a new signed ingress model. Never simply remove the
+  `from_me` check to make unauthenticated messages work.
+- Develop/test on alpha only; do not promote incomplete
+  features to beta or stable. Full command semantics and
+  limitations: `docs/BOT_POLICY_V2.md`.
+
 ## New authoritative policy: Vault-Matter owns ALL socket/group role state
 
 - Vault-Matter is the **sole authoritative role manager** for socket
