@@ -38,6 +38,29 @@ verified stage assessment.
 
 ## Single-terminal WhatsApp development trial (alpha)
 
+### Low-disk single-clone development
+
+Use one Git checkout instead of cloning alpha, beta and stable into separate
+directories. Switch branches only after stopping live provider/controller
+processes and inspecting `git status`. For a shared build cache, export an
+**absolute** `CARGO_TARGET_DIR` such as
+`$HOME/.cache/matterssmith/target` before running Cargo. The alpha launcher
+honors this variable for both Rust binaries. `CARGO_HOME` already shares crate
+downloads by default; no extra Cargo installation per branch is necessary.
+For restricted disks, `CARGO_INCREMENTAL=0`,
+`CARGO_PROFILE_DEV_DEBUG=0` and `CARGO_PROFILE_TEST_DEBUG=0` reduce build
+artifacts, at the expense of debugging information. Different profiles or
+dependencies can still generate distinct compilation products.
+
+Sessions remain independently stored under
+`~/.local/share/base-matter/branches/{alpha,beta,stable}/whatsapp-test/`;
+they never belong in the shared Cargo target directory. The alpha launcher
+currently manages a branch-isolated session; beta and stable do not yet have
+this launcher or a qualified live WhatsApp provider. Do not treat their
+offline Rust tests as live WhatsApp pairing tests. A removed private session
+cannot be reconstructed from GitHub.
+
+
 The original WhatsApp Rust pairing implementation was recovered from
 `Matter-Base-matter-1.zip` and historical `src/providers/whatsapp/mod.rs`.
 That reference had one-process startup and a temporary `#ping` reply.
