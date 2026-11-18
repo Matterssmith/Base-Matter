@@ -90,9 +90,9 @@ impl WhatsAppControlIpc {
                     "Base-Matter | Configuración global del socket\nSocket: {}\nPredeterminado: {}\nGrupos: {}\nPrivados externos: {}\nCanales: {}\nEstas políticas NO son roles ni encienden el socket.",
                     if socket_powered { "ENCENDIDO" } else { "APAGADO" },
                     format_policy(default_policy),
-                    format_policy(group_policy),
-                    format_policy(private_policy),
-                    format_policy(channel_policy),
+                    format_surface_policy(group_policy),
+                    format_surface_policy(private_policy),
+                    format_surface_policy(channel_policy),
                 )),
             ),
             Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
@@ -220,7 +220,15 @@ fn format_policy(value: Option<bool>) -> &'static str {
     match value {
         Some(true) => "activado",
         Some(false) => "apagado",
-        None => "heredar (sin valor específico)",
+        None => "sin predeterminado (denegar si no hay excepción)",
+    }
+}
+
+fn format_surface_policy(value: Option<bool>) -> &'static str {
+    match value {
+        Some(true) => "activado explícitamente",
+        Some(false) => "apagado explícitamente",
+        None => "APAGADO por defecto (requiere habilitación expresa)",
     }
 }
 
