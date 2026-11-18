@@ -8,6 +8,28 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Controles en chat privado y grupos autenticados (alpha)
+
+El control remoto ya respondió en WhatsApp al propietario con `=/>status`
+y `=/>on`. El chat privado propio se reserva desde ahora a los
+ajustes globales del socket; `menu/help/start/add/add++` son
+comandos de ámbito grupal. El proveedor verifica `from_me`, el
+PN/LID real del cliente, el chat `@g.us` y el remitente propio.
+El destino grupal queda firmado en el HMAC; el controlador determina
+el grupo por ese dato autenticado, sin aceptar IDs en texto como
+prueba de permisos. El controlador del socket no arranca Bot-Matter.
+`=/>group on/off/inherit/status` afecta únicamente a ese grupo;
+el encendido general `=/>on/off` sigue siendo privado.
+
+`=/>set role <PN/LID> <rango>` es control privado del socket.
+`=/>group role <PN/LID> <rango>` es una asignación específica
+del grupo, todavía no una delegación de ejecución. Los rangos no
+pertenecen al escalafón de administración del proyecto. `user`
+es implícito; el almacén local persiste solamente asignaciones
+no predeterminadas. Falta la publicación cifrada autenticada en
+Vault-Matter y su recuperación; no asumir persistencia remota.
+Las pruebas de grupos reales siguen pendientes en esta revisión.
+
 ## Corrección de identidad PN/LID autenticada (alpha)
 
 La sesión vinculada se identifica ahora mediante `ctx.client.pn()` y
