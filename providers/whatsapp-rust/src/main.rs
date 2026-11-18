@@ -468,6 +468,8 @@ async fn main() -> Result<()> {
                             // Only a verified owner-authored private/group event
                             // may receive an authorized response. No reply is sent
                             // for disabled bot functions or unauthorized senders.
+                            let ipc_already_templated =
+                                matches!(&ack, ControlAck::AppliedWithMessage(_));
                             let debug_requested = frame.text.ends_with(" --debug");
                             let actual_command = frame.text
                                 .strip_suffix(" --debug")
@@ -522,13 +524,23 @@ async fn main() -> Result<()> {
                             } else {
                                 response
                             };
-                            // The provider's live REGISTER/recovery previews use
-                            // the same external template renderer as IPC replies.
-                            let response = match render_provider_control(&response) {
-                                Ok(formatted) => formatted,
-                                Err(_) => {
-                                    eprintln!("Base-Matter: control response rejected by theme");
-                                    return;
+                            // The IPC already used the verified chat's selected
+                            // template. Never overwrite a customized group layout
+                            // with the provider's fallback frame. Only responses
+                            // generated here (REGISTER/recovery/fallback) need it.
+                            let provider_generated =
+                                actual_command == "=/>start"
+                                    || actual_command == "=/>add++"
+                                    || actual_command.starts_with("=/>add++ snapshot ");
+                            let response = if ipc_already_templated && !provider_generated {
+                                response
+                            } else {
+                                match render_provider_control(&response) {
+                                    Ok(formatted) => formatted,
+                                    Err(_) => {
+                                        eprintln!("Base-Matter: control response rejected by theme");
+                                        return;
+                                    }
                                 }
                             };
                             if ctx.reply(response).await.is_err() {
