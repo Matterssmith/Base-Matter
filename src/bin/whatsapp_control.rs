@@ -273,25 +273,21 @@ fn main() -> Result<()> {
         let records = audit_store.audit_history(context.socket_id, context.actor_id)?;
         Ok(format!("Base-Matter: auditoría del socket, {} registros locales. Vault-Matter aún no sincronizado.", records.len()))
     })?;
-    let style = Arc::new(ControlThemes::new(ControlTheme::new(
-        "Base-Matter",
-        "base-matter",
-        "✦",
-    )?));
+    let default_theme = ControlTheme::new("Base-Matter", "base-matter", "✦")?;
+    let style = Arc::new(ControlThemes::new(default_theme.clone()));
     let menu_theme = Arc::clone(&style);
     extensions.register("menu", &["menú"], move |context, args| {
-        let section = match args {
-            [] => "menu".to_owned(),
-            [category] if category.len() <= 32 => format!("menu {category}"),
-            _ => bail!("Menu accepts at most one category"),
-        };
-        menu_theme.render(context.group_id, &section)
+        if !args.is_empty() {
+            bail!("Global control menu has no categories");
+        }
+        menu_theme.render(context.group_id, "menu")
     })?;
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
             .with_control_extensions(extensions)
             .with_public_menu(Arc::clone(&style))
-            .with_silent_bot_commands(),
+            .with_silent_bot_commands()
+            .with_unified_live_controls(),
     );
     let bridge = Arc::new(WhatsAppControlBridge::new(
         WhatsAppBridgeConfig {
@@ -303,7 +299,7 @@ fn main() -> Result<()> {
         replay,
         dispatcher,
     )?);
-    let service = WhatsAppControlIpc::new(bridge);
+    let service = WhatsAppControlIpc::new(bridge).with_theme(default_theme);
     println!("Base-Matter owner control listening on local loopback.");
     service.serve(bind)
 }
