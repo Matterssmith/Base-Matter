@@ -72,7 +72,7 @@ lector de solo lectura y deniega todo permiso no confirmado.
 La identidad propietaria original puede seguir apagando el socket
 sin depender de un rango delegable.
 
-## Controles en chat privado y grupos autenticados (alpha)
+## Archivo histórico — División privado/grupo anterior (sustituida por BOT_POLICY_V2)
 
 El control remoto ya respondió en WhatsApp al propietario con `=/>status`
 y `=/>on`. El chat privado propio se reserva desde ahora a los
