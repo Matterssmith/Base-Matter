@@ -84,6 +84,18 @@ fn rejects_untrusted_member_identity_and_file_edits() {
     fs::remove_dir_all(dir).unwrap();
 }
 
+fn provider_binary() -> std::path::PathBuf {
+    // Cargo does not always export this while compiling all targets.
+    // Prefer the compile-time value when present, otherwise resolve it
+    // from the integration test's runtime environment.
+    option_env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider")
+        .map(Into::into)
+        .or_else(|| {
+            std::env::var_os("CARGO_BIN_EXE_whatsapp-matter-rust-provider").map(Into::into)
+        })
+        .expect("Cargo did not supply the WhatsApp Rust provider binary")
+}
+
 #[test]
 fn offline_cli_verifies_archive_without_starting_whatsapp() {
     use std::process::Command;
@@ -94,7 +106,7 @@ fn offline_cli_verifies_archive_without_starting_whatsapp() {
     let file = save_encrypted(&db, &key, &snapshot).unwrap();
     let filename = file.file_name().unwrap().to_string_lossy().into_owned();
 
-    let binary = env!("CARGO_BIN_EXE_whatsapp-matter-rust-provider");
+    let binary = provider_binary();
     let mut command = Command::new(binary);
     command
         .arg("--recovery-verify")
