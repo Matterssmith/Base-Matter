@@ -244,8 +244,19 @@ fn signed_group_status_tracks_global_defaults_and_exact_group_override() {
         bridge.ingest(&status).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::GroupStatus {
             group_id: group.into(),
+            enabled: false,
+            source: matter_base::activation::ActivationSource::None,
+        })
+    );
+    bridge.ingest(&frame("chat-kind-on", "=/>bot group on")).unwrap();
+    status.message_id = "chat-status-enabled".into();
+    sign(&mut status, &SECRET);
+    assert_eq!(
+        bridge.ingest(&status).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::GroupStatus {
+            group_id: group.into(),
             enabled: true,
-            source: matter_base::activation::ActivationSource::Socket,
+            source: matter_base::activation::ActivationSource::Group,
         })
     );
 
