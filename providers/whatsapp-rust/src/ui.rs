@@ -6,8 +6,8 @@
  */
 use anyhow::{bail, Result};
 use buffa::MessageField;
-use whatsapp_rust::prelude::wa;
 use wa::message::interactive_response_message::InteractiveResponseMessage as NativeResponse;
+use whatsapp_rust::prelude::wa;
 
 const MAX_MENU_BYTES: usize = 3200;
 const BUTTONS: [(&str, &str, &str); 3] = [

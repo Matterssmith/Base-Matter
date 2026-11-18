@@ -20,6 +20,14 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Formato de importación en proveedor (alpha)
+
+El CI de `3178e32` detectó un único orden de imports distinto
+del solicitado por Rustfmt en `providers/whatsapp-rust/src/ui.rs`.
+Se aplicó la disposición exacta. No hay cambios de API, seguridad,
+estilo, botones, HTML ni sesión. El resto de la suite se validará
+sobre el nuevo SHA. Ambos README revisados y actualizados (2/2).
+
 ## 2026-11-18 — Clippy del proveedor NativeFlow (alpha)
 
 El CI `44379206555` sobre `d6dd6f1` pasó formato, compilación y

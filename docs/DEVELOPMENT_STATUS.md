@@ -1,3 +1,10 @@
+## 2026-11-18 — Rustfmt de alias NativeFlow (alpha)
+
+La verificación `44380170502` detectó exclusivamente orden
+de imports en `ui.rs` antes de los demás pasos. Corrección
+puntual realizada, sin tocar permisos ni sesiones. READMEs
+auditados 2/2, actualizados 2/2. Repetir CI de SHA exacto.
+
 ## 2026-11-18 — Corrección estricta de Clippy en NativeFlow (alpha)
 
 `44379206555` pasó compilación, tests offline y tres pruebas de

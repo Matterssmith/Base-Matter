@@ -1,3 +1,9 @@
+## Ajuste de orden de imports NativeFlow (alpha)
+
+El paso rustfmt en `3178e32` exigió ordenar el alias
+`NativeResponse` y `wa`. Corregido siguiendo el diff de CI.
+Sin modificaciones de lógica y sujeto a CI completo en el nuevo SHA.
+
 ## Ajuste de Clippy para el experimento NativeFlow (alpha)
 
 En la revisión `d6dd6f1`, las pruebas nativas y el convertidor de
