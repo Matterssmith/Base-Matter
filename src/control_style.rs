@@ -42,9 +42,21 @@ impl ControlTheme {
     /// Render a verified, bounded reply. Refuse suspicious control chars;
     /// never reinterpret literal command text or authorize an operation.
     pub fn decorate(&self, body: &str) -> Result<String> {
-        const DEFAULT_HEADER: &str = "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*";
-        const CREDIT: &str = "Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].";
-        if body.starts_with(DEFAULT_HEADER) && body.trim_end().ends_with(CREDIT) {
+        // Repeated rendering of a preformatted menu/preview must be
+        // idempotent even for an authorized, non-default theme.
+        let (prefix, suffix) = self
+            .template
+            .split_once("{{BODY}}")
+            .ok_or_else(|| anyhow!("Invalid control template"))?;
+        let replace_fields = |part: &str| {
+            part.replace("{{TITLE}}", &self.title)
+                .replace("{{ACCENT}}", &self.accent)
+        };
+        let rendered_prefix = replace_fields(prefix);
+        let rendered_suffix = replace_fields(suffix);
+        if body.starts_with(&rendered_prefix)
+            && body.trim_end().ends_with(rendered_suffix.trim_end())
+        {
             return Ok(body.to_owned());
         }
         if body.is_empty()
@@ -114,7 +126,7 @@ impl ControlThemes {
         Ok(())
     }
 
-    pub fn render(&self, community_id: Option<&str>, section: &str) -> Result<String> {
+    fn selected(&self, community_id: Option<&str>) -> Result<ControlTheme> {
         let selected = if let Some(community_id) = community_id {
             validate_community_id(community_id)?;
             self.communities
@@ -125,9 +137,17 @@ impl ControlThemes {
         } else {
             None
         };
-        selected
-            .unwrap_or_else(|| self.fallback.clone())
-            .render(section)
+        Ok(selected.unwrap_or_else(|| self.fallback.clone()))
+    }
+
+    /// One theme selection for every successful command response,
+    /// not only the menu. The caller must supply a VERIFIED chat scope.
+    pub fn decorate(&self, community_id: Option<&str>, body: &str) -> Result<String> {
+        self.selected(community_id)?.decorate(body)
+    }
+
+    pub fn render(&self, community_id: Option<&str>, section: &str) -> Result<String> {
+        self.selected(community_id)?.render(section)
     }
 }
 
