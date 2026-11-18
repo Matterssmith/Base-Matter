@@ -247,7 +247,7 @@ fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
         if outcome == "applied" {
             assert!(response["message"].as_str().is_some_and(|text| {
                 text.starts_with("╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹")
-                    && text.contains("Base-Matter: política del bot")
+                    && text.contains("Política del bot para")
                     && text.contains("\n")
                     && !text.contains("\\n")
             }));
