@@ -91,6 +91,19 @@ Preserve socket isolation and persist/audit administrative changes atomically.
   histories. Operate from a single Git clone and shared Cargo build
   cache in the owner's one-terminal environment. Preserve sessions.
 
+## Safety invariant: external chat surfaces default OFF
+
+The `group`, external `private`, and `channel` kinds must remain
+disabled unless the verified socket owner explicitly enables that kind
+or an exact supported chat scope. A socket-wide `--global on`
+**must not** make all joined groups or unknown private DMs respond
+automatically. `inherit` removes an override, falling back to the
+kind default; missing kind default means deny. The owner's own
+private self-chat uses a separate `kind:self` scope and can
+inherit the socket fallback. Never conflate external-private
+with self-chat settings. New regression tests must prove default
+denial even when the socket-global policy is enabled.
+
 ## Verified-public-read exception (alpha; identity boundary)
 
 The earlier owner-only HMAC path remains exclusive for mutations.
