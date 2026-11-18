@@ -8,6 +8,22 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Respuestas propias y plantilla seleccionada de cada chat (alpha)
+
+La respuesta de `WhatsAppControlIpc` llega ya renderizada con la
+plantilla del chat verificado. El proceso `whatsapp-rust` conserva
+esa respuesta y **no impone encima el diseño predeterminado**.
+Para informes generados directamente en el proveedor (REGISTER,
+recuperación comunitaria y respuestas de reserva), utiliza
+`render_provider_control`, que carga exactamente el mismo
+archivo de plantilla y nunca otra variante escrita dentro de
+los handlers.
+
+La prueba nueva `tests/whatsapp_theme_scopes.rs` verifica en
+el núcleo la salida por grupo, con créditos y saltos de línea
+reales. Falta probarlo con el binario WhatsApp conectado.
+No se cambian SQLite, pairing code, claves ni sesiones.
+
 ## Contrato WhatsApp actual: un solo comando y una sola plantilla (alpha)
 
 Los comandos `=/>on/off` se han retirado del proveedor y del puente
