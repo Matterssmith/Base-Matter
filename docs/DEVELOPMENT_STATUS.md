@@ -1,3 +1,11 @@
+## 2026-11-18 — Instalación única y compilaciones compartidas (alpha; prueba Debian pendiente)
+
+- El operador informó agotamiento de disco al clonar/compilar alpha, beta y stable por separado y retiró el entorno local.
+- Corregida en el lanzador alpha la ruta del controlador para que respete `CARGO_TARGET_DIR` absoluto; antes asumía `$root/target` y fallaba al compartir compilaciones.
+- Preparación recomendada: un único clon Git con cambios de rama secuenciales, CARGO_HOME común y un único directorio target, sin perder las sesiones separadas por rama.
+- Compilación liviana recomendada: sin debug e incremental, limitada por trabajos en paralelo. Cambiar de rama con provider parado; el lanzador está disponible solo en alpha.
+- Revisados ambos README y actualizada esta bitácora. CI, ejecución Debian y sesión WhatsApp real siguen pendientes. Ningún código experimental promovido a beta ni stable.
+
 ## 2026-11-18 — Recuperación del arranque WhatsApp Rust (alpha; ejecución Debian y CI pendientes)
 
 - Comparados los tres ZIP aportados: `Matter-Base-matter-1.zip` incluye el arranque Rust directo y el `#ping` de prueba; los otros dos no constituyen ese punto de recuperación.
