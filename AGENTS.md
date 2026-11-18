@@ -4,6 +4,27 @@ Read `docs/DEVELOPMENT_STATUS.md`, the root README and architecture before work.
 Inspect actual code, Git status, branch, ignored files and applicable nested instructions.
 Do not assume a past report is current. Preserve useful existing implementations.
 
+### Invariante de plantilla por chat (alpha; 2026-11-18)
+
+El registro `ControlThemes` debe compartirse entre el menú y el
+IPC. El identificador del chat solo se usa para seleccionar estilo
+**después** de que el puente valide HMAC, ámbito, actor y replay.
+Cada resultado con texto —incluidos estado, políticas, auditoría,
+ayuda y previsualizaciones— se representa mediante el renderizador
+de `src/control_style.rs`. No insertar marcos Unicode directamente
+en cada comando. El proveedor `whatsapp-rust` **no** aplica otra
+plantilla a un mensaje ya formateado por IPC, aunque tenga tema
+de grupo distinto. La ruta de salida comprueba longitud y controles
+antes del reconocimiento idempotente del tema.
+
+La plantilla de estilo por grupo puede configurarse mediante
+`ControlThemes::set_community` con `ControlTheme::with_template`
+validado; todavía no hay comando persistente `=/>set style`,
+y no debe afirmarse lo contrario. `community` en las políticas
+de activación es un tipo de chat distinto del ámbito de
+personalización de temas; su encendido sigue sin aplicarse
+sin metadatos atestiguados de WhatsApp.
+
 ## Contrato prioritario del propietario — 2026-11-18 (sustituye comandos anteriores)
 
 - En WhatsApp, **solo `=/>bot on/off/inherit`** gestiona la activación. Retirar
