@@ -8,6 +8,20 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Resultado comunicado del proveedor Rust — 2026-11-18
+
+El operador ejecutó la suite independiente del proveedor después
+de corregir el ingreso nativo. Pasaron **21 pruebas**:
+una del ejecutable principal, dieciséis de `tests/provider.rs`,
+tres de recuperación y una de REGISTER. El bloqueo restante
+reportado fue `clippy::type_complexity` del **núcleo Base**,
+no una prueba fallida del proveedor.
+
+La corrección sustituye la tupla de seis políticas por una
+estructura Rust nombrada, sin alterar el protocolo HMAC,
+las sesiones SQLite, pairing code ni las plantillas WhatsApp.
+Falta la nueva ejecución de Clippy de ambos paquetes.
+
 ## Revisión del ingreso nativo (alpha; suite completa pendiente)
 
 La suite Base identificó un caso donde `=/>on` retirado y
