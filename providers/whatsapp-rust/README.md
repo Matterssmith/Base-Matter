@@ -8,6 +8,31 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Contratos recientes de chat, estado y silencio (alpha; build Debian pendiente)
+
+La sesión real ya respondió comandos de propietario dentro de un
+grupo, pero dejó claro que `PoweredOff` significa socket apagado,
+no fallo de la política grupal. En alpha se incorporaron
+`=/>status` (contexto actual), `=/>status --global`
+(predeterminados), `=/>bot on/off/inherit` (chat),
+`=/>bot group/private/channel on/off/inherit` (tipos) y
+`=/>bot --global on/off/inherit` (socket).
+
+`=/>menu` / `=/>menú` muestra un diseño Matterssmith propio por
+categorías al habilitar el bot. Los comandos normales, el menú y
+la ayuda de `bot` no responden cuando la política está apagada;
+`status` sigue disponible. `=/>help` y `=/>h` se retiraron.
+El proveedor acepta un acuse `ignored` auténtico y no lo responde
+en WhatsApp. El límite acotado de respuestas IPC se amplió para
+incluir el menú decorativo y `--debug` sin cargar datos secretos.
+
+**Límite de seguridad:** `from_me` y PN/LID solo autorizan al
+propietario vinculado; no abrir mensajes de otros usuarios
+suplantando su identidad. El soporte de canales y privados
+externos exige un nuevo ingreso autenticado. La conexión con
+Vault-Matter y `selfmod` aún no están instalados.
+Ver `../../docs/BOT_POLICY_V2.md`.
+
 ## Pruebas offline del binario y recuperación (alpha)
 
 La suite del proveedor se ejecuta de forma independiente al núcleo:
