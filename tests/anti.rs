@@ -21,14 +21,20 @@ fn all_anti_rules_are_disabled_until_explicitly_configured() {
     for rule in RULES {
         assert_eq!(store.get_global(SOCKET, rule).unwrap().enabled, false);
         assert_eq!(store.get(SOCKET, GROUP, rule).unwrap().enabled, false);
-        assert_eq!(store.get(SOCKET, GROUP, rule).unwrap().action, AntiAction::Warn);
+        assert_eq!(
+            store.get(SOCKET, GROUP, rule).unwrap().action,
+            AntiAction::Warn
+        );
     }
     let inventory = store.command(SOCKET, Some(GROUP), &[]).unwrap();
     assert!(inventory.contains("Antis del grupo"));
     assert!(inventory.contains("status: off [warn]"));
     assert!(inventory.contains("oneview: off [warn]"));
     assert!(inventory.contains("sticker: off [warn]"));
-    assert!(store.command(SOCKET, None, &[]).unwrap().contains("socket global"));
+    assert!(store
+        .command(SOCKET, None, &[])
+        .unwrap()
+        .contains("socket global"));
 }
 
 #[test]
@@ -52,9 +58,7 @@ fn anti_status_means_whatsapp_group_status_not_list_all_antis() {
         "status: on [warn]"
     );
     assert_eq!(store.get(SOCKET, GROUP, "oneview").unwrap().enabled, false);
-    let global = store
-        .command(SOCKET, None, &args(&["status"]))
-        .unwrap();
+    let global = store.command(SOCKET, None, &args(&["status"])).unwrap();
     assert_eq!(global, "status: off [warn]");
 }
 
@@ -88,24 +92,32 @@ fn actions_are_persisted_independently_from_activation_and_never_moderate() {
     ));
     {
         let store = AntiStore::open(&path).unwrap();
-        assert!(store
-            .set_action(SOCKET, Some(GROUP), "movie", "delete")
-            .unwrap()
-            .contains("sin moderación")
-            || store
-                .command(SOCKET, Some(GROUP), &args(&["movie"]))
+        assert!(
+            store
+                .set_action(SOCKET, Some(GROUP), "movie", "delete")
                 .unwrap()
-                .contains("[delete]"));
+                .contains("sin moderación")
+                || store
+                    .command(SOCKET, Some(GROUP), &args(&["movie"]))
+                    .unwrap()
+                    .contains("[delete]")
+        );
         assert!(!store.get(SOCKET, GROUP, "movie").unwrap().enabled);
         store
             .command(SOCKET, Some(GROUP), &args(&["movie", "on"]))
             .unwrap();
-        assert!(store.inspect_links(SOCKET, GROUP, "https://youtube.com").unwrap().is_empty());
+        assert!(store
+            .inspect_links(SOCKET, GROUP, "https://youtube.com")
+            .unwrap()
+            .is_empty());
     }
     {
         let store = AntiStore::open(&path).unwrap();
         assert!(store.get(SOCKET, GROUP, "movie").unwrap().enabled);
-        assert_eq!(store.get(SOCKET, GROUP, "movie").unwrap().action, AntiAction::Delete);
+        assert_eq!(
+            store.get(SOCKET, GROUP, "movie").unwrap().action,
+            AntiAction::Delete
+        );
     }
     std::fs::remove_file(path).unwrap();
 }
@@ -135,7 +147,9 @@ fn link_detection_is_passive_and_uses_exact_domain_boundaries() {
 fn untrusted_groups_and_unknown_filters_are_rejected() {
     let store = AntiStore::open(":memory:").unwrap();
     assert!(store.command(SOCKET, Some("../fake"), &[]).is_err());
-    assert!(store.command(SOCKET, Some(GROUP), &args(&["unknown"])).is_err());
+    assert!(store
+        .command(SOCKET, Some(GROUP), &args(&["unknown"]))
+        .is_err());
     assert!(store
         .set_action(SOCKET, Some(GROUP), "link", "execute-shell")
         .is_err());

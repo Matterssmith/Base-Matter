@@ -91,7 +91,9 @@ pub struct AntiStore {
 fn valid_socket(socket: &str) -> Result<()> {
     if socket.is_empty()
         || socket.len() > 128
-        || !socket.bytes().all(|c| c.is_ascii_alphanumeric() || b"._:-".contains(&c))
+        || !socket
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || b"._:-".contains(&c))
     {
         bail!("Socket inválido");
     }
@@ -101,10 +103,14 @@ fn valid_socket(socket: &str) -> Result<()> {
 fn valid_scope(socket: &str, group: &str) -> Result<()> {
     if socket.is_empty()
         || socket.len() > 128
-        || !socket.bytes().all(|c| c.is_ascii_alphanumeric() || b"._:-".contains(&c))
+        || !socket
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || b"._:-".contains(&c))
         || group.len() > 128
         || !group.ends_with("@g.us")
-        || !group.bytes().all(|c| c.is_ascii_alphanumeric() || b"@._:-".contains(&c))
+        || !group
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || b"@._:-".contains(&c))
     {
         bail!("Ámbito de grupo no verificado");
     }
@@ -150,7 +156,10 @@ pub fn canonical_rule(rule: &str) -> Result<&'static str> {
         "delete" => "antidelete",
         other => other,
     };
-    RULES.iter().copied().find(|value| *value == key)
+    RULES
+        .iter()
+        .copied()
+        .find(|value| *value == key)
         .ok_or_else(|| anyhow!("Protección desconocida"))
 }
 
@@ -227,7 +236,10 @@ impl AntiStore {
         valid_scope(socket, group)?;
         let rule = canonical_rule(name)?;
         let group_value = {
-            let db = self.db.lock().map_err(|_| anyhow!("Protecciones no disponibles"))?;
+            let db = self
+                .db
+                .lock()
+                .map_err(|_| anyhow!("Protecciones no disponibles"))?;
             db.query_row(
                 "SELECT enabled, action FROM group_anti_rules
                  WHERE socket_id=?1 AND group_jid=?2 AND rule=?3",
@@ -255,21 +267,36 @@ impl AntiStore {
     pub fn get_global(&self, socket: &str, name: &str) -> Result<AntiRule> {
         valid_socket(socket)?;
         let rule = canonical_rule(name)?;
-        let db = self.db.lock().map_err(|_| anyhow!("Protecciones no disponibles"))?;
-        let row = db.query_row(
-            "SELECT enabled, action FROM socket_anti_defaults
+        let db = self
+            .db
+            .lock()
+            .map_err(|_| anyhow!("Protecciones no disponibles"))?;
+        let row = db
+            .query_row(
+                "SELECT enabled, action FROM socket_anti_defaults
              WHERE socket_id=?1 AND rule=?2",
-            params![socket, rule],
-            |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)),
-        ).optional()?;
+                params![socket, rule],
+                |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)),
+            )
+            .optional()?;
         match row {
             Some(value) => Self::decode(value),
-            None => Ok(AntiRule { enabled: false, action: AntiAction::Warn }),
+            None => Ok(AntiRule {
+                enabled: false,
+                action: AntiAction::Warn,
+            }),
         }
     }
 
     /// Writes are atomic with an immutable, bounded audit entry.
-    fn set(&self, socket: &str, group: Option<&str>, name: &str, enabled: Option<bool>, action: Option<AntiAction>) -> Result<AntiRule> {
+    fn set(
+        &self,
+        socket: &str,
+        group: Option<&str>,
+        name: &str,
+        enabled: Option<bool>,
+        action: Option<AntiAction>,
+    ) -> Result<AntiRule> {
         valid_socket(socket)?;
         if let Some(group) = group {
             valid_scope(socket, group)?;
@@ -284,7 +311,10 @@ impl AntiStore {
             enabled: enabled.unwrap_or(previous.enabled),
             action: action.unwrap_or(previous.action),
         };
-        let mut db = self.db.lock().map_err(|_| anyhow!("Protecciones no disponibles"))?;
+        let mut db = self
+            .db
+            .lock()
+            .map_err(|_| anyhow!("Protecciones no disponibles"))?;
         let tx = db.transaction()?;
         if let Some(group) = group {
             tx.execute(
@@ -292,7 +322,13 @@ impl AntiStore {
                  VALUES(?1,?2,?3,?4,?5)
                  ON CONFLICT(socket_id,group_jid,rule)
                  DO UPDATE SET enabled=excluded.enabled, action=excluded.action",
-                params![socket, group, rule, i64::from(selected.enabled), selected.action.as_str()],
+                params![
+                    socket,
+                    group,
+                    rule,
+                    i64::from(selected.enabled),
+                    selected.action.as_str()
+                ],
             )?;
         } else {
             tx.execute(
@@ -300,7 +336,12 @@ impl AntiStore {
                  VALUES(?1,?2,?3,?4)
                  ON CONFLICT(socket_id,rule)
                  DO UPDATE SET enabled=excluded.enabled, action=excluded.action",
-                params![socket, rule, i64::from(selected.enabled), selected.action.as_str()],
+                params![
+                    socket,
+                    rule,
+                    i64::from(selected.enabled),
+                    selected.action.as_str()
+                ],
             )?;
         }
         tx.execute(
@@ -310,7 +351,11 @@ impl AntiStore {
                 socket,
                 group.unwrap_or("@global"),
                 rule,
-                format!("enabled={};action={}", selected.enabled, selected.action.as_str())
+                format!(
+                    "enabled={};action={}",
+                    selected.enabled,
+                    selected.action.as_str()
+                )
             ],
         )?;
         tx.commit()?;
@@ -321,7 +366,10 @@ impl AntiStore {
     pub fn inherit(&self, socket: &str, group: &str, name: &str) -> Result<AntiRule> {
         valid_scope(socket, group)?;
         let rule = canonical_rule(name)?;
-        let mut db = self.db.lock().map_err(|_| anyhow!("Protecciones no disponibles"))?;
+        let mut db = self
+            .db
+            .lock()
+            .map_err(|_| anyhow!("Protecciones no disponibles"))?;
         let tx = db.transaction()?;
         tx.execute(
             "DELETE FROM group_anti_rules WHERE socket_id=?1 AND group_jid=?2 AND rule=?3",
@@ -356,7 +404,11 @@ impl AntiStore {
         for rule in RULES {
             lines.push(self.display(socket, group, rule)?);
         }
-        let scope = if group.is_some() { "grupo" } else { "socket global" };
+        let scope = if group.is_some() {
+            "grupo"
+        } else {
+            "socket global"
+        };
         Ok(format!(
             "Antis del {scope} (solo configuración; moderación automática no conectada):\n{}",
             lines.join("\n")
@@ -397,7 +449,13 @@ impl AntiStore {
         }
     }
 
-    pub fn set_action(&self, socket: &str, group: Option<&str>, name: &str, action: &str) -> Result<String> {
+    pub fn set_action(
+        &self,
+        socket: &str,
+        group: Option<&str>,
+        name: &str,
+        action: &str,
+    ) -> Result<String> {
         let selected = self.set(socket, group, name, None, Some(AntiAction::parse(action)?))?;
         Ok(format!(
             "{}: acción {} guardada; moderación automática pendiente.",
@@ -410,23 +468,37 @@ impl AntiStore {
     /// Broader message/media protections require verified metadata.
     pub fn inspect_links(&self, socket: &str, group: &str, text: &str) -> Result<Vec<AntiFinding>> {
         valid_scope(socket, group)?;
-        if text.len() > 4096 { bail!("Mensaje excede límite"); }
+        if text.len() > 4096 {
+            bail!("Mensaje excede límite");
+        }
         let lowered = text.to_ascii_lowercase();
         let mut domains = Vec::new();
         for word in lowered.split_whitespace() {
             let w = word.trim_matches(|c: char| "<>()[]{}'\",;!".contains(c));
-            let after = w.strip_prefix("https://").or_else(|| w.strip_prefix("http://"));
+            let after = w
+                .strip_prefix("https://")
+                .or_else(|| w.strip_prefix("http://"));
             if let Some(host) = after.and_then(|s| s.split('/').next()) {
                 let host = host.split('?').next().unwrap_or("");
                 let host = host.split(':').next().unwrap_or("");
-                if host.is_empty() || host.len() > 253 || !host.contains('.') || !host.bytes().all(|b| b.is_ascii_alphanumeric() || b".-".contains(&b)) { continue; }
+                if host.is_empty()
+                    || host.len() > 253
+                    || !host.contains('.')
+                    || !host
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b".-".contains(&b))
+                {
+                    continue;
+                }
                 domains.push(host.to_owned());
             }
         }
         let mut found = Vec::new();
         for name in RULES.iter().copied().filter(|s| s.starts_with("antilink")) {
             let rule = self.get(socket, group, name)?;
-            if !rule.enabled { continue; }
+            if !rule.enabled {
+                continue;
+            }
             let relevant = domains.iter().any(|host| {
                 let suffix = |name: &str| host == name || host.ends_with(&format!(".{name}"));
                 match name {
@@ -445,7 +517,10 @@ impl AntiStore {
                 }
             });
             if relevant {
-                found.push(AntiFinding { rule: name, requested_action: rule.action });
+                found.push(AntiFinding {
+                    rule: name,
+                    requested_action: rule.action,
+                });
             }
         }
         Ok(found)

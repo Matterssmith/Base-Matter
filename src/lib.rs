@@ -13,8 +13,8 @@
  */
 
 pub mod activation;
-pub mod anti;
 pub mod add_commands;
+pub mod anti;
 pub mod authorization;
 pub mod bots;
 pub mod command_audit;

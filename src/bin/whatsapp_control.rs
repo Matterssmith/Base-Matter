@@ -213,7 +213,9 @@ fn main() -> Result<()> {
     let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot))?);
     // Isolated from activation, replay and WhatsApp session SQLite databases.
     // A missing anti database is created privately with every rule disabled.
-    let antis = Arc::new(AntiStore::open(activation_path.with_extension("anti.sqlite"))?);
+    let antis = Arc::new(AntiStore::open(
+        activation_path.with_extension("anti.sqlite"),
+    )?);
     let extensions = Arc::new(ControlExtensionRegistry::new());
     // A signed, socket-owner-authorized request for live provider discovery.
     // Mutations are intentionally unsupported in this alpha checkpoint.

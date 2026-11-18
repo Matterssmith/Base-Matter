@@ -8,6 +8,14 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Corrección de verificación Rust (alpha; 2026-11-18)
+
+El último CI (`6142c6c`) falló por formato de la plantilla compartida
+`src/control_style.rs` en la comprobación del proveedor, no por errores
+verificados de emparejamiento. El mismo cambio también corrige el formato
+del núcleo y la prueba desactualizada de créditos. Falta nuevo CI sobre el
+SHA exacto y prueba real de WhatsApp antes de declarar esta revisión estable.
+
 ## Clippy: segundo consumidor del snapshot (alpha)
 
 En la nueva verificación de `alpha`, Clippy del núcleo se detuvo

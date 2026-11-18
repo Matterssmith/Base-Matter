@@ -20,6 +20,13 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Corrección de CI para antis y créditos (alpha; ejecución pendiente)
+
+- La ejecución de GitHub Actions del commit `6142c6c` detectó formato Rust pendiente en seis archivos, incluido el módulo de protecciones y la plantilla compartida.
+- La suite Windows detectó una prueba de `=/>credits` desactualizada. Se mantiene el crédito obligatorio `Hecho por Lournyx Matterssmith [Lou-Nyx].` y la atribución explícita de fundadora y creadora, sin atribuir rangos no verificados a colaboradores.
+- Se normalizaron las diferencias publicadas por Rustfmt y se actualizó la expectativa estricta de la prueba. **CI aún no verificado para este cambio**; no se promueve a `beta` ni `stable`.
+- El almacenamiento/configuración `anti` está en fase de prueba: la moderación automática no está conectada al flujo real de mensajes. No se afirma funcionamiento operativo de expulsión/borrado ni se habilita por defecto.
+
 ## 2026-11-18 — Menú global compacto, créditos explícitos y referencias Aura/YoSoyYo (alpha)
 
 Tras la validación local íntegra del operador en `61b45ee`

@@ -27,8 +27,7 @@ impl ControlTheme {
             title: title.to_owned(),
             bot_id: bot_id.to_owned(),
             accent: accent.to_owned(),
-            template: include_str!("../templates/matterssmith-control.txt")
-                .replace("\r\n", "\n"),
+            template: include_str!("../templates/matterssmith-control.txt").replace("\r\n", "\n"),
         })
     }
 
@@ -88,9 +87,7 @@ impl ControlTheme {
         }
         // Git working trees on Windows may use CRLF. Normalize trusted
         // static templates before enforcing WhatsApp's control-char bounds.
-        self.decorate(
-            &include_str!("../templates/matterssmith-menu.txt").replace("\r\n", "\n"),
-        )
+        self.decorate(&include_str!("../templates/matterssmith-menu.txt").replace("\r\n", "\n"))
     }
 }
 

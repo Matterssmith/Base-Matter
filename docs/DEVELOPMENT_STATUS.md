@@ -1,3 +1,19 @@
+## 2026-11-18 — Reparación de CI de antis/créditos en alpha (pendiente verificación)
+
+- Diagnóstico GitHub Actions sobre `6142c6c`: las comprobaciones de formato fallaron
+  en `src/bin/whatsapp_control.rs`, `src/anti.rs`, `src/control.rs`,
+  `src/control_style.rs`, `src/lib.rs` y `tests/anti.rs`.
+- Windows terminó la compilación y detectó fallo de expectativa obsoleta
+  en `tests/live_unified_controls.rs::credits_are_explicit_and_do_not_turn_on_any_chat`.
+- Aplicados los cambios de formato emitidos por Rustfmt, unificado el texto
+  de `=/>credits` con crédito exacto y fundadora, y ajustada la prueba.
+- READMEs revisados: 2 de 2 (raíz y proveedor); ambos actualizados para
+  distinguir correcciones de CI de validación final. `AGENTS.md` revisado
+  y conservado. Ninguna sesión WhatsApp ni rama beta/stable modificada.
+- **Pendientes:** confirmar CI Linux/Windows + proveedor para nuevo SHA;
+  revisar errores adicionales, probar comandos de protección sin moderación
+  destructiva y efectuar prueba autorizada de WhatsApp real. No liberar.
+
 ## 2026-11-18 — Ajuste final de respuestas y pruebas IPC (alpha)
 
 - `src/control_ipc.rs` elimina de los cuerpos de respuesta el prefijo
