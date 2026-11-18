@@ -1,5 +1,52 @@
 # Prueba WhatsApp Rust de Base-Matter — pairing code
 
+## Nuevos comandos de activación por contexto (alpha, pruebas pendientes)
+
+Los comandos `help/h` fueron eliminados. En un chat autenticado
+del propietario, `=/>status` informa el estado de política del bot
+en ese chat incluso cuando está desactivado. `=/>status --global`
+consulta el predeterminado del socket (y valores por grupo,
+privado y canal) aunque el socket esté apagado.
+
+**Primero en el chat propio:**
+
+```text
+=/>status --global
+=/>on
+=/>bot --global on
+=/>bot group on
+=/>status
+=/>menu
+=/>menu mode
+=/>status --debug
+```
+
+**Después en un grupo autorizado:**
+
+```text
+=/>status
+=/>menu
+=/>bot off
+=/>status
+=/>menu
+=/>bot inherit
+=/>status
+=/>menu
+```
+
+El `menu` enviado mientras esté apagada la política grupal
+**no debe recibir respuesta**. `status` sí responde. Si
+`status` indica `PoweredOff`, el socket operativo está apagado
+y debe encenderse desde el chat propio con `=/>on`.
+
+No usar mensajes de otros participantes como prueba de ingreso
+público: esta versión del puente solo autentica `from_me`
+del propietario. El ingreso de terceros, canales y privados
+externos, así como `self/selfmod/mod` con Vault-Matter, requiere
+nuevas implementaciones y pruebas. No cambiar sesión, DB, pairing
+ni llaves para ejecutar esta revisión.
+Ver `docs/BOT_POLICY_V2.md`.
+
 ## Procedimiento vigente en alpha: una sola terminal
 
 ```bash
