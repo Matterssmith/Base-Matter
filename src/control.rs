@@ -38,6 +38,13 @@ pub enum DispatchResult {
         granted: bool,
         changed: bool,
     },
+    SocketRoleChanged {
+        scope_id: String,
+        user_id: String,
+        role_id: String,
+        granted: bool,
+        changed: bool,
+    },
     Inactive,
     Message(Option<String>),
     Extension {
@@ -56,6 +63,7 @@ pub struct ControlDispatcher {
     router: Arc<CommandRouter>,
     global_policy: GlobalPolicy,
     roles: Option<Arc<RoleStore>>,
+    socket_roles: Option<Arc<RoleStore>>,
     extensions: Option<Arc<ControlExtensionRegistry>>,
 }
 
@@ -72,6 +80,7 @@ impl ControlDispatcher {
             router,
             global_policy: GlobalPolicy::Configured(global_default),
             roles: None,
+            socket_roles: None,
             extensions: None,
         }
     }
@@ -89,6 +98,7 @@ impl ControlDispatcher {
             router,
             global_policy: GlobalPolicy::Persisted,
             roles: None,
+            socket_roles: None,
             extensions: None,
         }
     }
@@ -97,6 +107,95 @@ impl ControlDispatcher {
     pub fn with_roles(mut self, roles: Arc<RoleStore>) -> Self {
         self.roles = Some(roles);
         self
+    }
+
+    /// Owner-administered socket/group roles, never tied to BotRegistry.
+    /// This is local durable state; encrypted Vault sync needs a separate
+    /// authenticated key provider and repository sink.
+    pub fn with_socket_roles(mut self, roles: Arc<RoleStore>) -> Self {
+        self.socket_roles = Some(roles);
+        self
+    }
+
+    fn change_socket_role(
+        &self,
+        socket: &str,
+        actor: &str,
+        group: Option<&str>,
+        subject: &str,
+        role: &str,
+        grant: bool,
+    ) -> Result<DispatchResult> {
+        const SOCKET_ROLES: &[&str] = &[
+            "co-owner", "admin", "moderator", "operator",
+            "trusted", "member", "restricted", "banned",
+        ];
+        let registry = self
+            .socket_roles
+            .as_ref()
+            .ok_or_else(|| anyhow!("Socket role controller is not configured"))?;
+        let admission = self.activation.admission(socket, None, self.global_policy)?;
+        if admission.owner_id != actor {
+            bail!("Socket owner authorization denied");
+        }
+        if role != "user" && !SOCKET_ROLES.contains(&role) {
+            bail!("Unknown socket role");
+        }
+        if !grant && role == "user" {
+            bail!("The implicit user rank cannot be explicitly removed");
+        }
+        // The authenticated socket owner chooses an explicit PN/LID identity.
+        // Display aliases and arbitrary WhatsApp names are never principals.
+        let (namespace, raw) = if let Some(phone) = subject.strip_suffix("@s.whatsapp.net") {
+            ("pn", phone)
+        } else if let Some(lid) = subject.strip_suffix("@lid") {
+            ("lid", lid)
+        } else if let Some(phone) = subject.strip_prefix("pn:") {
+            ("pn", phone)
+        } else if let Some(lid) = subject.strip_prefix("lid:") {
+            ("lid", lid)
+        } else {
+            ("pn", subject)
+        };
+        if !(8..=20).contains(&raw.len())
+            || raw.starts_with('0')
+            || !raw.bytes().all(|b| b.is_ascii_digit())
+        {
+            bail!("Socket role subject must be a numeric PN/LID identifier");
+        }
+        let principal = format!("{namespace}:{raw}");
+        let scope = if let Some(group) = group {
+            use sha2::{Digest, Sha256};
+            let mut digest = Sha256::new();
+            digest.update(socket.as_bytes());
+            digest.update([0]);
+            digest.update(group.as_bytes());
+            let hash = digest.finalize();
+            format!("group:{}", hex::encode(&hash[..16]))
+        } else {
+            format!("socket:{socket}")
+        };
+        registry.provision_scope(&scope, actor)?;
+        for role_name in SOCKET_ROLES {
+            registry.ensure_root_role(&scope, actor, role_name)?;
+        }
+        let changed = if grant {
+            registry.set_exclusive_role(
+                &scope,
+                actor,
+                &principal,
+                if role == "user" { None } else { Some(role) },
+            )?
+        } else {
+            registry.revoke(&scope, actor, &principal, role)?
+        };
+        Ok(DispatchResult::SocketRoleChanged {
+            scope_id: scope,
+            user_id: principal,
+            role_id: role.to_owned(),
+            granted: grant,
+            changed,
+        })
     }
 
     pub fn with_control_extensions(mut self, registry: Arc<ControlExtensionRegistry>) -> Self {
@@ -112,6 +211,9 @@ impl ControlDispatcher {
         role: &str,
         grant: bool,
     ) -> Result<DispatchResult> {
+        if self.socket_roles.is_some() {
+            return self.change_socket_role(socket, actor, None, user, role, grant);
+        }
         let roles = self
             .roles
             .as_ref()
@@ -183,6 +285,14 @@ impl ControlDispatcher {
                         policy,
                     });
                 }
+                ["group" | "grupo", "role" | "rango", user, role] => {
+                    let group_id = group.ok_or_else(|| {
+                        anyhow!("Group role control requires an authenticated group chat")
+                    })?;
+                    return self.change_socket_role(
+                        receiving_socket, actor, Some(group_id), user, role, true
+                    );
+                }
                 ["group" | "grupo", "status" | "estado"] => {
                     let group_id = group.ok_or_else(|| {
                         anyhow!("Group status requires an authenticated group chat")
@@ -230,6 +340,12 @@ impl ControlDispatcher {
                         source: admission.decision.source,
                         bot_instance_id: admission.bot_instance_id,
                     });
+                }
+                ["role", user, role] => {
+                    if group.is_some() {
+                        bail!("Socket role assignment requires private owner chat");
+                    }
+                    return self.change_role(receiving_socket, actor, user, role, true);
                 }
                 ["set", "role", user, role] => {
                     if group.is_some() {
