@@ -1,3 +1,27 @@
+## Experimento NativeFlow y HTML de estilo (alpha, 2026-11-18)
+
+Para una prueba controlada de botones, ejecutar en la terminal del
+operador `export MATTER_WA_NATIVE_BUTTONS=1` y luego
+`cargo run --locked` desde la raíz. Por defecto `=/>menu`
+continúa enviándose en texto, con la plantilla original.
+Con la opción activada, el proveedor intenta enviar un único
+`InteractiveMessage.NativeFlowMessage` con el cuerpo exacto del menú
+más tres `quick_reply`: Estado, Menú y Créditos. Los botones tienen
+IDs específicos solo de lectura; una selección se procesa por el mismo
+puente firmado HMAC, autorización de chat y protección antirreplay.
+Un error de envío provoca fallback al texto. No se garantiza que
+Android/iOS rendericen el proto sin un ensayo real.
+
+`src/ui.rs` permite HTML **solo como lenguaje abreviado de estilo**:
+`b/strong`, `i/em`, `s`, `code`, `br`, algunas entidades,
+sin atributos ni JavaScript, convertido a marcado de WhatsApp.
+No se crea un WebView, no se usa el tipo experimental
+`FOAHtmlPrimitiveDemoDONOTUSE`. La discriminación Android/iPhone
+no está implementada: no existe una identidad de SO autenticada en
+los eventos que recibe esta versión del proveedor.
+Ninguna función nueva envía mensajes espontáneos, cambia roles o
+activa el bot por defecto. Mantener respaldo de sesión y bloqueo.
+
 ## 2026-11-18 — Corrección de la prueba de `status --global` público
 
 El CI del proveedor sobre `ce57169` compiló y pasó 15/16 pruebas

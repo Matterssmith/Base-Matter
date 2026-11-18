@@ -1,3 +1,27 @@
+## Menú con botones experimentales — alpha 2026-11-18
+
+El menú original en texto es el valor predeterminado. Para probar la
+variante con **tres botones nativos** (`Estado`, `Menú`, `Créditos`)
+sin modificar credenciales ni SQLite, en la terminal activa como Sakura:
+
+```bash
+cd /home/Sakura/Base-Matter
+export MATTER_WA_NATIVE_BUTTONS=1
+cargo run --locked
+```
+
+El mensaje `=/>menu` se envía entonces como NativeFlow con el
+cuerpo original del menú, o como texto si el proveedor rechaza el
+envío. Las pulsaciones realizan solamente consultas. Verifica que los
+botones aparecen en Android y iPhone, que la selección devuelve una
+respuesta del controlador y que el menú de texto permanece disponible
+desactivando la variable. La versión actual **no** sabe la plataforma
+del remitente y no debe simular que filtra botones Android/iOS.
+
+HTML de estilo limitado se transforma a formato de WhatsApp; no se
+envía HTML web, CSS, JavaScript ni contenido ejecutable. No iniciar
+dos instancias de la misma sesión para comparar teléfonos.
+
 ## Corrección vigente — menú original y estado global (alpha, 2026-11-18)
 
 Desde el chat propio y desde un grupo en el que eres el remitente autenticado:

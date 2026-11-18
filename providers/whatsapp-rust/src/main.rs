@@ -16,7 +16,9 @@ use whatsapp_matter_rust_provider::{
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
-    render_provider_control, Config, ControlAck, Event, SessionLease,
+    render_provider_control,
+    ui::{native_menu_message, readonly_button_command},
+    Config, ControlAck, Event, SessionLease,
 };
 use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*};
 
@@ -368,6 +370,10 @@ async fn main() -> Result<()> {
         Some(_) => bail!("Unsupported provider operation"),
     }
     let config = Arc::new(Config::from_env()?);
+    // Opt-in until a real phone has confirmed NativeFlow rendering.
+    // No platform guessing: the same three read-only buttons are offered
+    // to every verified recipient, or the original text is sent.
+    let native_buttons = matches!(std::env::var("MATTER_WA_NATIVE_BUTTONS").as_deref(), Ok("1"));
     require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
     let database = config
@@ -431,7 +437,9 @@ async fn main() -> Result<()> {
                     chat_jid: &chat,
                     sender_jid: &sender,
                     message_id: &ctx.info.id,
-                    text: ctx.message.text_content().unwrap_or_default(),
+                    text: readonly_button_command(&ctx.message)
+                        .or_else(|| ctx.message.text_content())
+                        .unwrap_or_default(),
                     from_me: source.is_from_me,
                     is_group: source.is_group,
                     timestamp: ctx.info.timestamp.timestamp(),
@@ -543,6 +551,18 @@ async fn main() -> Result<()> {
                                     }
                                 }
                             };
+                            if native_buttons
+                                && matches!(actual_command, "=/>menu" | "=/>menú")
+                            {
+                                if let Ok(interactive) = native_menu_message(&response) {
+                                    if ctx.send_message(interactive).await.is_ok() {
+                                        return;
+                                    }
+                                }
+                                // Unsupported or rejected native buttons
+                                // must not suppress the exact original menu.
+                                eprintln!("Base-Matter: native buttons unavailable; using text menu");
+                            }
                             if ctx.reply(response).await.is_err() {
                                 eprintln!("Base-Matter control applied; chat acknowledgment unavailable");
                             }

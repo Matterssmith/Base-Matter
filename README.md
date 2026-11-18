@@ -20,6 +20,30 @@ width="100%"
 
 ---
 
+## 2026-11-18 — Botones nativos experimentales y estilo HTML mínimo (alpha)
+
+- El proveedor independiente Rust ahora tiene un constructor de
+  `NativeFlowMessage` con tres botones reales `quick_reply`:
+  Estado, Menú, Créditos. El cuerpo conserva **exactamente** el
+  diseño original Matterssmith y su crédito en un solo mensaje.
+- Las pulsaciones de botón, si el cliente las entrega como
+  `InteractiveResponseMessage`, se transforman únicamente en lecturas
+  ya autorizadas y vuelven al puente autenticado HMAC y antirreplay.
+  Ningún botón ejecuta `bot on/off` o concede rango.
+- El HTML de estilo muy breve acepta solo etiquetas conocidas
+  (negrita, cursiva, tachado, código, salto de línea) y las convierte
+  al formato de texto de WhatsApp. Rechaza scripts, atributos y enlaces
+  HTML arbitrarios; **no** envía HTML de navegador ni JavaScript.
+- Hasta disponer de prueba real, botones **apagados por defecto**.
+  Para probarlos: `export MATTER_WA_NATIVE_BUTTONS=1` antes de
+  iniciar `cargo run --locked`. Cuando el envío nativo devuelve error,
+  se envía el menú original por texto. Si el cliente ignora un mensaje
+  enviado correctamente, puede no mostrarlo: requiere validación humana.
+- No se presenta una detección fiable Android/iPhone: los tres botones
+  actuales son comunes a todos los clientes. La segmentación por SO y
+  botones específicos siguen pendientes. Solo `alpha`; no cambiar
+  `beta`/`stable` ni datos de sesión. README revisados: 2/2.
+
 ## 2026-11-18 — Regresión del proveedor tras el menú original (alpha)
 
 - GitHub Actions del primer cambio `ce57169`: núcleo Linux en verde

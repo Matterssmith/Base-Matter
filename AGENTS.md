@@ -1,5 +1,28 @@
 # Matterssmith — repository instructions
 
+## Contrato nuevo — botones NativeFlow y HTML breve (alpha, 2026-11-18)
+
+Solicitud expresa: preparar controles interactivos reales al estilo de botones
+de Telegram, conservando íntegro el menú original en **un solo mensaje**.
+El proveedor Rust `whatsapp-rust` 0.7.0 ofrece envío de protobuf
+`InteractiveMessage.NativeFlowMessage` y respuestas `quick_reply`;
+integrar sin Node y con un único proceso dueño de la sesión.
+
+El envío de NativeFlow es **opt-in** mediante
+`MATTER_WA_NATIVE_BUTTONS=1`, desactivado por defecto hasta probar
+recepción y visualización reales, con fallback texto si el envío falla.
+Los tres botones iniciales son exclusivamente
+`status`, `menu`, `credits`: toda respuesta de botón vuelve a
+pasar por la comprobación de identidad y firma HMAC de Base-Matter.
+No activar `bot on/off` ni roles mediante IDs de botón.
+
+HTML breve de estilo debe convertirse a texto WhatsApp con etiquetas
+permitidas y validación cerrada. No enviar `FOAHtmlPrimitiveDemoDONOTUSE`,
+HTML/CSS/JS ejecutable ni afirmar WebView nativo. **No se puede
+garantizar la distinción Android/iPhone por el evento actual.**
+No usar heurísticas de JID; botones específicos por sistema deberán
+esperar metadatos autenticados y pruebas en ambos clientes.
+
 ## Invariante de usuario actualizada — 2026-11-18: restaurar diseño original y alcance de status
 
 Esta instrucción expresa del propietario prevalece sobre la sección antigua de

@@ -1,3 +1,24 @@
+## 2026-11-18 — Fase UI: botones Rust y HTML de estilo (alpha)
+
+- Identificada API real de `whatsapp-rust` 0.7.0:
+  `ctx.send_message(wa::Message)`, mensajes NativeFlow y respuesta
+  nativa tipada. No usar Node/Baileys ni HTML web ejecutable.
+- `src/ui.rs` prepara un mensaje con tres botones `quick_reply`
+  (Estado, Menú y Créditos) en una sola carga útil; preserva menú
+  original y convierte un pequeño fragmento HTML permitido a
+  marcado WhatsApp. Rechaza etiquetas y atributos no permitidos.
+- Integrada lectura de IDs con asignación estática solamente a
+  acciones de consulta; ingreso firmado HMAC y antirreplay se
+  conservan. Banderín `MATTER_WA_NATIVE_BUTTONS=1` habilita el
+  ensayo experimental; default desactivado; fallback a texto ante
+  error de envío.
+- Se agregan tests offline de estructura NativeFlow, HTML y rechazo
+  de IDs administrativos; queda validar Cargo, CI Linux/Windows,
+  entrega real Android/iPhone y compatibilidad visual. Sin afirmación
+  de que el cliente interprete HTML web ni de detección de SO.
+- README revisados íntegramente: 2/2; ambos actualizados.
+  Ramas beta/stable y sesiones privadas intactas.
+
 ## 2026-11-18 — Ajuste de suite independiente del proveedor (alpha)
 
 El CI `ce57169` completó satisfactoriamente todo el núcleo Linux.
