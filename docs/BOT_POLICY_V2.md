@@ -126,6 +126,23 @@ and other historical commands must be integrated with a *real*
 Vault decision verifier and the platform's verified admin metadata.
 They are **not live actions** in this checkpoint.
 
+## Default-deny de ámbitos externos
+
+La herencia no debe habilitar superficies externas accidentalmente:
+`group`, `private` externo y `channel` **deniegan** si no
+existe una asignación explícita de tipo o grupo. La política
+`--global on` NO las convierte en encendidas por omisión.
+Se requiere `=/>bot group on`, `=/>bot private on`,
+`=/>bot channel on` o excepción puntual firmada y aprobada.
+El estado `inherit` elimina la excepción y vuelve al tipo;
+si ese tipo no está habilitado, permanece apagado.
+
+El chat propio del propietario usa el ámbito especial
+`kind:self`, que puede heredar la política base y jamás
+es gobernado por `kind:private`. Esto preserva los
+comandos de recuperación de socket. La política de encendido
+no autoriza ninguna operación administrativa de Vault.
+
 ## Implementación posterior: lectura pública limitada (alpha, prueba real pendiente)
 
 El controlador puede ahora firmar y responder **únicamente**
