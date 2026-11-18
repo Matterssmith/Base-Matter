@@ -38,8 +38,8 @@ verified stage assessment.
 Matter-Base is intended to host reusable Rust capabilities consumed through
 public APIs. It must remain independent of Matter-Bot and platform adapters.
 This repository currently does **not** implement WhatsApp, Telegram, Discord,
-general authorization roles, network socket control, plugin execution,
-or a sandbox. Command routing and persistent activation policies are partial.
+platform identity authentication, network socket control, plugin execution,
+or a sandbox. Bot-scoped resource roles are available through an injected policy store. Command routing and persistent activation policies are partial.
 
 Bot registration requires an owner ID. Consumers must derive actor IDs from
 authenticated requests before calling owner-management APIs. Owners can manage
@@ -66,8 +66,9 @@ separately and does not establish a live integration.
 | `core::config` | Default application name, environment, debug flag, and locale | Partial; no validation/loading |
 | `core::runtime` | Opens legal storage, builds a context, owns module initialize/start/shutdown lifecycle; can inject bot and user registries | Partial; default registries are in memory, no built-in modules are registered |
 | `core::context` | Shares event bus, typed service registry, legal store, bot registry, and user registry | Implemented at this scope |
-| `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; general roles remain pending |
+| `bots` | Family/release/instance identity, unique display names, in-memory or SQLite-backed registration and recovery with atomic schema versioning | Implemented owner/co-owner enforcement and audited ownership changes; resource roles are a separate injected policy store |
 | `users` | Global application user IDs, explicit unique external identity links, and per-bot/user key-value data in memory or SQLite | Implemented with an injected `UserAuthorizer`; the application authenticates principals and enforces ownership and bot scope |
+| `authorization` | SQLite bot-scoped roles, bounded inheritance, deny-first resource permissions and atomic administrative audit | Implemented at this scope; explicit router integration, trusted identity ingress required |
 | `commands` | Prefixes, canonical aliases, authorization, middleware and handlers | Optional SQLite attempt/outcome audit; socket gating via ControlDispatcher; no platform parsing |
 | `activation` | SQLite owner-scoped power, group/socket overrides, persisted global fallback and atomic audit | Trusted provisioning, durable bot binding, owner transfer/recovery; no network connections |
 | `events` | Synchronous named callbacks; listeners are copied before invocation so callbacks run outside the registry lock | Basic; in-memory and not durable; a callback panic propagates from `publish`; `publish_checked` catches unwinding panics per listener, continues dispatch, and returns an error |
@@ -85,6 +86,7 @@ Matter-Base platform.
 ```text
 src/
   activation.rs  Persistent socket activation policy and owner checks
+  authorization.rs  Bot-scoped roles, resource permissions and administration audit
   command_audit.rs  Persistent command attempts/outcomes and owner-scoped history
   commands.rs    Universal command routing
   control.rs     Control-prefix interception and socket-gated dispatch
@@ -278,6 +280,27 @@ owner-scoped pages of at most 1,000 records. Arguments, responses, message bodie
 and callback diagnostics are omitted. See [command audit contracts](docs/command-audit.md)
 for coverage, recovery and storage boundaries.
 
+## Resource authorization
+
+`RoleStore::open(path, bots)` pins a trusted bot registry. The current bot owner
+uses `provision_scope`, `set_role`, `assign_role`, `revoke_role` and `remove_role`
+to manage its policy; every change commits with an administrative audit record.
+Roles support bounded inheritance and exact selectors or `*` for resource type,
+resource ID and action. A matching deny overrides all allows; no grant means deny.
+No role name or owner label implies privileges, and grants never cross bot scope.
+
+Inject `RoleCommandAuthorizer::new(roles)` into the router to check resource type
+`command`, canonical command ID and action `execute`. This composes with command
+audit and socket activation; even wildcard role grants cannot bypass socket-owner
+power checks. `RoleStore::is_allowed` supports other explicitly mapped resources;
+legal/user stores retain their own authorizer contracts. Callers must authenticate
+identities and honor platform permissions.
+
+Policy is pinned to its administrator's owner ID and fails closed while that ID
+no longer owns the bot. A different owner must call `reset_scope` to discard old
+roles/assignments before configuring its policy. Read [authorization contracts](docs/authorization.md)
+for limits, snapshots, recovery and ownership-identity semantics.
+
 ## Socket activation policies
 
 `activation::SocketActivationStore` persists socket ownership, operational power,
@@ -308,8 +331,8 @@ See [activation contracts](docs/activation.md).
 
 ## Roadmap boundary
 
-General role inheritance, full Control Plane lifecycle, connection and
-messaging contracts, plugin validation, and
+Full Control Plane lifecycle, connection and messaging contracts, plugin
+validation, production identity integration and
 effective sandbox isolation remain pending. Matter-Bot must not be built on
 this crate until those core contracts are implemented, integrated, documented,
 and tested.

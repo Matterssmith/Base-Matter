@@ -24,6 +24,7 @@ Public crate API (`src/lib.rs`)
 │                     ├─ ServiceRegistry (in memory)
 │                     ├─ UserRegistry (injected; memory or SQLite)
 │                     └─ LegalStore (SQLite)
+├── RoleStore (SQLite bot-scoped inheritance/resource policy/administrative audit)
 ├── SocketActivationStore (SQLite policy/ownership/bot binding/audit)
 ├── ControlDispatcher (control interception and socket activation gate)
 ├── CommandRouter (prefixes, aliases, injected authorization and middleware)
@@ -58,15 +59,16 @@ the caller's authorizer must enforce bot scope, permissions, and activation.
 
 ## Persistence and trust boundaries
 
-The bot registry is shared through `MatterContext` and persists family/release/instance identity in SQLite when injected; initialization and schema version registration are transactional. Owner and co-owner checks, controlled removal, and registry ownership audit records are implemented. Each bot accepts at most 256 co-owners, and corrupted persisted lists over that limit fail validation. Reading bot audit history requires the current owner. Identity reads require an actor ID and reveal a record only to its owner or a co-owner; list results are limited to records shared with that actor. Consumers must pass an ID from authenticated request context. General role inheritance and authorization across other resource types are not. Shared users have global IDs and explicit provider/subject links; every link, resolution, and bot-scoped data operation requires a caller-supplied `UserPrincipal` policy. Matching external identifiers are never merged automatically. Private user data is keyed by bot instance, user, and key. The caller's `UserAuthorizer` must verify principal authentication, bot existence, ownership, and scope; this registry does not query the bot registry itself. The legal subsystem persists legal documents and consent decisions in SQLite; initialization and component schema-version updates are transactional, preserve unversioned existing data, roll back failed DDL, and reject unsupported future schema versions. Sensitive legal reads/writes require a `LegalPrincipal` evaluated by an application-supplied `LegalAuthorizer`; this crate delegates external identity authentication.
+The bot registry is shared through `MatterContext` and persists family/release/instance identity in SQLite when injected; initialization and schema version registration are transactional. Owner and co-owner checks, controlled removal, and registry ownership audit records are implemented. Each bot accepts at most 256 co-owners, and corrupted persisted lists over that limit fail validation. Reading bot audit history requires the current owner. Identity reads require an actor ID and reveal a record only to its owner or a co-owner; list results are limited to records shared with that actor. Consumers must pass an ID from authenticated request context. An injected RoleStore provides bounded role inheritance and generic resource authorization within bot scope; consumers map resources explicitly and authenticate principals. Shared users have global IDs and explicit provider/subject links; every link, resolution, and bot-scoped data operation requires a caller-supplied `UserPrincipal` policy. Matching external identifiers are never merged automatically. Private user data is keyed by bot instance, user, and key. The caller's `UserAuthorizer` must verify principal authentication, bot existence, ownership, and scope; this registry does not query the bot registry itself. The legal subsystem persists legal documents and consent decisions in SQLite; initialization and component schema-version updates are transactional, preserve unversioned existing data, roll back failed DDL, and reject unsupported future schema versions. Sensitive legal reads/writes require a `LegalPrincipal` evaluated by an application-supplied `LegalAuthorizer`; this crate delegates external identity authentication.
 Document registration and the read/validate/write path for consent decisions
 use immediate transactions, so concurrent independent database connections
 cannot both withdraw the same grant or observe a document-registration race
 between its duplicate check and insert. An access check uses one SQL statement
 to read the user and applicable document/decision state from one snapshot.
 The event bus, service registry, translation catalogs, and runtime config are
-in memory or caller supplied. General roles, network socket lifecycle, plugin
-isolation, and a general authorization/audit service remain unimplemented.
+in memory or caller supplied. Network socket lifecycle, plugin isolation and
+unified cross-service auditing remain unimplemented. RoleStore persists scoped
+resource policy and composes with command dispatch when explicitly injected.
 
 The security provider abstractions allow a caller to supply trusted key
 material and providers. Envelope plaintext and ciphertext are limited to
@@ -90,8 +92,8 @@ configure that store; this does not provide a distributed replay service.
 The following systems are future work and must be designed behind stable
 contracts before applications consume them:
 
-- General role and resource authorization beyond the existing bot owner/co-owner checks.
-- Ownership, roles, permissions, and audited authorization.
+- Production identity integration and mapping every consuming resource into the
+  implemented RoleStore policy; user/legal authorizer contracts remain explicit.
 - Broader ingress audit (including invalid/unregistered messages); recognized
   command auditing and socket gating are implemented when configured.
 - Full Control Plane/network lifecycle; owner-authorized socket handover and
@@ -126,3 +128,6 @@ one SQLite snapshot together with socket ownership and bot binding. Owner
 transfer/release atomically clears binding/local overrides and powers off, so
 new admissions cannot combine state from before and after a handover. Global policy administrators have no implicit authority
 over socket power or local overrides; static configuration remains supported.
+
+See [authorization contracts](authorization.md) for bounded role inheritance,
+deny precedence, owner pinning and command integration.
