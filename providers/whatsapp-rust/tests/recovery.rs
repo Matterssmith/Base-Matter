@@ -107,7 +107,7 @@ fn offline_cli_verifies_archive_without_starting_whatsapp() {
     let filename = file.file_name().unwrap().to_string_lossy().into_owned();
 
     let binary = provider_binary();
-    let mut command = Command::new(binary);
+    let mut command = Command::new(&binary);
     command
         .arg("--recovery-verify")
         .arg(&filename)
@@ -136,7 +136,7 @@ fn offline_cli_verifies_archive_without_starting_whatsapp() {
         .unwrap();
     assert!(!denied.status.success());
 
-    let traversal = Command::new(binary)
+    let traversal = Command::new(&binary)
         .args(["--recovery-verify", "../unsafe"])
         .output()
         .unwrap();
