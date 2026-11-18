@@ -91,6 +91,33 @@ Preserve socket isolation and persist/audit administrative changes atomically.
   histories. Operate from a single Git clone and shared Cargo build
   cache in the owner's one-terminal environment. Preserve sessions.
 
+## New authoritative policy: Vault-Matter owns ALL socket/group role state
+
+- Vault-Matter is the **sole authoritative role manager** for socket
+  and group roles. Base-Matter has **read-only** decision/query access
+  to Vault and no GitHub Vault write credentials or role mutation API.
+- A role only takes effect after fresh authenticated Vault confirmation;
+  no record, unreadable Vault, bad scope/actor, expired proof or
+  revoked revision => deny. No local default grants or offline copy.
+- Vault-Matter alone may approve commands from its own authenticated
+  WhatsApp/Telegram/Discord gateways, write encrypted role state and
+  audit records, and recover from its private repository. A forwarded
+  message or Base-generated relay is not itself verified user consent.
+- Base's original authenticated socket owner can power down the socket
+  without delegated role checks; project staff/owners never inherit
+  socket rank permissions implicitly.
+- `user` is an implicit absence of a grant; every explicit non-default
+  rank is Vault-owned. Local `RoleStore` and encrypted outbox remain
+  test utilities, never installed as a live second role authority.
+- Alpha WhatsApp controller MUST NOT install local socket role stores
+  or allow `set role` to mutate SQLite pending Vault service.
+  Keep `=/>roles` honest about missing authority.
+- Build a separate Vault Rust service and read-only verified Base
+  interface, not a plaintext roles file or GitHub token in the Base
+  process. See `docs/VAULT_ROLE_AUTHORITY.md`.
+- Continue alpha -> verified beta -> independently validated stable,
+  without declaring a working integration from schema-only metadata.
+
 ## Current hard constraints — owner clarification 2026-11-17
 
 - Every \`*-Matter\` repository is part of the Matter ecosystem; Bot-Matter
