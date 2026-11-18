@@ -1,3 +1,24 @@
+## 2026-11-18 — Referencia residual en prueba WhatsApp Bridge (alpha)
+
+1. El operador ejecutó Clippy después de migrar
+   `inspect_bot_defaults()` de tupla a `BotDefaultPolicies`.
+   Falló en `tests/whatsapp_bridge.rs:111` con `E0609`:
+   el campo `.0` dejó de existir.
+2. Se cambió solo la prueba para leer `.socket_powered`
+   y se aplicó el estilo esperado por rustfmt. El núcleo
+   y la integración WhatsApp no cambian de comportamiento.
+3. Las suites funcionales anteriores estaban aprobadas,
+   incluidas las pruebas del proveedor; **el nuevo commit**
+   requiere compilación, tests y Clippy estrictos en Debian.
+4. Ramas `beta/stable` sin modificación. Preservar los
+   cambios locales de `cargo fmt`, stashes y el archivo
+   `providers/whatsapp-rust/Cargo.lock` sin seguimiento;
+   no usar comandos destructivos.
+5. Siguiente: sincronizar `alpha` sin sobrescribir los
+   cambios locales, verificar primero `cargo clippy
+   --all-targets --locked -- -D warnings`, luego las
+   suites completas, Clippy del proveedor y auditoría.
+
 ## 2026-11-18 — Refactorización contra clippy::type_complexity (alpha; validación pendiente)
 
 1. **Evidencia en Debian:** las pruebas visibles de `cargo test
