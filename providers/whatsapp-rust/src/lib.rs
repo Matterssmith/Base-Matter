@@ -189,15 +189,17 @@ impl Config {
         let allowed = if event.is_group {
             matches!(
                 command,
-                "=/>group" | "=/>grupo" | "=/>menu" | "=/>status"
-                    | "=/>bot" | "=/>start" | "=/>add" | "=/>add++"
+                "=/>group" | "=/>grupo" | "=/>menu" | "=/>menú"
+                    | "=/>status" | "=/>estado" | "=/>bot"
+                    | "=/>start" | "=/>add" | "=/>add++"
             )
         } else {
             matches!(
                 command,
-                "=/>on" | "=/>off" | "=/>status" | "=/>bot"
-                    | "=/>menu" | "=/>set" | "=/>unset"
-                    | "=/>role" | "=/>roles" | "=/>audit"
+                "=/>on" | "=/>off" | "=/>status" | "=/>estado"
+                    | "=/>bot" | "=/>menu" | "=/>menú"
+                    | "=/>set" | "=/>unset" | "=/>role"
+                    | "=/>roles" | "=/>audit"
             )
         };
         if !allowed {
