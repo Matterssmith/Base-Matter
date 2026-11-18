@@ -87,7 +87,7 @@ impl WhatsAppControlIpc {
             })) => (
                 ControlIpcOutcome::Applied,
                 Some(format!(
-                    "Base-Matter | Configuración global del socket\\nSocket: {}\\nPredeterminado: {}\\nGrupos: {}\\nPrivados externos: {}\\nCanales: {}\\nEstas políticas NO son roles ni encienden el socket.",
+                    "Base-Matter | Configuración global del socket\nSocket: {}\nPredeterminado: {}\nGrupos: {}\nPrivados externos: {}\nCanales: {}\nEstas políticas NO son roles ni encienden el socket.",
                     if socket_powered { "ENCENDIDO" } else { "APAGADO" },
                     format_policy(default_policy),
                     format_policy(group_policy),
