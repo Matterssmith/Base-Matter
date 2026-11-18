@@ -12,7 +12,7 @@ use tokio::{
     time::{timeout, Duration},
 };
 use whatsapp_matter_rust_provider::{
-    parse_control_ack,
+    parse_control_ack, render_provider_control,
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
@@ -521,6 +521,15 @@ async fn main() -> Result<()> {
                                 )
                             } else {
                                 response
+                            };
+                            // The provider's live REGISTER/recovery previews use
+                            // the same external template renderer as IPC replies.
+                            let response = match render_provider_control(&response) {
+                                Ok(formatted) => formatted,
+                                Err(_) => {
+                                    eprintln!("Base-Matter: control response rejected by theme");
+                                    return;
+                                }
                             };
                             if ctx.reply(response).await.is_err() {
                                 eprintln!("Base-Matter control applied; chat acknowledgment unavailable");
