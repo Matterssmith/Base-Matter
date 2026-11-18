@@ -1,5 +1,5 @@
 /*
- * Base-Matter — authenticated WhatsApp owner-control bridge (v1).
+ * Base-Matter — authenticated WhatsApp owner and public read-only bridge (v1).
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
@@ -54,8 +54,9 @@ pub enum WhatsAppBridgeOutcome {
     Dispatched(DispatchResult),
 }
 
-/// Accepts only authenticated, owner-origin, scope-bound controls in
-/// private self-chat or verified groups. No Bot-Matter handlers, QR or ping.
+/// Distinguishes trusted owner-origin administrative controls from signed,
+/// read-only incoming status/menu/bot requests in verified groups or external
+/// private chats. Never routes public messages to Bot-Matter or role mutation.
 pub struct WhatsAppControlBridge {
     config: WhatsAppBridgeConfig,
     key: Zeroizing<[u8; 32]>,
