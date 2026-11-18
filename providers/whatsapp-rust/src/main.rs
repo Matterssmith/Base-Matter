@@ -460,7 +460,11 @@ async fn main() -> Result<()> {
                             println!("Base-Matter owner control applied");
                             // Only an authenticated private self-chat may receive
                             // an authorized response. Text has no control prefix.
-                            let response = if frame.text == "=/>start" {
+                            let debug_requested = frame.text.ends_with(" --debug");
+                            let actual_command = frame.text
+                                .strip_suffix(" --debug")
+                                .unwrap_or(&frame.text);
+                            let response = if actual_command == "=/>start" {
                                 match timeout(
                                     Duration::from_secs(20),
                                     discover_register(&ctx, &config.owner_jid),
@@ -470,7 +474,7 @@ async fn main() -> Result<()> {
                                     Ok(Ok(report)) => report,
                                     _ => "Base-Matter REGISTER: inspección no disponible o incompleta; no se hicieron cambios.".to_owned(),
                                 }
-                            } else if frame.text == "=/>add++" {
+                            } else if actual_command == "=/>add++" {
                                 match timeout(
                                     Duration::from_secs(20),
                                     preview_community_recovery(&ctx, &config.owner_jid),
@@ -481,7 +485,7 @@ async fn main() -> Result<()> {
                                     _ => "Base-Matter: inventario de recuperación incompleto; no se copiaron miembros.".to_owned(),
                                 }
                             } else if let Some(community_id) =
-                                frame.text.strip_prefix("=/>add++ snapshot ")
+                                actual_command.strip_prefix("=/>add++ snapshot ")
                             {
                                 match timeout(
                                     Duration::from_secs(45),
@@ -497,6 +501,18 @@ async fn main() -> Result<()> {
                                     ControlAck::AppliedWithMessage(text) => text,
                                     _ => "Base-Matter: solicitud procesada.".to_owned(),
                                 }
+                            };
+                            let response = if debug_requested
+                                && (actual_command == "=/>start"
+                                    || actual_command == "=/>add++"
+                                    || actual_command.starts_with("=/>add++ snapshot "))
+                            {
+                                format!(
+                                    "{response}\\n[DEBUG] plataforma=WhatsApp; contexto={};                                      identidad=verificada; transporte=HMAC; secretos=ocultos",
+                                    if data.is_group { "grupo" } else { "privado" }
+                                )
+                            } else {
+                                response
                             };
                             if ctx.reply(response).await.is_err() {
                                 eprintln!("Base-Matter control applied; chat acknowledgment unavailable");
