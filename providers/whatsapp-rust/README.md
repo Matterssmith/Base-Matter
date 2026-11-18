@@ -8,6 +8,23 @@ la biblioteca whatsapp-rust 0.7.0 y las dependencias actuales de Base.
 Ambos procesos siguen escritos en Rust y se comunican por un canal TCP
 en 127.0.0.1 protegido con HMAC-SHA256 de 256 bits.
 
+## Validación por fases en Debian (alpha)
+
+La última suite reportada del **núcleo** se detuvo por
+una aserción antigua de `tests/control_style.rs`, que
+buscaba un `bot_id` interno en el menú compacto.
+La expectativa ya fue corregida en GitHub, sin añadir
+dicho identificador a las respuestas. El proveedor Rust
+no llegó a ejecutarse en ese lote: **no asumir su
+aprobación para el nuevo commit**.
+
+El operador tiene modificaciones locales generadas por
+`cargo fmt` y un `providers/whatsapp-rust/Cargo.lock`
+sin seguimiento. Preservar ambos al sincronizar; el lock
+no contiene una sesión WhatsApp y no se debe borrar como
+forma de corregir esta regresión. Repetir las pruebas del
+proveedor después de confirmar la suite central.
+
 ## Respuestas propias y plantilla seleccionada de cada chat (alpha)
 
 La respuesta de `WhatsAppControlIpc` llega ya renderizada con la
