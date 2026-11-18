@@ -11,6 +11,8 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use std::sync::Arc;
 
+const PROJECT_CREDITS: &str = "Créditos:\nHecho por Lournyx Matterssmith [Lou-Nyx].";
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum DispatchResult {
     Control {
@@ -399,6 +401,15 @@ impl ControlDispatcher {
                     output,
                 })
             }
+            ["=/>credits" | "=/>creditos" | "=/>créditos"] => {
+                if !decision.decision.enabled {
+                    return Ok(DispatchResult::Inactive);
+                }
+                Ok(DispatchResult::Extension {
+                    command: "credits".to_owned(),
+                    output: PROJECT_CREDITS.to_owned(),
+                })
+            }
             ["=/>bot"] => {
                 if !decision.decision.enabled {
                     return Ok(DispatchResult::Inactive);
@@ -560,6 +571,16 @@ impl ControlDispatcher {
                 }
             }
             match tokens.as_slice() {
+                ["credits" | "creditos" | "créditos"] => {
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    return Ok(DispatchResult::Extension {
+                        command: "credits".to_owned(),
+                        output: PROJECT_CREDITS.to_owned(),
+                    });
+                }
                 ["status" | "estado"] | ["status" | "estado", "--debug"] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
