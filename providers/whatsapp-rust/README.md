@@ -1,3 +1,10 @@
+## 2026-11-18 — Se corrigió la posición de la prueba de Grupo
+El commit anterior sustituyó por error el caso POSITIVO "menu group"
+y dejó Grupo en la lista NEGATIVA. Ahora la lista positiva contiene
+Grupo (una de las 21 entradas) y la negativa prueba "menu unknown".
+No se modificó el signer ni se ampliaron permisos. README
+revisados: 2/2. Revalidación del nuevo SHA pendiente.
+
 ## 2026-11-18 — Corrección de test y checkpoint tras CI
 
 CI del SHA 97de8ac mostró:

@@ -1,3 +1,20 @@
+# Checkpoint 2026-11-18 — corrección exacta de test Grupo
+
+- SHA base: ce9465a8cffaa1c7b17dc7596f8798a7fbfb83a8.
+- Commit: "fix(alpha): correct positive and negative group menu tests".
+- Próxima tarea: comprobar GitHub Actions Linux/Windows y
+  provider offline para nuevo SHA; obtener logs en caso de fallo.
+- Incidencia: test de provider rechazaba incorrectamente
+  "menu unknown" en el conjunto autorizado (y viceversa).
+- Estado de funcionalidad: menu HTML/audio/TS18/TS19 ya en
+  alpha; falta confirmación de representación en WhatsApp real.
+- Flags de ensayo: MATTER_WA_NATIVE_BUTTONS=1,
+  MATTER_WA_MENU_LAB=1, MATTER_WA_RICH_HTML=1.
+- Ejecución: cargo run --locked desde /home/Sakura/Base-Matter;
+  antes git fetch y pull --ff-only en alpha.
+- Seguridad: sólo self-chat de dueño para lab. Ninguna clave.
+- README revisados: 2/2. beta/stable intactas.
+
 # Punto vigente de recuperación — Base-Matter alpha (18-11-2026)
 
 - SHA base: 97de8ac040148925baa194710a0d5dab82d90aff.

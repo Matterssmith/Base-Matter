@@ -1,5 +1,13 @@
 # Historial de decisiones de implementación — Base-Matter
 
+## BASE-D008 — corrección de casos positivos/negativos de grupo
+- Incidencia en  ce9465a8: reemplazo inicial mal ubicado.
+- Ahora `=/>menu group` aparece solo en el conjunto autorizado
+  y `=/>menu unknown` solo en el conjunto rechazado.
+- El código de seguridad no cambió; solo la prueba.
+- README revisados: 2/2; CI pendiente.
+
+
 ## BASE-D007 — recuperación del checkpoint y test de grupo
 - SHA anterior: 97de8ac040148925baa194710a0d5dab82d90aff.
 - Incidencia: el commit previo omitió WORK_CONTINUITY.
