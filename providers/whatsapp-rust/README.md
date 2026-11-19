@@ -1,3 +1,17 @@
+### CI de submenús públicos (alpha 2026-11-18)
+
+La prueba offline de `578c680` detectó que el proveedor
+firmaba submenús genéricos como `menu group`, antes
+explícitamente prohibidos. Se sustituyó el comodín por
+una lista exacta de categorías: status, bot, set, antis,
+roles, system, sandbox, ai y navigation. Solo se
+aceptan páginas 1..8; no se autoriza ninguna
+mutación ni categoría inventada. Los casos positivos
+de menú incluyen set, antis, antis 2 y system.
+La lectura pública depende de la activación del chat;
+las operaciones de propietario usan otra firma.
+README del proveedor actualizado, sin credenciales.
+
 ### Verificación de código modular / independiente
 
 La compilación de `2943cedd` llegó a Clippy

@@ -284,6 +284,10 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
     for allowed in [
         "=/>menu",
         "=/>menú",
+        "=/>menu set",
+        "=/>menu antis",
+        "=/>menu antis 2",
+        "=/>menu system",
         "=/>bot",
         "=/>bot on",
         "=/>bot off",
@@ -337,6 +341,8 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>bot on",
         "=/>set role 12345678901 admin",
         "=/>menu group",
+        "=/>menu antis 999",
+        "=/>menu unset",
         "=/>menu config extra",
         "#ping",
     ] {

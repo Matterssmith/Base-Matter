@@ -28,13 +28,13 @@ pub mod antilocation;
 pub mod antimedia;
 pub mod antimention;
 pub mod antipoll;
-#[path = "antis.rs"]
-pub mod listing_command;
 pub mod antispam;
 pub mod antistatus;
 pub mod antisticker;
 pub mod antivideo;
 pub mod antiviewonce;
+#[path = "antis.rs"]
+pub mod listing_command;
 
 pub const CATEGORY: Category = Category {
     id: "antis",

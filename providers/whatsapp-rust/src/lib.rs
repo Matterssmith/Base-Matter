@@ -312,16 +312,28 @@ impl Config {
             return Ok(None);
         }
         let parts: Vec<_> = event.text.split_whitespace().collect();
-        let allowed = matches!(
-            parts.as_slice(),
+        let public_category = |value: &str| {
+            matches!(
+                value,
+                "status" | "bot" | "set" | "antis" | "roles" | "system"
+                    | "sandbox" | "ai" | "navigation"
+            )
+        };
+        let allowed = match parts.as_slice() {
             ["=/>status" | "=/>estado"]
-                | ["=/>status" | "=/>estado", "--global"]
-                | ["=/>menu" | "=/>menú"]
-                | ["=/>menu" | "=/>menú", _]
-                | ["=/>menu" | "=/>menú", _, _]
-                | ["=/>bot"]
-                | ["=/>credits" | "=/>creditos" | "=/>créditos"]
-        );
+            | ["=/>status" | "=/>estado", "--global"]
+            | ["=/>menu" | "=/>menú"]
+            | ["=/>bot"]
+            | ["=/>credits" | "=/>creditos" | "=/>créditos"] => true,
+            ["=/>menu" | "=/>menú", category] => public_category(category),
+            ["=/>menu" | "=/>menú", category, page] => {
+                public_category(category)
+                    && page
+                        .parse::<usize>()
+                        .is_ok_and(|value| (1..=8).contains(&value))
+            }
+            _ => false,
+        };
         if !allowed {
             return Ok(None);
         }

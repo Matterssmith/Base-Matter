@@ -1,3 +1,19 @@
+### 2026-11-18 — Integridad de submenús y tests del proveedor
+
+- `578c680`: núcleo Linux pasó compilación y
+  tests en la ronda previa; Clippy había señalado
+  nombres internos idénticos al módulo, ya resueltos.
+- Proveedor Rust: 15/16 pruebas de contrato pasaron.
+  Falló la prueba de rechazo de `menu group` por
+  permitir una categoría arbitraria en el firmante.
+  Corregido con allowlist exacta de categorías y
+  páginas 1..8; añadidas pruebas de menús válidos.
+- Orden Rustfmt ajustado en dos módulos de catálogo.
+- Pendiente ejecutar CI completo del nuevo SHA
+  Linux/Windows/proveedor, luego prueba WhatsApp.
+- `beta` y `stable` siguen intactas; no mover
+  sin validación. Ambos README revisados (2/2).
+
 ### 2026-11-18 — Iteración de Clippy/standalone
 
 En `2943cedd` pasaron Rustfmt, check y

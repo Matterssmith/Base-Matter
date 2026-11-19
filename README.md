@@ -20,6 +20,25 @@ width="100%"
 
 ---
 
+### Control de pruebas de WhatsApp — validación de submenús (alpha)
+
+En `578c680` el CI de Rust pasó el formato inicial
+pero la verificación del proveedor detectó una regresión:
+el test antiguo rechazaba `menu <categoría>` mientras el
+nuevo diseño ya admite esas categorías. Se corrigió sin
+abrir un comodín de comandos públicos: el proveedor
+firma únicamente las **nueve categorías registradas**
+y páginas numéricas entre 1 y 8; continúa rechazando
+categorías arbitrarias y operaciones administrativas.
+Las pruebas de solo lectura fueron ampliadas para
+exigir el reconocimiento de `menu set`, `menu antis`,
+`menu antis 2` y `menu system`. Se aplicaron dos
+reordenamientos Rustfmt, manteniendo cada comando
+en su propio archivo. No se tocan sesiones, APIs ni roles.
+La versión nueva aún necesita CI verde y verificación
+real de los botones en WhatsApp. README raíz y del
+proveedor revisados antes de esta publicación.
+
 ### CI del menú modular — Clippy y proveedor independiente
 
 El CI de `2943cedd` pasó formato, `cargo check`
