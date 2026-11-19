@@ -604,7 +604,9 @@ impl ControlDispatcher {
                 }
             }
             match tokens.as_slice() {
-                ["test"] | ["test", "ui" | "html" | "row"] | ["test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => {
+                ["test"]
+                | ["test", "ui" | "html" | "row"]
+                | ["test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => {
                     if group.is_some() {
                         bail!("Las pruebas visuales requieren el chat privado del propietario");
                     }

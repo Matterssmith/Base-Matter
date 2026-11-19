@@ -1,3 +1,11 @@
+### 2026-11-18 — Formato confirmado para tarjeta de prueba ButtonsRow
+
+El CI del SHA 62399fa se detuvo antes de compilar por Rustfmt:
+tres diferencias en tests/ui.rs y una en el match de src/control.rs.
+Se aplicó la salida literal de Rustfmt, sin modificar el comportamiento
+del ensayo clásico ni el protocolo. Dos README revisados (2/2).
+Revalidar compilación/test/Clippy sobre el nuevo SHA.
+
 ### 2026-11-18 — Comparación WhatsApp: NativeFlow y ButtonsRow clásico
 
 Se agregó =/>test row, una tarjeta de texto basada en la familia

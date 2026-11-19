@@ -188,9 +188,7 @@ fn legacy_row_uses_three_response_buttons_without_network_or_media() {
     assert_eq!(buttons.buttons.len(), 3);
     assert_eq!(
         buttons.content_text.as_deref(),
-        Some(
-            "🧪 Tarjeta de prueba (ButtonsRow)\nElige Audio, MP4 o Enlace. No hay descargas."
-        )
+        Some("🧪 Tarjeta de prueba (ButtonsRow)\nElige Audio, MP4 o Enlace. No hay descargas.")
     );
     for (button, id, label) in [
         (&buttons.buttons[0], "matter.test.row.audio", "Audio"),
@@ -199,7 +197,12 @@ fn legacy_row_uses_three_response_buttons_without_network_or_media() {
     ] {
         assert_eq!(button.button_id.as_deref(), Some(id));
         assert_eq!(
-            button.button_text.as_option().unwrap().display_text.as_deref(),
+            button
+                .button_text
+                .as_option()
+                .unwrap()
+                .display_text
+                .as_deref(),
             Some(label)
         );
         assert_eq!(
@@ -216,4 +219,3 @@ fn legacy_row_uses_three_response_buttons_without_network_or_media() {
         assert_eq!(readonly_button_command(&legacy_click(id)), Some(command));
     }
 }
-
