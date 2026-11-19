@@ -48,6 +48,10 @@ fn button_command(id: &str) -> Option<&'static str> {
         "matter.read.help.sandbox" => Some("=/>help sandbox"),
         "matter.read.help.ai" => Some("=/>help ai"),
         "matter.read.help.navigation" => Some("=/>help navigation"),
+        "matter.test.button.a" => Some("=/>test ack a"),
+        "matter.test.button.b" => Some("=/>test ack b"),
+        "matter.test.select.one" => Some("=/>test ack one"),
+        "matter.test.select.two" => Some("=/>test ack two"),
         _ => None,
     }
 }
@@ -220,6 +224,66 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
                 wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(Box::new(
                     wa::message::interactive_message::NativeFlowMessage {
                         buttons,
+                        message_version: Some(1),
+                        ..Default::default()
+                    },
+                )),
+            ),
+            ..Default::default()
+        }),
+        ..Default::default()
+    })
+}
+
+/// Owner-only UI diagnostic transport. This does not verify phone rendering;
+/// it supplies two quick replies and two selector rows that the owner can tap.
+/// IDs map only to read-only acknowledgments after the normal HMAC bridge.
+pub fn native_ui_probe_message() -> Result<wa::Message> {
+    let selector = wa::message::interactive_message::native_flow_message::NativeFlowButton {
+        name: Some("single_select".to_owned()),
+        button_params_json: Some(
+            serde_json::json!({
+                "title": "Prueba de selector",
+                "sections": [{
+                    "title": "Selecciona una fila",
+                    "rows": [
+                        {"title": "Fila uno", "id": "matter.test.select.one"},
+                        {"title": "Fila dos", "id": "matter.test.select.two"}
+                    ]
+                }]
+            })
+            .to_string(),
+        ),
+    };
+    let quick_reply = |id: &str, label: &str| {
+        wa::message::interactive_message::native_flow_message::NativeFlowButton {
+            name: Some("quick_reply".to_owned()),
+            button_params_json: Some(
+                serde_json::json!({"display_text": label, "id": id}).to_string(),
+            ),
+        }
+    };
+    Ok(wa::Message {
+        interactive_message: MessageField::some(wa::message::InteractiveMessage {
+            body: MessageField::some(wa::message::interactive_message::Body {
+                text: Some(
+                    "🧪 Prueba de interfaz\nToca A, B o una fila del selector.\n\
+                     Espera un acuse del controlador; esto no modifica datos."
+                        .to_owned(),
+                ),
+            }),
+            footer: MessageField::some(wa::message::interactive_message::Footer {
+                text: Some("Base-Matter · prueba privada".to_owned()),
+                ..Default::default()
+            }),
+            interactive_message: Some(
+                wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(Box::new(
+                    wa::message::interactive_message::NativeFlowMessage {
+                        buttons: vec![
+                            selector,
+                            quick_reply("matter.test.button.a", "Botón A"),
+                            quick_reply("matter.test.button.b", "Botón B"),
+                        ],
                         message_version: Some(1),
                         ..Default::default()
                     },

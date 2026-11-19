@@ -604,6 +604,52 @@ impl ControlDispatcher {
                 }
             }
             match tokens.as_slice() {
+                ["test"] | ["test", "ui" | "html"] | ["test", "ack", "a" | "b" | "one" | "two"] => {
+                    if group.is_some() {
+                        bail!("Las pruebas visuales requieren el chat privado del propietario");
+                    }
+                    let admission =
+                        self.activation
+                            .admission(receiving_socket, None, self.global_policy)?;
+                    if admission.owner_id != actor {
+                        bail!("Solo el propietario verificado puede probar la interfaz");
+                    }
+                    let output = match tokens.as_slice() {
+                        ["test", "ui"] => [
+                            "🧪 Prueba de botones WhatsApp",
+                            "Esta prueba es solo de lectura y no modifica Vault ni grupos.",
+                            "Si ves dos botones y un selector, tócalos para comprobar la respuesta.",
+                            "Cada selección debe producir un acuse del controlador.",
+                            "Requiere MATTER_WA_NATIVE_BUTTONS=1; si falta, se devuelve este texto.",
+                            "Enviar no garantiza que WhatsApp muestre el control.",
+                        ]
+                        .join("\n"),
+                        ["test", "html"] => [
+                            "🧪 Prueba HTML experimental",
+                            "Solo funciona en el chat privado del propietario.",
+                            "Requiere MATTER_WA_RICH_HTML=1.",
+                            "El cliente puede ignorar la visualización aunque acepte el envío.",
+                            "No ejecuta scripts ni sonidos; esos recursos no están verificados.",
+                        ]
+                        .join("\n"),
+                        ["test", "ack", selection] => format!(
+                            "✅ Controlador: selección {selection} recibida y autenticada.\n\
+                             Si tocaste un botón o una fila, confirma visualmente la respuesta.\n\
+                             Escribir el comando manualmente NO demuestra que funcione el botón."
+                        ),
+                        _ => [
+                            "🧪 Pruebas visuales",
+                            "=/>test ui — botones y selector",
+                            "=/>test html — envío Rich HTML experimental",
+                            "Los test de ejecución de código siguen pendientes.",
+                        ]
+                        .join("\n"),
+                    };
+                    return Ok(DispatchResult::Extension {
+                        command: "test".to_owned(),
+                        output,
+                    });
+                }
                 ["anti" | "antis", values @ ..] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {

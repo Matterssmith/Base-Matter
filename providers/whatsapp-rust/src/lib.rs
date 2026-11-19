@@ -238,6 +238,7 @@ impl Config {
                     | "=/>roles"
                     | "=/>audit"
                     | "=/>matter"
+                    | "=/>test"
                     | "=/>anti"
                     | "=/>antis"
                     | "=/>credits"
@@ -333,6 +334,13 @@ impl Config {
                     | "navigation"
             )
         };
+        let safe_help_name = |name: &str| {
+            !name.is_empty()
+                && name.len() <= 48
+                && name
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || b"_-".contains(&byte))
+        };
         let allowed = match parts.as_slice() {
             ["=/>status" | "=/>estado"]
             | ["=/>status" | "=/>estado", "--global"]
@@ -341,7 +349,7 @@ impl Config {
             | ["=/>credits" | "=/>creditos" | "=/>créditos"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda", category] => {
-                public_category(category) || *category == "all"
+                public_category(category) || *category == "all" || safe_help_name(category)
             }
             ["=/>help" | "=/>h" | "=/>ayuda", category, page] => {
                 public_category(category)

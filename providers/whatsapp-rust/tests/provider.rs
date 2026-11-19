@@ -284,6 +284,10 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
         "=/>menu antis",
         "=/>menu antis 2",
         "=/>menu system",
+        "=/>test",
+        "=/>test ui",
+        "=/>test html",
+        "=/>test ack a",
         "=/>bot",
         "=/>bot on",
         "=/>bot off",
@@ -316,6 +320,10 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>menú",
         "=/>bot",
         "=/>credits",
+        "=/>help antilink",
+        "=/>help menu",
+        "=/>help all",
+        "=/>help antis 2",
     ] {
         incoming.text = text;
         let signed = config
@@ -340,6 +348,9 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>menu antis 999",
         "=/>menu unset",
         "=/>menu config extra",
+        "=/>help run(unknown)",
+        "=/>test ui",
+        "=/>test ack a",
         "#ping",
     ] {
         incoming.text = text;

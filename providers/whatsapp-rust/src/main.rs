@@ -18,7 +18,7 @@ use whatsapp_matter_rust_provider::{
     },
     render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
-    ui::{native_navigation_message, readonly_button_command},
+    ui::{native_navigation_message, native_ui_probe_message, readonly_button_command},
     Config, ControlAck, Event, SessionLease,
 };
 use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*};
@@ -592,6 +592,31 @@ async fn main() -> Result<()> {
                                     }
                                 }
                             };
+                            if actual_command == "=/>test ui"
+                                && native_buttons
+                                && frame.from_me
+                                && frame.chat_jid == config.owner_jid
+                            {
+                                if let Ok(probe) = native_ui_probe_message() {
+                                    if ctx.send_message(probe).await.is_ok() {
+                                        return;
+                                    }
+                                }
+                                eprintln!("Base-Matter: UI test unavailable; sending text instructions");
+                            }
+                            if actual_command == "=/>test html"
+                                && rich_html_trial
+                                && frame.from_me
+                                && frame.chat_jid == config.owner_jid
+                            {
+                                if let Ok(message) = experimental_self_chat_rich_message(&response)
+                                {
+                                    if ctx.send_message(message).await.is_ok() {
+                                        return;
+                                    }
+                                }
+                                eprintln!("Base-Matter: HTML test unavailable; sending text instructions");
+                            }
                             if rich_html_trial
                                 && frame.from_me
                                 && frame.chat_jid == config.owner_jid

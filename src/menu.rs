@@ -354,6 +354,11 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
     if CATEGORIES.iter().any(|cat| cat.id == query) {
         return render(&format!("menu {query}"), options);
     }
+    if let [category, page] = query.split_whitespace().collect::<Vec<_>>().as_slice() {
+        if CATEGORIES.iter().any(|cat| cat.id == *category) {
+            return render(&format!("menu {category} {page}"), options);
+        }
+    }
     let item = CATEGORIES
         .iter()
         .flat_map(|cat| cat.commands.iter())

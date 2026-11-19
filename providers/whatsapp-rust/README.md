@@ -1,3 +1,20 @@
+### 2026-11-18 — Pruebas de menú y botones ejecutables desde WhatsApp (alpha)
+
+El comando privado del propietario =/>test ui construye una prueba NativeFlow
+con dos botones y dos filas; al seleccionarlos, el puente de control
+normal verifica identidad de la sesión, HMAC y antirreplay, y emite un
+acuse de solo lectura. =/>test html usa únicamente el transporte
+experimental ya existente y requiere MATTER_WA_RICH_HTML=1.
+Se documentan instrucciones de verificación visual manual en
+docs/WHATSAPP_UI_TESTS.md.
+
+Se corrigió también el filtro de ayuda pública para permitir nombres
+de comando seguros como =/>help antilink y se admite help antis 2
+en el renderizador. No se autoriza ninguna mutación pública.
+El campo "test" del menú corresponde solo a pruebas visuales;
+test <código> y ejecución remota permanecen pendientes.
+Dos README revisados (2/2). No se alteran sesiones, Vault ni ramas beta/stable.
+
 ### 2026-11-18 — Clippy final del prototipo de sticker
 
 CI confirmó compilación y pruebas del proveedor; Clippy -D warnings

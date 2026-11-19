@@ -62,3 +62,18 @@ fn individual_antis_are_public_metadata_but_never_execution_grants() {
     assert!(menu::render("menu antis 9", Preferences::default()).is_err());
     assert!(menu::render("menu no-such-category", Preferences::default()).is_err());
 }
+
+#[test]
+fn help_queries_support_command_metadata_and_category_pages() {
+    use matter_base::menu;
+    let options = Preferences::default();
+    let help = menu::render_help("antilink", options).unwrap();
+    assert!(help.contains("Ayuda: antilink"));
+    assert!(help.contains("=/ >") == false);
+    let page = menu::render_help("antis 2", options).unwrap();
+    assert!(page.contains("antilink"));
+    let test = menu::render_help("test", options).unwrap();
+    assert!(test.contains("test ui"));
+    assert!(test.contains("test html"));
+    assert!(menu::render_help("not-registered", options).is_err());
+}

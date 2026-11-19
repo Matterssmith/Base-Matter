@@ -6,7 +6,8 @@
  */
 use buffa::MessageField;
 use whatsapp_matter_rust_provider::ui::{
-    native_menu_message, native_navigation_message, readonly_button_command, short_html_to_whatsapp,
+    native_menu_message, native_navigation_message, native_ui_probe_message, readonly_button_command,
+    short_html_to_whatsapp,
 };
 use whatsapp_rust::prelude::wa;
 
@@ -140,3 +141,43 @@ fn html_style_is_restricted_and_does_not_execute_markup() {
     assert!(native_menu_message("").is_err());
     assert!(native_menu_message(&"x".repeat(3400)).is_err());
 }
+
+#[test]
+fn owner_ui_probe_has_two_quick_replies_and_two_selectable_rows() {
+    let message = native_ui_probe_message().unwrap();
+    let interactive = message.interactive_message.as_option().unwrap();
+    let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
+        interactive.interactive_message.as_ref()
+    else {
+        panic!("Expected NativeFlow UI probe");
+    };
+    assert_eq!(native.buttons.len(), 3);
+    assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
+    let list: serde_json::Value =
+        serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
+    let rows = list["sections"][0]["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0]["id"], "matter.test.select.one");
+    assert_eq!(rows[1]["id"], "matter.test.select.two");
+    for (id, command) in [
+        ("matter.test.button.a", "=/>test ack a"),
+        ("matter.test.button.b", "=/>test ack b"),
+        ("matter.test.select.one", "=/>test ack one"),
+        ("matter.test.select.two", "=/>test ack two"),
+    ] {
+        assert_eq!(
+            readonly_button_command(&native_click(id, "quick_reply")),
+            Some(command)
+        );
+        assert_eq!(
+            readonly_button_command(&native_click(id, "single_select")),
+            Some(command)
+        );
+        assert_eq!(readonly_button_command(&legacy_click(id)), Some(command));
+    }
+    assert_eq!(
+        readonly_button_command(&native_click("matter.test.run.code", "quick_reply")),
+        None
+    );
+}
+
