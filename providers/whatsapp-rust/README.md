@@ -1,3 +1,11 @@
+### 2026-11-18 — Corrección de tipado en selector público
+
+El CI del SHA 8c4c79d superó el formato del proveedor pero reveló
+dos comparaciones inválidas de referencias dobles en src/lib.rs:
+&&str frente a str. Se aplicó la corrección de tipos *category,
+sin ampliar la lista de categorías ni los permisos.
+README raíz y proveedor revisados (2/2); revalidar el nuevo SHA.
+
 ### 2026-11-18 — CI: corrección de formato UI y colisiones Windows
 
 El SHA fb90999e falló en formato del proveedor UI, espacios en blanco
