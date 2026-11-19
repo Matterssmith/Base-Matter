@@ -564,14 +564,17 @@ async fn main() -> Result<()> {
                     if protocol.r#type
                         == Some(wa::message::protocol_message::Type::MESSAGE_EDIT)
                     {
-                        (
-                            "edited",
-                            protocol
-                                .edited_message
-                                .as_option()
-                                .and_then(|message| message.text_content())
-                                .unwrap_or_default(),
-                        )
+                        if let Some(content) = protocol
+                            .edited_message
+                            .as_option()
+                            .and_then(|message| message.text_content())
+                        {
+                            ("edited", content)
+                        } else {
+                            // Missing plaintext is not evidence of a
+                            // successfully decoded edit; keep it opaque.
+                            ("opaque", "")
+                        }
                     } else {
                         ("original", ctx.message.text_content().unwrap_or_default())
                     }

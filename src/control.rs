@@ -549,6 +549,11 @@ impl ControlDispatcher {
         text: &str,
         edit: crate::anti_guard::EditState,
     ) -> Result<()> {
+        // Passive inspection is scoped to chats the owner has activated.
+        // Disabled groups do not accumulate observational metadata.
+        if !self.bot_admission(socket, Some(group), "group")?.decision.enabled {
+            return Ok(());
+        }
         let store = self
             .group_antis
             .as_ref()
