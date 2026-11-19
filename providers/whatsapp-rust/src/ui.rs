@@ -52,6 +52,9 @@ fn button_command(id: &str) -> Option<&'static str> {
         "matter.test.button.b" => Some("=/>test ack b"),
         "matter.test.select.one" => Some("=/>test ack one"),
         "matter.test.select.two" => Some("=/>test ack two"),
+        "matter.test.row.audio" => Some("=/>test ack audio"),
+        "matter.test.row.mp4" => Some("=/>test ack mp4"),
+        "matter.test.row.link" => Some("=/>test ack link"),
         _ => None,
     }
 }
@@ -293,6 +296,39 @@ pub fn native_ui_probe_message() -> Result<wa::Message> {
         }),
         ..Default::default()
     })
+}
+
+/// A legacy ButtonsMessage row, matching the protocol family used by
+/// classic Go/JS SendButtonsRow examples. Text-only on purpose: a real
+/// thumbnail needs an independently uploaded and encrypted WA media object.
+/// The private owner can compare this with NativeFlow from =/>test ui.
+pub fn legacy_row_probe_message() -> wa::Message {
+    let response = |id: &str, label: &str| wa::message::buttons_message::Button {
+        button_id: Some(id.to_owned()),
+        button_text: MessageField::some(wa::message::buttons_message::button::ButtonText {
+            display_text: Some(label.to_owned()),
+        }),
+        r#type: Some(wa::message::buttons_message::button::Type::RESPONSE),
+        ..Default::default()
+    };
+    wa::Message {
+        buttons_message: MessageField::some(wa::message::ButtonsMessage {
+            content_text: Some(
+                "🧪 Tarjeta de prueba (ButtonsRow)\n\
+                 Elige Audio, MP4 o Enlace. No hay descargas."
+                    .to_owned(),
+            ),
+            footer_text: Some("Base-Matter · diagnóstico privado".to_owned()),
+            header_type: Some(wa::message::buttons_message::HeaderType::EMPTY),
+            buttons: vec![
+                response("matter.test.row.audio", "Audio"),
+                response("matter.test.row.mp4", "MP4"),
+                response("matter.test.row.link", "Enlace"),
+            ],
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
 }
 
 /// A response is only a request to a read-only, fixed command.

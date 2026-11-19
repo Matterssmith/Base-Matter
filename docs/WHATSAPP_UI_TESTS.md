@@ -21,6 +21,7 @@ MATTER_WA_RICH_HTML=0 inicialmente. No es necesario reinicializar la sesión.
 - =/>help antis 2 : página de ayuda de categoría
 - =/>test : qué pruebas visuales existen
 - =/>test ui : envía 2 botones nativos y un selector de 2 filas
+- =/>test row : envía tarjeta clásica de 3 botones: Audio, MP4, Enlace
 - =/>test html : ensaya HTML solo con MATTER_WA_RICH_HTML=1
 
 Pulsa **Botón A**, **Botón B**, **Fila uno** y **Fila dos**, uno por
@@ -47,3 +48,8 @@ números de teléfono ni llaves privadas.
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+La variante `=/>test row` utiliza `ButtonsMessage` (familia clásica de
+`SendButtonsRow` en Go). Esta prueba es deliberadamente de texto:
+una miniatura real necesita un objeto de imagen cifrado y subido al
+servidor de WhatsApp. No afirmar que este ensayo ya incluye miniatura.

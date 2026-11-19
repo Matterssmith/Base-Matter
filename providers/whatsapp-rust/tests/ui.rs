@@ -6,8 +6,8 @@
  */
 use buffa::MessageField;
 use whatsapp_matter_rust_provider::ui::{
-    native_menu_message, native_navigation_message, native_ui_probe_message,
-    readonly_button_command, short_html_to_whatsapp,
+    legacy_row_probe_message, native_menu_message, native_navigation_message,
+    native_ui_probe_message, readonly_button_command, short_html_to_whatsapp,
 };
 use whatsapp_rust::prelude::wa;
 
@@ -180,3 +180,40 @@ fn owner_ui_probe_has_two_quick_replies_and_two_selectable_rows() {
         None
     );
 }
+
+#[test]
+fn legacy_row_uses_three_response_buttons_without_network_or_media() {
+    let message = legacy_row_probe_message();
+    let buttons = message.buttons_message.as_option().unwrap();
+    assert_eq!(buttons.buttons.len(), 3);
+    assert_eq!(
+        buttons.content_text.as_deref(),
+        Some(
+            "🧪 Tarjeta de prueba (ButtonsRow)\nElige Audio, MP4 o Enlace. No hay descargas."
+        )
+    );
+    for (button, id, label) in [
+        (&buttons.buttons[0], "matter.test.row.audio", "Audio"),
+        (&buttons.buttons[1], "matter.test.row.mp4", "MP4"),
+        (&buttons.buttons[2], "matter.test.row.link", "Enlace"),
+    ] {
+        assert_eq!(button.button_id.as_deref(), Some(id));
+        assert_eq!(
+            button.button_text.as_option().unwrap().display_text.as_deref(),
+            Some(label)
+        );
+        assert_eq!(
+            button.r#type,
+            Some(wa::message::buttons_message::button::Type::RESPONSE)
+        );
+    }
+    assert!(message.interactive_message.as_option().is_none());
+    for (id, command) in [
+        ("matter.test.row.audio", "=/>test ack audio"),
+        ("matter.test.row.mp4", "=/>test ack mp4"),
+        ("matter.test.row.link", "=/>test ack link"),
+    ] {
+        assert_eq!(readonly_button_command(&legacy_click(id)), Some(command));
+    }
+}
+

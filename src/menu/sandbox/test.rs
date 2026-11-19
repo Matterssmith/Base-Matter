@@ -5,8 +5,8 @@ use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
     name: "test",
-    es: "Pruebas visuales en WhatsApp (sin ejecutar código)",
-    en: "Visual WhatsApp tests (no code execution)",
-    usages: &["test", "test ui", "test html"],
+    es: "Pruebas visuales NativeFlow, ButtonsRow y HTML (sin ejecutar código)",
+    en: "NativeFlow, ButtonsRow and HTML tests (no code execution)",
+    usages: &["test", "test ui", "test row", "test html"],
     implemented: true,
 };

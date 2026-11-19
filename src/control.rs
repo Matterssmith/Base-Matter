@@ -604,7 +604,7 @@ impl ControlDispatcher {
                 }
             }
             match tokens.as_slice() {
-                ["test"] | ["test", "ui" | "html"] | ["test", "ack", "a" | "b" | "one" | "two"] => {
+                ["test"] | ["test", "ui" | "html" | "row"] | ["test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => {
                     if group.is_some() {
                         bail!("Las pruebas visuales requieren el chat privado del propietario");
                     }
@@ -624,6 +624,13 @@ impl ControlDispatcher {
                             "Enviar no garantiza que WhatsApp muestre el control.",
                         ]
                         .join("\n"),
+                        ["test", "row"] => [
+                            "🧪 Prueba de tarjeta ButtonsRow",
+                            "Ejemplo de prueba con tres botones: Audio, MP4, Enlace.",
+                            "No descarga archivos ni ejecuta código.",
+                            "El cliente puede ocultar botones clásicos antiguos.",
+                        ]
+                        .join("\n"),
                         ["test", "html"] => [
                             "🧪 Prueba HTML experimental",
                             "Solo funciona en el chat privado del propietario.",
@@ -639,7 +646,8 @@ impl ControlDispatcher {
                         ),
                         _ => [
                             "🧪 Pruebas visuales",
-                            "=/>test ui — botones y selector",
+                            "=/>test ui — botones NativeFlow y selector",
+                            "=/>test row — botones clásicos Audio/MP4/Enlace",
                             "=/>test html — envío Rich HTML experimental",
                             "Los test de ejecución de código siguen pendientes.",
                         ]

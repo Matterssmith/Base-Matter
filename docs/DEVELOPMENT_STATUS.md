@@ -1,3 +1,14 @@
+### 2026-11-18 — Comparación WhatsApp: NativeFlow y ButtonsRow clásico
+
+Se agregó =/>test row, una tarjeta de texto basada en la familia
+protobuf ButtonsMessage con tres botones (Audio, MP4, Enlace),
+equivalentes al patrón Go ts19 recibido. Las respuestas de
+ButtonsResponseMessage se traducen a acuses de solo lectura bajo
+el puente autenticado, sin descargas ni ejecución de código.
+No se agrega imagen de cabecera: necesita un upload cifrado real,
+que será una etapa posterior, ni se da por probado el renderizado
+en el cliente. README 2/2 revisados, CI del SHA requerido.
+
 ### 2026-11-18 — CI de pruebas visuales: Rustfmt y Clippy
 
 En el SHA 1291d43, la compilación y los tests por defecto de Linux

@@ -18,7 +18,10 @@ use whatsapp_matter_rust_provider::{
     },
     render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
-    ui::{native_navigation_message, native_ui_probe_message, readonly_button_command},
+    ui::{
+        legacy_row_probe_message, native_navigation_message, native_ui_probe_message,
+        readonly_button_command,
+    },
     Config, ControlAck, Event, SessionLease,
 };
 use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*};
@@ -603,6 +606,15 @@ async fn main() -> Result<()> {
                                     }
                                 }
                                 eprintln!("Base-Matter: UI test unavailable; sending text instructions");
+                            }
+                            if actual_command == "=/>test row"
+                                && frame.from_me
+                                && frame.chat_jid == config.owner_jid
+                            {
+                                if ctx.send_message(legacy_row_probe_message()).await.is_ok() {
+                                    return;
+                                }
+                                eprintln!("Base-Matter: classic ButtonsRow test rejected; using text");
                             }
                             if actual_command == "=/>test html"
                                 && rich_html_trial

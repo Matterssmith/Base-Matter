@@ -286,6 +286,7 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
         "=/>menu system",
         "=/>test",
         "=/>test ui",
+        "=/>test row",
         "=/>test html",
         "=/>test ack a",
         "=/>bot",
