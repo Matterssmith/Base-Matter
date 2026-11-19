@@ -1,3 +1,11 @@
+## 2026-11-19 — Corrección de formato en acceso invitado
+
+- Base alpha anterior: 3c1fa6f325df63718eb67eefb9ce1a66ff4424e4.
+- Proveedor WhatsApp verificó PASS para el primer cambio. CI núcleo detuvo por rustfmt: orden alfabético de módulos y dos bloques de tests con espaciado incorrecto. Diferencias exactas aplicadas.
+- Política intacta: lectura para invitados sin registro cuando el chat esté habilitado; `=/>register` informativo; Vault no recibe datos y no se asignan roles.
+- Vault-Matter `matter` actualizó contrato de invitados en `850071e1bda6f62d68eea802666e45474d379825`.
+- README revisados: 2/2. Nuevo CI pendiente; no afirmar teléfono probado.
+
 ## 2026-11-19 — Modo invitado estilo demo, registro voluntario
 
 - HEAD remoto alpha antes del cambio: ea7c0da6c579f24406093940e7677fe6a349dfbd. El usuario confirmó que se debe poder usar el bot sin registro, como una versión de prueba: **no imponer CURP, biometría, género, edad ni inscripción Vault para comandos básicos**.

@@ -1,3 +1,8 @@
+## BASE-D016 — Rustfmt de contrato guest (2026-11-19)
+
+- CI del SHA 3c1fa6f325df63718eb67eefb9ce1a66ff4424e4: proveedor PASS, Rustfmt FAIL. Aplicar solo cambios de estilo requeridos por CI en lib.rs y tests/whatsapp_public_readonly.rs.
+- Sin cambios de seguridad/alcance. README 2/2. Nuevo SHA pendiente de CI.
+
 ## BASE-D015 — Sin registro obligatorio: invitado demo (2026-11-19)
 
 - Invitados pueden consumir funciones básicas autorizadas, sin CURP, biometría ni registro Vault; heredan las restricciones normales del socket/chat.

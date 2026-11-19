@@ -384,10 +384,20 @@ fn guest_can_read_registration_info_without_enrollment_or_active_bot() {
                 && output.contains("No se guardó")
     ));
     assert_eq!(
-        bridge.ingest(&frame("guest-menu-off", "=/>menu", READER, READER, false)).unwrap(),
+        bridge
+            .ingest(&frame("guest-menu-off", "=/>menu", READER, READER, false))
+            .unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
     );
-    assert!(bridge.ingest(&frame("guest-mutation-denied", "=/>set role 123 admin", READER, READER, false)).is_err());
+    assert!(bridge
+        .ingest(&frame(
+            "guest-mutation-denied",
+            "=/>set role 123 admin",
+            READER,
+            READER,
+            false
+        ))
+        .is_err());
 }
 
 #[test]
@@ -401,7 +411,10 @@ fn guest_capability_contract_does_not_require_identity_enrollment() {
         assert!(can_use_without_registration(capability, true));
     }
     for capability in [
-        G::AdministrativeWrite, G::VaultProfile, G::IdentityVerification, G::CodeExecution,
+        G::AdministrativeWrite,
+        G::VaultProfile,
+        G::IdentityVerification,
+        G::CodeExecution,
     ] {
         assert!(!can_use_without_registration(capability, false));
         assert!(!can_use_without_registration(capability, true));
