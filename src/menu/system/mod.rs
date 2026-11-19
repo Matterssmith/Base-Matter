@@ -2,7 +2,8 @@
 use crate::menu::Category;
 pub mod reload;
 pub mod restart;
-pub mod system;
+#[path = "system.rs"]
+pub mod main_command;
 pub mod update;
 
 pub const CATEGORY: Category = Category {
@@ -11,7 +12,7 @@ pub const CATEGORY: Category = Category {
     en: "SYSTEM",
     icon: "⚙︎",
     commands: &[
-        system::COMMAND,
+        main_command::COMMAND,
         update::COMMAND,
         restart::COMMAND,
         reload::COMMAND,

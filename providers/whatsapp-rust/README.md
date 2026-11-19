@@ -1,3 +1,17 @@
+### Verificación de código modular / independiente
+
+La compilación de `2943cedd` llegó a Clippy
+en el núcleo y detectó únicamente la regla
+`module_inception` de nombres internos; se
+mantiene un archivo por comando sin suprimir
+advertencias. El proveedor standalone marcó
+dos diferencias Rustfmt en
+`provider_control_style.rs`; ambas corregidas.
+Se conserva el decorador de respaldo y la
+separación del menú (no reimportar
+`crate::menu` a la biblioteca autónoma).
+README actualizado; nueva compilación pendiente.
+
 ### Decoración independiente del proveedor (CI 2026-11-18)
 
 La importación anterior de `../../../src/control_style.rs`

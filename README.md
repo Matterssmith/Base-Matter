@@ -20,6 +20,22 @@ width="100%"
 
 ---
 
+### CI del menú modular — Clippy y proveedor independiente
+
+El CI de `2943cedd` pasó formato, `cargo check`
+y `cargo test` del núcleo Linux, pero Clippy
+rechazó módulos cuyo nombre coincidía con el
+directorio (regla `module_inception`). Se
+conservan los archivos individuales solicitados,
+usando identificadores Rust `main_command` y
+`listing_command` mediante `#[path]` en los
+`mod.rs` correspondientes. No se cambian nombres
+de comandos visibles, roles ni sus permisos.
+El proveedor requiere dos ajustes menores de
+Rustfmt en su decorador autónomo; aplicados.
+README raíz y de proveedor revisados para
+este commit; validar nuevo SHA antes de promover.
+
 ### Revisión CI del catálogo — separación del proveedor Rust
 
 En el commit inicial `44ab5b35`, Linux y el proveedor independiente

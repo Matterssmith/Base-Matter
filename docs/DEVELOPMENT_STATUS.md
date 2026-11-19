@@ -1,3 +1,17 @@
+### 2026-11-18 — Iteración de Clippy/standalone
+
+En `2943cedd` pasaron Rustfmt, check y
+tests Linux; Clippy señaló `module_inception`
+en las carpetas de comandos. Corregido con
+alias internos sin suprimir el linter ni
+reubicar archivos. El CI de formato del
+proveedor marcó dos diferencias en el
+decorador independiente, corregidas.
+Reejecutar Linux, Windows y proveedor;
+no considerar listo ni pasar a beta
+hasta comprobar resultados. Ambos
+README revisados en este commit.
+
 ### 2026-11-18 — Cierre de Rustfmt y compatibilidad proveedor
 
 - Se corrigieron los diffs completos emitidos por

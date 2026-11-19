@@ -28,7 +28,8 @@ pub mod antilocation;
 pub mod antimedia;
 pub mod antimention;
 pub mod antipoll;
-pub mod antis;
+#[path = "antis.rs"]
+pub mod listing_command;
 pub mod antispam;
 pub mod antistatus;
 pub mod antisticker;
@@ -41,7 +42,7 @@ pub const CATEGORY: Category = Category {
     en: "PROTECTIONS",
     icon: "♧",
     commands: &[
-        antis::COMMAND,
+        listing_command::COMMAND,
         anti::COMMAND,
         antilink::COMMAND,
         antilinkwa::COMMAND,

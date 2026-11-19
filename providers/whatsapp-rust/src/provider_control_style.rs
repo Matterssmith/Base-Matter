@@ -4,16 +4,14 @@
 use anyhow::{bail, Result};
 
 pub fn decorate(body: &str) -> Result<String> {
-    if body.is_empty()
-        || body.len() > 3800
-        || body.chars().any(|ch| ch.is_control() && ch != '\n')
+    if body.is_empty() || body.len() > 3800 || body.chars().any(|ch| ch.is_control() && ch != '\n')
     {
         bail!("Invalid control response");
     }
-    let template = include_str!("../../../templates/matterssmith-control.txt")
-        .replace("\r\n", "\n");
-    let legacy_menu = include_str!("../../../templates/matterssmith-menu.txt")
-        .replace("\r\n", "\n");
+    let template =
+        include_str!("../../../templates/matterssmith-control.txt").replace("\r\n", "\n");
+    let legacy_menu =
+        include_str!("../../../templates/matterssmith-menu.txt").replace("\r\n", "\n");
     if body.trim_end_matches('\n') == legacy_menu.trim_end_matches('\n') {
         return Ok(legacy_menu.trim_end_matches('\n').to_owned());
     }

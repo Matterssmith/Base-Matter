@@ -2,7 +2,8 @@
 use crate::menu::Category;
 pub mod console;
 pub mod eval;
-pub mod sandbox;
+#[path = "sandbox.rs"]
+pub mod main_command;
 pub mod test;
 
 pub const CATEGORY: Category = Category {
@@ -11,7 +12,7 @@ pub const CATEGORY: Category = Category {
     en: "TESTS AND CONSOLE",
     icon: "◈",
     commands: &[
-        sandbox::COMMAND,
+        main_command::COMMAND,
         test::COMMAND,
         console::COMMAND,
         eval::COMMAND,

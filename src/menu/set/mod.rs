@@ -1,6 +1,7 @@
 // Category set: a Rust module per command.
 use crate::menu::Category;
-pub mod set;
+#[path = "set.rs"]
+pub mod main_command;
 pub mod set_anti;
 pub mod set_lang;
 pub mod set_role;
@@ -12,7 +13,7 @@ pub const CATEGORY: Category = Category {
     en: "CONFIGURATION",
     icon: "♛",
     commands: &[
-        set::COMMAND,
+        main_command::COMMAND,
         set_style::COMMAND,
         set_lang::COMMAND,
         set_role::COMMAND,
