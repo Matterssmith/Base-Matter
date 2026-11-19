@@ -224,10 +224,7 @@ impl ControlThemes {
 
     /// Use only after the WhatsApp bridge authenticates the frame and
     /// admits the read-only menu. Never infer a Vault global rank.
-    pub fn render_verified_root(
-        &self,
-        viewer: MenuViewer<'_>,
-    ) -> Result<String> {
+    pub fn render_verified_root(&self, viewer: MenuViewer<'_>) -> Result<String> {
         let preferences = self
             .dynamic_menu
             .as_ref()

@@ -124,9 +124,13 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     assert!(classic.len() <= 3800);
     assert!(classic.ends_with("*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*"));
     let plain = menu::render_root_with_viewer(
-        Preferences { style: Style::None, language: Language::Es },
+        Preferences {
+            style: Style::None,
+            language: Language::Es,
+        },
         context,
-    ).unwrap();
+    )
+    .unwrap();
     assert!(plain.starts_with("Menú de control global"));
     assert!(plain.contains("menu config"));
     assert!(plain.contains("menu utils"));
@@ -134,10 +138,20 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     assert!(plain.contains("Socket: test-socket"));
     assert!(!plain.contains('╭'));
     assert!(!plain.contains('♪'));
+    assert!(plain.contains("IA: menu ia"));
+    assert!(plain.contains("Todo: menu all"));
+    assert!(!plain.contains("𝙸𝙰"));
     let public = menu::render_root_with_viewer(
         Preferences::default(),
-        MenuViewer { user: "@usuario", role: "Usuario", status: "ACTIVADO", socket: "Privado", socket_owner: false },
-    ).unwrap();
+        MenuViewer {
+            user: "@usuario",
+            role: "Usuario",
+            status: "ACTIVADO",
+            socket: "Privado",
+            socket_owner: false,
+        },
+    )
+    .unwrap();
     assert!(!public.contains("╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹"));
     assert!(!public.contains("test-socket"));
 }

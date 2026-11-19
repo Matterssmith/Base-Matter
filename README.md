@@ -1,3 +1,6 @@
+### 2026-11-18 — Rustfmt de menú autenticado y texto sin diseño
+CI detectó formato en control_ipc.rs, control_style.rs, src/menu.rs y tests/menu_catalog.rs. Se aplicó el formato exacto. `style none` ahora enumera nombres simples de las 21 entradas, sin glifos de la lista clásica. El formato visual clásico, la autoridad por socket y los controles de seguridad no cambiaron. READMEs revisados 2/2; verificar nuevo SHA.
+
 ### 2026-11-18 — Corrección de saltos y delimitadores del menú completo
 Se corrigió la serialización UTF-8 para que el marco use saltos de línea reales, no secuencias escapadas, y se agregó la cenefa completa al detector de respuestas ya decoradas. El test de límite NativeFlow se ajustó a 3900 bytes; nueva prueba valida formato clásico, identidad verificada, variante sin diseño, ausencia de rótulos vacíos y separación de la sección de autoridad para lectores externos. Revisados ambos README; CI del SHA anterior detectará/confirmará diferencias adicionales.
 

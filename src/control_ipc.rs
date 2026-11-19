@@ -199,8 +199,11 @@ impl WhatsAppControlIpc {
                 .filter(|frame| {
                     matches!(
                         frame.text.as_str(),
-                        "=/>menu" | "=/>menú" | "=/>menu page 1"
-                            | "=/>menu page 2" | "=/>menu page 3"
+                        "=/>menu"
+                            | "=/>menú"
+                            | "=/>menu page 1"
+                            | "=/>menu page 2"
+                            | "=/>menu page 3"
                     )
                 })
                 .and_then(|frame| {
@@ -230,7 +233,8 @@ impl WhatsAppControlIpc {
         };
         // All successful replies use the same per-chat renderer.
         // A menu preformatted through that registry is idempotent.
-        let validated = verified_root.or(message)
+        let validated = verified_root
+            .or(message)
             .and_then(|body| {
                 self.themes
                     .decorate(authenticated_group.as_deref(), &body)

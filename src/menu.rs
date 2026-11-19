@@ -535,14 +535,20 @@ pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> 
             };
             lines.push(format!("│·♪·{branch}[ {label} [menu {id}]"));
         } else {
-            lines.push(format!("{label} — menu {id}"));
+            let plain_label = if *id == "all" {
+                if spanish { "Todo" } else { "All" }
+            } else {
+                CATEGORIES
+                    .iter()
+                    .find(|category| category.id == *id)
+                    .map(|category| label(category, options.language))
+                    .ok_or_else(|| anyhow!("Unknown canonical category"))?
+            };
+            lines.push(format!("{plain_label}: menu {id}"));
         }
     }
     if classic {
-        lines.extend([
-            "╰─╮╭────────⟨🌀".to_owned(),
-            "       ││".to_owned(),
-        ]);
+        lines.extend(["╰─╮╭────────⟨🌀".to_owned(), "       ││".to_owned()]);
         if viewer.socket_owner {
             // Role description only. The viewer's actual verified rank
             // is printed separately; global ownership requires Vault proof.
