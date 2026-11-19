@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antiimage",
+    name: "anti image",
     es: "Protección image; desactivada inicialmente",
     en: "Protection image; initially disabled",
-    usages: &["antiimage on|off|inherit"],
+    usages: &["anti image", "set anti image on|off|inherit"],
     implemented: true,
 };

@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antiaudio",
+    name: "anti audio",
     es: "Protección audio; desactivada inicialmente",
     en: "Protection audio; initially disabled",
-    usages: &["antiaudio on|off|inherit"],
+    usages: &["anti audio", "set anti audio on|off|inherit"],
     implemented: true,
 };

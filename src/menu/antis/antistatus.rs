@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antistatus",
+    name: "anti status",
     es: "Protección status; desactivada inicialmente",
     en: "Protection status; initially disabled",
-    usages: &["antistatus on|off|inherit"],
+    usages: &["anti status", "set anti status on|off|inherit"],
     implemented: true,
 };

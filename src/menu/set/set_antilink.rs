@@ -11,8 +11,8 @@ pub const COMMAND: CommandSpec = CommandSpec {
         "set anti link list",
         "set anti link add <dominio> [dominio...]",
         "set anti link del <dominio> [dominio...]",
-        "set anti link --global add <dominio> [dominio...]",
-        "set anti link --global list",
+        "set anti --mod link add <dominio> [dominio...]",
+        "set anti --mod link list",
     ],
     implemented: true,
 };

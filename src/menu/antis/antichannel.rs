@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antichannel",
+    name: "anti channel",
     es: "Protección channel; desactivada inicialmente",
     en: "Protection channel; initially disabled",
-    usages: &["antichannel on|off|inherit"],
+    usages: &["anti channel", "set anti channel on|off|inherit"],
     implemented: true,
 };

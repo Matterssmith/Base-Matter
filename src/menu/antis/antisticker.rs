@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antisticker",
+    name: "anti sticker",
     es: "Protección sticker; desactivada inicialmente",
     en: "Protection sticker; initially disabled",
-    usages: &["antisticker on|off|inherit"],
+    usages: &["anti sticker", "set anti sticker on|off|inherit"],
     implemented: true,
 };

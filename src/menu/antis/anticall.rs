@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "anticall",
+    name: "anti call",
     es: "Protección call; desactivada inicialmente",
     en: "Protection call; initially disabled",
-    usages: &["anticall on|off|inherit"],
+    usages: &["anti call", "set anti call on|off|inherit"],
     implemented: true,
 };
