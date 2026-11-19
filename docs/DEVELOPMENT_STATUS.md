@@ -1,3 +1,19 @@
+### 2026-11-18 — Referencia guardada: tarjeta Go con botones `SendButtonsRow`
+
+- Código original `ts18`/`ts19` almacenado como texto inerte en
+  `docs/references/ts18_ts19_buttons.go.txt` para impedir que se compile
+  como parte de Base-Matter.
+- Características reales del ejemplo: miniatura cuadrada JPEG de 300×300,
+  descripción con metadatos, botones Audio/MP4 (y Enlace en ts19).
+- La referencia no demuestra el selector de múltiples países de otra captura:
+  esa UI necesita un diseño/contrato distinto.
+- Confirmación del operador: botones actuales no funcionan según lo esperado
+  y el menú `antis` es difícil de leer. Rediseño e integración Rust pendientes.
+- Mantener Go únicamente como referencia; no trasladar códigos de descarga,
+  APIs ni dependencias sin permisos/licencia revisados.
+- Auditar README raíz y README de proveedor por este commit; sin cambios
+  de ejecución, ramas beta/stable, sesionamiento o protecciones.
+
 ### 2026-11-18 — CI núcleo Linux verde / proveedor formato
 
 En `dcf39b2`, núcleo Linux: Rustfmt, cargo check,

@@ -20,6 +20,20 @@ width="100%"
 
 ---
 
+### 2026-11-18 — Referencia del propietario: tarjetas con botones de fila (Go, solo documentación)
+
+Se preservó literalmente el ejemplo Go `ts18`/`ts19` recibido del propietario en
+`docs/references/ts18_ts19_buttons.go.txt`. Su punto de interés es
+`SendButtonsRow(title, text, footer, thumbnail, buttons)` con dos botones
+para `ts18` (Audio/MP4) y tres para `ts19` (Audio/MP4/Enlace).
+**Este código es referencia de interfaz, no ejecutable ni integración de Go.**
+No implica que el proveedor Rust haya reproducido esos botones ni prueba
+compatibilidad HTML, tarjetas o selectores grandes en WhatsApp.
+Documentación: [referencia técnica](docs/WHATSAPP_BUTTON_CARD_REFERENCE.md).
+READMEs raíz y proveedor revisados antes de publicar; no se cambia
+sesión, Vault, roles, antis, seguridad ni Bot-Matter.
+
+
 ### 2026-11-18 — Corrección final de formato del proveedor
 
 Para `dcf39b2`, la verificación Linux del núcleo quedó

@@ -127,3 +127,12 @@ registro de permisos, no en este menú.
 
 No promover a beta sin CI Linux/Windows/proveedor y una prueba
 manual confirmada en WhatsApp.
+
+## Referencia nueva de tarjetas de botones inferiores (2026-11-18)
+
+El propietario aportó el ejemplo Go `ts18`/`ts19` con `SendButtonsRow`
+para una tarjeta con miniatura y botones inferiores Audio/MP4/Enlace.
+Es una **referencia de UX**, no una implementación incorporada en Rust:
+[análisis y archivo literal](WHATSAPP_BUTTON_CARD_REFERENCE.md).
+El menú `antis` actual y sus botones tienen que rediseñarse antes
+de anunciar soporte práctico; no se reactivan antis por esta anotación.

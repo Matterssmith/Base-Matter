@@ -1,0 +1,150 @@
+package dl
+
+import (
+	"bytes"
+	"errors"
+	"image"
+	"image/jpeg"
+	_ "image/png"
+	"regexp"
+	"strings"
+
+	"github.com/ANDERSONTELLO"
+
+	"golang.org/x/image/draw"
+	_ "golang.org/x/image/webp"
+)
+
+var ts18Action = regexp.MustCompile(`(?i)^(audio|mp4|link)\s+(\S+)$`)
+
+func init() {
+	for _, name := range []string{"ts18", "ts19"} {
+		bot.Register(&bot.Command{
+			Name:      name,
+			Category:  "downloader",
+			Desc:      "Prueba de búsqueda en YouTube con botones de descarga.",
+			Usage:     "<búsqueda/url>",
+			Hidden:    true,
+			OwnerOnly: true,
+			Run:       runTS18,
+		})
+	}
+}
+
+func ytSquareThumb(c *bot.Ctx, link string) []byte {
+	if link == "" {
+		return nil
+	}
+	data, _, err := bot.FetchBytes(c.Bg(), link)
+	if err != nil {
+		return nil
+	}
+	src, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil
+	}
+	r := src.Bounds()
+	w, h := r.Dx(), r.Dy()
+	if w > h {
+		x := r.Min.X + (w-h)/2
+		r = image.Rect(x, r.Min.Y, x+h, r.Max.Y)
+	} else {
+		y := r.Min.Y + (h-w)/2
+		r = image.Rect(r.Min.X, y, r.Max.X, y+w)
+	}
+	dst := image.NewRGBA(image.Rect(0, 0, 300, 300))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), src, r, draw.Src, nil)
+	var buf bytes.Buffer
+	if jpeg.Encode(&buf, dst, &jpeg.Options{Quality: 80}) != nil {
+		return nil
+	}
+	return buf.Bytes()
+}
+
+func noLink(e error) error {
+	if e != nil {
+		return e
+	}
+	return errors.New("la API no devolvió el archivo")
+}
+
+func runTS18(c *bot.Ctx) error {
+	p := bot.Pick(c.Prefix, ".")
+	input := strings.TrimSpace(c.Text)
+	if input == "" {
+		return c.Reply("Escribe qué buscar.\n> Ejemplo: " + p + c.Command + " Metamorfosis phonk")
+	}
+
+	if m := ts18Action.FindStringSubmatch(input); m != nil {
+		action, link := strings.ToLower(m[1]), m[2]
+		if action == "link" {
+			return c.Reply(link)
+		}
+		c.React("⏳")
+		var err error
+		if action == "mp4" {
+			res, e := c.Bot.API.YTVideoRace(link)
+			if e == nil && res.DL != "" {
+				err = c.SendURL(res.DL, bot.URLOpts{Kind: "video", Mime: "video/mp4"})
+			} else {
+				err = noLink(e)
+			}
+		} else {
+			res, e := c.Bot.API.YTAudio(link)
+			if e == nil && res.DL != "" {
+				err = c.SendAudioURL(res.DL, 0)
+			} else {
+				err = noLink(e)
+			}
+		}
+		if err != nil {
+			c.React("✖️")
+			return c.Reply("No se pudo descargar: " + err.Error())
+		}
+		c.React("✅")
+		return nil
+	}
+
+	c.React("🔎")
+	video, direct, _ := findVideo(c, input)
+	if video == nil && direct == "" {
+		c.React("✖️")
+		return c.Reply("Sin resultados en YouTube.")
+	}
+	url, title := direct, "YouTube"
+	lines := []string{}
+	var thumb []byte
+	if video != nil {
+		url, title = bot.Pick(video.URL, direct), bot.Pick(video.Title, title)
+		if video.Channel != "" {
+			lines = append(lines, "> Canal: "+video.Channel)
+		}
+		if video.Duration != "" {
+			lines = append(lines, "> Duración: "+video.Duration)
+		}
+		if video.Views > 0 {
+			lines = append(lines, "> Reproducciones: "+formatViews(c, video.Views))
+		}
+		if video.Published != "" {
+			lines = append(lines, "> Publicado: "+video.Published)
+		}
+		thumb = ytSquareThumb(c, video.Thumbnail)
+	}
+	text := "*Elige el formato para descargar.*\n\n> *" + title + "*"
+	if len(lines) > 0 {
+		text += "\n" + strings.Join(lines, "\n")
+	}
+	buttons := []bot.Button{
+		{ID: p + c.Command + " audio " + url, Text: "Audio"},
+		{ID: p + c.Command + " mp4 " + url, Text: "MP4"},
+	}
+	if c.Command == "ts19" {
+		buttons = append(buttons, bot.Button{ID: p + c.Command + " link " + url, Text: "Enlace"})
+	}
+	if _, err := c.SendButtonsRow(title, text, c.Bot.Cfg.Dev, thumb, buttons); err != nil {
+		c.React("✖️")
+		return c.Reply("No se pudo enviar la tarjeta: " + err.Error())
+	}
+	c.React("✅")
+	return nil
+}

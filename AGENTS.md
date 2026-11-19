@@ -1,5 +1,21 @@
 # Base-Matter — repository instructions
 
+## Referencia prioritaria del propietario — botones de fila del ejemplo Go (2026-11-18)
+
+El propietario proporcionó código fuente `package dl` con comandos `ts18` y
+`ts19`. Conservar el original en `docs/references/ts18_ts19_buttons.go.txt`.
+Señal visual deseada: tarjeta con miniatura JPEG cuadrada, título y texto
+descriptivo, con botones INFERIORES horizontales (Audio, MP4 y, opcional,
+Enlace). La función Go que muestra esa tarjeta es `c.SendButtonsRow`.
+El ejemplo no acredita soporte de HTML nativo ni del selector de países de
+otra imagen. Solo sirve como referencia de interfaz; Rust sigue siendo el
+lenguaje del proveedor y núcleo. No incorporar código Go ni habilitar
+descargas o acciones desde botones sin verificar contratos, autorización
+y cliente WhatsApp real. La observación del propietario de que los botones
+actuales no funcionan y el menú antis es ilegible es un bug de UX abierto.
+Ver `docs/WHATSAPP_BUTTON_CARD_REFERENCE.md`.
+
+
 ## Contrato de menú de Base-Matter, 2026-11-18
 
 `src/menu.rs` contiene contratos de presentación:

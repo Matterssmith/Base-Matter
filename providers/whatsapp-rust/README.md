@@ -1,3 +1,13 @@
+### 2026-11-18 — Ejemplo original de tarjeta con botones de fila (sin integración)
+
+Se conserva en el repositorio el código Go suministrado por el propietario
+para `ts18`/`ts19`, incluida la llamada `SendButtonsRow` que presenta
+miniatura, texto y botones inferiores Audio/MP4/Enlace. Es una referencia
+visual; **no** se añadió un motor Go, descarga multimedia ni endpoints externos.
+Los botones de menú en Rust actuales son un prototipo distinto y la prueba
+del teléfono no demostró aún la interacción deseada.
+Ver [`docs/WHATSAPP_BUTTON_CARD_REFERENCE.md`](../../docs/WHATSAPP_BUTTON_CARD_REFERENCE.md).
+
 ### CI final del menú por categorías
 
 El commit `dcf39b2` pasó las verificaciones del
