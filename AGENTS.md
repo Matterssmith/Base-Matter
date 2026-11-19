@@ -1,5 +1,10 @@
 # Base-Matter — repository instructions
 
+## Regla vinculante de categorías cerradas — 2026-11-18
+
+**Consultar antes de cambiar cualquier menú:** [docs/CATEGORY_CONTRACT.md](docs/CATEGORY_CONTRACT.md). El propietario fijó **21 entradas exactas**, en el orden de su muestra: IA, Anti, Todo, Configuración, Descargas, Economía, Diversión, Gacha, Juegos, Grupo, Información, Enlaces, Principal, Modo, Propietario, Perfil, Reacciones, Búsqueda, Conexiones, Sistema, Utilidades. **No inventar, renombrar ni añadir categorías**. Todo es una vista agregada, no un destino para comandos. Un comando existente se reubica en alguna entrada permitida; nombres heredados de módulos sólo pueden ser aliases internos. Ningún comando pendiente se declara operativo. WhatsApp conserva un único botón «Categorías». La migración del código debe completar el contrato y sus pruebas antes de promover a beta.
+
+
 ## UI NativeFlow de categorías (2026-11-18)
 
 El proveedor `ui.rs` ofrece UN SOLO botón selector NativeFlow «Categorías» (single_select), con nueve categorías reales y «Todo» =/>menu all como fila. La presentación del dueño emplea `╭─💠`, `│·♪·╠[`, `│·♪·╚[` y `╰───────────⟨ 🌀`. No mostrar botones separados «Ayuda»/«Ver todo», ni inventar categorías sin ejecutor. Se admite respuesta legacy ButtonsResponseMessage de los botones fila Go, solo con IDs cerrados. Ninguna selección concede capacidades. El cliente WhatsApp real no está probado. Efectos HTML y stickers de roles quedan separados y desactivados sin autorización/datos reales.

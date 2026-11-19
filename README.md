@@ -1,3 +1,6 @@
+### 2026-11-18 — Catálogo de categorías cerrado por instrucción del propietario
+El contrato [docs/CATEGORY_CONTRACT.md](docs/CATEGORY_CONTRACT.md) registra las 21 entradas exactas del menú original y prohíbe categorías inventadas. Todo = vista agregada. Establece destino de cada comando histórico, aliases de compatibilidad y un único botón «Categorías». La documentación **no equivale a migración completa del código**; pendiente adecuar el renderizador y las pruebas.
+
 ### 2026-11-18 — Diagnóstico sin argumentos incluso con bot OFF
 La ruta pública de =/>test ahora devuelve un informe mínimo cuando
 el bot está apagado, en lugar de descartarlo sin respuesta.
