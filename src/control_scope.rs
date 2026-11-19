@@ -107,7 +107,9 @@ pub fn parse_user_target<'a>(
                 value: Some(mention),
             })
         }
-        _ => bail!("Usuario no verificable. Responde a un mensaje o usa una mención, número o user válido"),
+        _ => bail!(
+            "Usuario no verificable. Responde a un mensaje o usa una mención, número o user válido"
+        ),
     }
 }
 
@@ -132,10 +134,7 @@ mod tests {
                 arguments: vec!["link"]
             }
         );
-        for value in [
-            vec!["--mod", "link", "on"],
-            vec!["link", "on", "--mod"],
-        ] {
+        for value in [vec!["--mod", "link", "on"], vec!["link", "on", "--mod"]] {
             let parsed = parse_scope(&value).unwrap();
             assert_eq!(parsed.scope, CommandScope::Socket);
             assert_eq!(parsed.arguments, vec!["link", "on"]);
@@ -164,11 +163,15 @@ mod tests {
             UserTargetKind::Mention
         );
         assert_eq!(
-            parse_user_target(&["numero", "5215512345678"], false).unwrap().kind,
+            parse_user_target(&["numero", "5215512345678"], false)
+                .unwrap()
+                .kind,
             UserTargetKind::Number
         );
         assert_eq!(
-            parse_user_target(&["user", "member-1"], false).unwrap().kind,
+            parse_user_target(&["user", "member-1"], false)
+                .unwrap()
+                .kind,
             UserTargetKind::User
         );
         assert!(parse_user_target(&["user", "name with spaces"], false).is_err());
