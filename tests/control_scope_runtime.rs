@@ -74,7 +74,7 @@ fn no_argument_commands_show_current_effective_state() {
         call(&c, group, Some(group), "=/>bot").unwrap(),
         DispatchResult::GroupStatus { enabled: false, .. }
     ));
-    assert!(text(call(&c, group, Some(group), "=/>anti").unwrap()).contains("chat actual"));
+    assert!(text(call(&c, group, Some(group), "=/>anti").unwrap()).contains("Antis del grupo"));
     assert!(text(call(&c, group, Some(group), "=/>anti link").unwrap()).contains("link: off"));
 }
 

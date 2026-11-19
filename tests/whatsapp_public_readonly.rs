@@ -8,6 +8,7 @@ use anyhow::{bail, Result};
 use hmac::{Hmac, Mac};
 use matter_base::{
     activation::{ActivationSource, SocketActivationStore},
+    anti::AntiStore,
     control::{ControlDispatcher, DispatchResult},
     control_style::{ControlTheme, ControlThemes},
     BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter, InboundReplayStore,
@@ -39,6 +40,7 @@ fn fixture() -> WhatsAppControlBridge {
     let controller = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
             .with_public_menu(themes)
+            .with_group_antis(Arc::new(AntiStore::open(":memory:").unwrap()))
             .with_silent_bot_commands()
             .with_unified_live_controls(),
     );
@@ -478,4 +480,36 @@ fn incoming_group_anti_events_are_verified_audited_and_never_executed() {
     );
     assert!(bridge.ingest(&private).is_err());
     assert!(!store.get("socket-1", GROUP, "link").unwrap().enabled);
+}
+
+#[test]
+fn public_anti_inspections_are_read_only_and_scoped_to_enabled_chat() {
+    let bridge = fixture();
+    bridge
+        .ingest(&frame("owner-enable", "=/>bot on", "owner", OWNER_JID, true))
+        .unwrap();
+    bridge
+        .ingest(&frame("owner-socket", "=/>bot --mod on", "owner", OWNER_JID, true))
+        .unwrap();
+    bridge
+        .ingest(&frame("owner-group", "=/>bot group on", "owner", OWNER_JID, true))
+        .unwrap();
+    for (id, query) in [
+        ("read-chat", "=/>anti"),
+        ("read-link", "=/>anti link"),
+        ("read-mod", "=/>anti --mod link"),
+        ("read-global", "=/>anti --global link"),
+    ] {
+        assert!(matches!(
+            bridge.ingest(&frame(id, query, READER, GROUP, false)).unwrap(),
+            WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
+                if command == "anti" && output.contains("link: off")
+        ));
+    }
+    assert!(bridge
+        .ingest(&frame("read-write", "=/>anti link on", READER, GROUP, false))
+        .is_err());
+    assert!(bridge
+        .ingest(&frame("read-set", "=/>set anti link on", READER, GROUP, false))
+        .is_err());
 }
