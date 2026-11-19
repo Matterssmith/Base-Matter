@@ -1,3 +1,34 @@
+## Checkpoint de implementación — 2026-11-18 (México)
+
+**Idea del propietario:** cada nueva idea y cambio debe quedar en las
+instrucciones y en el punto exacto de progreso. Se crean
+docs/DECISION_LOG.md y docs/WORK_CONTINUITY.md; AGENTS.md exige
+actualizarlos con docs/DEVELOPMENT_STATUS.md en cada commit. CI añade
+un control automático para evitar omisiones y mantener referencia
+a la revisión de ambos README.
+
+**Permiso actualizado:** el propietario informa que Jeriel le
+autorizó utilizar su clave de Aura Reed para la IA planeada y
+no especificó límites. Documentado en Vault-Matter privado commit
+8872f9c; no equivale a licencia activa ni habilitación de API.
+No hay keys ni worker, ejecución de código u operaciones añadidas.
+
+**Archivos modificados:** AGENTS.md, ambos README, docs/MATTER_AI.md,
+docs/DEVELOPMENT_STATUS.md, docs/DECISION_LOG.md,
+docs/WORK_CONTINUITY.md, scripts/check_continuity.py,
+.github/workflows/rust-ci.yml, tests/menu_catalog.rs,
+tests/command_audit.rs.
+
+**Diagnóstico del SHA anterior d6ff4cb:** Linux tests/menu_catalog
+falló por mezclar la cabecera de ayuda con el menú; Windows
+tests/command_audit falló intermitentemente por ruta temporal
+AlreadyExists. Ambas causas corregidas en esta revisión.
+**Pruebas del nuevo SHA:** pendientes. Las pruebas de integración en
+WhatsApp físico no se han hecho. Beta/stable permanecen intactas.
+**Siguiente:** verificar CI exacto, reparar si es necesario con
+actualización de todos los registros, después ensayar menú/help
+en WhatsApp. README revisados: 2/2.
+
 ### 2026-11-18 — Diagnóstico sin argumentos incluso con bot OFF
 La ruta pública de =/>test ahora devuelve un informe mínimo cuando
 el bot está apagado, en lugar de descartarlo sin respuesta.

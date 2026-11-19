@@ -16,13 +16,21 @@ use std::sync::{
 struct Temp(std::path::PathBuf);
 impl Temp {
     fn new() -> Self {
-        let p = std::env::temp_dir().join(format!(
-            "matter-command-audit-{}-{}",
-            std::process::id(),
-            time::OffsetDateTime::now_utc().unix_timestamp_nanos()
-        ));
-        std::fs::create_dir(&p).unwrap();
-        Self(p)
+        for _ in 0..5 {
+            let mut nonce = [0_u8; 16];
+            getrandom::fill(&mut nonce).expect("Random test directory nonce");
+            let p = std::env::temp_dir().join(format!(
+                "matter-command-audit-{}-{}",
+                std::process::id(),
+                hex::encode(nonce)
+            ));
+            match std::fs::create_dir(&p) {
+                Ok(()) => return Self(p),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(error) => panic!("Test directory unavailable: {error}"),
+            }
+        }
+        panic!("Unique test directory unavailable");
     }
 }
 impl Drop for Temp {

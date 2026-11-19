@@ -1,3 +1,21 @@
+## Autorización de Aura Reed comunicada — 2026-11-18
+
+El propietario de Matterssmith informó que Jeriel (GitHub:
+https://github.com/jerielweb), creador de Aura Reed, le autorizó
+usar su clave de IA para las tareas planeadas, **sin establecer
+límites específicos**. Este informe ya está registrado en
+Vault-Matter privado (rama matter, commit 8872f9c):
+docs/AI_PERMISSION_AURA_REED.md.
+
+**No equivale a proveedor operativo:** no hay clave provisionada,
+gateway Vault activo ni licencia cifrada y verificable. La
+ausencia de límites numéricos informados no es cuota infinita;
+se respetan límites del servicio y controles técnicos/costes
+del ecosistema. Las futuras capacidades de orientación de
+menús y asistencia de programación deben registrarse por
+concesión y verificarse por operación. El permiso no concede
+ejecución de código, escritura GitHub, roles ni dispositivos.
+
 # Matter AI — acceso indirecto mediante Vault-Matter
 
 **Estado:** contrato del cliente Rust en `alpha`, sin gateway Vault

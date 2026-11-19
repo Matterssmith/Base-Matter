@@ -57,6 +57,9 @@ jobs:
       - name: Verify Clippy
         run: cargo clippy --all-targets --locked -- -D warnings
 
+      - name: Verify mandatory decision and continuity records
+        run: python3 scripts/check_continuity.py
+
       - name: Audit tracked README links, credits and secrets
         run: python3 scripts/verify_repository.py
 

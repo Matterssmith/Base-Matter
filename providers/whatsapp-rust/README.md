@@ -1,3 +1,17 @@
+### 2026-11-18 — Continuidad obligatoria y permiso Aura Reed comunicado
+
+El usuario exige registrar cada idea y cambio en instrucciones, un
+historial de decisiones y un checkpoint exacto para reiniciar tras
+desconexiones. [AGENTS.md](../../AGENTS.md) es la norma vinculante;
+[continuidad](../../docs/WORK_CONTINUITY.md) y
+[decisiones](../../docs/DECISION_LOG.md) se actualizan en cada commit.
+El workflow Rust lo exige. La documentación de IA
+[docs/MATTER_AI.md](../../docs/MATTER_AI.md) remite al permiso comunicado
+por Jeriel, registrado en Vault-Matter (sin límites específicos
+comunicados, pero sin clave o broker activo). Se corrigen una
+aserción de menu/help y una colisión temporal Windows.
+**README revisados: 2/2**. CI de este nuevo SHA pendiente.
+
 ### 2026-11-18 — Rustfmt y ayuda sin categorías
 Se aplicó formato Rustfmt en la ayuda por página, la disponibilidad de comandos, las variantes del menú y las pruebas. `=/>help` sin argumentos muestra exclusivamente formas de ayuda, sin copiar el menú. Ambos README revisados 2/2; se requiere nueva verificación.
 

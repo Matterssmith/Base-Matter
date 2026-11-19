@@ -1,5 +1,49 @@
 # Base-Matter — repository instructions
 
+## REGLA PRIORITARIA — CONTINUIDAD Y DECISIONES POR COMMIT (2026-11-18)
+
+Consultar siempre, **antes de modificar**, docs/WORK_CONTINUITY.md,
+docs/DECISION_LOG.md, docs/CATEGORY_CONTRACT.md, docs/MATTER_AI.md,
+docs/DEVELOPMENT_STATUS.md y todos los README. Recuperar el SHA real
+de GitHub y el CI de ese SHA. El registro más reciente prevalece sobre
+notas históricas contradictorias de este documento.
+
+Por CADA idea, decisión, cambio, corrección de Rustfmt, prueba o
+actualización que produzca un nuevo commit, editar EN ESE MISMO COMMIT:
+- AGENTS.md: instrucción vigente, o referencia con estado y corrección;
+- docs/DECISION_LOG.md: origen de la idea, decisión, archivos y límites;
+- docs/WORK_CONTINUITY.md: SHA anterior, alcance, pruebas, pendientes,
+  bloqueos, pasos exactos de reanudación y próximo trabajo;
+- docs/DEVELOPMENT_STATUS.md: resumen técnico por etapa.
+Revisar TODOS los README rastreados antes de cada commit, actualizar
+cualquier texto desactualizado e indicar «README revisados: 2/2».
+El CI valida la presencia de estos cambios conjuntos. El nuevo
+commit debe publicarse y compararse con la rama remota antes de
+informar que está seguro. Nunca inventar SHA ni resultados CI:
+anotar «pendiente de CI» en el commit inicial y comprobar acciones
+reales al terminar. Un nuevo cambio después de revisar CI actualiza
+los cuatro registros otra vez.
+
+No publicar secretos, PN/LID, sesiones, prompts privados ni credenciales.
+No realizar reset --hard de trabajo local sin respaldarlo, ni activar
+Matter-Bot antes de cumplir los criterios de Base-Matter. Trabajar
+sobre alpha sin alterar beta o stable hasta aprobación y pruebas.
+
+### Autorización de Jeriel: estado actualizado
+El propietario de Matterssmith informó el 18-11-2026 que Jeriel,
+creador de Aura Reed (GitHub: jerielweb), le concedió usar su clave
+para la IA prevista SIN comunicar límites numéricos. Ya no está
+«pendiente de respuesta». Registro privado en Vault-Matter:
+docs/AI_PERMISSION_AURA_REED.md (rama matter, commit 8872f9c).
+Esto es consentimiento COMUNICADO POR EL SOLICITANTE, no una
+concesión técnica ya activada. Sin cuota informada no significa
+sin cuotas del proveedor. Ninguna clave se ha provisionado, no hay
+worker Vault de IA desplegado y no se autorizan consola, escritura,
+dispositivos ni roles por este permiso. Sólo registrar usos
+previstos (orientación de menús, asesoría/programación) y activar
+tras verificación/cifrado/recibo de política. Nunca copiar clave.
+
+
 ## Regla de salida de menús y ayuda (2026-11-18)
 El menú sólo lista categorías y sintaxis disponible; no ofrecer narraciones, explicación de implementación ni opciones no implementadas. `help` sin argumentos enseña sintaxis de ayuda, no el menú; `help <comando|categoria>` es el lugar de detalle. Si un comando no tiene función al invocarse sin argumentos, responde con `Uso` y sus parámetros reales. `style none` tiene idéntica semántica sin adornos. Véase `docs/CATEGORY_CONTRACT.md`.
 
@@ -60,10 +104,10 @@ activación ni roles. El HTML completo es
 experimental, sin pruebas de renderizado móvil.
 No borrar la plantilla antigua hasta auditar
 sus consumidores, pero no usarla en el
-controlador de producción. El permiso de
-Alya Core continúa pendiente; ninguna clave
-se importa de Aura Reed ni se transmite por
-WhatsApp. Ver `docs/MENU_CATALOG.md`.
+controlador de producción. Jeriel ya comunicó autorización para la IA planeada,
+sin límites específicos reportados; no hay una concesión
+Vault activa ni clave importada. Ningún secreto se
+transmite por WhatsApp. Ver `docs/MENU_CATALOG.md`.
 
 ## Contrato de permisos de IA concedidos por titulares — 2026-11-18
 

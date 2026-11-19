@@ -79,7 +79,9 @@ fn individual_antis_are_public_metadata_but_never_execution_grants() {
     }
     let page = menu::render("menu antis 2", Preferences::default()).unwrap();
     assert!(page.contains("antilink"));
-    assert!(page.contains("📖 Ayuda: Anti"));
+    assert!(!page.contains("📖 Ayuda: Anti"));
+    let explanation = menu::render_help("antis 2", Preferences::default()).unwrap();
+    assert!(explanation.contains("📖 Ayuda: Anti"));
     assert!(menu::render("menu antis 9", Preferences::default()).is_err());
     assert!(menu::render("menu no-such-category", Preferences::default()).is_err());
 }
