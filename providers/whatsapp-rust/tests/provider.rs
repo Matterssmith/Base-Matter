@@ -332,7 +332,7 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>menu fun",
         "=/>menu gacha",
         "=/>menu games",
-        "=/>menu group",
+        "=/>menu unknown",
         "=/>menu info",
         "=/>menu links",
         "=/>menu main",

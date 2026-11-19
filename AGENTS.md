@@ -1,5 +1,19 @@
 # Base-Matter — repository instructions
 
+## 2026-11-18 — Corrección de test y checkpoint tras CI
+
+CI del SHA 97de8ac mostró:
+- La suite del proveedor marcó fallida una aserción heredada que
+  rechazaba `=/>menu group`, aunque «Grupo» es una de las 21
+  categorías autorizadas. El caso negativo ahora es
+  `=/>menu unknown`; todas las categorías siguen probándose.
+- La verificación documental detectó que el commit previo omitió
+  modificar docs/WORK_CONTINUITY.md. Este commit lo corrige
+  y refuerza la regla de registrar el checkpoint SIEMPRE.
+- Los cambios son tests/documentación, no permisos de escritura.
+- README revisados: 2/2. CI nuevo pendiente.
+
+
 ## 2026-11-18 — Test real de 21 categorías y documentos de WhatsApp
 
 La plantilla antigua de pruebas sólo renderiza "menu" raíz y

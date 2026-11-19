@@ -1,5 +1,14 @@
 # Historial de decisiones de implementación — Base-Matter
 
+## BASE-D007 — recuperación del checkpoint y test de grupo
+- SHA anterior: 97de8ac040148925baa194710a0d5dab82d90aff.
+- Incidencia: el commit previo omitió WORK_CONTINUITY.
+- Prueba: `menu group` es una categoría permitida, no debe
+  figurar en la lista de denegaciones del signer.
+- Corrección: sustituida por `menu unknown`.
+- Resultado: revalidación nueva pendiente; README 2/2.
+
+
 ## BASE-D006 — Fixture dinámico del menú y guías WhatsApp
 - Falla CI: tests/whatsapp_public_readonly.rs probaba la nueva
   navegación con un renderer de plantilla estática antigua que sólo

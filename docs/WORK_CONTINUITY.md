@@ -1,3 +1,28 @@
+# Punto vigente de recuperación — Base-Matter alpha (18-11-2026)
+
+- SHA base: 97de8ac040148925baa194710a0d5dab82d90aff.
+- Commit esperado: "fix(alpha): restore continuity checkpoint and valid readonly menu tests".
+- Archivos: providers/whatsapp-rust/tests/provider.rs y los
+  cuatro archivos obligatorios de seguimiento (AGENTS, DECISION_LOG,
+  WORK_CONTINUITY, DEVELOPMENT_STATUS), ambos README.
+- Corrección: prueba de rechazo del signer reemplaza "menu group"
+  por "menu unknown". Grupo es categoría legítima.
+- Incidencia de proceso: el commit anterior no actualizó este
+  checkpoint; el CI lo detectó. Retomar la actualización estricta
+  de los cuatro archivos en cada commit.
+- CI SHA 97de8ac: proveedor FAIL en test de categoría Grupo,
+  Rust Linux FAIL por checker de continuidad; Windows en ejecución.
+- CI nuevo: pendiente. No afirmar que la interfaz se vio en móvil.
+- Funcionalidad actual para probar: =/>menu en self-chat,
+  21 entradas y un selector nativo; con flags MENU_LAB=1 y
+  RICH_HTML=1 se prueban tarjetas TS18, TS19, RichResponse y
+  audio Ogg/Opus 0.45s. El sonido requiere pulsar reproducir.
+- Siguiente: verificar GitHub Actions Linux/Windows y proveedor,
+  corregir fallas de pruebas o compilación, registrar un nuevo
+  checkpoint en cada commit. Tras verde, iniciar WhatsApp Rust
+  con pairing code o sesión existente y probar =/>menu.
+- README revisados: 2/2. Rama beta/stable intacta.
+
 # Checkpoint 2026-11-18 — 21 categorías y pruebas de transporte
 
 - SHA base: 954aea37c2c92bc944ceb309780eaa9b1581a87d.
