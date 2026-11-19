@@ -625,7 +625,7 @@ async fn main() -> Result<()> {
                     sender_jid: &sender,
                     message_id: &ctx.info.id,
                     text: selected_button
-                        .or_else(|| reply_help.as_deref())
+                        .or(reply_help.as_deref())
                         .or_else(|| ctx.message.text_content())
                         .unwrap_or_default(),
                     from_me: source.is_from_me,

@@ -822,7 +822,10 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
     // Exact command metadata wins over a category alias of the same name.
     // For example, 'anti' is a control verb AND the Anti category.
     let is_command = CATEGORIES.iter().any(|category| {
-        category.commands.iter().any(|command| command.name == query)
+        category
+            .commands
+            .iter()
+            .any(|command| command.name == query)
     });
     if !is_command
         && CATEGORIES
