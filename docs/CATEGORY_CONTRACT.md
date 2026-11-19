@@ -1,3 +1,13 @@
+## 2026-11-19 — Tipografía WhatsApp y categorías vacías ocultas (alpha)
+
+- Idea de Dev MS Leito Delfin 3 Siss: separar decoración y texto funcional usando negrita `*texto*`, código inline \`texto\` y bloque \`\`\`texto\`\`\`; no enviar los marcadores como instrucciones a ejecutar.
+- El catálogo contractual de 21 rutas permanece registrado. La **lista visible** se calcula únicamente a partir de descriptores `implemented: true`; `Todo` conserva la vista agregada. Una categoría vacía no aparece en `=/>menu`, `menu all` ni en el selector NativeFlow «Categorías».
+- `templates/menu-visible-categories.json` es el manifiesto compartido del selector Rust. `src/menu.rs` valida por prueba que coincide con el inventario real: una implementación nueva exige actualizar el manifiesto en el mismo cambio. Las páginas históricas pueden seguir aceptándose por compatibilidad, sin mostrar filas vacías.
+- Los nombres de categorías aparecen en negritas WhatsApp y las rutas de comandos usan monoespaciado; la cenefa ornamental se conserva. `style none` permanece en texto plano.
+- Se guardan cinco alfabetos Unicode y los formatos de texto en `templates/message-alphabets.json`, la plantilla `templates/message-frame.txt`, y el renderizador reutilizable `src/message_typography.rs`. Accentos se conservan cuando no existe glifo equivalente.
+- Seguridad sin cambios: botones sólo de lectura, ninguna categoría gana permisos, filtros Anti siguen OFF y no se activa Bot-Matter. Requiere CI Linux/Windows/proveedor y prueba real del teléfono.
+- README revisados: 2/2. CI del nuevo SHA: pendiente.
+
 ## 2026-11-18 — Menú y laboratorio de interfaz en WhatsApp
 
 El menú autorizado conserva las 21 entradas del contrato cerrado,
@@ -26,7 +36,7 @@ Leer [WHATSAPP_UI_TESTS.md](WHATSAPP_UI_TESTS.md) para los pasos.
 
 ## Formato obligatorio del menú global (noviembre 2026)
 
-El comando `=/>menu` usa el encabezado `*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*`, título de control global, las 21 categorías en orden, cierre `╰─╮╭────────⟨🌀`, autoridad descriptiva, panel del usuario/socket/rol/estado, instrucciones y cenefa final. El panel **debe** usar información autenticada del puente; un `Owner del socket` nunca implica por sí mismo `Owner Global` de Vault. La sección `Owner Global` describe la jerarquía, no prueba un rango concedido. No inventar alias WhatsApp ni mostrar PN/LID a terceros. `style none` mantiene categorías, rutas y estado en texto simple, sin cenefas. Se conservan **las 21 entradas incluso cuando alguna no tiene comandos**; no escribir «Sin comandos registrados» ni un rótulo de vacío. `menu all` omite encabezados sin comandos, y las páginas individuales no mencionan ausencia de comandos. El selector conserva un solo botón «Categorías» y páginas seguras. Toda respuesta debe cumplir límites de bytes del puente.
+El comando `=/>menu` usa el encabezado `*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*`, título de control global, las 21 categorías en orden, cierre `╰─╮╭────────⟨🌀`, autoridad descriptiva, panel del usuario/socket/rol/estado, instrucciones y cenefa final. El panel **debe** usar información autenticada del puente; un `Owner del socket` nunca implica por sí mismo `Owner Global` de Vault. La sección `Owner Global` describe la jerarquía, no prueba un rango concedido. No inventar alias WhatsApp ni mostrar PN/LID a terceros. `style none` mantiene categorías, rutas y estado en texto simple, sin cenefas. Se conservan las **21 entradas en el catálogo contractual**, pero el menú renderizado oculta por completo las categorías sin ningún comando implementado; no escribir «Sin comandos registrados». `menu all` omite encabezados sin comandos, y las páginas individuales no mencionan ausencia de comandos. El selector conserva un solo botón «Categorías» y páginas seguras. Toda respuesta debe cumplir límites de bytes del puente.
 
 
 **Fuente de autoridad:** catálogo de 21 entradas entregado por la persona propietaria el 18 de noviembre de 2026. **Estado:** el catálogo visual y el selector con paginación ya están implementados en `alpha`; las carpetas de código heredadas aún conservan sus nombres internos. Falta confirmar CI completo de la última revisión y el comportamiento real de WhatsApp.
@@ -34,13 +44,13 @@ El comando `=/>menu` usa el encabezado `*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦
 ## Regla innegociable
 
 - **Sólo** pueden existir las categorías/entradas del catálogo siguiente, en el **mismo orden**. No añadir "Bot", "Roles", "Sandbox", "Estado", "Navegación", "Ayuda" ni ninguna otra categoría fuera de la lista, aunque existan módulos internos con esos nombres.
-- Los **comandos** se clasifican dentro de una entrada autorizada; un nombre de módulo, comando, plugin, prefijo o proveedor **no crea una categoría**. Se permite que una categoría esté vacía: mostrar "Sin comandos registrados" sin inventar funciones.
+- Los **comandos** se clasifican dentro de una entrada autorizada; un nombre de módulo, comando, plugin, prefijo o proveedor **no crea una categoría**. Se permite una categoría vacía en el catálogo interno, pero **no** se muestra en el menú ni en el selector hasta tener comandos implementados.
 - **Todo** (`menu all`) es una **vista agregada** de los comandos de las otras categorías, no un espacio para alojar comandos exclusivos.
 - Mantener **un único botón visible «Categorías»**, `single_select`, en el menú interactivo; no añadir botones paralelos «Ayuda», «Ver todo» ni más botones al menú. Los comandos escritos no son botones.
 - Los filtros Anti están **apagados por defecto**. La clasificación nunca activa funciones, cambia permisos ni otorga roles.
 - No cambiar la implementación de comandos existentes por una reorganización visual. Los alias de comandos o rutas anteriores pueden preservarse por compatibilidad, **pero jamás aparecen como categorías adicionales**.
 - Los controles globales de Base-Matter usan `=/>`. El prefijo `#` del bot de plataforma es independiente; la fila «Conexiones» se mantiene `sockets` y el contrato del prefijo correspondiente debe verificarse antes de mostrarlo como activo.
-- Si WhatsApp limita la cantidad de filas de `single_select`, paginar dentro del selector de **un solo botón** y mantener las 21 entradas accesibles; una fila «Más» sería navegación y **no** una nueva categoría.
+- Si WhatsApp limita la cantidad de filas de `single_select`, paginar dentro del selector de **un solo botón** y mantener accesibles solo las categorías con comandos implementados; una fila «Más» sería navegación y **no** una nueva categoría.
 - No añadir categorías automáticamente desde plugins, proveedores de IA, comandos importados o nuevas ramas. Una petición de crear otra categoría requiere modificación expresa de este contrato por la persona propietaria.
 
 ## Catálogo exacto (21 entradas, orden fijo)

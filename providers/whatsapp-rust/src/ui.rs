@@ -10,6 +10,7 @@ use wa::message::interactive_response_message::InteractiveResponseMessage as Nat
 use whatsapp_rust::prelude::wa;
 
 const MAX_MENU_BYTES: usize = 3800;
+const VISIBLE_CATEGORIES: &str = include_str!("../../../templates/menu-visible-categories.json");
 
 const NAV_CATEGORIES: [(&str, &str, &str); 21] = [
     ("ia", "ⴵ IA", "matter.read.menu.ia"),
@@ -192,20 +193,36 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     {
         bail!("Native navigation is read-only");
     }
-    // WhatsApp selectors have a small row limit: one button, three pages.
-    // Navigation rows are not categories and grant no capabilities.
-    let page = match request {
+    // Shared visibility manifest: only implemented categories are selectable.
+    // The core tests assert that this manifest matches implemented commands.
+    let active: Vec<String> = serde_json::from_str(VISIBLE_CATEGORIES)?;
+    if active.is_empty()
+        || active.len() > NAV_CATEGORIES.len()
+        || active.iter().any(|id| !NAV_CATEGORIES.iter().any(|(known, _, _)| known == id))
+    {
+        bail!("Invalid visible menu categories");
+    }
+    let categories: Vec<_> = NAV_CATEGORIES
+        .iter()
+        .filter(|(id, _, _)| active.iter().any(|shown| shown == id))
+        .collect();
+    if categories.len() != active.len() {
+        bail!("Duplicate visible menu category");
+    }
+    const PAGE_SIZE: usize = 9;
+    let pages = categories.len().div_ceil(PAGE_SIZE).max(1);
+    let requested_page = match request {
         "=/>menu page 2" => 2,
         "=/>menu page 3" => 3,
         _ => 1,
     };
-    let (start, end) = match page {
-        1 => (0, 9),
-        2 => (9, 17),
-        _ => (17, NAV_CATEGORIES.len()),
-    };
-    let mut rows: Vec<_> = NAV_CATEGORIES[start..end]
+    // Historical page IDs are still read-only aliases, not empty pages.
+    let page = requested_page.min(pages);
+    let start = (page - 1) * PAGE_SIZE;
+    let mut rows: Vec<_> = categories
         .iter()
+        .skip(start)
+        .take(PAGE_SIZE)
         .map(|(_, label, id)| {
             serde_json::json!({
                 "title": label,
@@ -220,7 +237,7 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
             "id": format!("matter.read.menu.page.{}", page - 1)
         }));
     }
-    if page < 3 {
+    if page < pages {
         rows.push(serde_json::json!({
             "title": "Más categorías",
             "id": format!("matter.read.menu.page.{}", page + 1)
@@ -246,7 +263,7 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
                 text: Some(menu.to_owned()),
             }),
             footer: MessageField::some(wa::message::interactive_message::Footer {
-                text: Some(format!("Control · Categorías {page}/3")),
+                text: Some(format!("Control · Categorías {page}/{pages}")),
                 ..Default::default()
             }),
             interactive_message: Some(

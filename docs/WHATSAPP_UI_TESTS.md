@@ -26,15 +26,16 @@ pairing code de 8 caracteres. No se usa QR ni Node.js.
 =/>bot on
 =/>menu
 =/>menu anti
-=/>menu page 2
-=/>menu page 3
+=/>menu all
+=/>menu config
 =/>help
 =/>help antilink
 ```
 
-`=/>menu` muestra primero el diseño del usuario y las **21 categorías
-autorizadas**, con un solo botón **Categorías**. El selector tiene
-tres páginas y vuelve a respuestas de solo lectura.
+`=/>menu` muestra primero el diseño del usuario y únicamente las categorías con comandos implementados,
+con un solo botón **Categorías**. Las 21 entradas se conservan en el
+catálogo interno; las vacías no aparecen en el menú ni en el selector.
+Las rutas históricas de paginación siguen aceptándose para compatibilidad.
 
 Con `MATTER_WA_MENU_LAB=1`, **solo en el chat privado verificado del
 dueño**, el mismo comando también prueba mensajes adicionales:
@@ -53,7 +54,10 @@ como diagnósticos independientes.
 
 El menú no explica la implementación; `=/>help` indica únicamente
 cómo solicitar ayuda. `style none` conserva el menú sin decoración.
-No se muestran avisos sobre categorías sin comandos.
+No se muestran categorías vacías. Los nombres visibles están en negritas;
+las rutas de comandos, entre acentos graves de código WhatsApp.
+Los cinco alfabetos y la plantilla reutilizable están en
+`templates/message-alphabets.json` y `templates/message-frame.txt`.
 
 **Aceptación real pendiente:** capturas del selector, TS18, TS19,
 HTML, y audio en Android. Las pruebas GitHub Actions verifican

@@ -33,6 +33,7 @@ pub mod ingress;
 pub mod legal;
 pub mod matter_ai;
 pub mod menu;
+pub mod message_typography;
 pub mod modules;
 pub mod pairing;
 pub mod platforms;

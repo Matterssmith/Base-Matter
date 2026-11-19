@@ -365,6 +365,21 @@ impl MenuPreferences {
         Ok(())
     }
 }
+/// Visible menu entries are derived from commands that have an actual implementation.
+/// "all" is an aggregate view, never a command category.
+pub fn visible_category_ids() -> Vec<&'static str> {
+    let mut ids = Vec::new();
+    for category in CATEGORIES {
+        if category.commands.iter().any(|command| command.implemented) {
+            ids.push(category.id);
+            if category.id == "anti" {
+                ids.push("all");
+            }
+        }
+    }
+    ids
+}
+
 pub fn command_count() -> usize {
     CATEGORIES
         .iter()
@@ -525,15 +540,20 @@ pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> 
             "Global control menu".to_owned()
         }]
     };
-    for (index, (id, es, en)) in ENTRIES.iter().enumerate() {
+    let visible_ids = visible_category_ids();
+    let visible_entries: Vec<_> = ENTRIES
+        .iter()
+        .filter(|(id, _, _)| visible_ids.contains(id))
+        .collect();
+    for (index, (id, es, en)) in visible_entries.iter().enumerate() {
         let decorated_label = if spanish { es } else { en };
         if classic {
-            let branch = if index + 1 == ENTRIES.len() {
+            let branch = if index + 1 == visible_entries.len() {
                 "╚"
             } else {
                 "╠"
             };
-            lines.push(format!("│·♪·{branch}[ {decorated_label} [menu {id}]"));
+            lines.push(format!("│·♪·{branch}[ *{decorated_label}* `[menu {id}]`"));
         } else {
             let plain_label = if *id == "all" {
                 if spanish {
@@ -657,9 +677,9 @@ fn verbose_menu(options: Preferences) -> Result<String> {
         if commands.is_empty() {
             continue;
         }
-        lines.push(format!("{}:", label(category, options.language)));
+        lines.push(format!("*{}*:", label(category, options.language)));
         for command in commands {
-            lines.push(format!("  =/>{}", command.name));
+            lines.push(format!("  `=/>{}`", command.name));
         }
     }
     let output = lines.join("\n");
@@ -821,18 +841,17 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
             .iter()
             .filter(|command| command.implemented)
             .collect();
+        if visible.is_empty() {
+            continue;
+        }
         if options.style == Style::Classic {
             out.push(format!(
-                "╞═╦═ {} {}",
+                "╞═╦═ {} *{}*",
                 category.icon,
                 label(category, options.language)
             ));
         } else {
             out.push(label(category, options.language).to_owned());
-        }
-        if visible.is_empty() {
-            out.push(String::new());
-            continue;
         }
         if root {
             out.push(format!("menu {}", category.id));
@@ -856,7 +875,7 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
                 } else {
                     "╠"
                 };
-                out.push(format!("│♪{branch}[ =/>{usage}"));
+                out.push(format!("│♪{branch}[ `=/>{usage}`"));
             } else {
                 out.push(format!("=/>{usage}"));
             }
@@ -926,30 +945,12 @@ mod tests {
             .lines()
             .filter(|line| line.starts_with("│·♪·"))
             .collect();
-        assert_eq!(rows.len(), 21);
         let canonical = [
-            "ia",
-            "anti",
-            "all",
-            "config",
-            "downloads",
-            "economy",
-            "fun",
-            "gacha",
-            "games",
-            "group",
-            "info",
-            "links",
-            "main",
-            "mode",
-            "owner",
-            "profile",
-            "reactions",
-            "search",
-            "sockets",
-            "system",
-            "utils",
+            "ia", "anti", "all", "config", "info", "main", "mode", "owner", "utils",
         ];
+        assert_eq!(rows.len(), canonical.len());
+        let configured: Vec<String> = serde_json::from_str(include_str!("../templates/menu-visible-categories.json")).unwrap();
+        assert_eq!(configured, visible_category_ids());
         for (row, id) in rows.iter().zip(canonical) {
             assert!(
                 row.contains(&format!("[menu {id}]")),
@@ -976,8 +977,8 @@ mod tests {
     fn classic_menu_has_single_prefix_without_brand_or_credits() {
         let menu = render("menu", Preferences::default()).unwrap();
         assert!(menu.starts_with("*꒦꒷✰꒷꒦︶"));
-        assert!(menu.contains("│·♪·╠[ ⴵ ·· 𝙸𝙰 [menu ia]"));
-        assert!(menu.contains("│·♪·╚[ ✧ 𝚄𝚝𝚒𝚕𝚒𝚍𝚊𝚍𝚎𝚜 [menu utils]"));
+        assert!(menu.contains("│·♪·╠[ *ⴵ ·· 𝙸𝙰* `[menu ia]`"));
+        assert!(menu.contains("│·♪·╚[ *✧ 𝚄𝚝𝚒𝚕𝚒𝚍𝚊𝚍𝚎𝚜* `[menu utils]`"));
         assert!(menu.contains("╰─╮╭────────⟨🌀"));
         assert!(menu.contains("menu all"));
         assert!(menu.contains("menu anti"));
@@ -996,9 +997,8 @@ mod tests {
         assert!(render("menu antis 5", options).is_ok());
         assert!(render("menu antis 9", options).is_err());
         assert!(render("menu unknown", options).is_err());
-        assert!(!render("menu gacha", options)
-            .unwrap()
-            .contains("Sin comandos registrados"));
+        assert!(!render("menu gacha", options).unwrap().contains("Gacha"));
+        assert!(!render("menu", options).unwrap().contains("[menu group]"));
         assert!(render("menu anti 5", options).is_ok());
         assert!(render("menu config", options)
             .unwrap()

@@ -9,7 +9,7 @@ fn live_menu_registry_builds_categories_without_personal_brand_or_footer_credits
         .with_dynamic_menu(Arc::clone(&prefs));
     let root = control.render(None, "menu").unwrap();
     assert!(root.starts_with("*꒦꒷✰꒷꒦︶"));
-    assert!(root.contains("│·♪·╠[ ⴵ ·· 𝙸𝙰 [menu ia]"));
+    assert!(root.contains("│·♪·╠[ *ⴵ ·· 𝙸𝙰* `[menu ia]`"));
     assert!(root.contains("╰─╮╭────────⟨🌀"));
     assert!(root.contains("menu config"));
     assert!(root.contains("menu anti"));
@@ -33,7 +33,10 @@ fn live_menu_registry_builds_categories_without_personal_brand_or_footer_credits
             "Legacy categories must not be visible: {forbidden}"
         );
     }
-    assert!(root.contains("[menu sockets]"));
+    assert!(!root.contains("[menu sockets]"));
+    assert!(!root.contains("[menu group]"));
+    assert!(!root.contains("[menu gacha]"));
+    assert!(root.contains("`[menu anti]`"));
     assert!(root.contains("[menu utils]"));
     assert_eq!(control.decorate(None, &root).unwrap(), root);
 
@@ -119,6 +122,7 @@ fn help_queries_support_command_metadata_and_category_pages() {
     let empty_section = menu::render("menu gacha", options).unwrap();
     assert!(!empty_section.contains("Sin comandos"));
     assert!(!empty_section.contains("No commands"));
+    assert!(!empty_section.contains("Gacha"));
     let help_none = menu::render_help(
         "",
         Preferences {
@@ -166,6 +170,8 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     assert!(plain.starts_with("Menú de control global"));
     assert!(plain.contains("menu config"));
     assert!(plain.contains("menu utils"));
+    assert!(!plain.contains("menu group"));
+    assert!(!plain.contains("menu sockets"));
     assert!(plain.contains("Usuario: @owner_checked"));
     assert!(plain.contains("Socket: test-socket"));
     assert!(!plain.contains('╭'));

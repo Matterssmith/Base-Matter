@@ -1,3 +1,20 @@
+## 2026-11-19 — Tipografía WhatsApp y categorías vacías ocultas (alpha)
+
+- Idea de Dev MS Leito Delfin 3 Siss: separar decoración y texto funcional usando negrita `*texto*`, código inline \`texto\` y bloque \`\`\`texto\`\`\`; no enviar los marcadores como instrucciones a ejecutar.
+- El catálogo contractual de 21 rutas permanece registrado. La **lista visible** se calcula únicamente a partir de descriptores `implemented: true`; `Todo` conserva la vista agregada. Una categoría vacía no aparece en `=/>menu`, `menu all` ni en el selector NativeFlow «Categorías».
+- `templates/menu-visible-categories.json` es el manifiesto compartido del selector Rust. `src/menu.rs` valida por prueba que coincide con el inventario real: una implementación nueva exige actualizar el manifiesto en el mismo cambio. Las páginas históricas pueden seguir aceptándose por compatibilidad, sin mostrar filas vacías.
+- Los nombres de categorías aparecen en negritas WhatsApp y las rutas de comandos usan monoespaciado; la cenefa ornamental se conserva. `style none` permanece en texto plano.
+- Se guardan cinco alfabetos Unicode y los formatos de texto en `templates/message-alphabets.json`, la plantilla `templates/message-frame.txt`, y el renderizador reutilizable `src/message_typography.rs`. Accentos se conservan cuando no existe glifo equivalente.
+- Seguridad sin cambios: botones sólo de lectura, ninguna categoría gana permisos, filtros Anti siguen OFF y no se activa Bot-Matter. Requiere CI Linux/Windows/proveedor y prueba real del teléfono.
+- README revisados: 2/2. CI del nuevo SHA: pendiente.
+
+### Uso genérico de formato
+
+`message_typography::font_text("Aviso", "sans_bold")` cambia el alfabeto visible.
+`message_typography::format_segment("=/>status", TextFormat::InlineCode)` formatea instrucciones como texto.
+`message_typography::render_message("Aviso", "Texto normal", "serif_bold")` coloca un mensaje arbitrario en la cenefa común.
+La biblioteca no envía mensajes ni autoriza comandos. Los cinco alfabetos soportados son `normal`, `serif_bold`, `sans_bold`, `monospace` y `fullwidth`.
+
 # Base-Matter — Menú universal y estética externa
 
 `=/>menu`, `=/>help` y `=/>h` son comandos reales de Base-Matter

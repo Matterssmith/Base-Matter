@@ -1,3 +1,13 @@
+## 2026-11-19 — Cambio visual solicitado: tipografías y categorías activas
+
+- Base remota alpha: 8639b9e4beab5217f344766d74c1b85578b3daba.
+- Idea de Leito: negritas para títulos, `código inline` para comandos, soporte de bloques ```código```; separar información y ornamento.
+- Ocultar todas las categorías sin comandos implementados en menú principal, agregación, submenús y botón de WhatsApp. Catálogo contractual de 21 entradas preservado.
+- Archivos funcionales: src/menu.rs, providers/whatsapp-rust/src/ui.rs, src/message_typography.rs, src/lib.rs, templates/menu-visible-categories.json, templates/message-alphabets.json y templates/message-frame.txt.
+- Pruebas de catálogo, interfaz y puente ajustadas; menús heredados por compatibilidad conservan su autenticación HMAC y permisos.
+- Continuidad: revisar CI de este commit (Linux/Windows/proveedor). Si falla, corregir en alpha y actualizar estos cuatro registros. Después realizar prueba de pantalla en WhatsApp de =/>menu y selector Categorías, junto a TS18/TS19, sonido y Rich HTML opcional. Beta/stable sin cambios.
+- README revisados: 2/2. CI y pantalla real pendientes.
+
 # Checkpoint 2026-11-18 — corrección exacta de test Grupo
 
 - SHA base: ce9465a8cffaa1c7b17dc7596f8798a7fbfb83a8.

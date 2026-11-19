@@ -1,3 +1,10 @@
+## BASE-D009 — UX Leito y alfabetos reutilizables (2026-11-19)
+
+- Propuesta recibida: hacer perceptible la diferencia entre adorno y contenido mediante formatos de WhatsApp.
+- Decisión: ocultar categorías sin comandos implementados en menú y botones; mantener 21 identificadores solo en contrato interno y routing histórico de lectura.
+- Usar manifiesto compartido en Rust y catálogo JSON de cinco alfabetos, marco reutilizable y módulo de formato. No conceder permisos ni añadir comandos.
+- Base: 8639b9e4beab5217f344766d74c1b85578b3daba. CI pendiente; READMEs 2/2.
+
 # Historial de decisiones de implementación — Base-Matter
 
 ## BASE-D008 — corrección de casos positivos/negativos de grupo

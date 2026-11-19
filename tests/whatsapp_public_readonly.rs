@@ -361,7 +361,8 @@ fn all_21_canonical_categories_and_three_pages_have_real_dynamic_menu_routing() 
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
             if command == "menu"
                 && output.contains("[menu ia]")
-                && output.contains("[menu sockets]")
+                && !output.contains("[menu sockets]")
+                && !output.contains("[menu gacha]")
                 && output.contains("[menu utils]")
     ));
 }
