@@ -462,7 +462,6 @@ impl AntiStore {
         ))
     }
 
-
     /// Read-only query. Never accepts on/off/inherit, even from a verified owner.
     /// The mutation path is separately authorized by ControlDispatcher.
     pub fn inspect_command(
@@ -511,7 +510,10 @@ impl AntiStore {
                 self.command(socket, group, &[name.clone(), action.clone()])
             }
             [name, keyword, action]
-                if matches!(keyword.as_str(), "action" | "accion" | "acciones" | "accions") =>
+                if matches!(
+                    keyword.as_str(),
+                    "action" | "accion" | "acciones" | "accions"
+                ) =>
             {
                 self.set_action(socket, group, name, action)
             }

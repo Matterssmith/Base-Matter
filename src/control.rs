@@ -752,7 +752,7 @@ impl ControlDispatcher {
                                 output: AntiStore::global_factory_defaults(filter)?,
                             });
                         }
-                        ["--mod", query @ ..] => (None, *query),
+                        ["--mod", query @ ..] => (None, query),
                         _ => (
                             Some(group.ok_or_else(|| {
                                 anyhow!("Este chat no tiene filtros de grupo; usa anti --mod")
@@ -760,7 +760,10 @@ impl ControlDispatcher {
                             values,
                         ),
                     };
-                    let args = query.iter().map(|word| (*word).to_owned()).collect::<Vec<_>>();
+                    let args = query
+                        .iter()
+                        .map(|word| (*word).to_owned())
+                        .collect::<Vec<_>>();
                     let output = store.inspect_command(receiving_socket, scope, &args)?;
                     return Ok(DispatchResult::Extension {
                         command: "anti".to_owned(),
@@ -794,7 +797,14 @@ impl ControlDispatcher {
                         if *name == "link"
                             && matches!(
                                 *operation,
-                                "list" | "lista" | "add" | "agregar" | "del" | "delete" | "remove" | "quitar"
+                                "list"
+                                    | "lista"
+                                    | "add"
+                                    | "agregar"
+                                    | "del"
+                                    | "delete"
+                                    | "remove"
+                                    | "quitar"
                             )
                         {
                             let domain_scope = if socket_scope {
@@ -828,7 +838,10 @@ impl ControlDispatcher {
                             anyhow!("Para cambiar un filtro de grupo, usa ese grupo; --mod modifica el socket")
                         })?)
                     };
-                    let args = words.iter().map(|word| (*word).to_owned()).collect::<Vec<_>>();
+                    let args = words
+                        .iter()
+                        .map(|word| (*word).to_owned())
+                        .collect::<Vec<_>>();
                     let output = store.configure_command(receiving_socket, config_scope, &args)?;
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
