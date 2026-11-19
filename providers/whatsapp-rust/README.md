@@ -1,3 +1,7 @@
+### Botón selector + Ayuda + Ver todo, y lectura de respuestas Go-style
+
+Se reemplazaron los tres quick replies fijos por un `single_select` con nueve filas para categorías y dos botones de consulta. El parser reconoce tanto `NativeFlowResponseMessage` como `ButtonsResponseMessage` cuando los IDs pertenecen a la lista cerrada. Sin comandos administrativos, envíos espontáneos ni descarga de medios. El cliente real Android/iOS no ha sido validado. README revisado.
+
 ### Formato del puente para help
 
 Se aplicó el bloque Rustfmt solicitado por CI a las ramas de ayuda pública. Sin cambios de comportamiento, permisos, claves ni sesión. README revisado.

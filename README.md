@@ -20,6 +20,11 @@ width="100%"
 
 ---
 
+### Selección interactiva por categorías (alpha; prueba real pendiente)
+
+El proveedor `whatsapp-rust` ahora puede generar un botón `single_select` de nueve categorías y dos respuestas rápidas de Ayuda/Ver todo; las selecciones se traducen exclusivamente a `menu`/`help` firmados. También lee `ButtonsResponseMessage.selectedButtonId`, compatible con el patrón de botón de fila del ejemplo Go, sin habilitar descargas. Ningún botón muta bot/roles/antis. El envío aceptado sigue sin probar renderizado real. Dos README revisados.
+
+
 ### Corrección de formato Rustfmt — navegación y ayuda (alpha)
 
 Se aplicaron los cambios de formato exactos emitidos por GitHub Actions en `src/menu.rs`, `src/bin/whatsapp_control.rs` y el proveedor Rust. Sin cambios semánticos ni de sesión. README 2/2 revisados y actualizados; se requiere nuevo CI para el commit.

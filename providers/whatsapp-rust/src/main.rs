@@ -18,7 +18,7 @@ use whatsapp_matter_rust_provider::{
     },
     render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
-    ui::{native_menu_message, readonly_button_command},
+    ui::{native_navigation_message, readonly_button_command},
     Config, ControlAck, Event, SessionLease,
 };
 use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*};
@@ -610,11 +610,14 @@ async fn main() -> Result<()> {
                                 );
                             }
                             if native_buttons
-                                && (matches!(actual_command, "=/>menu" | "=/>menú")
+                                && (matches!(actual_command, "=/>menu" | "=/>menú" | "=/>help" | "=/>h" | "=/>ayuda")
                                     || actual_command.starts_with("=/>menu ")
-                                    || actual_command.starts_with("=/>menú "))
+                                    || actual_command.starts_with("=/>menú ")
+                                    || actual_command.starts_with("=/>help ")
+                                    || actual_command.starts_with("=/>h ")
+                                    || actual_command.starts_with("=/>ayuda "))
                             {
-                                if let Ok(interactive) = native_menu_message(&response) {
+                                if let Ok(interactive) = native_navigation_message(&response, actual_command) {
                                     if ctx.send_message(interactive).await.is_ok() {
                                         return;
                                     }

@@ -1,3 +1,7 @@
+### UI de botones por categorías (alpha)
+
+Selector NativeFlow con nueve categorías, Ayuda contextual y Ver todo. Se aceptan respuestas de botones nativos y de botones tradicionales con IDs exactos; todo pasa por el HMAC y replay. Pruebas offline del serializador y parser agregadas. Sin confirmar funcionamiento en cliente físico. README 2/2 revisados.
+
 ### CI: normalización Rustfmt de la interfaz
 
 Las dos comprobaciones Linux se detuvieron en formato; se aplicaron sus hunks con comparación textual exacta, sin alterar comportamiento. Pendiente resultado CI del nuevo SHA.

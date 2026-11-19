@@ -1,5 +1,10 @@
 # Base-Matter — repository instructions
 
+## UI NativeFlow de categorías (2026-11-18)
+
+El proveedor `ui.rs` ofrece selector NativeFlow de categorías (single_select) y Ayuda/Ver todo de solo lectura. Se admite respuesta legacy ButtonsResponseMessage de los botones fila Go, solo con IDs cerrados. Ninguna selección concede capacidades. El cliente WhatsApp real no está probado. Efectos HTML y stickers de roles quedan separados y desactivados sin autorización/datos reales.
+
+
 ## Prioridad UX confirmada 2026-11-18
 
 Menú compacto, ayuda por categorías y botones al estilo SendButtonsRow; el propietario confirmó que HTML/JS y sonido se ven funcionando en su referencia externa, pero falta demostrar equivalencia en whatsapp-rust. Pantalla completa solo al mantener pulsado un botón HTML, sonidos solo por interacción. Soporte futuro de stickers de verificación de rangos cuando llegue el código; visual no concede autoridad Vault. No activar moderación por defecto.
