@@ -334,8 +334,17 @@ fn edited_obfuscated_links_are_detected_only_with_active_generic_rule() {
 fn anti_audit_tracks_readable_opaque_edits_and_camouflage_by_group() {
     use matter_base::anti_guard::EditState;
     let store = AntiStore::open(":memory:").unwrap();
-    store.inspect_message(SOCKET, GROUP, "＝／＞bot on https://t․me", EditState::EditedReadable).unwrap();
-    store.inspect_message(SOCKET, GROUP, "", EditState::EditedEncryptedUnavailable).unwrap();
+    store
+        .inspect_message(
+            SOCKET,
+            GROUP,
+            "＝／＞bot on https://t․me",
+            EditState::EditedReadable,
+        )
+        .unwrap();
+    store
+        .inspect_message(SOCKET, GROUP, "", EditState::EditedEncryptedUnavailable)
+        .unwrap();
     let result = store.audit_summary(SOCKET, Some(GROUP)).unwrap();
     for claim in [
         "Editados legibles: 1",
@@ -346,6 +355,12 @@ fn anti_audit_tracks_readable_opaque_edits_and_camouflage_by_group() {
         assert!(result.contains(claim), "{claim}");
     }
     assert!(!result.contains("https://"));
-    assert!(store.command(SOCKET, Some(GROUP), &args(&["audit"])).unwrap().contains("Camuflaje"));
-    assert!(store.audit_summary(SOCKET, Some(SECOND_GROUP)).unwrap().contains("Editados legibles: 0"));
+    assert!(store
+        .command(SOCKET, Some(GROUP), &args(&["audit"]))
+        .unwrap()
+        .contains("Camuflaje"));
+    assert!(store
+        .audit_summary(SOCKET, Some(SECOND_GROUP))
+        .unwrap()
+        .contains("Editados legibles: 0"));
 }

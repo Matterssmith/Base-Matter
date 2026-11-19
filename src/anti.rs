@@ -693,7 +693,10 @@ impl AntiStore {
         if let Some(group) = group {
             valid_scope(socket, group)?;
         }
-        let db = self.db.lock().map_err(|_| anyhow!("Protecciones no disponibles"))?;
+        let db = self
+            .db
+            .lock()
+            .map_err(|_| anyhow!("Protecciones no disponibles"))?;
         let (readable, encrypted, commands, links): (i64, i64, i64, i64) = db.query_row(
             "SELECT
               COUNT(CASE WHEN event_state LIKE '%edited-readable%' THEN 1 END),
@@ -705,7 +708,11 @@ impl AntiStore {
             params![socket, group],
             |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
         )?;
-        let scope = if group.is_some() { "este grupo" } else { "socket global" };
+        let scope = if group.is_some() {
+            "este grupo"
+        } else {
+            "socket global"
+        };
         Ok(format!(
             "Anti · inspecciones de {scope} (solo lectura)\n             Editados legibles: {readable}\n             Editados cifrados sin inspeccionar: {encrypted}\n             Camuflaje de comandos: {commands}\n             Camuflaje de enlaces: {links}\n             No se ejecutaron acciones de moderación."
         ))

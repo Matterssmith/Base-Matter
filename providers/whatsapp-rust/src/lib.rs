@@ -457,9 +457,6 @@ impl Config {
         Ok(Some(frame))
     }
 
-    /// Signs only recent, self-authored messages in the owner's own private
-    /// chat. All identifiers come from the trusted whatsapp-rust callback.
-
     /// Emit a signed, READ-ONLY Anti observation for a real group callback.
     /// The invisible internal prefix cannot be supplied as a control command
     /// and the signed observation never gives sender admin permissions.
@@ -519,6 +516,8 @@ impl Config {
         signed.signature = sign_frame(&signed, &self.bridge_key)?;
         Ok(Some(signed))
     }
+    /// Signs only recent, self-authored messages in the owner's own private
+    /// chat. All identifiers come from the trusted whatsapp-rust callback.
     pub fn signed_control(&self, event: &Event<'_>) -> Result<Option<SignedFrame>> {
         if !event.from_me
             || event.is_group
