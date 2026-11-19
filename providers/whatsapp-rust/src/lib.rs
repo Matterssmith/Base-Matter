@@ -322,18 +322,18 @@ impl Config {
             return Ok(None);
         }
         let parts: Vec<_> = event.text.split_whitespace().collect();
+        // Exactly the approved 21 visible entries, plus legacy aliases.
+        // These names only authorize READ-ONLY routing; never elevation.
         let public_category = |value: &str| {
             matches!(
                 value,
-                "status"
-                    | "bot"
-                    | "set"
-                    | "antis"
-                    | "roles"
-                    | "system"
-                    | "sandbox"
-                    | "ai"
-                    | "navigation"
+                "ia" | "anti" | "all" | "config" | "downloads"
+                    | "economy" | "fun" | "gacha" | "games" | "group"
+                    | "info" | "links" | "main" | "mode" | "owner"
+                    | "profile" | "reactions" | "search" | "sockets"
+                    | "system" | "utils"
+                    | "ai" | "antis" | "set" | "bot" | "roles"
+                    | "status" | "navigation" | "sandbox"
             )
         };
         let safe_help_name = |name: &str| {
@@ -360,6 +360,7 @@ impl Config {
                     && page.parse::<usize>().is_ok_and(|v| (1..=8).contains(&v))
             }
             ["=/>menu" | "=/>menú", category] => public_category(category) || *category == "all",
+            ["=/>menu" | "=/>menú", "page", page] => matches!(*page, "1" | "2" | "3"),
             ["=/>menu" | "=/>menú", category, page] => {
                 public_category(category)
                     && page

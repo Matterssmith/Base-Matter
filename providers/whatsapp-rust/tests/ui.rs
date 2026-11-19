@@ -6,8 +6,8 @@
  */
 use buffa::MessageField;
 use whatsapp_matter_rust_provider::ui::{
-    legacy_row_probe_message, native_menu_message, native_navigation_message,
-    native_ui_probe_message, readonly_button_command, short_html_to_whatsapp,
+    legacy_row_probe_message, menu_lab_card, native_menu_message, native_navigation_message,
+    native_ui_probe_message, readonly_button_command, short_html_to_whatsapp, MenuCardVariant,
 };
 use whatsapp_rust::prelude::wa;
 
@@ -241,5 +241,29 @@ fn legacy_row_uses_three_response_buttons_without_network_or_media() {
         ("matter.test.row.link", "=/>test ack link"),
     ] {
         assert_eq!(readonly_button_command(&legacy_click(id)), Some(command));
+    }
+}
+
+/// Offline TS18/TS19 cards: only allowed, owner-scoped test acknowledgments.
+#[test]
+fn ts18_ts19_menu_lab_cards_preserve_readonly_click_mapping() {
+    for (variant, size) in [(MenuCardVariant::Ts18, 2), (MenuCardVariant::Ts19, 3)] {
+        let card = menu_lab_card(variant);
+        let buttons = &card.buttons_message.as_option().unwrap().buttons;
+        assert_eq!(buttons.len(), size);
+        for (index, expected) in [
+            "=/>test ack audio",
+            "=/>test ack mp4",
+            "=/>test ack link",
+        ]
+        .iter()
+        .take(size)
+        .enumerate()
+        {
+            let id = buttons[index].button_id.as_ref().unwrap();
+            assert_eq!(readonly_button_command(&legacy_click(id)), Some(*expected));
+        }
+        assert!(card.rich_response_message.as_option().is_none());
+        assert!(card.audio_message.as_option().is_none());
     }
 }

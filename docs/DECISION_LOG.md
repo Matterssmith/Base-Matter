@@ -1,5 +1,15 @@
 # Historial de decisiones de implementación — Base-Matter
 
+## BASE-D004 — Ingreso de 21 categorías y páginas, 18-11-2026
+- Se evita que el click de un selector ya autorizado sea descartado
+  por el signer público, manteniendo lectura sin permisos de modificación.
+- Las 21 rutas visibles y las páginas 1–3 son entradas válidas;
+  aliases históricos sólo de compatibilidad.
+- Pruebas: signer read-only y despachador con las 21 entradas,
+  seguridad de botones, vista HTML con audio original.
+- Estado: CI pendiente, teléfono todavía no probado. README 2/2.
+
+
 ## BASE-D003 — Menú HTML y sonido TS18/TS19, 2026-11-18
 - Origen: prueba visual =/>menu pedida por el propietario.
 - Decisión: un selector y 21 categorías primero; tarjetas TS18

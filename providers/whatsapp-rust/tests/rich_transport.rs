@@ -36,7 +36,10 @@ fn rich_transport_wraps_original_owner_menu_without_fake_meta_ai_origin() {
         .unwrap();
     assert!(html.contains("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
     assert!(html.contains("꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡"));
-    assert!(html.contains("disabled>Estado</button>"));
+    assert!(html.contains("disabled>Audio</button>"));
+    assert!(html.contains("disabled>MP4</button>"));
+    assert!(html.contains("disabled>Enlace</button>"));
+    assert!(html.contains("data:audio/ogg;base64,"));
     let wire = json.to_string();
     for marker in [
         "0@bot",

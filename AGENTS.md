@@ -1,5 +1,16 @@
 # Base-Matter — repository instructions
 
+## 2026-11-18 — Selector: 21 categorías y páginas admitidas (pruebas)
+El proveedor de entrada de lectores acepta exclusivamente las 21
+categorías autorizadas y páginas 1–3, además de aliases antiguos,
+siempre como lectura y sujetos a identidad PN/LID, HMAC, antirreplay
+y activación. Se añadieron pruebas para cada opción y para botones
+TS18/TS19 Audio/MP4/Enlace y HTML con audio no automático.
+La prueba de `=/>menu group` ahora debe pasar (es una categoría
+autorizada); comandos no registrados siguen rechazados.
+README revisados: 2/2. CI de este SHA pendiente.
+
+
 ## 2026-11-18 — Laboratorio del menú en el chat propio
 La prueba =/>menu mantiene primero las 21 categorías originales y UN
 selector «Categorías». Con MATTER_WA_MENU_LAB=1, solo en self-chat

@@ -15,9 +15,11 @@ fn original_matterssmith_menu_is_preserved_inside_offline_html() {
     assert!(html.contains("꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡"));
     assert!(html.contains("*Base-Matter* · ✦"));
     assert!(html.contains("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
-    assert!(html.contains("disabled>Estado</button>"));
-    assert!(html.contains("disabled>Menú</button>"));
-    assert!(html.contains("disabled>Créditos</button>"));
+    assert!(html.contains("disabled>Audio</button>"));
+    assert!(html.contains("disabled>MP4</button>"));
+    assert!(html.contains("disabled>Enlace</button>"));
+    assert!(html.contains("data:audio/ogg;base64,"));
+    assert!(html.contains("<audio controls preload="));
     assert!(!html.contains("<script"));
     assert!(!html.contains("<iframe"));
     assert!(!html.contains("onclick="));
@@ -33,7 +35,7 @@ fn untrusted_text_cannot_inject_scripts_or_html_attributes() {
     for text in ["", "unsafe\u{0000}menu", "x\u{001b}y"] {
         assert!(menu_html_preview(text).is_err());
     }
-    assert!(menu_html_preview(&"a".repeat(3201)).is_err());
+    assert!(menu_html_preview(&"a".repeat(3801)).is_err());
 }
 
 #[test]

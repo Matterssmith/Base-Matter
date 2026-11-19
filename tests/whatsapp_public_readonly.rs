@@ -240,7 +240,7 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
         "=/>bot private off",
         "=/>set role 5215512345678 admin",
         "=/>roles",
-        "=/>menu group",
+        "=/>menu nonexistent",
         "=/>menu other extra",
     ]
     .iter()
@@ -248,6 +248,37 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
     {
         let test = frame(&format!("denied-{index}"), text, READER, READER, false);
         assert!(bridge.ingest(&test).is_err(), "must reject {text}");
+    }
+    for (index, command) in [
+        "=/>menu ia", "=/>menu anti", "=/>menu all", "=/>menu config",
+        "=/>menu downloads", "=/>menu economy", "=/>menu fun",
+        "=/>menu gacha", "=/>menu games", "=/>menu group",
+        "=/>menu info", "=/>menu links", "=/>menu main", "=/>menu mode",
+        "=/>menu owner", "=/>menu profile", "=/>menu reactions",
+        "=/>menu search", "=/>menu sockets", "=/>menu system",
+        "=/>menu utils", "=/>menu page 1", "=/>menu page 2",
+        "=/>menu page 3",
+    ]
+    .iter()
+    .enumerate()
+    {
+        let outcome = bridge
+            .ingest(&frame(
+                &format!("read-menu-{index}"),
+                command,
+                READER,
+                READER,
+                false,
+            ))
+            .unwrap();
+        assert!(
+            matches!(
+                outcome,
+                WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, .. })
+                    if command == "menu"
+            ),
+            "menu selector rejected: {command}"
+        );
     }
     assert!(matches!(
         bridge.ingest(&frame("pub-private-global", "=/>status --global", READER, READER, false)).unwrap(),
