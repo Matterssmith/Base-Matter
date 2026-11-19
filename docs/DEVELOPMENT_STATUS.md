@@ -1,3 +1,9 @@
+## 2026-11-19 — Ajuste Rustfmt de política Anti por grupos activos
+
+- SHA previo d0afffdff09a5f73965f7f640b31dd7141cdf6f8. Apliqué formato de CI para `bot_admission(...).decision.enabled` de `inspect_anti_observation`; no cambia lógica.
+- Monitoreo pasivo solo en grupos activados por propietario, edición cifrada sin clave permanece no inspeccionada, comandos camuflados nunca se ejecutan.
+- README revisados 2/2. Pendiente CI del nuevo SHA y confirmación real en WhatsApp.
+
 ## 2026-11-19 — Privacidad y semántica de ediciones Anti
 
 - Base previo ffb8a7a344d010f870e195571e8d0d14285e6478. La pasarela de inspección Anti registra metadatos de mensajes de grupos **solo si el propietario habilitó ese grupo** según política actual del socket. Grupos apagados se omiten; la pasarela no introduce una excepción de activación.

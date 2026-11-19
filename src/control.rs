@@ -551,7 +551,11 @@ impl ControlDispatcher {
     ) -> Result<()> {
         // Passive inspection is scoped to chats the owner has activated.
         // Disabled groups do not accumulate observational metadata.
-        if !self.bot_admission(socket, Some(group), "group")?.decision.enabled {
+        if !self
+            .bot_admission(socket, Some(group), "group")?
+            .decision
+            .enabled
+        {
             return Ok(());
         }
         let store = self
