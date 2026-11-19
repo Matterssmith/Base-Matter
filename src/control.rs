@@ -804,7 +804,8 @@ impl ControlDispatcher {
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }
-                    let themes = self.public_menu
+                    let themes = self
+                        .public_menu
                         .as_ref()
                         .ok_or_else(|| anyhow!("Menu preferences are unavailable"))?;
                     if tokens[1] == "style" {
@@ -827,7 +828,8 @@ impl ControlDispatcher {
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }
-                    let themes = self.public_menu
+                    let themes = self
+                        .public_menu
                         .as_ref()
                         .ok_or_else(|| anyhow!("Menu configuration unavailable"))?;
                     return Ok(DispatchResult::Extension {

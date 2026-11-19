@@ -1,9 +1,9 @@
 // Category system: a Rust module per command.
 use crate::menu::Category;
+pub mod reload;
+pub mod restart;
 pub mod system;
 pub mod update;
-pub mod restart;
-pub mod reload;
 
 pub const CATEGORY: Category = Category {
     id: "system",

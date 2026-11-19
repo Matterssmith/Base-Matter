@@ -1,3 +1,19 @@
+### 2026-11-18 — Cierre de Rustfmt y compatibilidad proveedor
+
+- Se corrigieron los diffs completos emitidos por
+  `cargo fmt --check` del núcleo y del proveedor en
+  `44ab5b35`, sin cambiar la lógica autorizativa.
+- El standalone Rust WhatsApp ya no importa el
+  `ControlThemes` del núcleo que depende de
+  `crate::menu`. Su decorador de respaldo es
+  autónomo, sin dependencias del registro.
+- Los módulos por categoría siguen independientes;
+  el estilo `none`/idioma y los botones requieren
+  pruebas de compilación y teléfono real.
+- No promover a beta hasta compilar, pasar tests
+  y validar WhatsApp. README raíz y de proveedor
+  revisados en el commit.
+
 ## 2026-11-18 — Menú por comando, entrega alpha
 
 - 55 módulos de metadatos en nueve categorías;

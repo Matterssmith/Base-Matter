@@ -7,7 +7,5 @@ pub const CATEGORY: Category = Category {
     es: "𝗘𝗦𝗧𝗔𝗗𝗢 𝗬 𝗖𝗢𝗡𝗦𝗨𝗟𝗧𝗔𝗦",
     en: "STATUS AND CONSULTATION",
     icon: "◈",
-    commands: &[
-        status::COMMAND,
-    ],
+    commands: &[status::COMMAND],
 };

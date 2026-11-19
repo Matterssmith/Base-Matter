@@ -1,9 +1,9 @@
 // Category sandbox: a Rust module per command.
 use crate::menu::Category;
-pub mod sandbox;
-pub mod test;
 pub mod console;
 pub mod eval;
+pub mod sandbox;
+pub mod test;
 
 pub const CATEGORY: Category = Category {
     id: "sandbox",

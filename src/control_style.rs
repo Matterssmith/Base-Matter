@@ -4,10 +4,10 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
+use crate::menu::{Language, MenuPreferences, Style};
 use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use crate::menu::{Language, MenuPreferences, Style};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ControlTheme {
@@ -199,7 +199,9 @@ impl ControlThemes {
         {
             if body.is_empty()
                 || body.len() > 3800
-                || body.chars().any(|character| character.is_control() && character != '\n')
+                || body
+                    .chars()
+                    .any(|character| character.is_control() && character != '\n')
             {
                 bail!("Invalid dynamic menu body");
             }

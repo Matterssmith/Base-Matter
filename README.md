@@ -20,6 +20,20 @@ width="100%"
 
 ---
 
+### Revisión CI del catálogo — separación del proveedor Rust
+
+En el commit inicial `44ab5b35`, Linux y el proveedor independiente
+detectaron diferencias Rustfmt. Se aplicaron exactamente las
+normalizaciones solicitadas al controlador, 55 descriptores,
+renderizador, pruebas y proveedor. El proveedor ya no compila
+`src/control_style.rs` entero, que ahora requiere el registro
+`crate::menu`; dispone de su decorador de respuestas autónomo
+en `providers/whatsapp-rust/src/provider_control_style.rs`,
+que conserva el mismo formato del marco de respaldo.
+El nuevo commit se validará en Linux/Windows/proveedor antes
+de considerarlo listo para WhatsApp. No se alteran
+activación, sesiones, roles, APIs ni `beta`.
+
 ## 2026-11-18 — Catálogo de menú automático por categoría (alpha)
 
 Se integra el catálogo público `src/menu.rs` con nueve

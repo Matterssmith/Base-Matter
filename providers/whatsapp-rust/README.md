@@ -1,3 +1,17 @@
+### Decoración independiente del proveedor (CI 2026-11-18)
+
+La importación anterior de `../../../src/control_style.rs`
+se reemplaza por el módulo aislado
+`src/provider_control_style.rs` para los mensajes de
+REGISTER/recuperación y fallback. Evita importar el
+registro de comandos y SQLite del núcleo. El menú
+dinámico recibido por IPC ya viene formateado; no
+se envuelve otra vez. Se aplicaron los diffs
+Rustfmt del verificador. Probar los mensajes
+NativeFlow reales en Android/iOS tras confirmar
+CI, conservando solo tres botones de lectura.
+No se copió ningún secreto ni se modificaron sesiones.
+
 ## Menú modular y botones nativos, 2026-11-18 (alpha)
 
 El controlador usa un catálogo Rust por carpeta

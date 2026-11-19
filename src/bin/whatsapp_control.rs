@@ -291,9 +291,8 @@ fn main() -> Result<()> {
     let menu_preferences = Arc::new(MenuPreferences::open(
         activation_path.with_extension("menu.sqlite"),
     )?);
-    let style = Arc::new(
-        ControlThemes::new(default_theme.clone()).with_dynamic_menu(menu_preferences),
-    );
+    let style =
+        Arc::new(ControlThemes::new(default_theme.clone()).with_dynamic_menu(menu_preferences));
     let menu_theme = Arc::clone(&style);
     extensions.register("menu", &["menú"], move |context, args| {
         if args.len() > 2 {

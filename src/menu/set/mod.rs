@@ -1,10 +1,10 @@
 // Category set: a Rust module per command.
 use crate::menu::Category;
 pub mod set;
-pub mod set_style;
+pub mod set_anti;
 pub mod set_lang;
 pub mod set_role;
-pub mod set_anti;
+pub mod set_style;
 
 pub const CATEGORY: Category = Category {
     id: "set",

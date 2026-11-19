@@ -1,9 +1,9 @@
 // Base-Matter — Vault-owned AI execution and credential boundary.
 // The client sends an authorized request to a local Unix socket. It never
 // obtains provider API keys, endpoints, or decrypted Vault records.
-use anyhow::{bail, Result};
 #[cfg(unix)]
 use anyhow::anyhow;
+use anyhow::{bail, Result};
 #[cfg(any(unix, test))]
 use serde::Deserialize;
 #[cfg(unix)]

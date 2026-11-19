@@ -9,18 +9,12 @@ pub mod rich_preview;
 pub mod rich_transport;
 pub mod ui;
 
-// One implementation and one set of template assets are shared with
-// Base-Matter. The provider remains a standalone Rust package.
-// The standalone provider invokes only the common decorator; the
-// shared core module also defines the unused scoped registry and menu.
-#[allow(dead_code)]
-#[path = "../../../src/control_style.rs"]
-mod shared_control_style;
+// Provider-only fallback frame. The command registry lives in the
+// independent Base-Matter core; no core modules are imported here.
+mod provider_control_style;
 
-/// Render provider-side REGISTER/recovery replies through the exact same
-/// validated Matterssmith template as all IPC control responses.
 pub fn render_provider_control(body: &str) -> Result<String> {
-    shared_control_style::ControlTheme::new("Base-Matter", "base-matter", "✦")?.decorate(body)
+    provider_control_style::decorate(body)
 }
 
 use anyhow::{anyhow, bail, Result};

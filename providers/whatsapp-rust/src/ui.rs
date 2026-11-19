@@ -115,7 +115,9 @@ pub fn native_menu_message(menu: &str) -> Result<wa::Message> {
                 text: Some(menu.to_owned()),
             }),
             footer: MessageField::some(wa::message::interactive_message::Footer {
-                text: Some(short_html_to_whatsapp("<b>Control</b> · <i>Selecciona una categoría</i>")?),
+                text: Some(short_html_to_whatsapp(
+                    "<b>Control</b> · <i>Selecciona una categoría</i>",
+                )?),
                 ..Default::default()
             }),
             interactive_message: Some(

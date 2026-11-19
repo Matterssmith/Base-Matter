@@ -89,7 +89,10 @@ pub struct Preferences {
 }
 impl Default for Preferences {
     fn default() -> Self {
-        Self { style: Style::Classic, language: Language::Es }
+        Self {
+            style: Style::Classic,
+            language: Language::Es,
+        }
     }
 }
 pub struct MenuPreferences {
@@ -137,7 +140,10 @@ impl MenuPreferences {
         Ok(Self { db: Mutex::new(db) })
     }
     pub fn get(&self) -> Result<Preferences> {
-        let db = self.db.lock().map_err(|_| anyhow!("Menu database locked"))?;
+        let db = self
+            .db
+            .lock()
+            .map_err(|_| anyhow!("Menu database locked"))?;
         let item: Option<(String, String)> = db
             .query_row(
                 "SELECT style, language FROM menu_preferences WHERE singleton = 1",
@@ -154,7 +160,10 @@ impl MenuPreferences {
         }
     }
     pub fn set_style(&self, style: Style) -> Result<()> {
-        let db = self.db.lock().map_err(|_| anyhow!("Menu database locked"))?;
+        let db = self
+            .db
+            .lock()
+            .map_err(|_| anyhow!("Menu database locked"))?;
         db.execute(
             "INSERT INTO menu_preferences(singleton,style,language)
              VALUES(1,?1,COALESCE((SELECT language FROM menu_preferences WHERE singleton=1),'es'))
@@ -164,7 +173,10 @@ impl MenuPreferences {
         Ok(())
     }
     pub fn set_language(&self, language: Language) -> Result<()> {
-        let db = self.db.lock().map_err(|_| anyhow!("Menu database locked"))?;
+        let db = self
+            .db
+            .lock()
+            .map_err(|_| anyhow!("Menu database locked"))?;
         db.execute(
             "INSERT INTO menu_preferences(singleton,style,language)
              VALUES(1,COALESCE((SELECT style FROM menu_preferences WHERE singleton=1),'classic'),?1)
@@ -207,7 +219,11 @@ fn header(options: Preferences) -> Vec<String> {
             "💬 𝗦𝗶𝘀𝘁𝗲𝗺𝗮 𝗱𝗲 𝗖𝗼𝗻𝘁𝗿𝗼𝗹 𝗚𝗹𝗼𝗯𝗮𝗹 ۞₪»̶⟩".to_owned(),
             "╭─💠 𝗠𝗲𝗻𝘂́ 𝗣𝗿𝗶𝗻𝗰𝗶𝗽𝗮𝗹".to_owned(),
             "│  Bot: Principal · Sistema: Global".to_owned(),
-            format!("│  Prefijo: [ =/> ] · Comandos: {} · Pendientes: {}", command_count(), pending_count()),
+            format!(
+                "│  Prefijo: [ =/> ] · Comandos: {} · Pendientes: {}",
+                command_count(),
+                pending_count()
+            ),
             "│".to_owned(),
         ],
         (Style::None, Language::Es) => vec![
@@ -215,7 +231,11 @@ fn header(options: Preferences) -> Vec<String> {
             "Bot: Principal".to_owned(),
             "Sistema: Global".to_owned(),
             "Prefijo: =/>".to_owned(),
-            format!("Comandos: {} · Pendientes: {}", command_count(), pending_count()),
+            format!(
+                "Comandos: {} · Pendientes: {}",
+                command_count(),
+                pending_count()
+            ),
             String::new(),
         ],
         (Style::None, Language::En) => vec![
@@ -223,7 +243,11 @@ fn header(options: Preferences) -> Vec<String> {
             "Bot: Principal".to_owned(),
             "System: Global".to_owned(),
             "Prefix: =/>".to_owned(),
-            format!("Commands: {} · Pending: {}", command_count(), pending_count()),
+            format!(
+                "Commands: {} · Pending: {}",
+                command_count(),
+                pending_count()
+            ),
             String::new(),
         ],
     }
@@ -235,7 +259,9 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
         ["menu" | "menú", name] | [name] => (Some(*name), 1_usize),
         ["menu" | "menú", name, number] => (
             Some(*name),
-            number.parse::<usize>().map_err(|_| anyhow!("Invalid menu page"))?,
+            number
+                .parse::<usize>()
+                .map_err(|_| anyhow!("Invalid menu page"))?,
         ),
         _ => bail!("Usage: menu [category] [page]"),
     };
@@ -254,16 +280,27 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
     let mut out = header(options);
     for category in shown {
         if options.style == Style::Classic {
-            out.push(format!("╞═╦═ {} {}", category.icon, label(category, options.language)));
+            out.push(format!(
+                "╞═╦═ {} {}",
+                category.icon,
+                label(category, options.language)
+            ));
             out.push("│♪║".to_owned());
         } else {
             out.push(label(category, options.language).to_owned());
         }
         if root {
-            let item = category.commands.first().ok_or_else(|| anyhow!("Empty menu category"))?;
+            let item = category
+                .commands
+                .first()
+                .ok_or_else(|| anyhow!("Empty menu category"))?;
             match options.style {
                 Style::Classic => {
-                    out.push(format!("│♪╚[ {} — {}", item.name, description(item, options.language)));
+                    out.push(format!(
+                        "│♪╚[ {} — {}",
+                        item.name,
+                        description(item, options.language)
+                    ));
                     out.push(format!("│♪║  menu {}", category.id));
                 }
                 Style::None => {
@@ -290,7 +327,11 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
                 };
                 match options.style {
                     Style::Classic => {
-                        let branch = if index + 1 == slice.len() { "╚" } else { "╠" };
+                        let branch = if index + 1 == slice.len() {
+                            "╚"
+                        } else {
+                            "╠"
+                        };
                         out.push(format!("│♪{branch}[ {}{state}", command.name));
                         out.push(format!("│♪║  {}", description(command, options.language)));
                         for usage in command.usages {
@@ -337,7 +378,10 @@ mod tests {
         assert!(pending_count() > 0);
         assert_eq!(antis::CATEGORY.commands.len(), crate::anti::RULES.len() + 2);
         for rule in crate::anti::RULES {
-            assert!(antis::CATEGORY.commands.iter().any(|entry| entry.name == *rule));
+            assert!(antis::CATEGORY
+                .commands
+                .iter()
+                .any(|entry| entry.name == *rule));
         }
     }
 
@@ -359,14 +403,19 @@ mod tests {
         let set = render("menu set", options).unwrap();
         assert!(set.contains("set style classic|none"));
         assert!(set.contains("set lang es|en"));
-        assert!(render("menu antis 5", options).unwrap().contains("antiflood"));
+        assert!(render("menu antis 5", options)
+            .unwrap()
+            .contains("antiflood"));
         assert!(render("menu antis 9", options).is_err());
         assert!(render("menu unknown", options).is_err());
     }
 
     #[test]
     fn none_style_is_plain_and_supports_english() {
-        let options = Preferences { style: Style::None, language: Language::En };
+        let options = Preferences {
+            style: Style::None,
+            language: Language::En,
+        };
         let plain = render("menu set", options).unwrap();
         assert!(plain.starts_with("Global control menu"));
         assert!(plain.contains("Change menu style"));
@@ -381,7 +430,13 @@ mod tests {
         assert_eq!(store.get().unwrap(), Preferences::default());
         store.set_style(Style::None).unwrap();
         store.set_language(Language::En).unwrap();
-        assert_eq!(store.get().unwrap(), Preferences { style: Style::None, language: Language::En });
+        assert_eq!(
+            store.get().unwrap(),
+            Preferences {
+                style: Style::None,
+                language: Language::En
+            }
+        );
         store.set_style(Style::Classic).unwrap();
         assert_eq!(store.get().unwrap().language, Language::En);
     }

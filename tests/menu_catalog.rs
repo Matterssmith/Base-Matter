@@ -52,12 +52,10 @@ fn style_none_removes_artwork_and_language_en_changes_descriptions() {
 fn individual_antis_are_public_metadata_but_never_execution_grants() {
     use matter_base::menu;
     for rule in matter_base::anti::RULES {
-        assert!(
-            menu::antis::CATEGORY
-                .commands
-                .iter()
-                .any(|descriptor| descriptor.name == *rule)
-        );
+        assert!(menu::antis::CATEGORY
+            .commands
+            .iter()
+            .any(|descriptor| descriptor.name == *rule));
     }
     let page = menu::render("menu antis 2", Preferences::default()).unwrap();
     assert!(page.contains("antilink"));
