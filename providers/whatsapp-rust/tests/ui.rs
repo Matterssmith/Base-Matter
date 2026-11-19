@@ -6,8 +6,8 @@
  */
 use buffa::MessageField;
 use whatsapp_matter_rust_provider::ui::{
-    native_menu_message, native_navigation_message, native_ui_probe_message, readonly_button_command,
-    short_html_to_whatsapp,
+    native_menu_message, native_navigation_message, native_ui_probe_message,
+    readonly_button_command, short_html_to_whatsapp,
 };
 use whatsapp_rust::prelude::wa;
 
@@ -180,4 +180,3 @@ fn owner_ui_probe_has_two_quick_replies_and_two_selectable_rows() {
         None
     );
 }
-

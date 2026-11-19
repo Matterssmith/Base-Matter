@@ -1,3 +1,13 @@
+### 2026-11-18 — CI de pruebas visuales: Rustfmt y Clippy
+
+En el SHA 1291d43, la compilación y los tests por defecto de Linux
+pasaron; el proveedor se detuvo en un formato de importación y
+un salto de línea adicional en tests/ui.rs. Clippy detectó una
+comparación booleana innecesaria en tests/menu_catalog.rs.
+Se aplicó el formato exacto de Rustfmt y se sustituyó la aserción
+por la comprobación real del uso =/>antilink on|off|inherit.
+READMEs raíz y proveedor revisados (2/2), sin cambios de runtime.
+
 ### 2026-11-18 — Pruebas de menú y botones ejecutables desde WhatsApp (alpha)
 
 El comando privado del propietario =/>test ui construye una prueba NativeFlow
