@@ -205,6 +205,7 @@ impl ControlThemes {
                 || body.starts_with("💠 Base-Matter Help")
                 || body.starts_with("🛡️ Protecciones")
                 || body.starts_with("꒦꒷✰꒷꒦︶꒦꒷✧")
+                || body.starts_with("*꒦꒷✰꒷꒦︶꒦꒷✧")
                 || body.starts_with("Menú de control global")
                 || body.starts_with("Global control menu"))
         {

@@ -624,8 +624,8 @@ pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> 
         lines.push("Cada socket mantiene configuración independiente.".to_owned());
         lines.push("Los cambios administrativos deben auditarse.".to_owned());
     }
-    let result = lines.join("\\n");
-    if result.len() > 3800 || result.chars().any(|ch| ch.is_control() && ch != '\\n') {
+    let result = lines.join("\n");
+    if result.len() > 3800 || result.chars().any(|ch| ch.is_control() && ch != '\n') {
         bail!("Global menu exceeds safe WhatsApp bounds");
     }
     Ok(result)

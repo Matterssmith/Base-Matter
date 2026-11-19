@@ -163,7 +163,7 @@ fn html_style_is_restricted_and_does_not_execute_markup() {
         assert!(short_html_to_whatsapp(value).is_err());
     }
     assert!(native_menu_message("").is_err());
-    assert!(native_menu_message(&"x".repeat(3400)).is_err());
+    assert!(native_menu_message(&"x".repeat(3900)).is_err());
 }
 
 #[test]

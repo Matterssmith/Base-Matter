@@ -1,3 +1,6 @@
+### 2026-11-18 — Corrección de saltos y delimitadores del menú completo
+Se corrigió la serialización UTF-8 para que el marco use saltos de línea reales, no secuencias escapadas, y se agregó la cenefa completa al detector de respuestas ya decoradas. El test de límite NativeFlow se ajustó a 3900 bytes; nueva prueba valida formato clásico, identidad verificada, variante sin diseño, ausencia de rótulos vacíos y separación de la sección de autoridad para lectores externos. Revisados ambos README; CI del SHA anterior detectará/confirmará diferencias adicionales.
+
 ### 2026-11-18 — Formato completo de menú global y variante sin diseño
 Se adoptó la cenefa, encabezado, 21 filas inmutables, sección descriptiva de autoridad, campos dinámicos de identidad verificada, comandos, rango, estado y socket, instrucciones y cierre. La ruta de IPC sólo rellena datos después de HMAC/antirreplay/admisión, no deriva Owner Global de un número. Se suprimió «Sin comandos registrados» y el menú all omite encabezados sin comandos. `style none` sigue mostrando categorías y datos. El selector conserva un único botón; se aumentó su límite de texto a 3800 bytes sin alterar límites de transporte ni permisos. Revisados ambos README y AGENTS; la comprobación CI y teléfono real siguen siendo necesarias.
 

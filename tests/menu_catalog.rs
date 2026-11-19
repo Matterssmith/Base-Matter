@@ -97,3 +97,47 @@ fn help_queries_support_command_metadata_and_category_pages() {
     assert!(test.contains("test html"));
     assert!(menu::render_help("not-registered", options).is_err());
 }
+
+#[test]
+fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
+    use matter_base::menu::{self, MenuViewer};
+    let context = MenuViewer {
+        user: "@owner_checked",
+        role: "Owner del socket",
+        status: "ACTIVADO",
+        socket: "test-socket",
+        socket_owner: true,
+    };
+    let classic = menu::render_root_with_viewer(Preferences::default(), context).unwrap();
+    assert!(classic.starts_with("*꒦꒷✰꒷꒦︶"));
+    assert!(classic.contains("💬 𝗦𝗶𝘀𝘁𝗲𝗺𝗮 𝗱𝗲 𝗖𝗼𝗻𝘁𝗿𝗼𝗹 𝗚𝗹𝗼𝗯𝗮𝗹"));
+    assert!(classic.contains("╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹"));
+    assert!(classic.contains("╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀"));
+    assert!(classic.contains("*@owner_checked*"));
+    assert!(classic.contains("*Owner del socket*"));
+    assert!(classic.contains("*ACTIVADO*"));
+    assert!(classic.contains("*test-socket*"));
+    assert!(!classic.contains("{total}"));
+    assert!(!classic.contains("{rol}"));
+    assert!(!classic.contains("Sin comandos registrados"));
+    assert!(!classic.contains("\\n"));
+    assert!(classic.len() <= 3800);
+    assert!(classic.ends_with("*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*"));
+    let plain = menu::render_root_with_viewer(
+        Preferences { style: Style::None, language: Language::Es },
+        context,
+    ).unwrap();
+    assert!(plain.starts_with("Menú de control global"));
+    assert!(plain.contains("menu config"));
+    assert!(plain.contains("menu utils"));
+    assert!(plain.contains("Usuario: @owner_checked"));
+    assert!(plain.contains("Socket: test-socket"));
+    assert!(!plain.contains('╭'));
+    assert!(!plain.contains('♪'));
+    let public = menu::render_root_with_viewer(
+        Preferences::default(),
+        MenuViewer { user: "@usuario", role: "Usuario", status: "ACTIVADO", socket: "Privado", socket_owner: false },
+    ).unwrap();
+    assert!(!public.contains("╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹"));
+    assert!(!public.contains("test-socket"));
+}
