@@ -4,6 +4,7 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
+pub mod help_reply;
 pub mod menu_sound;
 pub mod recovery;
 pub mod rich_preview;
@@ -373,6 +374,13 @@ impl Config {
             | ["=/>bot"]
             | ["=/>credits" | "=/>creditos" | "=/>créditos"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda"] => true,
+            ["=/>help", "--quoted", payload] => {
+                !payload.is_empty()
+                    && payload.len() <= 1500
+                    && payload
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || b"-_".contains(&byte))
+            },
             ["=/>test"] | ["=/>test", "ui" | "row"] => true,
             ["=/>register"] | ["=/>register", "start"] => true,
             ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => true,

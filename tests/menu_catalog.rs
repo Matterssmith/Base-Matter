@@ -233,3 +233,27 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     assert!(!public.contains("╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹"));
     assert!(!public.contains("test-socket"));
 }
+
+#[test]
+fn quoted_command_help_uses_catalog_and_never_runs_the_original() {
+    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+    let examples = [
+        ("=/>anti audit", "anti"),
+        ("=/>set anti link add t.me", "set anti link"),
+        ("=/>bot on", "bot"),
+        ("=/>register", "register"),
+        ("=/>set role", "set role"),
+    ];
+    for (quoted, name) in examples {
+        let encoded = URL_SAFE_NO_PAD.encode(quoted);
+        let reply = menu::render_help(&format!("--quoted {encoded}"), Preferences::default()).unwrap();
+        assert!(reply.contains(&format!("Ayuda completa: {name}")), "{quoted}: {reply}");
+        assert!(!reply.contains("Bot activado"));
+    }
+    assert!(menu::render_help("--quoted !!!", Preferences::default()).is_err());
+    let unknown = URL_SAFE_NO_PAD.encode("=/>this-command-does-not-exist");
+    assert!(menu::render_help(&format!("--quoted {unknown}"), Preferences::default()).is_err());
+    let normal = menu::render_help("set anti link", Preferences::default()).unwrap();
+    assert!(normal.contains("Categoría:"));
+    assert!(normal.contains("set anti link --global"));
+}

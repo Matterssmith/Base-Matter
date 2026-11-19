@@ -12,7 +12,7 @@ use tokio::{
     time::{timeout, Duration},
 };
 use whatsapp_matter_rust_provider::{
-    menu_sound, parse_control_ack,
+    help_reply::help_from_quoted_message, menu_sound, parse_control_ack,
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
@@ -553,6 +553,19 @@ async fn main() -> Result<()> {
                 let own_pn = ctx.client.pn().map(|jid| jid.to_non_ad_string());
                 let own_lid = ctx.client.lid().map(|jid| jid.to_non_ad_string());
                 let selected_button = readonly_button_command(&ctx.message);
+                let reply_help = if source.is_group || source.is_from_me {
+                    help_from_quoted_message(
+                        &ctx.message,
+                        ctx.message.text_content().unwrap_or_default(),
+                        &chat,
+                    )
+                } else {
+                    help_from_quoted_message(
+                        &ctx.message,
+                        ctx.message.text_content().unwrap_or_default(),
+                        &chat,
+                    )
+                };
 
                 // Legacy edits provide edited_message directly. Newer clients
                 // may carry an encrypted MESSAGE_EDIT envelope which requires
@@ -619,6 +632,7 @@ async fn main() -> Result<()> {
                     sender_jid: &sender,
                     message_id: &ctx.info.id,
                     text: selected_button
+                        .or_else(|| reply_help.as_deref())
                         .or_else(|| ctx.message.text_content())
                         .unwrap_or_default(),
                     from_me: source.is_from_me,

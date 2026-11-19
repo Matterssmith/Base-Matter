@@ -679,6 +679,65 @@ fn verbose_menu(options: Preferences) -> Result<String> {
     Ok(output)
 }
 
+
+fn resolve_quoted_help(message: &str) -> Result<&'static str> {
+    if message.len() > 1000 || message.chars().any(char::is_control) && message.contains('\r') {
+        bail!("La cita no contiene un comando válido");
+    }
+    for line in message.lines().take(12) {
+        // Read only the command's literal first-level syntax; no execution,
+        // Unicode rewriting, nested quoting or inferred authority.
+        let line = line.trim().trim_start_matches('>').trim();
+        let line = line.trim_matches(&['`', '*'][..]);
+        let Some(command) = line.strip_prefix("=/>") else {
+            continue;
+        };
+        let command = command.trim();
+        if command.is_empty() || command.len() > 144 {
+            continue;
+        }
+        let normalized = if command.starts_with("set antilink")
+            && (command == "set antilink" || command.starts_with("set antilink "))
+        {
+            "set anti link"
+        } else {
+            command
+        };
+        if let Some(found) = CATEGORIES
+            .iter()
+            .flat_map(|category| category.commands.iter())
+            .filter(|entry| {
+                normalized == entry.name
+                    || normalized.starts_with(&format!("{} ", entry.name))
+            })
+            .max_by_key(|entry| entry.name.len())
+        {
+            return Ok(found.name);
+        }
+    }
+    bail!("El mensaje citado no contiene un comando Matter reconocido")
+}
+
+fn full_help_note(name: &str, language: Language) -> &'static str {
+    let spanish = language == Language::Es;
+    match (name, spanish) {
+        ("set anti link", true) => "Ámbito: chat actual; --global aplica al socket. Solo propietario verificado. Los dominios se agregan a una lista, sin activar la moderación. Revisa la lista con «list».",
+        ("set anti link", false) => "Scope: current chat; --global selects the socket. Verified owner only. Adding domains does not enable moderation.",
+        ("anti", true) => "Los filtros están apagados inicialmente. «anti audit» muestra ediciones y camuflajes observados. La detección no elimina ni expulsa.",
+        ("anti", false) => "All filters initially OFF. «anti audit» reports edits and disguises; no automatic moderation.",
+        ("antilink", true) => "Protección única de dominios: configura la lista con «set anti link». Actívala aparte; detección de solo lectura.",
+        ("antilink", false) => "Single domain filter: configure with «set anti link». Enable separately; detection remains read-only.",
+        ("help", true) => "También puedes responder a un mensaje con un comando escribiendo «=/>help». Se interpreta como consulta de ayuda, nunca como ejecución.",
+        ("help", false) => "You can also reply to a message containing a command with «=/>help». Quoted commands are never executed.",
+        ("register", true) => "Registro voluntario, aún sin alta real en Vault. El acceso invitado a funciones básicas no exige identificación civil.",
+        ("register", false) => "Optional enrollment; Vault account creation is not live. Basic guest features require no civil ID.",
+        ("set role", true) => "El cambio de rangos requiere Vault-Matter autenticado; actualmente las escrituras de roles permanecen bloqueadas.",
+        ("set role", false) => "Role writes require authenticated Vault-Matter and are currently blocked.",
+        (_, true) => "Esta ficha describe el catálogo; ejecutar acciones depende de activación, permisos y soporte real del proveedor.",
+        (_, false) => "This is command metadata; execution depends on activation, authorization and provider support.",
+    }
+}
+
 fn help_usage(language: Language) -> String {
     let title = if language == Language::Es {
         "📖 Ayuda · Uso"
@@ -688,6 +747,7 @@ fn help_usage(language: Language) -> String {
     [
         title,
         "=/>help <comando>",
+        "Responde a un mensaje con un comando escribiendo =/>help",
         "=/>help <categoria>",
         "=/>help <categoria> <pagina>",
         "=/>help all",
@@ -746,6 +806,18 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
     if query.is_empty() || query == "all" {
         return Ok(help_usage(options.language));
     }
+    if let Some(encoded) = query.strip_prefix("--quoted ") {
+        use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+        if encoded.len() > 1500 || encoded.is_empty()
+            || !encoded.bytes().all(|byte| byte.is_ascii_alphanumeric() || b"-_".contains(&byte))
+        {
+            bail!("Cita inválida para ayuda");
+        }
+        let data = URL_SAFE_NO_PAD.decode(encoded)?;
+        let quoted = std::str::from_utf8(&data)?;
+        let command = resolve_quoted_help(quoted)?;
+        return render_help(command, options);
+    }
     if CATEGORIES
         .iter()
         .any(|category| category.id == canonical_category(query))
@@ -770,9 +842,15 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
         .flat_map(|category| category.commands.iter())
         .find(|command| command.name == query)
         .ok_or_else(|| anyhow!("Comando no encontrado. Usa =/>help"))?;
+    let category = CATEGORIES
+        .iter()
+        .find(|category| category.commands.iter().any(|item| item.name == command.name))
+        .ok_or_else(|| anyhow!("Comando sin categoría"))?;
     let mut lines = vec![
-        format!("📖 Ayuda: {}", command.name),
-        description(command, options.language).to_owned(),
+        format!("📖 Ayuda completa: {}", command.name),
+        format!("Categoría: {}", label(category, options.language)),
+        format!("Descripción: {}", description(command, options.language)),
+        format!("Estado: {}", if command.implemented { "En catálogo" } else { "Pendiente" }),
     ];
     if !command.implemented {
         lines.push(
@@ -786,9 +864,15 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
     }
     lines.push("Uso:".to_owned());
     for usage in command.usages {
-        lines.push(format!("=/>{}", usage));
+        lines.push(format!("`=/>{}`", usage));
     }
-    Ok(lines.join("\n"))
+    lines.push(String::new());
+    lines.push(full_help_note(command.name, options.language).to_owned());
+    let output = lines.join("\n");
+    if output.len() > 3450 {
+        bail!("Ayuda del comando demasiado extensa");
+    }
+    Ok(output)
 }
 
 pub fn render(section: &str, options: Preferences) -> Result<String> {
