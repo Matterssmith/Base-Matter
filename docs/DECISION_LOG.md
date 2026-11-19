@@ -1,3 +1,9 @@
+## 2026-11-19 — Compatibilidad estricta del test de citas
+
+- Base alpha anterior: 425bb2df3ac7a4541ce5a06f6eb4867e32259918. Rust provider 0.7 requiere el trait `MessageBuilderExt` para `Message::text`; en prueba `no_quote` se usa directamente el constructor explícito de `wa::Message`, sin dependencia adicional.
+- READMEs 2/2 revisados. Comportamiento de consulta de ayuda citado sin cambios, y sin conceder ejecución por texto citado.
+- Pruebas Linux/Windows/proveedor pendientes para el SHA de esta corrección.
+
 ## 2026-11-19 — Finalización de Rustfmt en prueba de ayuda por cita
 
 - SHA anterior: 79b3335c521eaab335ad8f8167ae91aef34c847d. El comprobador solicitó solo el orden de imports en `tests/menu_catalog.rs`; se aplicó sin alterar lógica.

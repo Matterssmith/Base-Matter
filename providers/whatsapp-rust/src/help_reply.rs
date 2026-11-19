@@ -78,7 +78,10 @@ mod tests {
 
     #[test]
     fn no_quote_does_not_synthesize_help() {
-        let message = wa::Message::text("=/>help");
+        let message = wa::Message {
+            conversation: Some("=/>help".into()),
+            ..Default::default()
+        };
         assert!(help_from_quoted_message(&message, "=/>help", "123@g.us").is_none());
     }
 }
