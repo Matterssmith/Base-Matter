@@ -1,3 +1,7 @@
+### Corrección HMAC para navegación
+
+La allowlist del proveedor incorpora `help/h/ayuda` en contextos verificados, y permite `menu all` públicamente si el chat está activo. Mantiene antirreplay y restricciones de propietario. README revisado.
+
 ### Actualización UX en alpha
 
 El puente reconoce `help` además del menú, siempre con HMAC y permisos previos. Los botones actuales aún no replican el ejemplo Go. Compatibilidad HTML, audio y pantalla completa pendiente de prueba real; no se han alterado las sesiones.

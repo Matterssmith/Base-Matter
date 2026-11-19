@@ -1,3 +1,7 @@
+### Corrección del primer corte de interfaz
+
+Se corrigieron coincidencias duplicadas y el bloqueo de help privado/menu completo público antes de CI. Dos README revisados; pruebas WhatsApp y botones pendientes.
+
 ### Primer corte UX de WhatsApp, 2026-11-18
 
 Código de menú compacto, `menu all`, ayuda contextual y control HMAC ampliado. Pruebas existentes adaptadas a la nueva cabecera; CI del SHA pendiente. Los botones/HTML y pruebas reales aún no están verificados. Dos README revisados.

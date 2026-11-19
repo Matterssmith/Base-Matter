@@ -20,6 +20,11 @@ width="100%"
 
 ---
 
+### Corregidos permisos de ayuda y menú completo
+
+Se normalizaron los verbos de ayuda en grupos y privados, retirando duplicados y permitiendo `menu all` en lectura pública de chats activos. Dos README inspeccionados y actualizados. Sin cambios de sesión, Vault ni rangos.
+
+
 ### 2026-11-18 — Primer corte de UX: menú corto, menú completo y ayuda
 
 El menú principal ahora muestra categorías legibles. `menu all` expone el catálogo íntegro; `menu antis` resume las protecciones sin enumerar redes sociales. Se añadió `help` y `help <comando>` al controlador y al puente de WhatsApp; sigue siendo lectura sin ejecución. `set antilink add/del` y los botones/HTML reales requieren la siguiente implementación. README raíz y del proveedor revisados (2/2); no se tocaron sesiones ni Vault.

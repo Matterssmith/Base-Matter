@@ -204,9 +204,6 @@ impl Config {
                     | "=/>grupo"
                     | "=/>menu"
                     | "=/>menú"
-                | "=/>help"
-                | "=/>h"
-                | "=/>ayuda"
                     | "=/>help"
                     | "=/>h"
                     | "=/>ayuda"
@@ -231,6 +228,9 @@ impl Config {
                     | "=/>bot"
                     | "=/>menu"
                     | "=/>menú"
+                    | "=/>help"
+                    | "=/>h"
+                    | "=/>ayuda"
                     | "=/>set"
                     | "=/>unset"
                     | "=/>role"
@@ -341,7 +341,7 @@ impl Config {
             ["=/>help" | "=/>h" | "=/>ayuda"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda", category] => public_category(category) || category == "all",
             ["=/>help" | "=/>h" | "=/>ayuda", category, page] => public_category(category) && page.parse::<usize>().is_ok_and(|v| (1..=8).contains(&v)),
-            ["=/>menu" | "=/>menú", category] => public_category(category),
+            ["=/>menu" | "=/>menú", category] => public_category(category) || category == "all",
             ["=/>menu" | "=/>menú", category, page] => {
                 public_category(category)
                     && page

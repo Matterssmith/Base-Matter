@@ -340,7 +340,7 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
         if item.implemented { "Estado: registrado" } else { "Estado: pendiente" }.to_owned(),
         "Uso:".to_owned(),
     ];
-    for usage in item.usages { lines.push(format!("=/> {usage}").replacen("=/> ", "=/ >", 0).replace("=/> ", "=/>")); }
+    for usage in item.usages { lines.push(format!("=/>{usage}")); }
     Ok(lines.join("\n"))
 }
 
