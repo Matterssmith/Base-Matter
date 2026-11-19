@@ -1,5 +1,10 @@
 # Base-Matter — repository instructions
 
+## Prioridad UX confirmada 2026-11-18
+
+Menú compacto, ayuda por categorías y botones al estilo SendButtonsRow; el propietario confirmó que HTML/JS y sonido se ven funcionando en su referencia externa, pero falta demostrar equivalencia en whatsapp-rust. Pantalla completa solo al mantener pulsado un botón HTML, sonidos solo por interacción. Soporte futuro de stickers de verificación de rangos cuando llegue el código; visual no concede autoridad Vault. No activar moderación por defecto.
+
+
 ## Referencia prioritaria del propietario — botones de fila del ejemplo Go (2026-11-18)
 
 El propietario proporcionó código fuente `package dl` con comandos `ts18` y

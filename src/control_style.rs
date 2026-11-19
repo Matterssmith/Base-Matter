@@ -193,7 +193,14 @@ impl ControlThemes {
         // Dynamic menus are self-contained. The same verified IPC response
         // passes through this renderer twice; never add another frame.
         if self.dynamic_menu.is_some()
-            && (body.starts_with("꒦꒷✰꒷꒦︶꒦꒷✧")
+            && (body.starts_with("💠 Menú de Base-Matter")
+                || body.starts_with("💠 Base-Matter Menu")
+                || body.starts_with("💠 Menú completo")
+                || body.starts_with("💠 Complete Menu")
+                || body.starts_with("💠 Ayuda de Base-Matter")
+                || body.starts_with("💠 Base-Matter Help")
+                || body.starts_with("🛡️ Protecciones")
+                || body.starts_with("꒦꒷✰꒷꒦︶꒦꒷✧")
                 || body.starts_with("Menú de control global")
                 || body.starts_with("Global control menu"))
         {
@@ -215,7 +222,11 @@ impl ControlThemes {
         let Some(preferences) = &self.dynamic_menu else {
             return theme.render(section);
         };
-        let body = crate::menu::render(section, preferences.get()?)?;
+        let body = if let Some(query) = section.strip_prefix("help") {
+            crate::menu::render_help(query, preferences.get()?)?
+        } else {
+            crate::menu::render(section, preferences.get()?)?
+        };
         let default_template =
             include_str!("../templates/matterssmith-control.txt").replace("\r\n", "\n");
         if theme.template == default_template {

@@ -20,6 +20,11 @@ width="100%"
 
 ---
 
+### 2026-11-18 — Primer corte de UX: menú corto, menú completo y ayuda
+
+El menú principal ahora muestra categorías legibles. `menu all` expone el catálogo íntegro; `menu antis` resume las protecciones sin enumerar redes sociales. Se añadió `help` y `help <comando>` al controlador y al puente de WhatsApp; sigue siendo lectura sin ejecución. `set antilink add/del` y los botones/HTML reales requieren la siguiente implementación. README raíz y del proveedor revisados (2/2); no se tocaron sesiones ni Vault.
+
+
 ### 2026-11-18 — Referencia del propietario: tarjetas con botones de fila (Go, solo documentación)
 
 Se preservó literalmente el ejemplo Go `ts18`/`ts19` recibido del propietario en

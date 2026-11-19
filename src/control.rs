@@ -417,6 +417,15 @@ impl ControlDispatcher {
                     output,
                 })
             }
+            ["=/>help" | "=/>ayuda" | "=/>h", rest @ ..] if rest.len() <= 3 => {
+                if !decision.decision.enabled { return Ok(DispatchResult::Inactive); }
+                let theme = self.public_menu.as_ref()
+                    .ok_or_else(|| anyhow!("Read-only help is unavailable"))?;
+                let section = if rest.is_empty() { "help".to_owned() }
+                    else { format!("help {}", rest.join(" ")) };
+                let output = theme.render(group, &section)?;
+                Ok(DispatchResult::Extension { command: "help".to_owned(), output })
+            }
             ["=/>credits" | "=/>creditos" | "=/>créditos"] => {
                 if !decision.decision.enabled {
                     return Ok(DispatchResult::Inactive);

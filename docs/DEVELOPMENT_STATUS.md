@@ -1,3 +1,7 @@
+### Primer corte UX de WhatsApp, 2026-11-18
+
+Código de menú compacto, `menu all`, ayuda contextual y control HMAC ampliado. Pruebas existentes adaptadas a la nueva cabecera; CI del SHA pendiente. Los botones/HTML y pruebas reales aún no están verificados. Dos README revisados.
+
 ### 2026-11-18 — Referencia guardada: tarjeta Go con botones `SendButtonsRow`
 
 - Código original `ts18`/`ts19` almacenado como texto inerte en

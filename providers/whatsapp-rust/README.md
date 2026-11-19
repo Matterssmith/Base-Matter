@@ -1,3 +1,7 @@
+### Actualización UX en alpha
+
+El puente reconoce `help` además del menú, siempre con HMAC y permisos previos. Los botones actuales aún no replican el ejemplo Go. Compatibilidad HTML, audio y pantalla completa pendiente de prueba real; no se han alterado las sesiones.
+
 ### 2026-11-18 — Ejemplo original de tarjeta con botones de fila (sin integración)
 
 Se conserva en el repositorio el código Go suministrado por el propietario

@@ -252,7 +252,106 @@ fn header(options: Preferences) -> Vec<String> {
         ],
     }
 }
+
+fn concise_menu(options: Preferences) -> Result<String> {
+    let mut lines = vec![
+        if options.language == Language::Es { "💠 Menú de Base-Matter" } else { "💠 Base-Matter Menu" }.to_owned(),
+        "Prefijo: =/>".to_owned(),
+        String::new(),
+    ];
+    for cat in CATEGORIES {
+        let title = match (cat.id, options.language) {
+            ("status", Language::Es) => "Estado",
+            ("status", _) => "Status",
+            ("set", Language::Es) => "Configuración",
+            ("set", _) => "Settings",
+            ("antis", Language::Es) => "Protecciones",
+            ("antis", _) => "Protections",
+            ("system", Language::Es) => "Sistema",
+            ("system", _) => "System",
+            ("navigation", Language::Es) => "Navegación",
+            ("navigation", _) => "Navigation",
+            ("bot", _) => "Bot",
+            ("roles", _) => "Roles",
+            ("sandbox", _) => "Sandbox",
+            _ => "IA",
+        };
+        lines.push(format!("{} — menu {}", title, cat.id));
+    }
+    lines.push(String::new());
+    lines.push("Todas las categorías: menu all".to_owned());
+    lines.push("Ayuda: help <comando>".to_owned());
+    Ok(lines.join("\n"))
+}
+
+fn verbose_menu(options: Preferences) -> Result<String> {
+    let mut lines = vec![
+        if options.language == Language::Es { "💠 Menú completo" } else { "💠 Complete Menu" }.to_owned(),
+        "Prefijo: =/>".to_owned(),
+    ];
+    for cat in CATEGORIES {
+        lines.push(format!("{}:", cat.id));
+        for entry in cat.commands {
+            lines.push(format!("  {}{}", entry.name,
+                if entry.implemented { "" } else { " [pendiente]" }));
+        }
+    }
+    lines.push("Detalle: help <comando>".to_owned());
+    let result = lines.join("\n");
+    if result.len() > 3450 { bail!("Menú completo demasiado largo"); }
+    Ok(result)
+}
+
+fn readable_antis() -> Result<String> {
+    Ok([
+        "🛡️ Protecciones · Base-Matter",
+        "Prefijo: =/>",
+        "Filtros desactivados por defecto.",
+        "",
+        "• antis — ver reglas",
+        "• anti <tipo> — consultar o configurar una regla",
+        "• antilink — filtro general de enlaces",
+        "• antispam — mensajes repetidos",
+        "• antiflood — exceso de mensajes",
+        "• antimedia — control de archivos",
+        "",
+        "Detalles: help antilink",
+        "Más protecciones: menu antis 2",
+        "La lista de enlaces add/del está pendiente.",
+    ].join("\n"))
+}
+
+pub fn render_help(query: &str, options: Preferences) -> Result<String> {
+    let query = query.trim();
+    if query.is_empty() {
+        return Ok(concise_menu(options)?.replacen("Menú de Base-Matter", "Ayuda de Base-Matter", 1)
+            .replacen("Base-Matter Menu", "Base-Matter Help", 1));
+    }
+    if query == "all" { return verbose_menu(options); }
+    if CATEGORIES.iter().any(|cat| cat.id == query) {
+        return render(&format!("menu {query}"), options);
+    }
+    let item = CATEGORIES.iter().flat_map(|cat| cat.commands.iter())
+        .find(|item| item.name == query)
+        .ok_or_else(|| anyhow!("Comando no encontrado. Usa help para las categorías"))?;
+    let mut lines = vec![
+        format!("📖 Ayuda: {}", item.name),
+        description(item, options.language).to_owned(),
+        if item.implemented { "Estado: registrado" } else { "Estado: pendiente" }.to_owned(),
+        "Uso:".to_owned(),
+    ];
+    for usage in item.usages { lines.push(format!("=/> {usage}").replacen("=/> ", "=/ >", 0).replace("=/> ", "=/>")); }
+    Ok(lines.join("\n"))
+}
+
 pub fn render(section: &str, options: Preferences) -> Result<String> {
+    match section.trim() {
+        "menu" | "menú" => return concise_menu(options),
+        "menu all" | "menú all" => return verbose_menu(options),
+        "menu antis" | "menú antis" => return readable_antis(),
+        _ => {}
+    }
+
     let words: Vec<&str> = section.split_whitespace().collect();
     let (category_id, page) = match words.as_slice() {
         [] | ["menu" | "menú"] => (None, 1_usize),
@@ -388,10 +487,10 @@ mod tests {
     #[test]
     fn classic_menu_has_single_prefix_without_brand_or_credits() {
         let menu = render("menu", Preferences::default()).unwrap();
-        assert!(menu.contains("╞═╦═"));
-        assert!(menu.contains("│♪╚["));
+        assert!(menu.contains("Menú de Base-Matter"));
+        assert!(menu.contains("menu all"));
         assert!(menu.contains("menu antis"));
-        assert!(menu.contains("Bot: Principal"));
+        assert!(menu.contains("menu bot"));
         assert_eq!(menu.matches("=/>").count(), 1);
         assert!(!menu.contains("Matterssmith"));
         assert!(!menu.contains("Créditos:"));

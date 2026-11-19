@@ -3,8 +3,8 @@ use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
     name: "help",
-    es: "Asistente de ayuda contextual; pendiente",
-    en: "Contextual command assistance; pending",
-    usages: &["help <pregunta>"],
-    implemented: false,
+    es: "Ayuda contextual de comandos por categoría",
+    en: "Contextual command help by category",
+    usages: &["help", "help all", "help <categoria>", "help <comando>"],
+    implemented: true,
 };
