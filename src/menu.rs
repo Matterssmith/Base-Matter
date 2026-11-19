@@ -751,31 +751,76 @@ mod tests {
     #[test]
     fn owner_category_contract_is_closed_ordered_and_deduplicated() {
         let allowed = [
-            "ia", "anti", "config", "downloads", "economy", "fun", "gacha",
-            "games", "group", "info", "links", "main", "mode", "owner",
-            "profile", "reactions", "search", "sockets", "system", "utils",
+            "ia",
+            "anti",
+            "config",
+            "downloads",
+            "economy",
+            "fun",
+            "gacha",
+            "games",
+            "group",
+            "info",
+            "links",
+            "main",
+            "mode",
+            "owner",
+            "profile",
+            "reactions",
+            "search",
+            "sockets",
+            "system",
+            "utils",
         ];
         let actual: Vec<&str> = CATEGORIES.iter().map(|category| category.id).collect();
-        assert_eq!(actual, allowed);
+        assert_eq!(actual.as_slice(), allowed.as_slice());
         let mut seen = std::collections::BTreeSet::new();
         for category in CATEGORIES {
             for command in category.commands {
-                assert!(seen.insert(command.name), "Duplicate command in menu: {}", command.name);
+                assert!(
+                    seen.insert(command.name),
+                    "Duplicate command in menu: {}",
+                    command.name
+                );
             }
         }
         assert!(seen.contains("help"));
         assert!(seen.contains("matter"));
         assert!(!CATEGORIES.iter().any(|category| category.id == "all"));
         let root = render("menu", Preferences::default()).unwrap();
-        let rows: Vec<_> = root.lines().filter(|line| line.starts_with("│·♪·")).collect();
+        let rows: Vec<_> = root
+            .lines()
+            .filter(|line| line.starts_with("│·♪·"))
+            .collect();
         assert_eq!(rows.len(), 21);
         let canonical = [
-            "ia", "anti", "all", "config", "downloads", "economy", "fun",
-            "gacha", "games", "group", "info", "links", "main", "mode",
-            "owner", "profile", "reactions", "search", "sockets", "system", "utils",
+            "ia",
+            "anti",
+            "all",
+            "config",
+            "downloads",
+            "economy",
+            "fun",
+            "gacha",
+            "games",
+            "group",
+            "info",
+            "links",
+            "main",
+            "mode",
+            "owner",
+            "profile",
+            "reactions",
+            "search",
+            "sockets",
+            "system",
+            "utils",
         ];
         for (row, id) in rows.iter().zip(canonical) {
-            assert!(row.contains(&format!("[menu {id}]")), "Wrong category: {id}");
+            assert!(
+                row.contains(&format!("[menu {id}]")),
+                "Wrong category: {id}"
+            );
         }
     }
 

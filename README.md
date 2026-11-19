@@ -1,3 +1,6 @@
+### 2026-11-18 — Formato de prueba de catálogo cerrado
+CI del SHA 653b6ec marcó únicamente formato de la prueba Rust del catálogo; se aplicaron exactamente los saltos de línea solicitados por Rustfmt. La aserción de IDs compara explícitamente slices en orden. README principal y proveedor revisados (2/2); se vuelve a validar. No hay cambios de transporte, sesión, Vault ni permisos.
+
 ### 2026-11-18 — Invariante de 21 entradas y comandos únicos
 Se añadió una prueba que compara el orden exacto de las 21 filas con el contrato cerrado, exige 20 destinos de comandos distintos de Todo y evita duplicados. El comando general help se ubica en Principal, no IA; matter permanece en IA. Los módulos internos siguen conservando rutas históricas sin exponerse como categorías. READMEs revisados 2/2; validar CI del nuevo SHA.
 
