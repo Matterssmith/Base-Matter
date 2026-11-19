@@ -1,3 +1,15 @@
+### 2026-11-18 — Prototipo Rust offline: sticker asociado al mensaje
+
+Se añadió providers/whatsapp-rust/src/sticker_badge.rs y sus pruebas
+offline. La función construye un mensaje protobuf con
+MessageAssociation/STICKER_ANNOTATION (associationType 11), valida
+la clave real de destino y metadatos cifrados del sticker y no envía
+mensajes. Está aislada del receptor productivo y no autoriza rangos.
+Vault-Matter contiene únicamente el contrato documental/JSON de las
+insignias, sin gateway de roles en producción. Boom/boom2 NO se habilitan.
+CI del nuevo SHA obligatoria, seguida de compatibilidad en teléfono.
+README raíz y proveedor revisados antes del commit (2/2).
+
 ### 2026-11-18 — Proveedor: expectativas corregidas para help privado
 
 El último CI del proveedor compiló, pero la prueba provider.rs todavía

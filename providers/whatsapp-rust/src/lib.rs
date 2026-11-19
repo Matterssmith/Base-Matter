@@ -8,6 +8,7 @@ pub mod recovery;
 pub mod rich_preview;
 pub mod rich_transport;
 pub mod ui;
+pub mod sticker_badge;
 
 // Provider-only fallback frame. The command registry lives in the
 // independent Base-Matter core; no core modules are imported here.
