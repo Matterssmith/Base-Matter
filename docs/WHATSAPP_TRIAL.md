@@ -1,8 +1,10 @@
+> **Corrección definitiva (2026-11-19):** la sintaxis nueva será `on|off|inherit`; `-` no es operador admitido. Esta corrección solo modifica la especificación, no el comportamiento del proveedor. Las secciones históricas describen el runtime anterior.
+
 ## NUEVA SINTAXIS OBJETIVO — 2026-11-19 (solo diseño, NO implementada)
 
 La sección histórica siguiente describe el comportamiento anterior de `alpha` y NO debe usarse como gramática objetivo.
-La regla futura es: `set` para **configurar**, y `anti [regla|--modo] on|off|-` para **activar, desactivar o heredar**.
-Ejemplos previstos: `=/>anti link on`, `=/>anti link -`, `=/>anti --multimedia on --except video,sticker`, `=/>anti --security on --include link,spam` (solo si el catálogo registra esas pertenencias).
+La regla futura es: `set` para **configurar**, y `anti [regla|--modo] on|off|inherit` para **activar, desactivar o heredar**.
+Ejemplos previstos: `=/>anti link on`, `=/>anti link inherit`, `=/>anti --multimedia on --except video,sticker`, `=/>anti --security on --include link,spam` (solo si el catálogo registra esas pertenencias).
 `=/>set anti link on` queda descartado como diseño. `--mod` socket, `--global` predeterminado general solo lectura sin autoridad Vault. Toda migración de runtime, menús y help permanece pendiente.
 Ver `docs/ANTI_COMMAND_CONVENTIONS.md` para selección, herencia, permisos y pruebas.
 

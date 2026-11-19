@@ -1,6 +1,8 @@
+> **Sintaxis definitiva prevista:** `on|off|inherit`. Nunca utilizar `-` como activación o herencia. Contrato documental; el puente Rust sigue sin exponer `inherit`.
+
 ## Ajuste de integración propuesto — 2026-11-19 (sin cambio Rust)
 
-Los comandos de bot `#antilink` y los controles `=/>anti link` deben usar en el futuro semántica compartida de activación `on|off|-` y de consultas, pero con permisos distintos. `set` se reserva a configuración. El puente público existente continúa sin implementación privada; `-` requiere operación nueva de retiro de override, aún NO incorporada al tipo Rust `AntiLinkCommand`. No afirmar soporte actual. Ver `docs/ANTI_COMMAND_CONVENTIONS.md`.
+Los comandos de bot `#antilink` y los controles `=/>anti link` deben usar en el futuro semántica compartida de activación `on|off|inherit` y de consultas, pero con permisos distintos. `set` se reserva a configuración. El puente público existente continúa sin implementación privada; `inherit` requiere operación nueva de retiro de override, aún NO incorporada al tipo Rust `AntiLinkCommand`. No afirmar soporte actual. Ver `docs/ANTI_COMMAND_CONVENTIONS.md`.
 
 # Base-Matter — Public protected capability bridge
 
