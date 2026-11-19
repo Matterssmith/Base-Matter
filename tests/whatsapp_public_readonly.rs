@@ -249,6 +249,62 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
         let test = frame(&format!("denied-{index}"), text, READER, READER, false);
         assert!(bridge.ingest(&test).is_err(), "must reject {text}");
     }
+    assert!(matches!(
+        bridge.ingest(&frame("pub-private-global", "=/>status --global", READER, READER, false)).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
+            if command == "status" && output.contains("privada del propietario")
+    ));
+    let wrong_chat = frame("wrong-1", "=/>menu", READER, OWNER_JID, false);
+    assert!(bridge.ingest(&wrong_chat).is_err());
+    let mut forged = frame("wrong-2", "=/>menu", READER, GROUP, false);
+    forged.actor_id = "5215519999999@lid".into();
+    assert!(bridge.ingest(&forged).is_err());
+    let impersonation = frame("wrong-3", "=/>bot on", "owner", GROUP, false);
+    assert!(bridge.ingest(&impersonation).is_err());
+}
+
+#[test]
+fn all_21_canonical_categories_and_three_pages_have_real_dynamic_menu_routing() {
+    let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
+    activation.provision("socket-1", "owner").unwrap();
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
+    let themes = Arc::new(
+        ControlThemes::new(ControlTheme::new("Matterssmith", "base-matter", "✦").unwrap())
+            .with_dynamic_menu(Arc::new(
+                matter_base::menu::MenuPreferences::open(":memory:").unwrap(),
+            )),
+    );
+    let controller = Arc::new(
+        ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
+            .with_public_menu(themes)
+            .with_silent_bot_commands()
+            .with_unified_live_controls(),
+    );
+    let bridge = WhatsAppControlBridge::new(
+        WhatsAppBridgeConfig {
+            socket_id: "socket-1".into(),
+            owner_actor_id: "owner".into(),
+            owner_jid: OWNER_JID.into(),
+        },
+        KEY,
+        Arc::new(InboundReplayStore::in_memory([9u8; 32]).unwrap()),
+        controller,
+    )
+    .unwrap();
+    for (index, command) in ["=/>bot on", "=/>bot --global on", "=/>bot private on"]
+        .iter()
+        .enumerate()
+    {
+        bridge
+            .ingest(&frame(
+                &format!("owner-enable-{index}"),
+                command,
+                "owner",
+                OWNER_JID,
+                true,
+            ))
+            .unwrap();
+    }
     for (index, command) in [
         "=/>menu ia",
         "=/>menu anti",
@@ -296,16 +352,16 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
             "menu selector rejected: {command}"
         );
     }
+
+    let root = bridge
+        .ingest(&frame("read-root-21", "=/>menu", READER, READER, false))
+        .unwrap();
     assert!(matches!(
-        bridge.ingest(&frame("pub-private-global", "=/>status --global", READER, READER, false)).unwrap(),
+        root,
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
-            if command == "status" && output.contains("privada del propietario")
+            if command == "menu"
+                && output.contains("[menu ia]")
+                && output.contains("[menu sockets]")
+                && output.contains("[menu utils]")
     ));
-    let wrong_chat = frame("wrong-1", "=/>menu", READER, OWNER_JID, false);
-    assert!(bridge.ingest(&wrong_chat).is_err());
-    let mut forged = frame("wrong-2", "=/>menu", READER, GROUP, false);
-    forged.actor_id = "5215519999999@lid".into();
-    assert!(bridge.ingest(&forged).is_err());
-    let impersonation = frame("wrong-3", "=/>bot on", "owner", GROUP, false);
-    assert!(bridge.ingest(&impersonation).is_err());
 }

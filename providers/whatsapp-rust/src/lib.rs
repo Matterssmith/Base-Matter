@@ -327,8 +327,7 @@ impl Config {
         let public_category = |value: &str| {
             matches!(
                 value,
-                "ia"
-                    | "anti"
+                "ia" | "anti"
                     | "all"
                     | "config"
                     | "downloads"

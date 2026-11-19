@@ -1,5 +1,17 @@
 # Historial de decisiones de implementación — Base-Matter
 
+## BASE-D006 — Fixture dinámico del menú y guías WhatsApp
+- Falla CI: tests/whatsapp_public_readonly.rs probaba la nueva
+  navegación con un renderer de plantilla estática antigua que sólo
+  soporta "menu". No es fallo de permisos de la ruta pública.
+- Solución: mantener fixture legado para sus tests y probar
+  categorías/páginas en fixture con MenuPreferences real.
+- Formato: corrección de rustfmt del match del proveedor.
+- Documentos: instrucciones precisas de prueba audio/HTML/TS18/TS19.
+- Estado: CI nuevo por verificar; ningún dato secreto modificado.
+- README revisados: 2/2.
+
+
 ## BASE-D005 — Rustfmt laboratorio, 18-11-2026
 - Problema: CI de provider y Rustcore rechazaron formato de arrays,
   match e imports del laboratorio y los tests de catálogo.

@@ -1,5 +1,15 @@
 # Base-Matter — repository instructions
 
+## 2026-11-18 — Test real de 21 categorías y documentos de WhatsApp
+
+La plantilla antigua de pruebas sólo renderiza "menu" raíz y
+rechaza submenús. Se movió la prueba de las 21 categorías y páginas
+a un fixture dinámico con MenuPreferences en memoria, sin alterar
+la política de producción. Corrección Rustfmt del provider lib.rs.
+Se actualizaron las guías del menú TS18/TS19, RichResponse y sonido.
+README revisados: 2/2. CI y prueba real del teléfono pendientes.
+
+
 ## 2026-11-18 — Corrección Rustfmt laboratorio y listas canónicas
 
 El CI detectó formato no estándar en los módulos del proveedor, en

@@ -1,3 +1,16 @@
+## 2026-11-18 — Menú y laboratorio de interfaz en WhatsApp
+
+El menú autorizado conserva las 21 entradas del contrato cerrado,
+un botón de categorías y respuesta textual alternativa. Sólo en
+self-chat verificado del propietario se activa MATTER_WA_MENU_LAB=1
+para enviar tarjetas TS18 (Audio/MP4), TS19 (Audio/MP4/Enlace) y un
+tono original de audio Ogg/Opus, además del HTML RichResponse cuando
+MATTER_WA_RICH_HTML=1. El audio requiere pulsar reproducir;
+HTML no ejecuta JavaScript ni garantiza soporte en WhatsApp.
+Ningún click concede privilegios ni ejecuta descargas. Los comandos
+en submenús sólo muestran sintaxis; help contiene los detalles.
+Leer [WHATSAPP_UI_TESTS.md](WHATSAPP_UI_TESTS.md) para los pasos.
+
 # Referencia de UI: tarjetas de WhatsApp con botones inferiores (ts18 / ts19)
 
 **Estado:** fuente aportada por el propietario, conservada sin adaptación
