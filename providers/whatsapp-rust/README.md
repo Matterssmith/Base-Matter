@@ -1,3 +1,6 @@
+### 2026-11-18 — Compilación Windows: nombre local del rótulo de categoría
+El compilador de Windows detectó que la variable local label ocultaba la función label del renderizador. Se renombró el local a decorated_label sin variar presentación ni permisos. Ambos README revisados; se requieren verificaciones completas del nuevo commit.
+
 ### 2026-11-18 — Formato final del menú sin símbolos
 El CI detectó una única diferencia de Rustfmt en el nombre de Todo del estilo none; se aplicó literalmente sin cambiar comportamiento. Se mantienen 21 rutas, sección de autoridad no otorgante y botón de categorías. README principal y proveedor revisados 2/2; revalidación por SHA.
 

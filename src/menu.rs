@@ -526,14 +526,14 @@ pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> 
         }]
     };
     for (index, (id, es, en)) in ENTRIES.iter().enumerate() {
-        let label = if spanish { es } else { en };
+        let decorated_label = if spanish { es } else { en };
         if classic {
             let branch = if index + 1 == ENTRIES.len() {
                 "╚"
             } else {
                 "╠"
             };
-            lines.push(format!("│·♪·{branch}[ {label} [menu {id}]"));
+            lines.push(format!("│·♪·{branch}[ {decorated_label} [menu {id}]"));
         } else {
             let plain_label = if *id == "all" {
                 if spanish {
