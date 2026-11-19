@@ -123,13 +123,7 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
         .ingest(&frame("own-1", "=/>bot on", "owner", OWNER_JID, true))
         .unwrap();
     bridge
-        .ingest(&frame(
-            "own-2",
-            "=/>bot --mod on",
-            "owner",
-            OWNER_JID,
-            true,
-        ))
+        .ingest(&frame("own-2", "=/>bot --mod on", "owner", OWNER_JID, true))
         .unwrap();
     // External groups stay disabled until the owner explicitly enables
     // the group kind, regardless of the socket-global fallback.
@@ -200,13 +194,7 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
         .ingest(&frame("own-1", "=/>bot on", "owner", OWNER_JID, true))
         .unwrap();
     bridge
-        .ingest(&frame(
-            "own-2",
-            "=/>bot --mod on",
-            "owner",
-            OWNER_JID,
-            true,
-        ))
+        .ingest(&frame("own-2", "=/>bot --mod on", "owner", OWNER_JID, true))
         .unwrap();
     let incoming = frame("pub-private", "=/>status", READER, READER, false);
     assert_eq!(

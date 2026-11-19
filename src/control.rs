@@ -832,9 +832,7 @@ impl ControlDispatcher {
                         scope => {
                             let group_scope = match scope {
                                 CommandScope::Socket => None,
-                                CommandScope::Chat => {
-                                    Self::anti_chat_scope(group, source)
-                                },
+                                CommandScope::Chat => Self::anti_chat_scope(group, source),
                                 CommandScope::Global => unreachable!("handled above"),
                             };
                             let args = scoped
@@ -880,7 +878,11 @@ impl ControlDispatcher {
                     }
                     let chat_scope = Self::anti_chat_scope(group, source);
                     if words.is_empty() {
-                        let output = store.inspect_command(receiving_socket, if socket_scope { None } else { chat_scope }, &[])?;
+                        let output = store.inspect_command(
+                            receiving_socket,
+                            if socket_scope { None } else { chat_scope },
+                            &[],
+                        )?;
                         return Ok(DispatchResult::Extension {
                             command: "set".to_owned(),
                             output,
@@ -942,13 +944,14 @@ impl ControlDispatcher {
                     if words.iter().any(|word| word.starts_with("--")) {
                         bail!("Opción de protección no reconocida");
                     }
-                    let config_scope = if socket_scope {
-                        None
-                    } else {
-                        chat_scope.ok_or_else(|| {
+                    let config_scope =
+                        if socket_scope {
+                            None
+                        } else {
+                            chat_scope.ok_or_else(|| {
                             anyhow!("Chat no verificado: utiliza --mod para configurar el socket")
                         }).map(Some)?
-                    };
+                        };
                     let args = words
                         .iter()
                         .map(|word| (*word).to_owned())
@@ -997,9 +1000,7 @@ impl ControlDispatcher {
                         bot_instance_id: admission.bot_instance_id,
                     });
                 }
-                ["status" | "estado", "--global"]
-                    if self.unified_live_controls =>
-                {
+                ["status" | "estado", "--global"] if self.unified_live_controls => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
@@ -1037,17 +1038,24 @@ impl ControlDispatcher {
                     });
                 }
                 ["bot", "--mod", action @ ("on" | "off" | "inherit" | "encender" | "apagar" | "heredar")]
-                | ["bot", action @ ("on" | "off" | "inherit" | "encender" | "apagar" | "heredar"), "--mod"] => {
-                    let policy = match action {
+                | ["bot", action @ ("on" | "off" | "inherit" | "encender" | "apagar" | "heredar"), "--mod"] =>
+                {
+                    let policy = match *action {
                         "on" | "encender" => Some(true),
                         "off" | "apagar" => Some(false),
                         _ => None,
                     };
                     return self.change_bot_policy(
-                        receiving_socket, actor, group, kind, "global", policy,
+                        receiving_socket,
+                        actor,
+                        group,
+                        kind,
+                        "global",
+                        policy,
                     );
                 }
                 ["bot", "--global", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
+                | ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar", "--global"]
                     if self.unified_live_controls =>
                 {
                     bail!("--global es una política general, no el socket. Las escrituras globales requieren autoridad Vault.");
@@ -1113,7 +1121,9 @@ impl ControlDispatcher {
                     });
                 }
                 ["bot", "--mod"] => {
-                    let defaults = self.activation.inspect_bot_defaults(receiving_socket, actor)?;
+                    let defaults = self
+                        .activation
+                        .inspect_bot_defaults(receiving_socket, actor)?;
                     return Ok(DispatchResult::BotGlobalStatus {
                         socket_powered: defaults.socket_powered,
                         default_policy: defaults.default_policy,
@@ -1134,7 +1144,9 @@ impl ControlDispatcher {
                     });
                 }
                 ["bot", "--global"] => {
-                    let defaults = self.activation.inspect_bot_defaults(receiving_socket, actor)?;
+                    let defaults = self
+                        .activation
+                        .inspect_bot_defaults(receiving_socket, actor)?;
                     return Ok(DispatchResult::BotGlobalStatus {
                         socket_powered: defaults.socket_powered,
                         default_policy: defaults.default_policy,
@@ -1144,24 +1156,37 @@ impl ControlDispatcher {
                         community_policy: defaults.community_policy,
                     });
                 }
-                ["set"] | ["set", "--mod"]
+                ["set"]
+                | ["set", "--mod"]
                 | ["set", "style" | "lang" | "language"]
                 | ["set", "style" | "lang" | "language", "--mod"]
                 | ["set", "--mod", "style" | "lang" | "language"] => {
                     if group.is_some() {
                         bail!("La configuración del menú se consulta en el chat privado del propietario");
                     }
-                    let admission = self.activation.admission(receiving_socket, None, self.global_policy)?;
+                    let admission =
+                        self.activation
+                            .admission(receiving_socket, None, self.global_policy)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }
-                    let themes = self.public_menu.as_ref()
+                    let themes = self
+                        .public_menu
+                        .as_ref()
                         .ok_or_else(|| anyhow!("Menu preferences are unavailable"))?;
                     let preferences = themes.current_menu_preferences()?;
-                    let field = tokens.iter().find(|word| matches!(**word, "style" | "lang" | "language"));
+                    let field = tokens
+                        .iter()
+                        .find(|word| matches!(**word, "style" | "lang" | "language"));
                     let output = match field {
-                        Some(&"style") => format!("Configuración actual · socket\nEstilo: {}", preferences.style.as_str()),
-                        Some(&"lang" | &"language") => format!("Configuración actual · socket\nIdioma: {}", preferences.language.as_str()),
+                        Some(&"style") => format!(
+                            "Configuración actual · socket\nEstilo: {}",
+                            preferences.style.as_str()
+                        ),
+                        Some(&"lang" | &"language") => format!(
+                            "Configuración actual · socket\nIdioma: {}",
+                            preferences.language.as_str()
+                        ),
                         _ => format!(
                             "Configuración actual · socket\nEstilo: {}\nIdioma: {}",
                             preferences.style.as_str(),
@@ -1196,7 +1221,11 @@ impl ControlDispatcher {
                         .public_menu
                         .as_ref()
                         .ok_or_else(|| anyhow!("Menu preferences are unavailable"))?;
-                    let setting = if tokens.contains(&"style") { "style" } else { "lang" };
+                    let setting = if tokens.contains(&"style") {
+                        "style"
+                    } else {
+                        "lang"
+                    };
                     if setting == "style" {
                         themes.set_menu_style(value)?;
                     } else {
@@ -1291,7 +1320,8 @@ impl ControlDispatcher {
                     });
                 }
                 ["status" | "estado", socket]
-                    if !matches!(*socket, "--debug" | "--global" | "--mod") => {
+                    if !matches!(*socket, "--debug" | "--global" | "--mod") =>
+                {
                     if group.is_some() {
                         bail!("Targeted socket status requires private owner chat");
                     }

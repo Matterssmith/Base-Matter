@@ -1,4 +1,3 @@
-
 /*
  * Base-Matter — live control no-argument state queries and scoped commands.
  *
@@ -32,19 +31,19 @@ fn fixture() -> ControlDispatcher {
         ControlThemes::new(ControlTheme::new("Base-Matter", "principal", "✦").unwrap())
             .with_dynamic_menu(menu),
     );
-    ControlDispatcher::new(
-        activation,
-        Arc::new(BotRegistry::in_memory()),
-        router,
-        None,
-    )
-    .with_group_antis(Arc::new(AntiStore::open(":memory:").unwrap()))
-    .with_public_menu(themes)
-    .with_unified_live_controls()
-    .with_silent_bot_commands()
+    ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
+        .with_group_antis(Arc::new(AntiStore::open(":memory:").unwrap()))
+        .with_public_menu(themes)
+        .with_unified_live_controls()
+        .with_silent_bot_commands()
 }
 
-fn call(control: &ControlDispatcher, source: &str, group: Option<&str>, message: &str) -> Result<DispatchResult> {
+fn call(
+    control: &ControlDispatcher,
+    source: &str,
+    group: Option<&str>,
+    message: &str,
+) -> Result<DispatchResult> {
     control.dispatch("socket-test", "owner", source, group, message)
 }
 
@@ -88,18 +87,26 @@ fn socket_scope_never_mutates_global_defaults() {
         call(&c, dm, None, "=/>status --mod").unwrap(),
         DispatchResult::BotGlobalStatus { .. }
     ));
-    assert!(text(call(&c, dm, None, "=/>status --global").unwrap()).contains("Predeterminado general"));
+    assert!(
+        text(call(&c, dm, None, "=/>status --global").unwrap()).contains("Predeterminado general")
+    );
     assert!(text(call(&c, dm, None, "=/>bot --global").unwrap()).contains("Predeterminado general"));
     assert!(call(&c, dm, None, "=/>bot --global on").is_err());
+    assert!(call(&c, dm, None, "=/>bot on --global").is_err());
     call(&c, dm, None, "=/>bot --mod on").unwrap();
     assert!(matches!(
         call(&c, dm, None, "=/>bot --mod").unwrap(),
-        DispatchResult::BotGlobalStatus { default_policy: Some(true), .. }
+        DispatchResult::BotGlobalStatus {
+            default_policy: Some(true),
+            ..
+        }
     ));
     call(&c, group, Some(group), "=/>set anti --mod link on").unwrap();
     assert!(text(call(&c, group, Some(group), "=/>anti link").unwrap()).contains("link: on"));
     assert!(text(call(&c, group, Some(group), "=/>anti --mod link").unwrap()).contains("link: on"));
-    assert!(text(call(&c, group, Some(group), "=/>anti --global link").unwrap()).contains("link: off"));
+    assert!(
+        text(call(&c, group, Some(group), "=/>anti --global link").unwrap()).contains("link: off")
+    );
     assert!(call(&c, group, Some(group), "=/>set anti --global link on").is_err());
     assert!(call(&c, group, Some(group), "=/>anti link on").is_err());
 }

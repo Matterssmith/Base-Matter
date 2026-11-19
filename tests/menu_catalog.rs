@@ -280,9 +280,13 @@ fn help_explains_mod_and_global_for_every_supported_stateful_family() {
         let help = menu::render_help(name, opts).unwrap();
         assert!(help.contains("--mod"), "missing socket scope for {name}");
     }
-    assert!(menu::render_help("status", opts).unwrap().contains("--global"));
+    assert!(menu::render_help("status", opts)
+        .unwrap()
+        .contains("--global"));
     assert!(menu::render_help("bot", opts).unwrap().contains("--global"));
-    assert!(menu::render_help("set anti", opts).unwrap().contains("set anti"));
+    assert!(menu::render_help("set anti", opts)
+        .unwrap()
+        .contains("set anti"));
     let plain = menu::render("menu anti", opts).unwrap();
     assert!(!plain.contains("=/>antis"));
     assert!(!plain.contains("=/>antilink on"));
