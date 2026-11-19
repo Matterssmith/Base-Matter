@@ -1,5 +1,8 @@
 # Base-Matter — repository instructions
 
+## Regla de salida de menús y ayuda (2026-11-18)
+El menú sólo lista categorías y sintaxis disponible; no ofrecer narraciones, explicación de implementación ni opciones no implementadas. `help` sin argumentos enseña sintaxis de ayuda, no el menú; `help <comando|categoria>` es el lugar de detalle. Si un comando no tiene función al invocarse sin argumentos, responde con `Uso` y sus parámetros reales. `style none` tiene idéntica semántica sin adornos. Véase `docs/CATEGORY_CONTRACT.md`.
+
 ## Contrato visual exacto de menú (noviembre 2026)
 Respetar la cenefa inicial/final, encabezado global, 21 categorías cerradas, autoridad descriptiva, bloque dinámico de identidad/socket/rango/estado e instrucciones conforme a [docs/CATEGORY_CONTRACT.md](docs/CATEGORY_CONTRACT.md). Sólo un botón «Categorías»; no listar ni etiquetar categorías vacías. `style none` debe operar sin símbolos. Nunca confundir propietario verificado del socket con Owner Global de Vault, ni exponer PN/LID a terceros. No inventar rangos, número total ni estado.
 

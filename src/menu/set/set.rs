@@ -5,6 +5,6 @@ pub const COMMAND: CommandSpec = CommandSpec {
     name: "set",
     es: "Mostrar configuraciones disponibles",
     en: "Show available settings",
-    usages: &["set"],
+    usages: &["set style classic|none", "set lang es|en"],
     implemented: true,
 };

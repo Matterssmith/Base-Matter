@@ -642,104 +642,136 @@ pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> 
 }
 
 fn verbose_menu(options: Preferences) -> Result<String> {
-    let mut lines = vec![
-        if options.language == Language::Es {
-            "💠 Menú completo"
-        } else {
-            "💠 Complete Menu"
-        }
-        .to_owned(),
-        "Prefijo: =/>".to_owned(),
-    ];
-    for cat in CATEGORIES {
-        if cat.commands.is_empty() {
+    let mut lines = vec![if options.language == Language::Es {
+        "💠 Todo"
+    } else {
+        "💠 All commands"
+    }
+    .to_owned()];
+    for category in CATEGORIES {
+        let commands: Vec<_> = category
+            .commands
+            .iter()
+            .filter(|command| command.implemented)
+            .collect();
+        if commands.is_empty() {
             continue;
         }
-        lines.push(format!("{}:", cat.id));
-        for entry in cat.commands {
-            lines.push(format!(
-                "  {}{}",
-                entry.name,
-                if entry.implemented {
-                    ""
-                } else {
-                    " [pendiente]"
-                }
-            ));
+        lines.push(format!("{}:", label(category, options.language)));
+        for command in commands {
+            lines.push(format!("  =/>{}", command.name));
         }
     }
-    lines.push("Detalle: help <comando>".to_owned());
-    let result = lines.join("\n");
-    if result.len() > 3450 {
-        bail!("Menú completo demasiado largo");
+    let output = lines.join("\n");
+    if output.len() > 3450 {
+        bail!("Full command index exceeds safe message size");
     }
-    Ok(result)
+    Ok(output)
 }
 
-fn readable_antis() -> Result<String> {
-    Ok([
-        "🛡️ Protecciones · Base-Matter",
-        "Prefijo: =/>",
-        "Filtros desactivados por defecto.",
+fn help_usage(language: Language) -> String {
+    let title = if language == Language::Es {
+        "📖 Ayuda · Uso"
+    } else {
+        "📖 Help · Usage"
+    };
+    [
+        title,
+        "=/>help <comando>",
+        "=/>help <categoria>",
+        "=/>help <categoria> <pagina>",
+        "=/>help all",
         "",
-        "• antis — ver reglas",
-        "• anti <tipo> — consultar o configurar una regla",
-        "• antilink — filtro general de enlaces",
-        "• antispam — mensajes repetidos",
-        "• antiflood — exceso de mensajes",
-        "• antimedia — control de archivos",
-        "",
-        "Detalles: help antilink",
-        "Más protecciones: menu antis 2",
-        "La lista de enlaces add/del está pendiente.",
+        "=/>menu",
     ]
-    .join("\n"))
+    .join("\n")
+}
+
+fn category_help(query: &str, page: usize, options: Preferences) -> Result<String> {
+    if page == 0 {
+        bail!("Help page must be positive");
+    }
+    let category = CATEGORIES
+        .iter()
+        .find(|category| category.id == canonical_category(query))
+        .ok_or_else(|| anyhow!("Unknown help category"))?;
+    const PAGE_SIZE: usize = 5;
+    let count = category.commands.len();
+    let pages = count.div_ceil(PAGE_SIZE).max(1);
+    if page > pages {
+        bail!("Help page does not exist");
+    }
+    let mut lines = vec![format!("📖 Ayuda: {}", label(category, options.language))];
+    let start = (page - 1) * PAGE_SIZE;
+    for command in &category.commands[start..count.min(start + PAGE_SIZE)] {
+        lines.push(format!("• {}", command.name));
+        lines.push(description(command, options.language).to_owned());
+        if !command.implemented {
+            lines.push(if options.language == Language::Es {
+                "No disponible"
+            } else {
+                "Not available"
+            }
+            .to_owned());
+        }
+        for usage in command.usages {
+            lines.push(format!("=/>{}", usage));
+        }
+    }
+    if pages > 1 {
+        lines.push(format!("=/>help {query} {} ({page}/{pages})", if page < pages { page + 1 } else { 1 }));
+    }
+    let output = lines.join("\n");
+    if output.len() > 3450 {
+        bail!("Help page exceeds safe message size");
+    }
+    Ok(output)
 }
 
 pub fn render_help(query: &str, options: Preferences) -> Result<String> {
     let query = query.trim();
-    if query.is_empty() {
-        return Ok(concise_menu(options)?
-            .replacen("╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀", "╭─💠 𝗔𝘆𝘂𝗱𝗮", 1)
-            .replacen("╭─💠 Categories", "╭─💠 Help", 1)
-            .replacen("Menú de Base-Matter", "Ayuda de Base-Matter", 1)
-            .replacen("Base-Matter Menu", "Base-Matter Help", 1));
-    }
-    if query == "all" {
-        return verbose_menu(options);
+    if query.is_empty() || query == "all" {
+        return Ok(help_usage(options.language));
     }
     if CATEGORIES
         .iter()
-        .any(|cat| cat.id == canonical_category(query))
+        .any(|category| category.id == canonical_category(query))
     {
-        return render(&format!("menu {query}"), options);
+        return category_help(query, 1, options);
     }
     if let [category, page] = query.split_whitespace().collect::<Vec<_>>().as_slice() {
         if CATEGORIES
             .iter()
-            .any(|cat| cat.id == canonical_category(category))
+            .any(|entry| entry.id == canonical_category(category))
         {
-            return render(&format!("menu {category} {page}"), options);
+            return category_help(
+                category,
+                page.parse::<usize>()
+                    .map_err(|_| anyhow!("Invalid help page"))?,
+                options,
+            );
         }
     }
-    let item = CATEGORIES
+    let command = CATEGORIES
         .iter()
-        .flat_map(|cat| cat.commands.iter())
-        .find(|item| item.name == query)
-        .ok_or_else(|| anyhow!("Comando no encontrado. Usa help para las categorías"))?;
+        .flat_map(|category| category.commands.iter())
+        .find(|command| command.name == query)
+        .ok_or_else(|| anyhow!("Comando no encontrado. Usa =/>help"))?;
     let mut lines = vec![
-        format!("📖 Ayuda: {}", item.name),
-        description(item, options.language).to_owned(),
-        if item.implemented {
-            "Estado: registrado"
-        } else {
-            "Estado: pendiente"
-        }
-        .to_owned(),
-        "Uso:".to_owned(),
+        format!("📖 Ayuda: {}", command.name),
+        description(command, options.language).to_owned(),
     ];
-    for usage in item.usages {
-        lines.push(format!("=/>{usage}"));
+    if !command.implemented {
+        lines.push(if options.language == Language::Es {
+            "No disponible"
+        } else {
+            "Not available"
+        }
+        .to_owned());
+    }
+    lines.push("Uso:".to_owned());
+    for usage in command.usages {
+        lines.push(format!("=/>{}", usage));
     }
     Ok(lines.join("\n"))
 }
@@ -748,7 +780,6 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
     match section.trim() {
         "menu" | "menú" => return concise_menu(options),
         "menu all" | "menú all" => return verbose_menu(options),
-        "menu anti" | "menú anti" | "menu antis" | "menú antis" => return readable_antis(),
         "menu page 1" | "menu page 2" | "menu page 3" => return concise_menu(options),
         _ => {}
     }
@@ -780,85 +811,50 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
     };
     let mut out = header(options);
     for category in shown {
+        let visible: Vec<_> = category
+            .commands
+            .iter()
+            .filter(|command| command.implemented)
+            .collect();
         if options.style == Style::Classic {
             out.push(format!(
                 "╞═╦═ {} {}",
                 category.icon,
                 label(category, options.language)
             ));
-            out.push("│♪║".to_owned());
         } else {
             out.push(label(category, options.language).to_owned());
         }
-        if category.commands.is_empty() {
-            // Keep the canonical navigation entry, never label it empty.
+        if visible.is_empty() {
             out.push(String::new());
             continue;
         }
         if root {
-            let item = category
-                .commands
-                .first()
-                .ok_or_else(|| anyhow!("Empty menu category"))?;
-            match options.style {
-                Style::Classic => {
-                    out.push(format!(
-                        "│♪╚[ {} — {}",
-                        item.name,
-                        description(item, options.language)
-                    ));
-                    out.push(format!("│♪║  menu {}", category.id));
-                }
-                Style::None => {
-                    out.push(item.name.to_owned());
-                    out.push(description(item, options.language).to_owned());
-                    out.push(format!("menu {}", category.id));
-                }
+            out.push(format!("menu {}", category.id));
+            continue;
+        }
+        const PAGE_SIZE: usize = 7;
+        let pages = visible.len().div_ceil(PAGE_SIZE);
+        if page > pages {
+            bail!("Menu page does not exist");
+        }
+        let start = (page - 1) * PAGE_SIZE;
+        let current = &visible[start..visible.len().min(start + PAGE_SIZE)];
+        let usages: Vec<_> = current
+            .iter()
+            .flat_map(|command| command.usages.iter().copied())
+            .collect();
+        for (index, usage) in usages.iter().enumerate() {
+            if options.style == Style::Classic {
+                let branch = if index + 1 == usages.len() { "╚" } else { "╠" };
+                out.push(format!("│♪{branch}[ =/>{usage}"));
+            } else {
+                out.push(format!("=/>{usage}"));
             }
-        } else {
-            const PAGE_SIZE: usize = 7;
-            let pages = category.commands.len().div_ceil(PAGE_SIZE);
-            if page > pages {
-                bail!("Menu page does not exist");
-            }
-            let start = (page - 1) * PAGE_SIZE;
-            let slice = &category.commands[start..category.commands.len().min(start + PAGE_SIZE)];
-            for (index, command) in slice.iter().enumerate() {
-                let state = if command.implemented {
-                    ""
-                } else if options.language == Language::Es {
-                    " [pendiente]"
-                } else {
-                    " [pending]"
-                };
-                match options.style {
-                    Style::Classic => {
-                        let branch = if index + 1 == slice.len() {
-                            "╚"
-                        } else {
-                            "╠"
-                        };
-                        out.push(format!("│♪{branch}[ {}{state}", command.name));
-                        out.push(format!("│♪║  {}", description(command, options.language)));
-                        for usage in command.usages {
-                            out.push(format!("│♪║  {usage}"));
-                        }
-                    }
-                    Style::None => {
-                        out.push(format!("{}{state}", command.name));
-                        out.push(description(command, options.language).to_owned());
-                        out.extend(command.usages.iter().map(|usage| (*usage).to_owned()));
-                    }
-                }
-            }
-            if pages > 1 {
-                let next = if page < pages { page + 1 } else { 1 };
-                let instruction = format!("menu {} {next} ({page}/{pages})", category.id);
-                out.push(match options.style {
-                    Style::Classic => format!("│♪║  {instruction}"),
-                    Style::None => instruction,
-                });
-            }
+        }
+        if pages > 1 {
+            let next = if page < pages { page + 1 } else { 1 };
+            out.push(format!("menu {} {next} ({page}/{pages})", category.id));
         }
         out.push(String::new());
     }
@@ -988,20 +984,16 @@ mod tests {
         let set = render("menu set", options).unwrap();
         assert!(set.contains("set style classic|none"));
         assert!(set.contains("set lang es|en"));
-        assert!(render("menu antis 5", options)
-            .unwrap()
-            .contains("antiflood"));
+        assert!(render("menu antis 5", options).is_ok());
         assert!(render("menu antis 9", options).is_err());
         assert!(render("menu unknown", options).is_err());
         assert!(!render("menu gacha", options)
             .unwrap()
             .contains("Sin comandos registrados"));
-        assert!(render("menu anti 5", options)
-            .unwrap()
-            .contains("antiflood"));
+        assert!(render("menu anti 5", options).is_ok());
         assert!(render("menu config", options)
             .unwrap()
-            .contains("set lang es|en"));
+            .contains("=/>set lang es|en"));
     }
 
     #[test]
@@ -1012,7 +1004,7 @@ mod tests {
         };
         let plain = render("menu set", options).unwrap();
         assert!(plain.starts_with("Global control menu"));
-        assert!(plain.contains("Change menu style"));
+        assert!(plain.contains("=/>set style classic|none"));
         assert!(!plain.contains('╞'));
         assert!(!plain.contains('│'));
         assert!(!plain.contains('♪'));

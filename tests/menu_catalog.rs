@@ -59,7 +59,7 @@ fn style_none_removes_artwork_and_language_en_changes_descriptions() {
     );
     let menu = control.render(None, "menu set").unwrap();
     assert!(menu.starts_with("Global control menu"));
-    assert!(menu.contains("Change menu style"));
+    assert!(menu.contains("=/>set style classic|none"));
     assert!(!menu.contains("╞"));
     assert!(!menu.contains("│"));
     assert!(!menu.contains("♪"));
@@ -79,6 +79,7 @@ fn individual_antis_are_public_metadata_but_never_execution_grants() {
     }
     let page = menu::render("menu antis 2", Preferences::default()).unwrap();
     assert!(page.contains("antilink"));
+    assert!(page.contains("📖 Ayuda: Anti"));
     assert!(menu::render("menu antis 9", Preferences::default()).is_err());
     assert!(menu::render("menu no-such-category", Preferences::default()).is_err());
 }
@@ -87,6 +88,14 @@ fn individual_antis_are_public_metadata_but_never_execution_grants() {
 fn help_queries_support_command_metadata_and_category_pages() {
     use matter_base::menu;
     let options = Preferences::default();
+    let root_help = menu::render_help("", options).unwrap();
+    assert!(root_help.starts_with("📖 Ayuda · Uso"));
+    assert!(root_help.contains("=/>help <comando>"));
+    assert!(!root_help.contains("╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀"));
+    assert!(!root_help.contains("[menu ia]"));
+    assert!(!root_help.contains("╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹"));
+    let root_help_all = menu::render_help("all", options).unwrap();
+    assert_eq!(root_help_all, root_help);
     let help = menu::render_help("antilink", options).unwrap();
     assert!(help.contains("Ayuda: antilink"));
     assert!(help.contains("=/>antilink on|off|inherit"));
@@ -96,6 +105,20 @@ fn help_queries_support_command_metadata_and_category_pages() {
     assert!(test.contains("test ui"));
     assert!(test.contains("test html"));
     assert!(menu::render_help("not-registered", options).is_err());
+    let anti_menu = menu::render("menu anti", options).unwrap();
+    assert!(anti_menu.contains("=/>antilink"));
+    assert!(!anti_menu.contains("Protección link"));
+    assert!(!anti_menu.contains("La lista de enlaces"));
+    assert!(!anti_menu.contains(" [pendiente]"));
+    let all = menu::render("menu all", options).unwrap();
+    assert!(!all.contains(" [pendiente]"));
+    assert!(!all.contains("console"));
+    assert!(!all.contains("Actualización supervisada"));
+    let empty_section = menu::render("menu gacha", options).unwrap();
+    assert!(!empty_section.contains("Sin comandos"));
+    assert!(!empty_section.contains("No commands"));
+    let help_none = menu::render_help("", Preferences { style: Style::None, language: Language::Es }).unwrap();
+    assert_eq!(root_help, help_none);
 }
 
 #[test]

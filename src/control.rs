@@ -466,7 +466,7 @@ impl ControlDispatcher {
                 }
                 Ok(DispatchResult::Extension {
                     command: "bot".to_owned(),
-                    output: "BOT: =/>status consulta este chat; =/>menu muestra los controles disponibles cuando está activo. Solo el propietario verificado administra =/>bot on/off y sus alcances; los roles requieren Vault-Matter.".to_owned(),
+                    output: "Uso:\n=/>bot on|off|inherit\n=/>bot --global on|off|inherit\n=/>bot group|private|channel|community on|off|inherit".to_owned(),
                 })
             }
             _ => bail!("Public chat cannot invoke administrative commands"),
@@ -881,7 +881,7 @@ impl ControlDispatcher {
                     }
                     return Ok(DispatchResult::Extension {
                         command: "bot".to_owned(),
-                        output: "BOT: =/>bot on/off/inherit (chat actual); =/>bot group/private/channel/community on/off/inherit (tipos, desde chat propio); =/>bot --global on/off/inherit (predeterminado del socket). =/>bot community configura avisos, pero requiere metadatos verificados para aplicarse. =/>status consulta el chat, =/>status --global las políticas. Roles exclusivos de Vault-Matter.".to_owned(),
+                        output: "Uso:\n=/>bot on|off|inherit\n=/>bot --global on|off|inherit\n=/>bot group|private|channel|community on|off|inherit".to_owned(),
                     });
                 }
                 ["set", "style" | "lang" | "language", value] => {
@@ -924,7 +924,7 @@ impl ControlDispatcher {
                         .ok_or_else(|| anyhow!("Menu configuration unavailable"))?;
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
-                        output: themes.render(None, "menu set")?,
+                        output: themes.render(None, "help set")?,
                     });
                 }
                 ["set", "role"] => {

@@ -1,3 +1,6 @@
+### 2026-11-18 — Menú de atributos separado de ayuda contextual
+Las páginas de `=/>menu` sólo enumeran variantes reales, sin descripciones ni pendientes; `=/>menu all` es un índice compacto. `=/>help` sin argumentos indica la sintaxis de ayuda y no copia categorías. `=/>help <categoria|comando>` mantiene los detalles. Invocaciones sin una operación de cero argumentos asignada, como `=/>set` y `=/>bot`, muestran uso. Ambos estilos (`classic` y `none`) siguen disponibles. READMEs revisados 2/2. Validar Linux, Windows y proveedor antes de usar en WhatsApp.
+
 ### 2026-11-18 — Compilación Windows: nombre local del rótulo de categoría
 El compilador de Windows detectó que la variable local label ocultaba la función label del renderizador. Se renombró el local a decorated_label sin variar presentación ni permisos. Ambos README revisados; se requieren verificaciones completas del nuevo commit.
 

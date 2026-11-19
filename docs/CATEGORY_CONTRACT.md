@@ -1,5 +1,16 @@
 # Contrato cerrado de categorías — Base-Matter
 
+## Separación obligatoria entre menú y ayuda (2026-11-18)
+
+- `=/>menu` conserva el marco oficial y las 21 entradas exactas: sólo nombres, rutas y atributos verificables, sin explicación de ejecución.
+- `=/>menu <categoria> [pagina]` enumera únicamente sintaxis/variantes de comandos disponibles. No imprimir descripciones, tutoriales ni comandos marcados pendientes. Las categorías sin comandos no llevan leyendas de vacío.
+- `=/>menu all` presenta el índice de comandos disponibles, sin indicaciones de funcionamiento.
+- `=/>help` **sin argumentos indica exclusivamente la sintaxis de ayuda** y no repite categorías, atributos de la sesión ni el marco principal.
+- `=/>help <comando>` permite consultar descripción, estado y variantes. `=/>help <categoria> [pagina]` detalla comandos de esa categoría.
+- Un comando sin argumentos y sin operación definida presenta **Uso** y las opciones permitidas. No debe devolver un menú de categorías como sustituto.
+- `style none` conserva el mismo contenido informativo, sin arte Unicode. La separación menú/ayuda no cambia autorización, HMAC, roles o políticas.
+
+
 ## Formato obligatorio del menú global (noviembre 2026)
 
 El comando `=/>menu` usa el encabezado `*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*`, título de control global, las 21 categorías en orden, cierre `╰─╮╭────────⟨🌀`, autoridad descriptiva, panel del usuario/socket/rol/estado, instrucciones y cenefa final. El panel **debe** usar información autenticada del puente; un `Owner del socket` nunca implica por sí mismo `Owner Global` de Vault. La sección `Owner Global` describe la jerarquía, no prueba un rango concedido. No inventar alias WhatsApp ni mostrar PN/LID a terceros. `style none` mantiene categorías, rutas y estado en texto simple, sin cenefas. Se conservan **las 21 entradas incluso cuando alguna no tiene comandos**; no escribir «Sin comandos registrados» ni un rótulo de vacío. `menu all` omite encabezados sin comandos, y las páginas individuales no mencionan ausencia de comandos. El selector conserva un solo botón «Categorías» y páginas seguras. Toda respuesta debe cumplir límites de bytes del puente.
