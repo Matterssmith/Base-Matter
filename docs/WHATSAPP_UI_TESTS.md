@@ -53,3 +53,5 @@ La variante `=/>test row` utiliza `ButtonsMessage` (familia clásica de
 `SendButtonsRow` en Go). Esta prueba es deliberadamente de texto:
 una miniatura real necesita un objeto de imagen cifrado y subido al
 servidor de WhatsApp. No afirmar que este ensayo ya incluye miniatura.
+
+`=/>test` sin argumentos debe responder incluso si el bot está apagado, indicando el estado. Si el chat está desactivado, `=/>test ui` y `=/>test row` no muestran botones. Revisa los logs del proveedor sin divulgar secretos.

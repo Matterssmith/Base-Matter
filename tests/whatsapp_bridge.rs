@@ -448,6 +448,16 @@ fn public_test_is_readonly_and_obeys_chat_activation() {
     public.chat_jid = public.actor_id.clone();
     public.from_me = false;
     sign(&mut public, &SECRET);
+    assert!(matches!(
+        bridge.ingest(&public).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
+            command,
+            output
+        }) if command == "test" && output.contains("BOT APAGADO")
+    ));
+    public.message_id = "visual-public-ui-off".into();
+    public.text = "=/>test ui".into();
+    sign(&mut public, &SECRET);
     assert_eq!(
         bridge.ingest(&public).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)

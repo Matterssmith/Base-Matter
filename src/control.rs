@@ -428,7 +428,16 @@ impl ControlDispatcher {
             }
             ["=/>test"] | ["=/>test", "ui" | "row"]
             | ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => {
+                // A no-argument diagnostic is intentionally available with
+                // the bot OFF (same read-only control exception as status).
+                // Visual or button action probes still require bot admission.
                 if !decision.decision.enabled {
+                    if parts.as_slice() == ["=/>test"] {
+                        return Ok(DispatchResult::Extension {
+                            command: "test".to_owned(),
+                            output: "🧪 Base-Matter responde: proveedor y control verificados. BOT APAGADO en este chat. Las pruebas de botones requieren que el propietario active el bot aquí; =/>status muestra el estado.".to_owned(),
+                        });
+                    }
                     return Ok(DispatchResult::Inactive);
                 }
                 let output = match parts.as_slice() {

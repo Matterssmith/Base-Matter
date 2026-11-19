@@ -1,3 +1,12 @@
+### 2026-11-18 — Diagnóstico sin argumentos incluso con bot OFF
+La ruta pública de =/>test ahora devuelve un informe mínimo cuando
+el bot está apagado, en lugar de descartarlo sin respuesta.
+Las pruebas con botones siguen inactivas hasta que el bot esté
+habilitado; no ejecutan código. El proveedor añade logs redaccionados
+para distinguir falta de firma, rechazo y bot desactivado, sin
+imprimir números, JID ni cuerpos de mensajes. Se incorporaron tests
+de bot OFF. Los dos README se revisaron (2/2). CI requerido.
+
 ### 2026-11-18 — Rustfmt del menú de categorías y regresión de test
 El CI del SHA bf6fe38 encontró dos diferencias de Rustfmt:
 el iterador de categorías y un salto de línea en tests/whatsapp_bridge.rs.

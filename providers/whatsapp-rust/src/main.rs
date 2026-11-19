@@ -500,6 +500,18 @@ async fn main() -> Result<()> {
                         &data, own_pn.as_deref(), own_lid.as_deref(),
                     )
                 };
+                // Whitelisted UI diagnostic ingress logs do not include
+                // message IDs, chat IDs, phone numbers or message bodies.
+                if matches!(
+                    data.text,
+                    "=/>test" | "=/>test ui" | "=/>test row" | "=/>test html"
+                ) {
+                    match &verified {
+                        Ok(Some(_)) => println!("Base-Matter: visual test authenticated for current chat"),
+                        Ok(None) => eprintln!("Base-Matter: visual test ignored before signing"),
+                        Err(_) => eprintln!("Base-Matter: visual test signer rejected current chat"),
+                    }
+                }
                 // Log rejections without leaking phone numbers, LIDs,
                 // message bodies, sessions or cryptographic keys.
                 if data.from_me && !data.is_group && data.text.starts_with("=/>") {
@@ -667,7 +679,11 @@ async fn main() -> Result<()> {
                             println!("Base-Matter duplicate control ignored (no new effect)");
                         }
                         Ok(ControlAck::Ignored) => {
-                            // Bot disabled in this chat: intentionally silent.
+                            // The bot is intentionally silent while disabled.
+                            // Only no-argument =/>test and status explain why.
+                            if frame.text.starts_with("=/>test") {
+                                eprintln!("Base-Matter: visual test ignored by chat admission");
+                            }
                         }
                         Err(_) => {
                             eprintln!("Base-Matter control denied or unreachable");
