@@ -254,38 +254,55 @@ fn header(options: Preferences) -> Vec<String> {
 }
 
 fn concise_menu(options: Preferences) -> Result<String> {
-    let mut lines = vec![
-        if options.language == Language::Es {
-            "💠 Menú de Base-Matter"
-        } else {
-            "💠 Base-Matter Menu"
-        }
-        .to_owned(),
-        "Prefijo: =/>".to_owned(),
-        String::new(),
+    // Owner-provided visual layout. Never invent unregistered categories.
+    const ENTRIES: [(&str, &str, &str); 10] = [
+        ("ai", "ⴵ ·· 𝙸𝙰", "ⴵ ·· AI"),
+        ("antis", "☾︎ ··· 𝙰𝚗𝚝𝚒", "☾︎ ··· Anti"),
+        ("all", "✦ · 𝚃𝚘𝚍𝚘", "✦ · All"),
+        ("set", "⚙︎ · 𝙲𝚘𝚗𝚏𝚒𝚐𝚞𝚛𝚊𝚌𝚒ó𝚗", "⚙︎ · Settings"),
+        ("bot", "◉ · 𝙱𝚘𝚝", "◉ · Bot"),
+        ("roles", "♛ · 𝚁𝚘𝚕𝚎𝚜", "♛ · Roles"),
+        ("sandbox", "◈ · 𝚂𝚊𝚗𝚍𝚋𝚘𝚡", "◈ · Sandbox"),
+        ("status", "ⓘ · 𝙴𝚜𝚝𝚊𝚍𝚘", "ⓘ · Status"),
+        ("system", "⚙︎ · 𝚂𝚒𝚜𝚝𝚎𝚖𝚊", "⚙︎ · System"),
+        ("navigation", "✧ · 𝙽𝚊𝚟𝚎𝚐𝚊𝚌𝚒ó𝚗", "✧ · Navigation"),
     ];
-    for cat in CATEGORIES {
-        let title = match (cat.id, options.language) {
-            ("status", Language::Es) => "Estado",
-            ("status", _) => "Status",
-            ("set", Language::Es) => "Configuración",
-            ("set", _) => "Settings",
-            ("antis", Language::Es) => "Protecciones",
-            ("antis", _) => "Protections",
-            ("system", Language::Es) => "Sistema",
-            ("system", _) => "System",
-            ("navigation", Language::Es) => "Navegación",
-            ("navigation", _) => "Navigation",
-            ("bot", _) => "Bot",
-            ("roles", _) => "Roles",
-            ("sandbox", _) => "Sandbox",
-            _ => "IA",
-        };
-        lines.push(format!("{} — menu {}", title, cat.id));
+    if ENTRIES.iter().any(|(id, _, _)| {
+        *id != "all" && !CATEGORIES.iter().any(|category| category.id == *id)
+    }) {
+        bail!("Menu presentation contains unregistered categories");
     }
-    lines.push(String::new());
-    lines.push("Todas las categorías: menu all".to_owned());
-    lines.push("Ayuda: help <comando>".to_owned());
+    let spanish = options.language == Language::Es;
+    let classic = options.style == Style::Classic;
+    let mut lines = vec![if classic {
+        if spanish {
+            "╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀"
+        } else {
+            "╭─💠 Categories"
+        }
+    } else if spanish {
+        "Menú de Base-Matter"
+    } else {
+        "Base-Matter Menu"
+    }
+    .to_owned()];
+    for (index, (id, es, en)) in ENTRIES.iter().enumerate() {
+        let label = if spanish { es } else { en };
+        if classic {
+            let branch = if index + 1 == ENTRIES.len() {
+                "╚"
+            } else {
+                "╠"
+            };
+            lines.push(format!("│·♪·{branch}[ {label} [menu {id}]"));
+        } else {
+            lines.push(format!("{label} — menu {id}"));
+        }
+    }
+    if classic {
+        lines.push("╰───────────⟨ 🌀".to_owned());
+    }
+    lines.push("Prefijo: =/>".to_owned());
     Ok(lines.join("\n"))
 }
 
@@ -345,6 +362,8 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
     let query = query.trim();
     if query.is_empty() {
         return Ok(concise_menu(options)?
+            .replacen("╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀", "╭─💠 𝗔𝘆𝘂𝗱𝗮", 1)
+            .replacen("╭─💠 Categories", "╭─💠 Help", 1)
             .replacen("Menú de Base-Matter", "Ayuda de Base-Matter", 1)
             .replacen("Base-Matter Menu", "Base-Matter Help", 1));
     }
@@ -524,7 +543,10 @@ mod tests {
     #[test]
     fn classic_menu_has_single_prefix_without_brand_or_credits() {
         let menu = render("menu", Preferences::default()).unwrap();
-        assert!(menu.contains("Menú de Base-Matter"));
+        assert!(menu.starts_with("╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀"));
+        assert!(menu.contains("│·♪·╠[ ⴵ ·· 𝙸𝙰 [menu ai]"));
+        assert!(menu.contains("│·♪·╚[ ✧ · 𝙽𝚊𝚟𝚎𝚐𝚊𝚌𝚒ó𝚗 [menu navigation]"));
+        assert!(menu.contains("╰───────────⟨ 🌀"));
         assert!(menu.contains("menu all"));
         assert!(menu.contains("menu antis"));
         assert!(menu.contains("menu bot"));

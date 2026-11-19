@@ -193,7 +193,11 @@ impl ControlThemes {
         // Dynamic menus are self-contained. The same verified IPC response
         // passes through this renderer twice; never add another frame.
         if self.dynamic_menu.is_some()
-            && (body.starts_with("💠 Menú de Base-Matter")
+            && (body.starts_with("╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀")
+                || body.starts_with("╭─💠 𝗔𝘆𝘂𝗱𝗮")
+                || body.starts_with("╭─💠 Categories")
+                || body.starts_with("╭─💠 Help")
+                || body.starts_with("💠 Menú de Base-Matter")
                 || body.starts_with("💠 Base-Matter Menu")
                 || body.starts_with("💠 Menú completo")
                 || body.starts_with("💠 Complete Menu")

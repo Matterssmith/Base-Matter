@@ -13,7 +13,7 @@ MATTER_WA_RICH_HTML=0 inicialmente. No es necesario reinicializar la sesión.
 
 ## Comandos para el propietario
 
-- =/>menu : menú corto y selector de categorías
+- =/>menu : diseño original restaurado con nueve categorías reales, Todo y exactamente un selector «Categorías»
 - =/>menu antis : resumen de protecciones
 - =/>menu all : catálogo completo
 - =/>help : navegación por categorías

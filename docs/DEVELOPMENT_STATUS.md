@@ -1,3 +1,17 @@
+### 2026-11-18 — Restauración del menú visual de categorías
+Se adopta exclusivamente el DISEÑO aportado por el propietario:
+«╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀», renglones «│·♪·╠[»,
+último «│·♪·╚[» y cierre «╰───────────⟨ 🌀».
+Presenta nueve categorías registradas y la opción «Todo»
+para =/>menu all. No se inventaron comandos de Economía,
+Gacha, Juegos u otras secciones del ejemplo. NativeFlow ofrece
+UN SOLO botón «Categorías» (single_select), sin botones
+separados Ayuda/Ver todo. Todo está dentro del selector.
+El ensayo =/>test ui y el clásico =/>test row conservan
+sus botones de diagnóstico independientes.
+Vault, secretos, configuración de antis y ramas beta/stable intactos.
+Dos README revisados antes del commit (2/2).
+
 ### 2026-11-18 — Corrección: =/>test silencioso desde WhatsApp
 
 El proveedor y puente sólo aceptaban =/>test desde el propio chat

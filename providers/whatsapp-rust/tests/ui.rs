@@ -44,7 +44,7 @@ fn legacy_click(id: &str) -> wa::Message {
 }
 
 #[test]
-fn menu_has_category_selector_and_two_quick_replies() {
+fn menu_has_exactly_one_categories_selector() {
     let original = include_str!("../../../templates/matterssmith-menu.txt").trim_end();
     let message = native_menu_message(original).unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
@@ -57,23 +57,25 @@ fn menu_has_category_selector_and_two_quick_replies() {
     else {
         panic!("Expected NativeFlow");
     };
-    assert_eq!(native.buttons.len(), 3);
+    assert_eq!(native.buttons.len(), 1);
     assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
     let categories: serde_json::Value =
         serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
     let rows = categories["sections"][0]["rows"].as_array().unwrap();
-    assert_eq!(rows.len(), 9);
-    assert!(rows.iter().any(|row| row["id"] == "matter.read.menu.antis"));
-    assert_eq!(native.buttons[1].name.as_deref(), Some("quick_reply"));
-    assert_eq!(native.buttons[2].name.as_deref(), Some("quick_reply"));
-    let help: serde_json::Value =
-        serde_json::from_str(native.buttons[1].button_params_json.as_deref().unwrap()).unwrap();
-    assert_eq!(help["id"], "matter.read.help");
+    assert_eq!(rows.len(), 10);
+    assert_eq!(rows[0]["id"], "matter.read.menu.ai");
+    assert_eq!(rows[1]["id"], "matter.read.menu.antis");
+    assert_eq!(rows[2]["id"], "matter.read.menu.all");
+    assert_eq!(rows[2]["title"], "✦ Todo");
+    assert_eq!(rows[9]["id"], "matter.read.menu.navigation");
+    assert!(rows
+        .iter()
+        .all(|row| row["id"].as_str().unwrap().starts_with("matter.read.menu.")));
     assert!(message.conversation.is_none());
 }
 
 #[test]
-fn submenus_offer_contextual_help_button() {
+fn submenus_offer_only_one_categories_selector() {
     let message = native_navigation_message("Protecciones", "=/>menu antis").unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
     let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
@@ -81,9 +83,8 @@ fn submenus_offer_contextual_help_button() {
     else {
         panic!("Expected NativeFlow");
     };
-    let help: serde_json::Value =
-        serde_json::from_str(native.buttons[1].button_params_json.as_deref().unwrap()).unwrap();
-    assert_eq!(help["id"], "matter.read.help.antis");
+    assert_eq!(native.buttons.len(), 1);
+    assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
     assert!(native_navigation_message("Unsafe", "=/>set role owner").is_err());
 }
 

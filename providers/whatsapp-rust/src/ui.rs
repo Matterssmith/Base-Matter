@@ -11,16 +11,17 @@ use whatsapp_rust::prelude::wa;
 
 const MAX_MENU_BYTES: usize = 3200;
 
-const NAV_CATEGORIES: [(&str, &str, &str); 9] = [
-    ("status", "Estado", "matter.read.menu.status"),
-    ("bot", "Bot", "matter.read.menu.bot"),
-    ("set", "Configuración", "matter.read.menu.set"),
-    ("antis", "Protecciones", "matter.read.menu.antis"),
-    ("roles", "Roles", "matter.read.menu.roles"),
-    ("system", "Sistema", "matter.read.menu.system"),
-    ("sandbox", "Sandbox", "matter.read.menu.sandbox"),
-    ("ai", "IA", "matter.read.menu.ai"),
-    ("navigation", "Navegación", "matter.read.menu.navigation"),
+const NAV_CATEGORIES: [(&str, &str, &str); 10] = [
+    ("ai", "ⴵ IA", "matter.read.menu.ai"),
+    ("antis", "☾︎ Anti", "matter.read.menu.antis"),
+    ("all", "✦ Todo", "matter.read.menu.all"),
+    ("set", "⚙︎ Configuración", "matter.read.menu.set"),
+    ("bot", "◉ Bot", "matter.read.menu.bot"),
+    ("roles", "♛ Roles", "matter.read.menu.roles"),
+    ("sandbox", "◈ Sandbox", "matter.read.menu.sandbox"),
+    ("status", "ⓘ Estado", "matter.read.menu.status"),
+    ("system", "⚙︎ Sistema", "matter.read.menu.system"),
+    ("navigation", "✧ Navegación", "matter.read.menu.navigation"),
 ];
 
 fn button_command(id: &str) -> Option<&'static str> {
@@ -56,25 +57,6 @@ fn button_command(id: &str) -> Option<&'static str> {
         "matter.test.row.mp4" => Some("=/>test ack mp4"),
         "matter.test.row.link" => Some("=/>test ack link"),
         _ => None,
-    }
-}
-
-fn context_help_id(command: &str) -> &'static str {
-    let category = command
-        .strip_prefix("=/>menu ")
-        .or_else(|| command.strip_prefix("=/>help "))
-        .unwrap_or_default();
-    match category {
-        "status" => "matter.read.help.status",
-        "bot" => "matter.read.help.bot",
-        "set" => "matter.read.help.set",
-        "antis" => "matter.read.help.antis",
-        "roles" => "matter.read.help.roles",
-        "system" => "matter.read.help.system",
-        "sandbox" => "matter.read.help.sandbox",
-        "ai" => "matter.read.help.ai",
-        "navigation" => "matter.read.help.navigation",
-        _ => "matter.read.help",
     }
 }
 
@@ -150,8 +132,8 @@ pub fn short_html_to_whatsapp(input: &str) -> Result<String> {
     Ok(output)
 }
 
-/// Construct a NativeFlow menu with a selectable category list plus
-/// two read-only quick replies. The phone must confirm visual support.
+/// Construct a NativeFlow menu with exactly one Categories selector.
+/// The phone must confirm visual support; no selection grants roles.
 pub fn native_menu_message(menu: &str) -> Result<wa::Message> {
     native_navigation_message(menu, "=/>menu")
 }
@@ -181,7 +163,7 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
         .map(|(_, label, id)| {
             serde_json::json!({
                 "title": label,
-                "description": "Abrir categoría",
+                "description": "Abrir menú",
                 "id": id
             })
         })
@@ -192,26 +174,14 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
             serde_json::json!({
                 "title": "Categorías",
                 "sections": [{
-                    "title": "Explorar menú",
+                    "title": "Categorías",
                     "rows": rows
                 }]
             })
             .to_string(),
         ),
     };
-    let quick_reply = |id: &str, label: &str| {
-        wa::message::interactive_message::native_flow_message::NativeFlowButton {
-            name: Some("quick_reply".to_owned()),
-            button_params_json: Some(
-                serde_json::json!({ "display_text": label, "id": id }).to_string(),
-            ),
-        }
-    };
-    let buttons = vec![
-        selector,
-        quick_reply(context_help_id(request), "Ayuda"),
-        quick_reply("matter.read.menu.all", "Ver todo"),
-    ];
+    let buttons = vec![selector];
     Ok(wa::Message {
         interactive_message: MessageField::some(wa::message::InteractiveMessage {
             body: MessageField::some(wa::message::interactive_message::Body {
@@ -219,7 +189,7 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
             }),
             footer: MessageField::some(wa::message::interactive_message::Footer {
                 text: Some(short_html_to_whatsapp(
-                    "<b>Control</b> · <i>Elige una categoría</i>",
+                    "<b>Control</b> · <i>Categorías</i>",
                 )?),
                 ..Default::default()
             }),

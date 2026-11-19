@@ -8,7 +8,9 @@ fn live_menu_registry_builds_categories_without_personal_brand_or_footer_credits
     let control = ControlThemes::new(ControlTheme::new("Base-Matter", "principal", "✦").unwrap())
         .with_dynamic_menu(Arc::clone(&prefs));
     let root = control.render(None, "menu").unwrap();
-    assert!(root.contains("Menú de Base-Matter"));
+    assert!(root.starts_with("╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀"));
+    assert!(root.contains("│·♪·╠[ ⴵ ·· 𝙸𝙰 [menu ai]"));
+    assert!(root.contains("╰───────────⟨ 🌀"));
     assert!(root.contains("menu set"));
     assert!(root.contains("menu antis"));
     assert!(root.contains("menu bot"));

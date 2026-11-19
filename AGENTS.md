@@ -2,7 +2,7 @@
 
 ## UI NativeFlow de categorías (2026-11-18)
 
-El proveedor `ui.rs` ofrece selector NativeFlow de categorías (single_select) y Ayuda/Ver todo de solo lectura. Se admite respuesta legacy ButtonsResponseMessage de los botones fila Go, solo con IDs cerrados. Ninguna selección concede capacidades. El cliente WhatsApp real no está probado. Efectos HTML y stickers de roles quedan separados y desactivados sin autorización/datos reales.
+El proveedor `ui.rs` ofrece UN SOLO botón selector NativeFlow «Categorías» (single_select), con nueve categorías reales y «Todo» =/>menu all como fila. La presentación del dueño emplea `╭─💠`, `│·♪·╠[`, `│·♪·╚[` y `╰───────────⟨ 🌀`. No mostrar botones separados «Ayuda»/«Ver todo», ni inventar categorías sin ejecutor. Se admite respuesta legacy ButtonsResponseMessage de los botones fila Go, solo con IDs cerrados. Ninguna selección concede capacidades. El cliente WhatsApp real no está probado. Efectos HTML y stickers de roles quedan separados y desactivados sin autorización/datos reales.
 
 
 ## Prioridad UX confirmada 2026-11-18
