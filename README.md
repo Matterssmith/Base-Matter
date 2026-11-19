@@ -1,3 +1,6 @@
+### 2026-11-18 — Invariante de 21 entradas y comandos únicos
+Se añadió una prueba que compara el orden exacto de las 21 filas con el contrato cerrado, exige 20 destinos de comandos distintos de Todo y evita duplicados. El comando general help se ubica en Principal, no IA; matter permanece en IA. Los módulos internos siguen conservando rutas históricas sin exponerse como categorías. READMEs revisados 2/2; validar CI del nuevo SHA.
+
 ### 2026-11-18 — Catálogo de 21 entradas aplicado a la presentación Rust
 Se reorganizaron los descriptores existentes dentro de IA, Anti, Configuración, Información, Principal, Modo, Propietario, Sistema y Utilidades. Otras entradas autorizadas no contienen comandos inventados. Todo sigue siendo una vista agregada. Aliases anteriores permanecen sólo como compatibilidad. Un único selector «Categorías», paginado en tres pantallas por límites del cliente, mantiene 21 entradas accesibles. Rustfmt corrigió las diferencias que reportó CI del SHA 457de96; se vuelve a validar Linux, Windows y el proveedor. Ver docs/CATEGORY_CONTRACT.md.
 

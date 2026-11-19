@@ -75,7 +75,7 @@ Los módulos existentes `src/menu/*` pueden seguir como **archivos internos** du
 
 | Módulo histórico | Destino autorizado |
 |---|---|
-| `ai` | **IA**: `matter` y su ayuda |
+| `ai` | **IA**: `matter`; **Principal**: ayuda general `help` |
 | `antis` | **Anti**: todos los filtros, `anti`, `antis` |
 | `set` | **Configuración**: ajustes generales, idioma y estilo; **Anti**: `set anti`; **Propietario**: `set role` |
 | `bot` | **Modo**: activación del bot y sus alcances |

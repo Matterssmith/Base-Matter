@@ -76,7 +76,7 @@ pub static CATEGORIES: &[Category] = &[
         es: "IA",
         en: "AI",
         icon: "ⴵ",
-        commands: ai::CATEGORY.commands,
+        commands: &[ai::matter::COMMAND],
     },
     Category {
         id: "anti",
@@ -157,7 +157,7 @@ pub static CATEGORIES: &[Category] = &[
         es: "Principal",
         en: "Main",
         icon: "✪",
-        commands: &[navigation::menu::COMMAND],
+        commands: &[navigation::menu::COMMAND, ai::help::COMMAND],
     },
     Category {
         id: "mode",
@@ -747,6 +747,37 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn owner_category_contract_is_closed_ordered_and_deduplicated() {
+        let allowed = [
+            "ia", "anti", "config", "downloads", "economy", "fun", "gacha",
+            "games", "group", "info", "links", "main", "mode", "owner",
+            "profile", "reactions", "search", "sockets", "system", "utils",
+        ];
+        let actual: Vec<&str> = CATEGORIES.iter().map(|category| category.id).collect();
+        assert_eq!(actual, allowed);
+        let mut seen = std::collections::BTreeSet::new();
+        for category in CATEGORIES {
+            for command in category.commands {
+                assert!(seen.insert(command.name), "Duplicate command in menu: {}", command.name);
+            }
+        }
+        assert!(seen.contains("help"));
+        assert!(seen.contains("matter"));
+        assert!(!CATEGORIES.iter().any(|category| category.id == "all"));
+        let root = render("menu", Preferences::default()).unwrap();
+        let rows: Vec<_> = root.lines().filter(|line| line.starts_with("│·♪·")).collect();
+        assert_eq!(rows.len(), 21);
+        let canonical = [
+            "ia", "anti", "all", "config", "downloads", "economy", "fun",
+            "gacha", "games", "group", "info", "links", "main", "mode",
+            "owner", "profile", "reactions", "search", "sockets", "system", "utils",
+        ];
+        for (row, id) in rows.iter().zip(canonical) {
+            assert!(row.contains(&format!("[menu {id}]")), "Wrong category: {id}");
+        }
+    }
 
     #[test]
     fn anti_catalog_matches_all_registered_rules() {
