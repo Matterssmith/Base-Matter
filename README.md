@@ -20,6 +20,11 @@ width="100%"
 
 ---
 
+### Corrección de formato Rustfmt — navegación y ayuda (alpha)
+
+Se aplicaron los cambios de formato exactos emitidos por GitHub Actions en `src/menu.rs`, `src/bin/whatsapp_control.rs` y el proveedor Rust. Sin cambios semánticos ni de sesión. README 2/2 revisados y actualizados; se requiere nuevo CI para el commit.
+
+
 ### Corregidos permisos de ayuda y menú completo
 
 Se normalizaron los verbos de ayuda en grupos y privados, retirando duplicados y permitiendo `menu all` en lectura pública de chats activos. Dos README inspeccionados y actualizados. Sin cambios de sesión, Vault ni rangos.

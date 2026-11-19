@@ -1,3 +1,7 @@
+### CI: normalización Rustfmt de la interfaz
+
+Las dos comprobaciones Linux se detuvieron en formato; se aplicaron sus hunks con comparación textual exacta, sin alterar comportamiento. Pendiente resultado CI del nuevo SHA.
+
 ### Corrección del primer corte de interfaz
 
 Se corrigieron coincidencias duplicadas y el bloqueo de help privado/menu completo público antes de CI. Dos README revisados; pruebas WhatsApp y botones pendientes.

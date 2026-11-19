@@ -295,9 +295,14 @@ fn main() -> Result<()> {
         Arc::new(ControlThemes::new(default_theme.clone()).with_dynamic_menu(menu_preferences));
     let help_theme = Arc::clone(&style);
     extensions.register("help", &["h", "ayuda"], move |context, args| {
-        if args.len() > 3 { bail!("Uso: help [all|categoria|comando]"); }
-        let section = if args.is_empty() { "help".to_owned() }
-            else { format!("help {}", args.join(" ")) };
+        if args.len() > 3 {
+            bail!("Uso: help [all|categoria|comando]");
+        }
+        let section = if args.is_empty() {
+            "help".to_owned()
+        } else {
+            format!("help {}", args.join(" "))
+        };
         help_theme.render(context.group_id, &section)
     })?;
     let menu_theme = Arc::clone(&style);

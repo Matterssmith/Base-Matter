@@ -1,3 +1,7 @@
+### Formato del puente para help
+
+Se aplicó el bloque Rustfmt solicitado por CI a las ramas de ayuda pública. Sin cambios de comportamiento, permisos, claves ni sesión. README revisado.
+
 ### Corrección HMAC para navegación
 
 La allowlist del proveedor incorpora `help/h/ayuda` en contextos verificados, y permite `menu all` públicamente si el chat está activo. Mantiene antirreplay y restricciones de propietario. README revisado.

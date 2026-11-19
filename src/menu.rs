@@ -255,7 +255,12 @@ fn header(options: Preferences) -> Vec<String> {
 
 fn concise_menu(options: Preferences) -> Result<String> {
     let mut lines = vec![
-        if options.language == Language::Es { "💠 Menú de Base-Matter" } else { "💠 Base-Matter Menu" }.to_owned(),
+        if options.language == Language::Es {
+            "💠 Menú de Base-Matter"
+        } else {
+            "💠 Base-Matter Menu"
+        }
+        .to_owned(),
         "Prefijo: =/>".to_owned(),
         String::new(),
     ];
@@ -286,19 +291,33 @@ fn concise_menu(options: Preferences) -> Result<String> {
 
 fn verbose_menu(options: Preferences) -> Result<String> {
     let mut lines = vec![
-        if options.language == Language::Es { "💠 Menú completo" } else { "💠 Complete Menu" }.to_owned(),
+        if options.language == Language::Es {
+            "💠 Menú completo"
+        } else {
+            "💠 Complete Menu"
+        }
+        .to_owned(),
         "Prefijo: =/>".to_owned(),
     ];
     for cat in CATEGORIES {
         lines.push(format!("{}:", cat.id));
         for entry in cat.commands {
-            lines.push(format!("  {}{}", entry.name,
-                if entry.implemented { "" } else { " [pendiente]" }));
+            lines.push(format!(
+                "  {}{}",
+                entry.name,
+                if entry.implemented {
+                    ""
+                } else {
+                    " [pendiente]"
+                }
+            ));
         }
     }
     lines.push("Detalle: help <comando>".to_owned());
     let result = lines.join("\n");
-    if result.len() > 3450 { bail!("Menú completo demasiado largo"); }
+    if result.len() > 3450 {
+        bail!("Menú completo demasiado largo");
+    }
     Ok(result)
 }
 
@@ -318,29 +337,42 @@ fn readable_antis() -> Result<String> {
         "Detalles: help antilink",
         "Más protecciones: menu antis 2",
         "La lista de enlaces add/del está pendiente.",
-    ].join("\n"))
+    ]
+    .join("\n"))
 }
 
 pub fn render_help(query: &str, options: Preferences) -> Result<String> {
     let query = query.trim();
     if query.is_empty() {
-        return Ok(concise_menu(options)?.replacen("Menú de Base-Matter", "Ayuda de Base-Matter", 1)
+        return Ok(concise_menu(options)?
+            .replacen("Menú de Base-Matter", "Ayuda de Base-Matter", 1)
             .replacen("Base-Matter Menu", "Base-Matter Help", 1));
     }
-    if query == "all" { return verbose_menu(options); }
+    if query == "all" {
+        return verbose_menu(options);
+    }
     if CATEGORIES.iter().any(|cat| cat.id == query) {
         return render(&format!("menu {query}"), options);
     }
-    let item = CATEGORIES.iter().flat_map(|cat| cat.commands.iter())
+    let item = CATEGORIES
+        .iter()
+        .flat_map(|cat| cat.commands.iter())
         .find(|item| item.name == query)
         .ok_or_else(|| anyhow!("Comando no encontrado. Usa help para las categorías"))?;
     let mut lines = vec![
         format!("📖 Ayuda: {}", item.name),
         description(item, options.language).to_owned(),
-        if item.implemented { "Estado: registrado" } else { "Estado: pendiente" }.to_owned(),
+        if item.implemented {
+            "Estado: registrado"
+        } else {
+            "Estado: pendiente"
+        }
+        .to_owned(),
         "Uso:".to_owned(),
     ];
-    for usage in item.usages { lines.push(format!("=/>{usage}")); }
+    for usage in item.usages {
+        lines.push(format!("=/>{usage}"));
+    }
     Ok(lines.join("\n"))
 }
 

@@ -339,8 +339,13 @@ impl Config {
             | ["=/>bot"]
             | ["=/>credits" | "=/>creditos" | "=/>créditos"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda"] => true,
-            ["=/>help" | "=/>h" | "=/>ayuda", category] => public_category(category) || category == "all",
-            ["=/>help" | "=/>h" | "=/>ayuda", category, page] => public_category(category) && page.parse::<usize>().is_ok_and(|v| (1..=8).contains(&v)),
+            ["=/>help" | "=/>h" | "=/>ayuda", category] => {
+                public_category(category) || category == "all"
+            }
+            ["=/>help" | "=/>h" | "=/>ayuda", category, page] => {
+                public_category(category)
+                    && page.parse::<usize>().is_ok_and(|v| (1..=8).contains(&v))
+            }
             ["=/>menu" | "=/>menú", category] => public_category(category) || category == "all",
             ["=/>menu" | "=/>menú", category, page] => {
                 public_category(category)
