@@ -236,8 +236,8 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
 
 #[test]
 fn quoted_command_help_uses_catalog_and_never_runs_the_original() {
-    use matter_base::menu;
     use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+    use matter_base::menu;
     let examples = [
         ("=/>anti audit", "anti"),
         ("=/>set anti link add t.me", "set anti link"),
