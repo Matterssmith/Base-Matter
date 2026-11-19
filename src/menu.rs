@@ -718,9 +718,9 @@ fn resolve_quoted_help(message: &str) -> Result<&'static str> {
 fn full_help_note(name: &str, language: Language) -> &'static str {
     let spanish = language == Language::Es;
     match (name, spanish) {
-        ("set anti link", true) => "Ámbito: chat actual; --global aplica al socket. Solo propietario verificado. Los dominios se agregan a una lista, sin activar la moderación. Revisa la lista con «list».",
-        ("set anti link", false) => "Scope: current chat; --global selects the socket. Verified owner only. Adding domains does not enable moderation.",
-        ("anti", true) => "«anti» consulta el grupo; «anti --mod» el socket y «anti --global» el valor base general, todavía sin política Vault compartida. «anti audit» muestra ediciones y camuflajes. Solo «set anti» modifica; no hay moderación automática.",
+        ("set anti link", true) => "Sin argumentos consulta estado y dominios del chat. --mod consulta/configura el socket. --global solo consulta valores de fábrica, sin política Vault compartida. Solo propietario verificado escribe; añadir dominios no activa el filtro.",
+        ("set anti link", false) => "No arguments show current chat domains and filter status. --mod selects the authenticated socket. --global reads unconfigured factory defaults only. Owner controls writes.",
+        ("anti", true) => "Sin argumentos consulta el chat actual. --mod consulta el socket, --global consulta valores de fábrica (sin Vault compartido). Consulta pública en chats habilitados; solo «set anti» modifica. «anti audit» muestra contadores pasivos; sin moderación automática.",
         ("anti", false) => "«anti» inspects the group, «anti --mod» this socket, «anti --global» the unconfigured global factory baseline. Only «set anti» writes. No automatic moderation.",
         ("anti link", true) => "Protección única de dominios: configura la lista con «set anti link». Actívala aparte; detección de solo lectura.",
         ("anti link", false) => "Single domain filter: configure with «set anti link». Enable separately; detection remains read-only.",
@@ -730,6 +730,18 @@ fn full_help_note(name: &str, language: Language) -> &'static str {
         ("register", false) => "Optional enrollment; Vault account creation is not live. Basic guest features require no civil ID.",
         ("set role", true) => "El cambio de rangos requiere Vault-Matter autenticado; actualmente las escrituras de roles permanecen bloqueadas.",
         ("set role", false) => "Role writes require authenticated Vault-Matter and are currently blocked.",
+        ("bot", true) => "Sin argumentos consulta el estado actual. --mod consulta los predeterminados del socket. --global muestra el valor general; no acepta escrituras globales sin autoridad. En el chat actual usa on|off|inherit.",
+        ("bot", false) => "No arguments show current chat state; --mod inspects socket defaults; --global reads system-level defaults. Global writes require authenticated authority.",
+        ("status", true) => "Sin argumentos consulta el chat. --mod muestra el socket al propietario; --global únicamente el valor predeterminado general del proceso, si se conoce.",
+        ("status", false) => "No arguments query the chat; --mod shows socket settings to the owner; --global reports any known process-wide fallback.",
+        ("set", true) => "Sin argumentos muestra estilo e idioma actuales. --mod se refiere al socket; --global solo informa los valores iniciales.",
+        ("set", false) => "No arguments show current style and language. --mod addresses this socket; --global only reports factory values.",
+        ("set anti", true) => "Sin argumentos consulta los filtros actuales; --mod consulta o cambia este socket. --global solo consulta los valores de fábrica; no permite escritura.",
+        ("set anti", false) => "No arguments inspect anti rules; --mod addresses this socket; --global reads factory defaults only.",
+        ("set style", true) => "Sin argumentos consulta el estilo actual del socket; --global no permite cambios.",
+        ("set style", false) => "No arguments read the current socket style; no shared global writes.",
+        ("set lang", true) => "Sin argumentos consulta el idioma actual del socket; --global no permite cambios.",
+        ("set lang", false) => "No arguments read the current socket language; no shared global writes.",
         (_, true) => "Esta ficha describe el catálogo; ejecutar acciones depende de activación, permisos y soporte real del proveedor.",
         (_, false) => "This is command metadata; execution depends on activation, authorization and provider support.",
     }

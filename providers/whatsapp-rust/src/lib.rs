@@ -367,6 +367,7 @@ impl Config {
         };
         let allowed = match parts.as_slice() {
             ["=/>status" | "=/>estado"]
+            | ["=/>status" | "=/>estado", "--mod"]
             | ["=/>status" | "=/>estado", "--global"]
             | ["=/>menu" | "=/>menú"]
             | ["=/>bot"]
@@ -392,6 +393,23 @@ impl Config {
                     || (*category == "anti" && *page == "audit")
             }
             ["=/>help" | "=/>h" | "=/>ayuda", "set", "anti", "link"] => true,
+            ["=/>anti", arguments @ ..] if arguments.len() <= 2 => {
+                let scope_count = arguments
+                    .iter()
+                    .filter(|argument| matches!(**argument, "--mod" | "--global"))
+                    .count();
+                let filters = arguments
+                    .iter()
+                    .filter(|argument| !matches!(**argument, "--mod" | "--global"))
+                    .copied()
+                    .collect::<Vec<_>>();
+                scope_count <= 1
+                    && filters.len() <= 1
+                    && filters.iter().all(|filter| {
+                        (1..=24).contains(&filter.len())
+                            && filter.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+                    })
+            }
             ["=/>menu" | "=/>menú", category] => public_category(category) || *category == "all",
             ["=/>menu" | "=/>menú", "page", page] => matches!(*page, "1" | "2" | "3"),
             ["=/>menu" | "=/>menú", category, page] => {

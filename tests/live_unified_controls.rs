@@ -157,13 +157,13 @@ fn group_switch_does_not_disable_another_group() {
         DispatchResult::GroupStatus { enabled: true, .. },
     ));
     assert!(matches!(
-        command(&control, a, "=/>status --global").unwrap(),
+        command(&control, a, "=/>status --mod").unwrap(),
         DispatchResult::BotGlobalStatus {
             socket_powered: true,
             ..
         }
     ));
-    assert!(command(&control, a, "=/>bot --global on").is_err());
+    assert!(command(&control, a, "=/>bot --mod on").is_err());
     assert!(control
         .dispatch("socket-alpha", "outsider", "owner-self", None, "=/>bot on")
         .is_err());
@@ -175,7 +175,7 @@ fn group_switch_does_not_disable_another_group() {
 fn socket_wide_bot_on_alone_wakes_the_self_chat_not_all_external_chats() {
     let (control, store) = fixture();
     assert_eq!(
-        command(&control, None, "=/>bot --global on").unwrap(),
+        command(&control, None, "=/>bot --mod on").unwrap(),
         DispatchResult::BotPolicyChanged {
             scope: "socket-global".into(),
             policy: Some(true),
@@ -218,7 +218,7 @@ fn community_announcement_policy_is_configurable_but_requires_verified_platform_
         }
     );
     assert!(matches!(
-        command(&control, None, "=/>status --global").unwrap(),
+        command(&control, None, "=/>status --mod").unwrap(),
         DispatchResult::BotGlobalStatus {
             community_policy: Some(true),
             group_policy: None,

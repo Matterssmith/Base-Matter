@@ -271,3 +271,19 @@ fn quoted_command_help_uses_catalog_and_never_runs_the_original() {
     let role = menu::render_help("set role", Preferences::default()).unwrap();
     assert!(role.contains("Ayuda completa: set role"));
 }
+
+#[test]
+fn help_explains_mod_and_global_for_every_supported_stateful_family() {
+    use matter_base::menu;
+    let opts = Preferences::default();
+    for name in ["anti", "status", "bot", "set", "set anti", "set anti link"] {
+        let help = menu::render_help(name, opts).unwrap();
+        assert!(help.contains("--mod"), "missing socket scope for {name}");
+    }
+    assert!(menu::render_help("status", opts).unwrap().contains("--global"));
+    assert!(menu::render_help("bot", opts).unwrap().contains("--global"));
+    assert!(menu::render_help("set anti", opts).unwrap().contains("set anti"));
+    let plain = menu::render("menu anti", opts).unwrap();
+    assert!(!plain.contains("=/>antis"));
+    assert!(!plain.contains("=/>antilink on"));
+}

@@ -148,6 +148,15 @@ impl ControlThemes {
         self
     }
 
+    /// Read the effective local menu settings; no mutation or permissions.
+    /// Callers must still be authenticated by the control dispatcher.
+    pub fn current_menu_preferences(&self) -> Result<crate::menu::Preferences> {
+        self.dynamic_menu
+            .as_ref()
+            .ok_or_else(|| anyhow!("Dynamic menu not configured"))?
+            .get()
+    }
+
     pub fn set_menu_style(&self, value: &str) -> Result<()> {
         let preferences = self
             .dynamic_menu

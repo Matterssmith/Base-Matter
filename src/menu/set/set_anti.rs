@@ -5,9 +5,12 @@ use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
     name: "set anti",
-    es: "Configurar una protección para el grupo o para este socket",
-    en: "Configure a protection for the group or this socket",
+    es: "Consultar o configurar protecciones del chat y predeterminados del socket",
+    en: "Inspect or configure chat protection and socket defaults",
     usages: &[
+        "set anti",
+        "set anti --mod",
+        "set anti --global",
         "set anti <tipo> on|off|inherit",
         "set anti --mod <tipo> on|off",
         "set anti <tipo> action warn|delete|kick",

@@ -98,7 +98,9 @@ fn valid_scope(socket: &str, group: &str) -> Result<()> {
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || b"._:-".contains(&c))
         || group.len() > 128
-        || !group.ends_with("@g.us")
+        || !(group.ends_with("@g.us")
+            || group.ends_with("@s.whatsapp.net")
+            || group.ends_with("@lid"))
         || !group
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || b"@._:-".contains(&c))
@@ -452,9 +454,9 @@ impl AntiStore {
             lines.push(self.display(socket, group, rule)?);
         }
         let scope = if group.is_some() {
-            "grupo"
+            "chat actual"
         } else {
-            "socket global"
+            "socket actual"
         };
         Ok(format!(
             "Antis del {scope} (solo configuración; moderación automática no conectada):\n{}",
@@ -617,7 +619,7 @@ impl AntiStore {
         };
         if matches!(operation, "list" | "lista") {
             if !values.is_empty() {
-                bail!("Uso: set anti link [--global] list");
+                bail!("Uso: set anti [--mod] link list");
             }
             let all = self.link_domains(socket, chat)?;
             let lines = all.iter().take(25).cloned().collect::<Vec<_>>();
@@ -640,7 +642,7 @@ impl AntiStore {
         let add = match operation {
             "add" | "agregar" => true,
             "del" | "delete" | "remove" | "quitar" => false,
-            _ => bail!("Uso: set anti link [--global] add|del|list <dominios>"),
+            _ => bail!("Uso: set anti [--mod] link add|del|list <dominios>"),
         };
         if values.is_empty() || values.len() > 12 {
             bail!("Indica entre 1 y 12 dominios por operación");

@@ -404,7 +404,11 @@ impl ControlDispatcher {
             }
             ["=/>status" | "=/>estado", "--global"] => Ok(DispatchResult::Extension {
                 command: "status".to_owned(),
-                output: "La configuración global del socket es privada del propietario. Usa =/>status para consultar el estado de este chat.".to_owned(),
+                output: self.global_default_status().to_owned(),
+            }),
+            ["=/>status" | "=/>estado", "--mod"] => Ok(DispatchResult::Extension {
+                command: "status".to_owned(),
+                output: "Las políticas internas del socket son privadas. Consulta el chat con =/>status.".to_owned(),
             }),
             ["=/>menu" | "=/>menú", rest @ ..] if rest.len() <= 2 => {
                 if !crate::guest::can_use_without_registration(
@@ -474,16 +478,90 @@ impl ControlDispatcher {
                 })
             }
             ["=/>bot"] => {
+                if let Some(group_id) = group {
+                    Ok(DispatchResult::GroupStatus {
+                        group_id: group_id.to_owned(),
+                        enabled: decision.decision.enabled,
+                        source: decision.decision.source,
+                    })
+                } else {
+                    Ok(DispatchResult::Status {
+                        socket_id: socket.to_owned(),
+                        enabled: decision.decision.enabled,
+                        source: decision.decision.source,
+                        bot_instance_id: None,
+                    })
+                }
+            }
+            ["=/>anti", words @ ..] if words.len() <= 3 => {
                 if !decision.decision.enabled {
                     return Ok(DispatchResult::Inactive);
                 }
+                let scoped = crate::control_scope::parse_scope(words)?;
+                if scoped.arguments.len() > 1
+                    && scoped.arguments.as_slice() != ["audit"]
+                {
+                    bail!("Uso: anti [--mod|--global] [tipo]");
+                }
+                let store = self
+                    .group_antis
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
+                let output = if scoped.scope == crate::control_scope::CommandScope::Global {
+                    match scoped.arguments.as_slice() {
+                        [] => AntiStore::global_factory_defaults(None)?,
+                        [name] => AntiStore::global_factory_defaults(Some(name))?,
+                        _ => bail!("Uso: anti --global [tipo]"),
+                    }
+                } else {
+                    let scope = match scoped.scope {
+                        crate::control_scope::CommandScope::Socket => None,
+                        crate::control_scope::CommandScope::Chat => {
+                            Self::anti_chat_scope(group, verified_chat)
+                        }
+                        crate::control_scope::CommandScope::Global => unreachable!(),
+                    };
+                    let arguments = scoped
+                        .arguments
+                        .iter()
+                        .map(|word| (*word).to_owned())
+                        .collect::<Vec<_>>();
+                    store.inspect_command(socket, scope, &arguments)?
+                };
                 Ok(DispatchResult::Extension {
-                    command: "bot".to_owned(),
-                    output: "Uso:\n=/>bot on|off|inherit\n=/>bot --global on|off|inherit\n=/>bot group|private|channel|community on|off|inherit".to_owned(),
+                    command: "anti".to_owned(),
+                    output,
                 })
             }
             _ => bail!("Public chat cannot invoke administrative commands"),
         }
+    }
+
+    fn global_default_status(&self) -> &'static str {
+        match self.global_policy {
+            GlobalPolicy::Configured(Some(true)) => {
+                "Predeterminado general de este proceso: ON. No representa una política central Vault."
+            }
+            GlobalPolicy::Configured(Some(false)) => {
+                "Predeterminado general de este proceso: OFF. No representa una política central Vault."
+            }
+            GlobalPolicy::Configured(None) => {
+                "Predeterminado general: sin configuración; denegar por defecto."
+            }
+            GlobalPolicy::Persisted => {
+                "Predeterminado general: consulta central no disponible aquí sin autoridad global autenticada."
+            }
+        }
+    }
+
+    fn anti_chat_scope<'a>(group: Option<&'a str>, chat: &'a str) -> Option<&'a str> {
+        group.or_else(|| {
+            if chat.ends_with("@s.whatsapp.net") || chat.ends_with("@lid") {
+                Some(chat)
+            } else {
+                None
+            }
+        })
     }
 
     /// Installs durable, per-verified-group anti-rule configuration.
@@ -754,9 +832,9 @@ impl ControlDispatcher {
                         scope => {
                             let group_scope = match scope {
                                 CommandScope::Socket => None,
-                                CommandScope::Chat => Some(group.ok_or_else(|| {
-                                    anyhow!("Este chat no tiene filtros de grupo; usa anti --mod")
-                                })?),
+                                CommandScope::Chat => {
+                                    Self::anti_chat_scope(group, source)
+                                },
                                 CommandScope::Global => unreachable!("handled above"),
                             };
                             let args = scoped
@@ -786,11 +864,45 @@ impl ControlDispatcher {
                         .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
                     use crate::control_scope::{parse_scope, CommandScope};
                     let scoped = parse_scope(values)?;
-                    if scoped.scope == CommandScope::Global {
-                        bail!("La configuración global requiere autoridad Vault verificada; usa --mod para este socket");
-                    }
                     let socket_scope = scoped.scope == CommandScope::Socket;
                     let words = scoped.arguments;
+                    if scoped.scope == CommandScope::Global {
+                        let filter = match words.as_slice() {
+                            [] => None,
+                            [name] => Some(*name),
+                            _ => bail!("No se admiten escrituras globales sin Vault autenticado"),
+                        };
+                        let output = AntiStore::global_factory_defaults(filter)?;
+                        return Ok(DispatchResult::Extension {
+                            command: "set".to_owned(),
+                            output,
+                        });
+                    }
+                    let chat_scope = Self::anti_chat_scope(group, source);
+                    if words.is_empty() {
+                        let output = store.inspect_command(receiving_socket, if socket_scope { None } else { chat_scope }, &[])?;
+                        return Ok(DispatchResult::Extension {
+                            command: "set".to_owned(),
+                            output,
+                        });
+                    }
+                    if words.as_slice() == ["link"] {
+                        let filter = store.inspect_command(
+                            receiving_socket,
+                            if socket_scope { None } else { chat_scope },
+                            &["link".to_owned()],
+                        )?;
+                        let domains = store.edit_link_domains(
+                            receiving_socket,
+                            if socket_scope { None } else { chat_scope },
+                            "list",
+                            &[],
+                        )?;
+                        return Ok(DispatchResult::Extension {
+                            command: "set".to_owned(),
+                            output: format!("{filter}\n{domains}"),
+                        });
+                    }
                     // Domain lists may be scoped to a verified private chat as well.
                     if let [name, operation, domains @ ..] = words.as_slice() {
                         if *name == "link"
@@ -833,9 +945,9 @@ impl ControlDispatcher {
                     let config_scope = if socket_scope {
                         None
                     } else {
-                        Some(group.ok_or_else(|| {
-                            anyhow!("Para cambiar un filtro de grupo, usa ese grupo; --mod modifica el socket")
-                        })?)
+                        chat_scope.ok_or_else(|| {
+                            anyhow!("Chat no verificado: utiliza --mod para configurar el socket")
+                        }).map(Some)?
                     };
                     let args = words
                         .iter()
@@ -886,6 +998,31 @@ impl ControlDispatcher {
                     });
                 }
                 ["status" | "estado", "--global"]
+                    if self.unified_live_controls =>
+                {
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    return Ok(DispatchResult::Extension {
+                        command: "status".to_owned(),
+                        output: self.global_default_status().to_owned(),
+                    });
+                }
+                ["status" | "estado", "--mod"] => {
+                    let defaults = self
+                        .activation
+                        .inspect_bot_defaults(receiving_socket, actor)?;
+                    return Ok(DispatchResult::BotGlobalStatus {
+                        socket_powered: defaults.socket_powered,
+                        default_policy: defaults.default_policy,
+                        group_policy: defaults.group_policy,
+                        private_policy: defaults.private_policy,
+                        channel_policy: defaults.channel_policy,
+                        community_policy: defaults.community_policy,
+                    });
+                }
+                ["status" | "estado", "--global"]
                 | ["status" | "estado", "--global", "--debug"] => {
                     let defaults = self
                         .activation
@@ -898,6 +1035,22 @@ impl ControlDispatcher {
                         channel_policy: defaults.channel_policy,
                         community_policy: defaults.community_policy,
                     });
+                }
+                ["bot", "--mod", action @ ("on" | "off" | "inherit" | "encender" | "apagar" | "heredar")]
+                | ["bot", action @ ("on" | "off" | "inherit" | "encender" | "apagar" | "heredar"), "--mod"] => {
+                    let policy = match action {
+                        "on" | "encender" => Some(true),
+                        "off" | "apagar" => Some(false),
+                        _ => None,
+                    };
+                    return self.change_bot_policy(
+                        receiving_socket, actor, group, kind, "global", policy,
+                    );
+                }
+                ["bot", "--global", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
+                    if self.unified_live_controls =>
+                {
+                    bail!("--global es una política general, no el socket. Las escrituras globales requieren autoridad Vault.");
                 }
                 ["bot", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
                 | ["bot", "--global", "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"]
@@ -940,20 +1093,96 @@ impl ControlDispatcher {
                         policy,
                     );
                 }
-                ["bot"] | ["bot", "--global"] => {
+                ["bot"] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }
-                    if !admission.decision.enabled {
-                        return Ok(DispatchResult::Inactive);
+                    if let Some(group_id) = group {
+                        return Ok(DispatchResult::GroupStatus {
+                            group_id: group_id.to_owned(),
+                            enabled: admission.decision.enabled,
+                            source: admission.decision.source,
+                        });
+                    }
+                    return Ok(DispatchResult::Status {
+                        socket_id: receiving_socket.to_owned(),
+                        enabled: admission.decision.enabled,
+                        source: admission.decision.source,
+                        bot_instance_id: admission.bot_instance_id,
+                    });
+                }
+                ["bot", "--mod"] => {
+                    let defaults = self.activation.inspect_bot_defaults(receiving_socket, actor)?;
+                    return Ok(DispatchResult::BotGlobalStatus {
+                        socket_powered: defaults.socket_powered,
+                        default_policy: defaults.default_policy,
+                        group_policy: defaults.group_policy,
+                        private_policy: defaults.private_policy,
+                        channel_policy: defaults.channel_policy,
+                        community_policy: defaults.community_policy,
+                    });
+                }
+                ["bot", "--global"] if self.unified_live_controls => {
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
                     }
                     return Ok(DispatchResult::Extension {
                         command: "bot".to_owned(),
-                        output: "Uso:\n=/>bot on|off|inherit\n=/>bot --global on|off|inherit\n=/>bot group|private|channel|community on|off|inherit".to_owned(),
+                        output: self.global_default_status().to_owned(),
                     });
                 }
-                ["set", "style" | "lang" | "language", value] => {
+                ["bot", "--global"] => {
+                    let defaults = self.activation.inspect_bot_defaults(receiving_socket, actor)?;
+                    return Ok(DispatchResult::BotGlobalStatus {
+                        socket_powered: defaults.socket_powered,
+                        default_policy: defaults.default_policy,
+                        group_policy: defaults.group_policy,
+                        private_policy: defaults.private_policy,
+                        channel_policy: defaults.channel_policy,
+                        community_policy: defaults.community_policy,
+                    });
+                }
+                ["set"] | ["set", "--mod"]
+                | ["set", "style" | "lang" | "language"]
+                | ["set", "style" | "lang" | "language", "--mod"]
+                | ["set", "--mod", "style" | "lang" | "language"] => {
+                    if group.is_some() {
+                        bail!("La configuración del menú se consulta en el chat privado del propietario");
+                    }
+                    let admission = self.activation.admission(receiving_socket, None, self.global_policy)?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    let themes = self.public_menu.as_ref()
+                        .ok_or_else(|| anyhow!("Menu preferences are unavailable"))?;
+                    let preferences = themes.current_menu_preferences()?;
+                    let field = tokens.iter().find(|word| matches!(**word, "style" | "lang" | "language"));
+                    let output = match field {
+                        Some(&"style") => format!("Configuración actual · socket\nEstilo: {}", preferences.style.as_str()),
+                        Some(&"lang" | &"language") => format!("Configuración actual · socket\nIdioma: {}", preferences.language.as_str()),
+                        _ => format!(
+                            "Configuración actual · socket\nEstilo: {}\nIdioma: {}",
+                            preferences.style.as_str(),
+                            preferences.language.as_str()
+                        ),
+                    };
+                    return Ok(DispatchResult::Extension {
+                        command: "set".to_owned(),
+                        output,
+                    });
+                }
+                ["set", "--global"] => {
+                    return Ok(DispatchResult::Extension {
+                        command: "set".to_owned(),
+                        output: "Predeterminado general del menú (fábrica, sin configuración Vault): estilo classic; idioma es.".to_owned(),
+                    });
+                }
+                ["set", "style" | "lang" | "language", value]
+                | ["set", "--mod", "style" | "lang" | "language", value]
+                | ["set", "style" | "lang" | "language", "--mod", value]
+                | ["set", "style" | "lang" | "language", value, "--mod"] => {
                     if group.is_some() {
                         bail!("Menu configuration requires the owner's private chat");
                     }
@@ -967,33 +1196,15 @@ impl ControlDispatcher {
                         .public_menu
                         .as_ref()
                         .ok_or_else(|| anyhow!("Menu preferences are unavailable"))?;
-                    if tokens[1] == "style" {
+                    let setting = if tokens.contains(&"style") { "style" } else { "lang" };
+                    if setting == "style" {
                         themes.set_menu_style(value)?;
                     } else {
                         themes.set_menu_language(value)?;
                     }
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
-                        output: format!("Menú {}: {}. Abre menu para verificar.", tokens[1], value),
-                    });
-                }
-                ["set"] => {
-                    if group.is_some() {
-                        bail!("Configuration is private owner control");
-                    }
-                    let admission =
-                        self.activation
-                            .admission(receiving_socket, None, self.global_policy)?;
-                    if admission.owner_id != actor {
-                        bail!("Socket owner authorization denied");
-                    }
-                    let themes = self
-                        .public_menu
-                        .as_ref()
-                        .ok_or_else(|| anyhow!("Menu configuration unavailable"))?;
-                    return Ok(DispatchResult::Extension {
-                        command: "set".to_owned(),
-                        output: themes.render(None, "help set")?,
+                        output: format!("Menú {setting}: {value}. Abre menu para verificar."),
                     });
                 }
                 ["set", "role"] => {
@@ -1079,7 +1290,8 @@ impl ControlDispatcher {
                         powered,
                     });
                 }
-                ["status" | "estado", socket] if socket != &"--debug" && socket != &"--global" => {
+                ["status" | "estado", socket]
+                    if !matches!(*socket, "--debug" | "--global" | "--mod") => {
                     if group.is_some() {
                         bail!("Targeted socket status requires private owner chat");
                     }

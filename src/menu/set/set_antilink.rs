@@ -5,9 +5,11 @@ use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
     name: "set anti link",
-    es: "Agregar, eliminar o consultar dominios del chat o socket",
-    en: "Add, remove or list blocked domains per chat or socket",
+    es: "Consultar filtro y lista de dominios o cambiarla en el chat/socket",
+    en: "Inspect link filter/domains or edit them for this chat/socket",
     usages: &[
+        "set anti link",
+        "set anti --mod link",
         "set anti link list",
         "set anti link add <dominio> [dominio...]",
         "set anti link del <dominio> [dominio...]",
