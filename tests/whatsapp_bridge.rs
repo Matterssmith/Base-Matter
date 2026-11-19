@@ -191,7 +191,7 @@ fn signed_owner_group_bot_controls_are_scoped_and_replayed_once() {
             .unwrap()
             .enabled
     );
-    let mut socket_status = frame("group-global-status", "=/>status --global");
+    let mut socket_status = frame("group-global-status", "=/>status --mod");
     socket_status.chat_jid = group.chat_jid.clone();
     sign(&mut socket_status, &SECRET);
     assert!(matches!(
@@ -201,7 +201,7 @@ fn signed_owner_group_bot_controls_are_scoped_and_replayed_once() {
             ..
         })
     ));
-    let mut global_on = frame("group-3", "=/>bot --global on");
+    let mut global_on = frame("group-3", "=/>bot --mod on");
     global_on.chat_jid = group.chat_jid.clone();
     sign(&mut global_on, &SECRET);
     assert!(bridge.ingest(&global_on).is_err());
@@ -234,7 +234,7 @@ fn signed_group_status_tracks_global_defaults_and_exact_group_override() {
 
     assert_eq!(
         bridge
-            .ingest(&frame("chat-global-1", "=/>bot --global on"))
+            .ingest(&frame("chat-global-1", "=/>bot --mod on"))
             .unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
             scope: "socket-global".into(),
@@ -243,7 +243,7 @@ fn signed_group_status_tracks_global_defaults_and_exact_group_override() {
     );
     assert_eq!(
         bridge
-            .ingest(&frame("chat-global-2", "=/>status --global"))
+            .ingest(&frame("chat-global-2", "=/>status --mod"))
             .unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotGlobalStatus {
             socket_powered: true,

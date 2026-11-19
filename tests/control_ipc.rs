@@ -164,7 +164,7 @@ fn external_private_default_does_not_disable_owner_self_chat_and_self_off_is_sil
         ControlIpcOutcome::Applied
     );
     assert_eq!(
-        service.dispatch(&signed("b-1", "=/>bot --global on")),
+        service.dispatch(&signed("b-1", "=/>bot --mod on")),
         ControlIpcOutcome::Applied
     );
 
