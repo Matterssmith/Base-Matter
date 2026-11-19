@@ -200,6 +200,7 @@ impl WhatsAppControlBridge {
                     | "=/>credits"
                     | "=/>creditos"
                     | "=/>créditos"
+                    | "=/>test"
             ) {
                 bail!("Only group-scoped controls are available in groups");
             }

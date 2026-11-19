@@ -4,7 +4,7 @@ Estado: funciones Rust añadidas para prueba manual, NO verificación de renderi
 
 ## Preparación segura
 
-Usa la sesión de pruebas existente, exclusivamente en tu chat privado contigo mismo.
+Usa la sesión de pruebas existente. El propietario puede probar en su chat privado o grupo verificado; otros usuarios sólo pueden probar NativeFlow y ButtonsRow en chats con el bot activado. HTML permanece restringido al chat privado del propietario.
 No abras dos procesos sobre el mismo SQLite. Los scripts de Base-Matter siguen usando
 código de vinculación por teléfono y no requieren QR.
 

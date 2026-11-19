@@ -394,5 +394,89 @@ fn signature_encoding_matches_hmac_sha256_protocol_vector() {
     );
 }
 
+
+#[test]
+fn test_command_responds_in_owner_private_and_verified_group() {
+    let (bridge, _) = fixture();
+    for (id, cmd) in [
+        ("visual-private-help", "=/>test"),
+        ("visual-private-ui", "=/>test ui"),
+        ("visual-private-row", "=/>test row"),
+    ] {
+        assert!(matches!(
+            bridge.ingest(&frame(id, cmd)).unwrap(),
+            WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
+                command,
+                ..
+            }) if command == "test"
+        ));
+    }
+    let mut group = frame("visual-owner-group", "=/>test");
+    group.chat_jid = "12036312345@g.us".into();
+    sign(&mut group, &SECRET);
+    assert!(matches!(
+        bridge.ingest(&group).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
+            command,
+            ..
+        }) if command == "test"
+    ));
+    assert_eq!(
+        bridge.ingest(&group).unwrap(),
+        WhatsAppBridgeOutcome::Duplicate
+    );
+    group.message_id = "visual-owner-ui".into();
+    group.text = "=/>test ui".into();
+    sign(&mut group, &SECRET);
+    assert!(matches!(
+        bridge.ingest(&group).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
+            command,
+            ..
+        }) if command == "test"
+    ));
+    group.message_id = "visual-owner-html".into();
+    group.text = "=/>test html".into();
+    sign(&mut group, &SECRET);
+    assert!(bridge.ingest(&group).is_err());
+}
+
+#[test]
+fn public_test_is_readonly_and_obeys_chat_activation() {
+    let (bridge, _) = fixture();
+    let mut public = frame("visual-public-off", "=/>test");
+    public.actor_id = "987654321012346@lid".into();
+    public.chat_jid = public.actor_id.clone();
+    public.from_me = false;
+    sign(&mut public, &SECRET);
+    assert_eq!(
+        bridge.ingest(&public).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
+    );
+    // Only a verified socket owner can turn on the chat. Test probes never do.
+    let mut owner_group = frame("visual-enable", "=/>bot on");
+    owner_group.chat_jid = "12036312345@g.us".into();
+    sign(&mut owner_group, &SECRET);
+    assert!(matches!(
+        bridge.ingest(&owner_group).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotPolicyChanged { .. })
+    ));
+    public.message_id = "visual-public-group".into();
+    public.chat_jid = owner_group.chat_jid.clone();
+    public.text = "=/>test row".into();
+    sign(&mut public, &SECRET);
+    assert!(matches!(
+        bridge.ingest(&public).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
+            command,
+            ..
+        }) if command == "test"
+    ));
+    public.message_id = "visual-public-html".into();
+    public.text = "=/>test html".into();
+    sign(&mut public, &SECRET);
+    assert!(bridge.ingest(&public).is_err());
+}
+
 // Créditos:
 // Hecho por Lournyx Matterssmith [Lou-Nyx].

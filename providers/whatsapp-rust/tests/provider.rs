@@ -233,6 +233,13 @@ fn verified_owner_group_controls_are_signed_for_exact_group_jid() {
         .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
         .unwrap()
         .is_some());
+    for probe in ["=/>test", "=/>test ui", "=/>test row"] {
+        event.text = probe;
+        assert!(c
+            .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .is_some());
+    }
     event.text = "=/>on";
     assert!(c
         .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
@@ -325,6 +332,10 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>help menu",
         "=/>help all",
         "=/>help antis 2",
+        "=/>test",
+        "=/>test ui",
+        "=/>test row",
+        "=/>test ack audio",
     ] {
         incoming.text = text;
         let signed = config
@@ -350,8 +361,9 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>menu unset",
         "=/>menu config extra",
         "=/>help run(unknown)",
-        "=/>test ui",
-        "=/>test ack a",
+        "=/>test html",
+        "=/>test run",
+        "=/>test ack invalid",
         "#ping",
     ] {
         incoming.text = text;

@@ -220,6 +220,7 @@ impl Config {
                     | "=/>credits"
                     | "=/>creditos"
                     | "=/>créditos"
+                    | "=/>test"
             )
         } else {
             matches!(
@@ -348,6 +349,8 @@ impl Config {
             | ["=/>bot"]
             | ["=/>credits" | "=/>creditos" | "=/>créditos"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda"] => true,
+            ["=/>test"] | ["=/>test", "ui" | "row"] => true,
+            ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda", category] => {
                 public_category(category) || *category == "all" || safe_help_name(category)
             }

@@ -597,8 +597,6 @@ async fn main() -> Result<()> {
                             };
                             if actual_command == "=/>test ui"
                                 && native_buttons
-                                && frame.from_me
-                                && frame.chat_jid == config.owner_jid
                             {
                                 if let Ok(probe) = native_ui_probe_message() {
                                     if ctx.send_message(probe).await.is_ok() {
@@ -608,8 +606,6 @@ async fn main() -> Result<()> {
                                 eprintln!("Base-Matter: UI test unavailable; sending text instructions");
                             }
                             if actual_command == "=/>test row"
-                                && frame.from_me
-                                && frame.chat_jid == config.owner_jid
                             {
                                 if ctx.send_message(legacy_row_probe_message()).await.is_ok() {
                                     return;
@@ -674,7 +670,14 @@ async fn main() -> Result<()> {
                             // Bot disabled in this chat: intentionally silent.
                         }
                         Err(_) => {
-                            eprintln!("Base-Matter owner control denied or unreachable");
+                            eprintln!("Base-Matter control denied or unreachable");
+                            // Only a signed owner test may receive this generic
+                            // diagnostic; never expose rejected public controls.
+                            if frame.from_me && frame.text.starts_with("=/>test") {
+                                let _ = ctx
+                                    .reply("Base-Matter: prueba rechazada por el controlador. Revisa permisos del chat y el registro local.")
+                                    .await;
+                            }
                         }
                     },
                     Ok(None) => {}

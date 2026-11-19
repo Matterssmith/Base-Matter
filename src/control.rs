@@ -426,6 +426,22 @@ impl ControlDispatcher {
                 let output = theme.render(group, &section)?;
                 Ok(DispatchResult::Extension { command: "help".to_owned(), output })
             }
+            ["=/>test"] | ["=/>test", "ui" | "row"]
+            | ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => {
+                if !decision.decision.enabled {
+                    return Ok(DispatchResult::Inactive);
+                }
+                let output = match parts.as_slice() {
+                    ["=/>test", "ui"] => "🧪 Prueba NativeFlow: botones y selector. Si aparecen, púlsalos. No se modifica ningún dato.".to_owned(),
+                    ["=/>test", "row"] => "🧪 Prueba ButtonsRow: Audio, MP4 y Enlace. No se ejecutan descargas.".to_owned(),
+                    ["=/>test", "ack", selected] => format!("✅ Prueba: selección {selected} recibida por el controlador (solo lectura)."),
+                    _ => "🧪 Pruebas del chat: =/>test ui (NativeFlow), =/>test row (ButtonsRow). Requieren bot activo. =/>test html es exclusivo del propietario en su chat privado.".to_owned(),
+                };
+                Ok(DispatchResult::Extension {
+                    command: "test".to_owned(),
+                    output,
+                })
+            }
             ["=/>credits" | "=/>creditos" | "=/>créditos"] => {
                 if !decision.decision.enabled {
                     return Ok(DispatchResult::Inactive);
@@ -607,12 +623,12 @@ impl ControlDispatcher {
                 ["test"]
                 | ["test", "ui" | "html" | "row"]
                 | ["test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => {
-                    if group.is_some() {
-                        bail!("Las pruebas visuales requieren el chat privado del propietario");
+                    if group.is_some() && tokens.as_slice() == ["test", "html"] {
+                        bail!("La prueba HTML requiere el chat privado del propietario");
                     }
                     let admission =
                         self.activation
-                            .admission(receiving_socket, None, self.global_policy)?;
+                            .admission(receiving_socket, group, self.global_policy)?;
                     if admission.owner_id != actor {
                         bail!("Solo el propietario verificado puede probar la interfaz");
                     }

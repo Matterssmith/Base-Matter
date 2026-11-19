@@ -1,3 +1,21 @@
+### 2026-11-18 — Corrección: =/>test silencioso desde WhatsApp
+
+El proveedor y puente sólo aceptaban =/>test desde el propio chat
+privado, por lo que los mensajes en grupos y de otras cuentas no
+alcanzaban el handler. Ahora las pruebas visuales de solo lectura
+(=/>test, ui, row y ack cerrados) funcionan:
+- propietario autenticado PN/LID: propio chat y grupos;
+- otros miembros: únicamente chats habilitados, con identidad
+  verificada por la misma ruta pública que =/>menu.
+HTML sigue restringido al propio privado del propietario y ninguna
+prueba concede roles ni ejecuta archivos.
+Envío NativeFlow/ButtonsRow permitido tras un ACK firmado para esas
+pruebas; el emisor recibe fallback de texto si el transporte falla.
+Pruebas de regresión cubren owner grupo/privado, replay, público off/on,
+y rechazo de HTML externo. No verificar renderizado físico desde CI.
+README (2/2) revisados; beta/stable no se modificaron.
+
+
 ### 2026-11-18 — Formato confirmado para tarjeta de prueba ButtonsRow
 
 El CI del SHA 62399fa se detuvo antes de compilar por Rustfmt:
