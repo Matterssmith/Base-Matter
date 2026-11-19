@@ -1,3 +1,6 @@
+### 2026-11-18 — Catálogo de 21 entradas aplicado a la presentación Rust
+Se reorganizaron los descriptores existentes dentro de IA, Anti, Configuración, Información, Principal, Modo, Propietario, Sistema y Utilidades. Otras entradas autorizadas no contienen comandos inventados. Todo sigue siendo una vista agregada. Aliases anteriores permanecen sólo como compatibilidad. Un único selector «Categorías», paginado en tres pantallas por límites del cliente, mantiene 21 entradas accesibles. Rustfmt corrigió las diferencias que reportó CI del SHA 457de96; se vuelve a validar Linux, Windows y el proveedor. Ver docs/CATEGORY_CONTRACT.md.
+
 ### 2026-11-18 — Catálogo de categorías cerrado por instrucción del propietario
 El contrato [docs/CATEGORY_CONTRACT.md](../../docs/CATEGORY_CONTRACT.md) registra las 21 entradas exactas del menú original y prohíbe categorías inventadas. Todo = vista agregada. Establece destino de cada comando histórico, aliases de compatibilidad y un único botón «Categorías». La documentación **no equivale a migración completa del código**; pendiente adecuar el renderizador y las pruebas.
 

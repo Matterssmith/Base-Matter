@@ -1,6 +1,6 @@
 # Contrato cerrado de categorías — Base-Matter
 
-**Fuente de autoridad:** catálogo de 21 entradas entregado por la persona propietaria el 18 de noviembre de 2026. **Estado:** instrucción obligatoria de arquitectura; los nombres internos históricos de Rust aún requieren migración. No proclamar que la migración terminó por crear este archivo.
+**Fuente de autoridad:** catálogo de 21 entradas entregado por la persona propietaria el 18 de noviembre de 2026. **Estado:** el catálogo visual y el selector con paginación ya están implementados en `alpha`; las carpetas de código heredadas aún conservan sus nombres internos. Falta confirmar CI completo de la última revisión y el comportamiento real de WhatsApp.
 
 ## Regla innegociable
 

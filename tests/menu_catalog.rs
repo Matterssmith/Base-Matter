@@ -18,8 +18,20 @@ fn live_menu_registry_builds_categories_without_personal_brand_or_footer_credits
     assert!(!root.contains("Créditos:"));
     assert_eq!(root.matches("=/>").count(), 1);
     assert_eq!(matter_base::menu::CATEGORIES.len(), 20);
-    for forbidden in ["[menu bot]", "[menu roles]", "[menu sandbox]", "[menu navigation]", "[menu set]", "[menu status]", "[menu antis]", "[menu ai]"] {
-        assert!(!root.contains(forbidden), "Legacy categories must not be visible: {forbidden}");
+    for forbidden in [
+        "[menu bot]",
+        "[menu roles]",
+        "[menu sandbox]",
+        "[menu navigation]",
+        "[menu set]",
+        "[menu status]",
+        "[menu antis]",
+        "[menu ai]",
+    ] {
+        assert!(
+            !root.contains(forbidden),
+            "Legacy categories must not be visible: {forbidden}"
+        );
     }
     assert!(root.contains("[menu sockets]"));
     assert!(root.contains("[menu utils]"));

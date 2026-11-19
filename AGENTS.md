@@ -1,5 +1,8 @@
 # Base-Matter — repository instructions
 
+## Aplicación del catálogo (alpha, noviembre 2026)
+La presentación `src/menu.rs` agrupa ahora comandos únicamente en las 20 categorías permitidas; `Todo` es la entrada 21 y agrega comandos. Categorías autorizadas sin comandos visibles quedan vacías. `providers/whatsapp-rust/src/ui.rs` mantiene un solo botón «Categorías» y páginas para llegar a las 21 entradas; ninguna fila de paginación constituye una nueva categoría. Los antiguos nombres de módulos solo son rutas internas y aliases. Los directorios aún necesitan migración física; no confundir ese trabajo con añadir categorías. La aceptación final requiere CI completo y prueba real de WhatsApp.
+
 ## Regla vinculante de categorías cerradas — 2026-11-18
 
 **Consultar antes de cambiar cualquier menú:** [docs/CATEGORY_CONTRACT.md](docs/CATEGORY_CONTRACT.md). El propietario fijó **21 entradas exactas**, en el orden de su muestra: IA, Anti, Todo, Configuración, Descargas, Economía, Diversión, Gacha, Juegos, Grupo, Información, Enlaces, Principal, Modo, Propietario, Perfil, Reacciones, Búsqueda, Conexiones, Sistema, Utilidades. **No inventar, renombrar ni añadir categorías**. Todo es una vista agregada, no un destino para comandos. Un comando existente se reubica en alguna entrada permitida; nombres heredados de módulos sólo pueden ser aliases internos. Ningún comando pendiente se declara operativo. WhatsApp conserva un único botón «Categorías». La migración del código debe completar el contrato y sus pruebas antes de promover a beta.

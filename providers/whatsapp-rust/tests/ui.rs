@@ -95,7 +95,9 @@ fn submenus_offer_only_one_categories_selector() {
         let interactive = message.interactive_message.as_option().unwrap();
         let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
             interactive.interactive_message.as_ref()
-        else { panic!("Expected single category selector"); };
+        else {
+            panic!("Expected single category selector");
+        };
         assert_eq!(native.buttons.len(), 1);
         let params: serde_json::Value =
             serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();

@@ -1,4 +1,4 @@
-> **Norma vigente:** [CATEGORY_CONTRACT.md](CATEGORY_CONTRACT.md) establece el catálogo inalterable de 21 entradas. Las nueve carpetas citadas abajo son sólo el estado de implementación anterior, **no categorías autorizadas**. La migración sigue pendiente.
+> **Norma vigente:** [CATEGORY_CONTRACT.md](CATEGORY_CONTRACT.md) establece el catálogo inalterable de 21 entradas. Las nueve carpetas citadas abajo son una **organización interna heredada**, no categorías autorizadas. La vista y las asignaciones del catálogo ya usan los identificadores permitidos; la migración física de directorios queda pendiente.
 
 # Menú modular de Base-Matter — categorías, estilos y compatibilidad
 

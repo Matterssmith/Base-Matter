@@ -90,7 +90,11 @@ pub static CATEGORIES: &[Category] = &[
         es: "Configuración",
         en: "Configuration",
         icon: "⚙︎",
-        commands: &[set::main_command::COMMAND, set::set_style::COMMAND, set::set_lang::COMMAND],
+        commands: &[
+            set::main_command::COMMAND,
+            set::set_style::COMMAND,
+            set::set_lang::COMMAND,
+        ],
     },
     Category {
         id: "downloads",
@@ -167,7 +171,11 @@ pub static CATEGORIES: &[Category] = &[
         es: "Propietario",
         en: "Owner",
         icon: "♛",
-        commands: &[roles::main_command::COMMAND, roles::audit::COMMAND, set::set_role::COMMAND],
+        commands: &[
+            roles::main_command::COMMAND,
+            roles::audit::COMMAND,
+            set::set_role::COMMAND,
+        ],
     },
     Category {
         id: "profile",
@@ -567,11 +575,17 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
     if query == "all" {
         return verbose_menu(options);
     }
-    if CATEGORIES.iter().any(|cat| cat.id == canonical_category(query)) {
+    if CATEGORIES
+        .iter()
+        .any(|cat| cat.id == canonical_category(query))
+    {
         return render(&format!("menu {query}"), options);
     }
     if let [category, page] = query.split_whitespace().collect::<Vec<_>>().as_slice() {
-        if CATEGORIES.iter().any(|cat| cat.id == canonical_category(category)) {
+        if CATEGORIES
+            .iter()
+            .any(|cat| cat.id == canonical_category(category))
+        {
             return render(&format!("menu {category} {page}"), options);
         }
     }
@@ -774,9 +788,15 @@ mod tests {
             .contains("antiflood"));
         assert!(render("menu antis 9", options).is_err());
         assert!(render("menu unknown", options).is_err());
-        assert!(render("menu gacha", options).unwrap().contains("Sin comandos registrados"));
-        assert!(render("menu anti 5", options).unwrap().contains("antiflood"));
-        assert!(render("menu config", options).unwrap().contains("set lang es|en"));
+        assert!(render("menu gacha", options)
+            .unwrap()
+            .contains("Sin comandos registrados"));
+        assert!(render("menu anti 5", options)
+            .unwrap()
+            .contains("antiflood"));
+        assert!(render("menu config", options)
+            .unwrap()
+            .contains("set lang es|en"));
     }
 
     #[test]
