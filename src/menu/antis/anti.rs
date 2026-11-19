@@ -5,6 +5,6 @@ pub const COMMAND: CommandSpec = CommandSpec {
     name: "anti",
     es: "Consultar o configurar una protección",
     en: "Inspect or configure a protection",
-    usages: &["anti <tipo>", "anti <tipo> on|off|inherit"],
+    usages: &["anti <tipo>", "anti <tipo> on|off|inherit", "anti audit"],
     implemented: true,
 };

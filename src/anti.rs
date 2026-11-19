@@ -471,6 +471,7 @@ impl AntiStore {
         }
         match args {
             [] => self.all_status(socket, group),
+            [name] if name == "audit" => self.audit_summary(socket, group),
             // A bare `anti status` is the WhatsApp group-status filter.
             // The only all-rules inventory is the argument-free `anti`.
             [name] => self.display(socket, group, name),
@@ -657,17 +658,19 @@ impl AntiStore {
         } else {
             Vec::new()
         };
-        let state = if review.unreadable {
-            "edited-encrypted-unreadable"
-        } else if review.command_camouflage {
-            "command-camouflage"
-        } else if review.link_camouflage {
-            "link-camouflage"
+        let mut labels = Vec::new();
+        if review.unreadable {
+            labels.push("edited-encrypted-unreadable");
         } else if review.edited {
-            "edited-readable"
-        } else {
-            ""
-        };
+            labels.push("edited-readable");
+        }
+        if review.command_camouflage {
+            labels.push("command-camouflage");
+        }
+        if review.link_camouflage {
+            labels.push("link-camouflage");
+        }
+        let state = labels.join("+");
         if !state.is_empty() {
             // No message body, sender JID, raw ID or unencrypted proof kept.
             let db = self
@@ -681,6 +684,31 @@ impl AntiStore {
             )?;
         }
         Ok((review, findings))
+    }
+
+    /// Metadata-only counters for the owner. Raw message text, sender JIDs
+    /// and raw message IDs are never stored in this audit table.
+    pub fn audit_summary(&self, socket: &str, group: Option<&str>) -> Result<String> {
+        valid_socket(socket)?;
+        if let Some(group) = group {
+            valid_scope(socket, group)?;
+        }
+        let db = self.db.lock().map_err(|_| anyhow!("Protecciones no disponibles"))?;
+        let (readable, encrypted, commands, links): (i64, i64, i64, i64) = db.query_row(
+            "SELECT
+              COUNT(CASE WHEN event_state LIKE '%edited-readable%' THEN 1 END),
+              COUNT(CASE WHEN event_state LIKE '%edited-encrypted-unreadable%' THEN 1 END),
+              COUNT(CASE WHEN event_state LIKE '%command-camouflage%' THEN 1 END),
+              COUNT(CASE WHEN event_state LIKE '%link-camouflage%' THEN 1 END)
+             FROM anti_observation_audit
+             WHERE socket_id=?1 AND (?2 IS NULL OR group_jid=?2)",
+            params![socket, group],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )?;
+        let scope = if group.is_some() { "este grupo" } else { "socket global" };
+        Ok(format!(
+            "Anti · inspecciones de {scope} (solo lectura)\n             Editados legibles: {readable}\n             Editados cifrados sin inspeccionar: {encrypted}\n             Camuflaje de comandos: {commands}\n             Camuflaje de enlaces: {links}\n             No se ejecutaron acciones de moderación."
+        ))
     }
 
     /// Text-only link classification. No chat mutations occur here.

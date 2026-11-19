@@ -149,7 +149,7 @@ mod tests {
     fn disguised_command_is_detected_but_not_executed() {
         for text in [
             "＝／＞bot on",
-            "=/​>bot on",
+            "=/\u{200B}>bot on",
             "= / >bot off",
             "＃menu",
             "=/>mеnu",
