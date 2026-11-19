@@ -11,9 +11,8 @@ use buffa::MessageField;
 use whatsapp_rust::prelude::wa;
 
 fn valid_jid(value: &str) -> bool {
-    let domain_ok = value.ends_with("@g.us")
-        || value.ends_with("@s.whatsapp.net")
-        || value.ends_with("@lid");
+    let domain_ok =
+        value.ends_with("@g.us") || value.ends_with("@s.whatsapp.net") || value.ends_with("@lid");
     domain_ok
         && !value.starts_with('@')
         && value.len() <= 128

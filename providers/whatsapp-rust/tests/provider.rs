@@ -263,13 +263,7 @@ fn verified_owner_group_controls_are_signed_for_exact_group_jid() {
 fn verified_private_owner_chat_does_not_sign_group_only_commands() {
     let (vars, root) = fixture();
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
-    for command in [
-        "=/>on",
-        "=/>off",
-        "=/>start",
-        "=/>add++",
-        "=/>group on",
-    ] {
+    for command in ["=/>on", "=/>off", "=/>start", "=/>add++", "=/>group on"] {
         assert!(c
             .signed_verified_control(&event(command), Some(OWNER), Some(VERIFIED_LID))
             .unwrap()

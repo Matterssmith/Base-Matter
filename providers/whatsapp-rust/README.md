@@ -1,3 +1,11 @@
+### 2026-11-18 — Formato requerido para prototipo de insignias
+
+El CI del prototipo se detuvo únicamente en cuatro diferencias de
+Rustfmt: orden de módulos, agrupación de dominios, imports del test
+y array de comandos legado. Se aplicaron los cambios exactos, sin
+alterar autorización, protocolo ni flujo de ejecución.
+READMEs raíz y proveedor revisados 2/2; nuevo SHA requiere CI.
+
 ### 2026-11-18 — Prototipo Rust offline: sticker asociado al mensaje
 
 Se añadió providers/whatsapp-rust/src/sticker_badge.rs y sus pruebas
