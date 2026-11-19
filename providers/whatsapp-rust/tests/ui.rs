@@ -40,7 +40,6 @@ fn list_click(id: &str) -> wa::Message {
             single_select_reply: MessageField::some(
                 wa::message::list_response_message::SingleSelectReply {
                     selected_row_id: Some(id.to_owned()),
-                    ..Default::default()
                 },
             ),
             ..Default::default()
