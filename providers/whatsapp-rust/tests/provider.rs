@@ -323,18 +323,35 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
     // Every canonical category and all three selector pages must be
     // accepted for authenticated public readers without granting writes.
     for command in [
-        "=/>menu ia", "=/>menu anti", "=/>menu all", "=/>menu config",
-        "=/>menu downloads", "=/>menu economy", "=/>menu fun",
-        "=/>menu gacha", "=/>menu games", "=/>menu group",
-        "=/>menu info", "=/>menu links", "=/>menu main", "=/>menu mode",
-        "=/>menu owner", "=/>menu profile", "=/>menu reactions",
-        "=/>menu search", "=/>menu sockets", "=/>menu system",
-        "=/>menu utils", "=/>menu page 1", "=/>menu page 2",
+        "=/>menu ia",
+        "=/>menu anti",
+        "=/>menu all",
+        "=/>menu config",
+        "=/>menu downloads",
+        "=/>menu economy",
+        "=/>menu fun",
+        "=/>menu gacha",
+        "=/>menu games",
+        "=/>menu group",
+        "=/>menu info",
+        "=/>menu links",
+        "=/>menu main",
+        "=/>menu mode",
+        "=/>menu owner",
+        "=/>menu profile",
+        "=/>menu reactions",
+        "=/>menu search",
+        "=/>menu sockets",
+        "=/>menu system",
+        "=/>menu utils",
+        "=/>menu page 1",
+        "=/>menu page 2",
         "=/>menu page 3",
     ] {
         incoming.text = command;
         assert!(
-            config.signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+            config
+                .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
                 .unwrap()
                 .is_some(),
             "read-only menu was rejected: {command}"

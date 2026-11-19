@@ -5,8 +5,8 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use anyhow::{bail, Result};
-use serde_json::{json, Value};
 use base64::Engine;
+use serde_json::{json, Value};
 
 const MAX_TEXT_BYTES: usize = 3800;
 const MAX_HTML_BYTES: usize = 16 * 1024;
@@ -32,8 +32,8 @@ pub fn menu_html_preview(menu: &str) -> Result<String> {
             _ => escaped.push(ch),
         }
     }
-    let audio_data = base64::engine::general_purpose::STANDARD
-        .encode(crate::menu_sound::menu_tone_bytes());
+    let audio_data =
+        base64::engine::general_purpose::STANDARD.encode(crate::menu_sound::menu_tone_bytes());
     let result = format!(
         r#"<!doctype html>
 <html lang="es">

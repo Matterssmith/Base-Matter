@@ -4,12 +4,12 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
+pub mod menu_sound;
 pub mod recovery;
 pub mod rich_preview;
 pub mod rich_transport;
 pub mod sticker_badge;
 pub mod ui;
-pub mod menu_sound;
 
 // Provider-only fallback frame. The command registry lives in the
 // independent Base-Matter core; no core modules are imported here.
@@ -327,13 +327,35 @@ impl Config {
         let public_category = |value: &str| {
             matches!(
                 value,
-                "ia" | "anti" | "all" | "config" | "downloads"
-                    | "economy" | "fun" | "gacha" | "games" | "group"
-                    | "info" | "links" | "main" | "mode" | "owner"
-                    | "profile" | "reactions" | "search" | "sockets"
-                    | "system" | "utils"
-                    | "ai" | "antis" | "set" | "bot" | "roles"
-                    | "status" | "navigation" | "sandbox"
+                "ia"
+                    | "anti"
+                    | "all"
+                    | "config"
+                    | "downloads"
+                    | "economy"
+                    | "fun"
+                    | "gacha"
+                    | "games"
+                    | "group"
+                    | "info"
+                    | "links"
+                    | "main"
+                    | "mode"
+                    | "owner"
+                    | "profile"
+                    | "reactions"
+                    | "search"
+                    | "sockets"
+                    | "system"
+                    | "utils"
+                    | "ai"
+                    | "antis"
+                    | "set"
+                    | "bot"
+                    | "roles"
+                    | "status"
+                    | "navigation"
+                    | "sandbox"
             )
         };
         let safe_help_name = |name: &str| {

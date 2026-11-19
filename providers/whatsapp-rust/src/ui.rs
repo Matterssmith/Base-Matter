@@ -347,10 +347,16 @@ pub fn menu_lab_card(variant: MenuCardVariant) -> wa::Message {
     if variant == MenuCardVariant::Ts19 {
         buttons.push(button("matter.test.row.link", "Enlace"));
     }
-    let title = if variant == MenuCardVariant::Ts18 { "TS18" } else { "TS19" };
+    let title = if variant == MenuCardVariant::Ts18 {
+        "TS18"
+    } else {
+        "TS19"
+    };
     wa::Message {
         buttons_message: MessageField::some(wa::message::ButtonsMessage {
-            content_text: Some(format!("{title} · Matterssmith\nAudio · MP4 · Enlace\nPrueba de botones, sin descargas.")),
+            content_text: Some(format!(
+                "{title} · Matterssmith\nAudio · MP4 · Enlace\nPrueba de botones, sin descargas."
+            )),
             footer_text: Some("Base-Matter · interfaz de prueba".to_owned()),
             header_type: Some(wa::message::buttons_message::HeaderType::EMPTY),
             buttons,

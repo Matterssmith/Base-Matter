@@ -1,3 +1,11 @@
+## 2026-11-18 — Corrección Rustfmt laboratorio y listas canónicas
+
+El CI detectó formato no estándar en los módulos del proveedor, en
+el catálogo de 21 rutas y en sus pruebas. Se aplicó exactamente el
+estilo solicitado a imports, match, tarjetas y arrays de test.
+No se modificó la autorización de escritura ni se habilitó IA/Vault.
+README revisados: 2/2. CI del nuevo SHA por confirmar.
+
 ## 2026-11-18 — Selector: 21 categorías y páginas admitidas (pruebas)
 El proveedor de entrada de lectores acepta exclusivamente las 21
 categorías autorizadas y páginas 1–3, además de aliases antiguos,

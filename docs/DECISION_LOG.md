@@ -1,5 +1,14 @@
 # Historial de decisiones de implementación — Base-Matter
 
+## BASE-D005 — Rustfmt laboratorio, 18-11-2026
+- Problema: CI de provider y Rustcore rechazaron formato de arrays,
+  match e imports del laboratorio y los tests de catálogo.
+- Decisión: aplicar rustfmt sin variar comportamiento ni permisos.
+- Evidencia: workflows de SHA 05ec05c5bba5bb33b63dcb9aec457e2f8fcedda4.
+- Resultado: archivos modificados y publicados, CI nueva pendiente.
+- README revisados: 2/2.
+
+
 ## BASE-D004 — Ingreso de 21 categorías y páginas, 18-11-2026
 - Se evita que el click de un selector ya autorizado sea descartado
   por el signer público, manteniendo lectura sin permisos de modificación.

@@ -12,7 +12,7 @@ use tokio::{
     time::{timeout, Duration},
 };
 use whatsapp_matter_rust_provider::{
-    parse_control_ack,
+    menu_sound, parse_control_ack,
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
@@ -22,7 +22,7 @@ use whatsapp_matter_rust_provider::{
         legacy_row_probe_message, menu_lab_card, native_navigation_message,
         native_ui_probe_message, readonly_button_command, MenuCardVariant,
     },
-    menu_sound, Config, ControlAck, Event, SessionLease,
+    Config, ControlAck, Event, SessionLease,
 };
 use whatsapp_rust::{
     download::MediaType,

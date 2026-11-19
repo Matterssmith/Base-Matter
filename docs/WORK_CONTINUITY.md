@@ -11,7 +11,20 @@
   comprobar CI y corregir fallos; luego probar WhatsApp real.
 - README revisados: 2/2. beta/stable sin cambios.
 
-# Checkpoint de continuidad — Base-Matter
+# Checkpoint 2026-11-18 — Rustfmt de laboratorio
+
+- SHA base: 05ec05c5bba5bb33b63dcb9aec457e2f8fcedda4.
+- Commit: "fix(alpha): rustfmt TS18 TS19 HTML audio menu lab".
+- Modificado: lib/main/ui/rich_preview del proveedor, pruebas de
+  proveedor/UI/lector público, instrucciones y los README.
+- Resultado de CI anterior: fallo de formato (sin ejecutar tests).
+- Resultado nuevo: pendiente de GitHub Actions Rust Linux/Windows
+  y proveedor independiente.
+- Próximo: leer logs CI del nuevo commit, corregir errores de
+  compilación o pruebas, actualizar registros por commit, probar
+  menú con sonido y botones en WhatsApp real.
+- README revisados: 2/2. beta/stable sin cambios.
+
 
 ## Checkpoint 2026-11-18 — experimento TS18/TS19 + HTML + audio
 - SHA anterior: 206d50707ec556880fe4e65b912e40245bef722a.

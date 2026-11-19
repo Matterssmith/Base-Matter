@@ -251,14 +251,10 @@ fn ts18_ts19_menu_lab_cards_preserve_readonly_click_mapping() {
         let card = menu_lab_card(variant);
         let buttons = &card.buttons_message.as_option().unwrap().buttons;
         assert_eq!(buttons.len(), size);
-        for (index, expected) in [
-            "=/>test ack audio",
-            "=/>test ack mp4",
-            "=/>test ack link",
-        ]
-        .iter()
-        .take(size)
-        .enumerate()
+        for (index, expected) in ["=/>test ack audio", "=/>test ack mp4", "=/>test ack link"]
+            .iter()
+            .take(size)
+            .enumerate()
         {
             let id = buttons[index].button_id.as_ref().unwrap();
             assert_eq!(readonly_button_command(&legacy_click(id)), Some(*expected));
