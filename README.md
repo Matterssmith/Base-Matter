@@ -1,3 +1,7 @@
+## Iniciativa futura Marketplace-Matter: límites de Base-Matter
+
+[Contrato de integración sin dependencia comercial](docs/COMMERCE_ECOSYSTEM_BOUNDARY.md) · [Requisitos globales](https://github.com/Matterssmith/Marketplace-Matter/blob/matter/docs/REQUISITOS_ECOSISTEMA_COMERCIO.md). Esta actualización no habilita funciones de tienda ni de Bot-Matter.
+
 ## 2026-11-19 — Corrección de formato en acceso invitado
 
 - Base alpha anterior: 3c1fa6f325df63718eb67eefb9ce1a66ff4424e4.

@@ -1,3 +1,8 @@
+## BASE-D017 — Frontera de negocio Matterssmith Commerce (2026-11-19)
+
+- Idea tienda/hardware/generador del propietario convertida a contrato transversal; Base-Matter no implementa lógicas de mercado ni datos Vault.
+- Contratos neutrales y seguridad siguen siendo su función; Bot-Matter permanece bloqueado. SHA previo 24349b0ae29c88ebecda571de01821fe310b8800. No hay pruebas comerciales activas.
+
 ## BASE-D016 — Rustfmt de contrato guest (2026-11-19)
 
 - CI del SHA 3c1fa6f325df63718eb67eefb9ce1a66ff4424e4: proveedor PASS, Rustfmt FAIL. Aplicar solo cambios de estilo requeridos por CI en lib.rs y tests/whatsapp_public_readonly.rs.

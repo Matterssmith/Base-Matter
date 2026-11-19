@@ -1,3 +1,12 @@
+## 2026-11-19 — Integración futura Matterssmith Commerce (solo contrato)
+
+- SHA Base `alpha` anterior: `24349b0ae29c88ebecda571de01821fe310b8800`.
+- Matriz MAT-COM-001..018 en `https://github.com/Matterssmith/Marketplace-Matter/blob/matter/docs/REQUISITOS_ECOSISTEMA_COMERCIO.md`; función de Base: interfaces neutrales, eventos y seguridad, no negocio de tienda.
+- Documento `docs/COMMERCE_ECOSYSTEM_BOUNDARY.md`. Sin cambios en código, proveedores, gating, sesiones ni bloqueo de Bot-Matter.
+- ZIP del propietario revisado; distingue marketplace de software, generador experimental, relevadores y Tri-Red. No se copian datos privados ni archivos completos.
+- README revisado: 1/1 en este repo. Sin pruebas funcionales nuevas; solo verificación de documentación/commit.
+- Próximo: mantener prioridades originales de Base-Matter, sin despliegue comercial hasta que se apruebe y se valide.
+
 ## 2026-11-19 — Corrección de formato en acceso invitado
 
 - Base alpha anterior: 3c1fa6f325df63718eb67eefb9ce1a66ff4424e4.

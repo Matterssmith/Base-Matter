@@ -1,3 +1,7 @@
+## Límite de comercio Matter
+
+Revisar `docs/COMMERCE_ECOSYSTEM_BOUNDARY.md` antes de añadir código de producto, propiedad, garantía, flete o API de tienda a Base-Matter. Base solo contratos de core y seguridad, Vault autoridad de propiedad y roles, Marketplace dominio comercial. Mantener la prioridad actual y Bot-Matter bloqueado; registrar documentación/README en cada commit.
+
 ## 2026-11-19 — Corrección de formato en acceso invitado
 
 - Base alpha anterior: 3c1fa6f325df63718eb67eefb9ce1a66ff4424e4.
