@@ -1,3 +1,15 @@
+### 2026-11-18 — CI: corrección de formato UI y colisiones Windows
+
+El SHA fb90999e falló en formato del proveedor UI, espacios en blanco
+del archivo de tests y una prueba de SQLite en Windows porque el nombre
+temporal usaba reloj/PID y podía colisionar tras reiniciar el test.
+Se aplicó el formato exacto indicado por Rustfmt a los dos archivos
+de NativeFlow; el directorio de prueba de replay ahora usa 128 bits
+aleatorios, reintento de colisión y limpieza por RAII.
+El menú/código de ejecución, Vault, roles y sesiones permanecen igual.
+Se revisaron los dos README (2/2). CI debe confirmar este nuevo SHA;
+no inferir compatibilidad del teléfono por pasar pruebas offline.
+
 ### Botón selector + Ayuda + Ver todo, y lectura de respuestas Go-style
 
 Se reemplazaron los tres quick replies fijos por un `single_select` con nueve filas para categorías y dos botones de consulta. El parser reconoce tanto `NativeFlowResponseMessage` como `ButtonsResponseMessage` cuando los IDs pertenecen a la lista cerrada. Sin comandos administrativos, envíos espontáneos ni descarga de medios. El cliente real Android/iOS no ha sido validado. README revisado.

@@ -71,7 +71,6 @@ fn context_help_id(command: &str) -> &'static str {
     }
 }
 
-
 /// Convert a *small* allowlisted HTML-style fragment to WhatsApp text
 /// formatting. WhatsApp does not interpret arbitrary HTML or JavaScript.
 /// Reject attributes, scripts, unknown tags and unclosed markup.
@@ -239,7 +238,10 @@ pub fn readonly_button_command(message: &wa::Message) -> Option<&'static str> {
     let id = if let Some(response) = message.interactive_response_message.as_option() {
         let NativeResponse::NativeFlowResponseMessage(native) =
             response.interactive_response_message.as_ref()?;
-        if !matches!(native.name.as_deref(), Some("quick_reply" | "single_select")) {
+        if !matches!(
+            native.name.as_deref(),
+            Some("quick_reply" | "single_select")
+        ) {
             return None;
         }
         let json = native.params_json.as_deref()?;

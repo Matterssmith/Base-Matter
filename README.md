@@ -1,3 +1,15 @@
+### 2026-11-18 — CI: corrección de formato UI y colisiones Windows
+
+El SHA fb90999e falló en formato del proveedor UI, espacios en blanco
+del archivo de tests y una prueba de SQLite en Windows porque el nombre
+temporal usaba reloj/PID y podía colisionar tras reiniciar el test.
+Se aplicó el formato exacto indicado por Rustfmt a los dos archivos
+de NativeFlow; el directorio de prueba de replay ahora usa 128 bits
+aleatorios, reintento de colisión y limpieza por RAII.
+El menú/código de ejecución, Vault, roles y sesiones permanecen igual.
+Se revisaron los dos README (2/2). CI debe confirmar este nuevo SHA;
+no inferir compatibilidad del teléfono por pasar pruebas offline.
+
 # ꧁✪⃢.✪ 𝐌𝖆𝖙𝖙𝖊𝖗𝖘𝖘𝖒𝖎𝖙𝖍۞₪»̶ ༄☾︎𝐌𝐒☽︎༄
 
 <div align="center">

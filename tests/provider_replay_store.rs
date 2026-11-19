@@ -15,22 +15,27 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::thread;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 struct TemporaryDirectory(PathBuf);
 
 impl TemporaryDirectory {
     fn new() -> Self {
-        let nonce = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("system clock must be after Unix epoch")
-            .as_nanos();
-        let path = std::env::temp_dir().join(format!(
-            "matter-base-replay-test-{}-{nonce}",
-            std::process::id()
-        ));
-        fs::create_dir(&path).expect("test directory must be unique");
-        Self(path)
+        // Random filenames prevent time/PID collisions across Windows CI reruns.
+        for _ in 0..16 {
+            let mut salt = [0u8; 16];
+            getrandom::fill(&mut salt).expect("random test directory salt");
+            let path = std::env::temp_dir().join(format!(
+                "matter-base-replay-test-{}-{}",
+                std::process::id(),
+                hex::encode(salt)
+            ));
+            match fs::create_dir(&path) {
+                Ok(()) => return Self(path),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(error) => panic!("failed to create test directory: {error}"),
+            }
+        }
+        panic!("failed to allocate unique test directory after 16 attempts")
     }
 }
 

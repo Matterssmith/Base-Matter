@@ -1,4 +1,4 @@
-/* 
+/*
  * WhatsApp-Matter — native category selection and read-only button reply tests.
  *
  * Créditos:
@@ -6,8 +6,7 @@
  */
 use buffa::MessageField;
 use whatsapp_matter_rust_provider::ui::{
-    native_menu_message, native_navigation_message, readonly_button_command,
-    short_html_to_whatsapp,
+    native_menu_message, native_navigation_message, readonly_button_command, short_html_to_whatsapp,
 };
 use whatsapp_rust::prelude::wa;
 
@@ -35,12 +34,10 @@ fn native_click(id: &str, name: &str) -> wa::Message {
 
 fn legacy_click(id: &str) -> wa::Message {
     wa::Message {
-        buttons_response_message: MessageField::some(
-            wa::message::ButtonsResponseMessage {
-                selected_button_id: Some(id.to_owned()),
-                ..Default::default()
-            },
-        ),
+        buttons_response_message: MessageField::some(wa::message::ButtonsResponseMessage {
+            selected_button_id: Some(id.to_owned()),
+            ..Default::default()
+        }),
         ..Default::default()
     }
 }
@@ -50,7 +47,10 @@ fn menu_has_category_selector_and_two_quick_replies() {
     let original = include_str!("../../../templates/matterssmith-menu.txt").trim_end();
     let message = native_menu_message(original).unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
-    assert_eq!(interactive.body.as_option().unwrap().text.as_deref(), Some(original));
+    assert_eq!(
+        interactive.body.as_option().unwrap().text.as_deref(),
+        Some(original)
+    );
     let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
         interactive.interactive_message.as_ref()
     else {
@@ -94,15 +94,32 @@ fn both_native_and_legacy_buttons_map_only_readonly_ids() {
         ("matter.read.menu.antis", "=/>menu antis"),
         ("matter.read.help.antis", "=/>help antis"),
     ] {
-        assert_eq!(readonly_button_command(&native_click(id, "quick_reply")), Some(command));
-        assert_eq!(readonly_button_command(&native_click(id, "single_select")), Some(command));
+        assert_eq!(
+            readonly_button_command(&native_click(id, "quick_reply")),
+            Some(command)
+        );
+        assert_eq!(
+            readonly_button_command(&native_click(id, "single_select")),
+            Some(command)
+        );
         assert_eq!(readonly_button_command(&legacy_click(id)), Some(command));
     }
-    for id in ["matter.bot.on", "=/>bot on", "matter.read.roles.grant", "matter.read.status --global"] {
-        assert_eq!(readonly_button_command(&native_click(id, "quick_reply")), None);
+    for id in [
+        "matter.bot.on",
+        "=/>bot on",
+        "matter.read.roles.grant",
+        "matter.read.status --global",
+    ] {
+        assert_eq!(
+            readonly_button_command(&native_click(id, "quick_reply")),
+            None
+        );
         assert_eq!(readonly_button_command(&legacy_click(id)), None);
     }
-    assert_eq!(readonly_button_command(&native_click("matter.read.menu", "admin_mutate")), None);
+    assert_eq!(
+        readonly_button_command(&native_click("matter.read.menu", "admin_mutate")),
+        None
+    );
     assert_eq!(readonly_button_command(&wa::Message::default()), None);
 }
 
@@ -112,7 +129,12 @@ fn html_style_is_restricted_and_does_not_execute_markup() {
         short_html_to_whatsapp("<b>Matterssmith</b><br><i>Control</i>").unwrap(),
         "*Matterssmith*\n_Control_"
     );
-    for value in ["<script>alert(1)</script>", "<a href=x>x</a>", "<b onclick=x>x</b>", "<b>unclosed"] {
+    for value in [
+        "<script>alert(1)</script>",
+        "<a href=x>x</a>",
+        "<b onclick=x>x</b>",
+        "<b>unclosed",
+    ] {
         assert!(short_html_to_whatsapp(value).is_err());
     }
     assert!(native_menu_message("").is_err());
