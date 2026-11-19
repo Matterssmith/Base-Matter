@@ -48,7 +48,10 @@ fn menu_has_exactly_one_categories_selector() {
     let original = include_str!("../../../templates/matterssmith-menu.txt").trim_end();
     let message = native_menu_message(original).unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
-    assert_eq!(interactive.body.as_option().unwrap().text.as_deref(), Some(original));
+    assert_eq!(
+        interactive.body.as_option().unwrap().text.as_deref(),
+        Some(original)
+    );
     let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
         interactive.interactive_message.as_ref()
     else {
@@ -59,17 +62,22 @@ fn menu_has_exactly_one_categories_selector() {
     let categories: serde_json::Value =
         serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
     let rows = categories["sections"][0]["rows"].as_array().unwrap();
-    let ids: Vec<String> = serde_json::from_str(
-        include_str!("../../../templates/menu-visible-categories.json"),
-    ).unwrap();
+    let ids: Vec<String> = serde_json::from_str(include_str!(
+        "../../../templates/menu-visible-categories.json"
+    ))
+    .unwrap();
     assert_eq!(rows.len(), ids.len());
     for (row, id) in rows.iter().zip(ids) {
         assert_eq!(row["id"], format!("matter.read.menu.{id}"));
     }
     assert!(rows.iter().all(|row| ![
-        "matter.read.menu.group", "matter.read.menu.gacha", "matter.read.menu.sockets",
-        "matter.read.menu.system", "matter.read.menu.downloads",
-    ].contains(&row["id"].as_str().unwrap())));
+        "matter.read.menu.group",
+        "matter.read.menu.gacha",
+        "matter.read.menu.sockets",
+        "matter.read.menu.system",
+        "matter.read.menu.downloads",
+    ]
+    .contains(&row["id"].as_str().unwrap())));
     assert!(message.conversation.is_none());
 }
 
@@ -92,7 +100,10 @@ fn submenus_offer_only_active_categories_and_one_selector() {
         };
         assert_eq!(native.buttons.len(), 1);
         assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
-        assert_eq!(native.buttons[0].button_params_json, expected_nav.buttons[0].button_params_json);
+        assert_eq!(
+            native.buttons[0].button_params_json,
+            expected_nav.buttons[0].button_params_json
+        );
     }
     assert!(native_navigation_message("Unsafe", "=/>set role owner").is_err());
 }

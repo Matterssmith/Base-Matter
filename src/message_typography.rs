@@ -44,15 +44,23 @@ pub fn format_segment(value: &str, format: TextFormat) -> Result<String> {
 /// (including accented letters) remain unchanged, preserving meaning.
 pub fn font_text(value: &str, font: &str) -> Result<String> {
     let catalog: Value = serde_json::from_str(include_str!("../templates/message-alphabets.json"))?;
-    let table = catalog["fonts"].get(font).ok_or_else(|| anyhow!("Unknown alphabet"))?;
+    let table = catalog["fonts"]
+        .get(font)
+        .ok_or_else(|| anyhow!("Unknown alphabet"))?;
     let keys = ["uppercase", "lowercase", "digits"];
-    let originals = ["ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz", "0123456789"];
+    let originals = [
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "abcdefghijklmnopqrstuvwxyz",
+        "0123456789",
+    ];
     let mut result = String::new();
     for ch in value.chars() {
         let mut mapped = None;
         for (key, original) in keys.iter().zip(originals) {
             if let Some(index) = original.chars().position(|letter| letter == ch) {
-                let glyphs = table[key].as_str().ok_or_else(|| anyhow!("Invalid alphabet"))?;
+                let glyphs = table[*key]
+                    .as_str()
+                    .ok_or_else(|| anyhow!("Invalid alphabet"))?;
                 mapped = glyphs.chars().nth(index);
                 if mapped.is_none() {
                     bail!("Incomplete alphabet");
@@ -78,7 +86,9 @@ pub fn render_message(title: &str, body: &str, font: &str) -> Result<String> {
     }
     let title = format_segment(&font_text(title, font)?, TextFormat::Bold)?;
     let template = include_str!("../templates/message-frame.txt");
-    let output = template.replace("{{TITLE}}", &title).replace("{{BODY}}", body);
+    let output = template
+        .replace("{{TITLE}}", &title)
+        .replace("{{BODY}}", body);
     if output.len() > 3800 {
         bail!("Decorative message exceeds WhatsApp safe length");
     }
@@ -91,8 +101,18 @@ mod tests {
 
     #[test]
     fn catalog_fonts_are_complete_and_reusable() {
-        for font in ["normal", "serif_bold", "sans_bold", "monospace", "fullwidth"] {
-            let alphabet = font_text("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", font).unwrap();
+        for font in [
+            "normal",
+            "serif_bold",
+            "sans_bold",
+            "monospace",
+            "fullwidth",
+        ] {
+            let alphabet = font_text(
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+                font,
+            )
+            .unwrap();
             assert_eq!(alphabet.chars().count(), 62);
         }
         assert_eq!(font_text("abc ñá 123", "normal").unwrap(), "abc ñá 123");
@@ -101,9 +121,18 @@ mod tests {
 
     #[test]
     fn whatsapp_text_modes_distinguish_content_from_decoration() {
-        assert_eq!(format_segment("Título", TextFormat::Bold).unwrap(), "*Título*");
-        assert_eq!(format_segment("menu anti", TextFormat::InlineCode).unwrap(), "`menu anti`");
-        assert_eq!(format_segment("codigo", TextFormat::CodeBlock).unwrap(), "```codigo```");
+        assert_eq!(
+            format_segment("Título", TextFormat::Bold).unwrap(),
+            "*Título*"
+        );
+        assert_eq!(
+            format_segment("menu anti", TextFormat::InlineCode).unwrap(),
+            "`menu anti`"
+        );
+        assert_eq!(
+            format_segment("codigo", TextFormat::CodeBlock).unwrap(),
+            "```codigo```"
+        );
         assert!(format_segment("un`safe", TextFormat::InlineCode).is_err());
         let result = render_message("Aviso", "`=/>status` — Estado del chat", "sans_bold").unwrap();
         assert!(result.starts_with("*꒦꒷✰"));

@@ -949,7 +949,9 @@ mod tests {
             "ia", "anti", "all", "config", "info", "main", "mode", "owner", "utils",
         ];
         assert_eq!(rows.len(), canonical.len());
-        let configured: Vec<String> = serde_json::from_str(include_str!("../templates/menu-visible-categories.json")).unwrap();
+        let configured: Vec<String> =
+            serde_json::from_str(include_str!("../templates/menu-visible-categories.json"))
+                .unwrap();
         assert_eq!(configured, visible_category_ids());
         for (row, id) in rows.iter().zip(canonical) {
             assert!(

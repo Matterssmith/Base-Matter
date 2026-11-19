@@ -1,3 +1,12 @@
+## 2026-11-19 — Rustfmt y tipado del cambio de menú
+
+- Base alpha previa: 83cc0f993e24b1ea70659c6e11d5bf8277015302.
+- GitHub Actions de la revisión inicial: formato FAIL en proveedor y Rust; se aplicaron exactamente las diferencias de rustfmt de ambos trabajos.
+- Se hace explícita la comparación `&str` frente a `String` del manifiesto de categorías activas, y el índice de los alfabetos JSON.
+- No cambian categorías, alcance, comandos, botones, permisos ni datos de Vault.
+- Siguiente: comprobar CI Linux/Windows/proveedor y después pantalla real en WhatsApp.
+- README revisados: 2/2. CI del siguiente SHA: pendiente.
+
 ## BASE-D009 — UX Leito y alfabetos reutilizables (2026-11-19)
 
 - Propuesta recibida: hacer perceptible la diferencia entre adorno y contenido mediante formatos de WhatsApp.
