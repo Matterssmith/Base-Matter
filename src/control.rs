@@ -730,7 +730,47 @@ impl ControlDispatcher {
                         output,
                     });
                 }
-                ["anti" | "antis", values @ ..] => {
+
+                ["anti", values @ ..] => {
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Solo el propietario del socket consulta protecciones");
+                    }
+                    let store = self
+                        .group_antis
+                        .as_ref()
+                        .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
+                    let (scope, query) = match values {
+                        ["--global", query @ ..] => {
+                            let filter = match query {
+                                [] => None,
+                                [name] => Some(*name),
+                                _ => bail!("Uso: anti --global [tipo]"),
+                            };
+                            return Ok(DispatchResult::Extension {
+                                command: "anti".to_owned(),
+                                output: AntiStore::global_factory_defaults(filter)?,
+                            });
+                        }
+                        ["--mod", query @ ..] => (None, *query),
+                        _ => (
+                            Some(group.ok_or_else(|| {
+                                anyhow!("Este chat no tiene filtros de grupo; usa anti --mod")
+                            })?),
+                            values,
+                        ),
+                    };
+                    let args = query.iter().map(|word| (*word).to_owned()).collect::<Vec<_>>();
+                    let output = store.inspect_command(receiving_socket, scope, &args)?;
+                    return Ok(DispatchResult::Extension {
+                        command: "anti".to_owned(),
+                        output,
+                    });
+                }
+                ["antis", ..] => {
+                    bail!("Comando retirado. Consulta los filtros con =/>anti");
+                }
+                ["set", "anti", values @ ..] | ["set", "antilink", values @ ..] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
                         bail!("Solo el propietario del socket configura protecciones");
@@ -739,138 +779,68 @@ impl ControlDispatcher {
                         .group_antis
                         .as_ref()
                         .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
-                    let global = values.first() == Some(&"--global");
-                    if global && group.is_some() {
-                        bail!(
-                            "Los valores globales se consultan en el chat privado del propietario"
-                        );
+                    // Legacy 'set antilink' remains a domain-list compatibility alias.
+                    // Neither that alias nor '--global' can mutate another socket.
+                    if values.iter().any(|word| *word == "--global") {
+                        bail!("La configuración global requiere autoridad Vault verificada; usa --mod para este socket");
                     }
-                    let scope = if global {
+                    let socket_scope = values.contains(&"--mod");
+                    let words: Vec<&str> = values
+                        .iter()
+                        .copied()
+                        .filter(|word| *word != "--mod")
+                        .collect();
+                    let config_scope = if socket_scope {
                         None
                     } else {
-                        Some(group.ok_or_else(|| anyhow!("Antis requieren grupo verificado"))?)
+                        Some(group.ok_or_else(|| {
+                            anyhow!("Para cambiar un filtro de grupo, usa ese grupo; --mod modifica el socket")
+                        })?)
                     };
-                    let args = values
-                        .iter()
-                        .skip(usize::from(global))
-                        .map(|s| (*s).to_owned())
-                        .collect::<Vec<_>>();
-                    let output = store.command(receiving_socket, scope, &args)?;
-                    return Ok(DispatchResult::Extension {
-                        command: "anti".to_owned(),
-                        output,
-                    });
-                }
-                ["set", "anti", "link", values @ ..] | ["set", "antilink", values @ ..] => {
-                    // The source JID is provided by the authenticated bridge.
-                    // The current chat is the exact signed group or private JID.
-                    let admission = self.bot_admission(receiving_socket, group, kind)?;
-                    if admission.owner_id != actor {
-                        bail!("Solo el propietario del socket configura dominios");
-                    }
-                    let store = self
-                        .group_antis
-                        .as_ref()
-                        .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
-                    let mut words = values.to_vec();
-                    let global_position = words.iter().position(|word| *word == "--global");
-                    if let Some(position) = global_position {
-                        words.remove(position);
-                        if words.contains(&"--global") {
-                            bail!("--global solo puede aparecer una vez");
+                    // Domain lists may be scoped to a verified private chat as well.
+                    if let [name, operation, domains @ ..] = words.as_slice() {
+                        if *name == "link"
+                            && matches!(
+                                *operation,
+                                "list" | "lista" | "add" | "agregar" | "del" | "delete" | "remove" | "quitar"
+                            )
+                        {
+                            let domain_scope = if socket_scope {
+                                None
+                            } else {
+                                Some(group.unwrap_or(source))
+                            };
+                            let entries = domains
+                                .iter()
+                                .map(|word| (*word).to_owned())
+                                .collect::<Vec<_>>();
+                            let output = store.edit_link_domains(
+                                receiving_socket,
+                                domain_scope,
+                                operation,
+                                &entries,
+                            )?;
+                            return Ok(DispatchResult::Extension {
+                                command: "set".to_owned(),
+                                output,
+                            });
                         }
                     }
-                    let scope = if global_position.is_some() {
-                        None
-                    } else {
-                        Some(group.unwrap_or(source))
-                    };
-                    if words.is_empty() {
-                        return Ok(DispatchResult::Extension {
-                            command: "set".to_owned(),
-                            output: "Uso:\n=/>set anti link list\n=/>set anti link add t.me instagram.com\n=/>set anti link del t.me\n=/>set anti link --global add youtube.com\n=/>set anti link --global list\nAgregar dominios no activa el filtro. Para grupos: =/>anti link on".to_owned(),
-                        });
+                    if words.iter().any(|word| word.starts_with("--")) {
+                        bail!("Opción de protección no reconocida");
                     }
-                    let operation = words[0];
-                    let domains: Vec<String> =
-                        words[1..].iter().map(|word| (*word).to_owned()).collect();
-                    let output =
-                        store.edit_link_domains(receiving_socket, scope, operation, &domains)?;
+                    let args = words.iter().map(|word| (*word).to_owned()).collect::<Vec<_>>();
+                    let output = store.configure_command(receiving_socket, config_scope, &args)?;
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
                         output,
                     });
                 }
-                ["set", "anti", values @ ..] => {
-                    let admission = self.bot_admission(receiving_socket, group, kind)?;
-                    if admission.owner_id != actor {
-                        bail!("Solo el propietario del socket configura protecciones");
-                    }
-                    let store = self
-                        .group_antis
-                        .as_ref()
-                        .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
-                    let global = values.first() == Some(&"--global");
-                    if global && group.is_some() {
-                        bail!("Los valores globales se configuran en el chat privado");
-                    }
-                    let scope =
-                        if global {
-                            None
-                        } else {
-                            Some(group.ok_or_else(|| {
-                                anyhow!("Protecciones requieren grupo verificado")
-                            })?)
-                        };
-                    let values = if global { &values[1..] } else { values };
-                    let [name, "action" | "accion" | "acciones" | "accions", action] = values
-                    else {
-                        bail!("Uso: set anti [--global] <tipo> action warn|delete|kick");
-                    };
-                    let output = store.set_action(receiving_socket, scope, name, action)?;
-                    return Ok(DispatchResult::Extension {
-                        command: "set".to_owned(),
-                        output,
-                    });
+                ["set", rule, ..] if ANTI_RULES.contains(rule) => {
+                    bail!("Usa =/>set anti <tipo> para configurar protecciones");
                 }
-                ["set", rule, "action" | "accion" | "acciones" | "accions", action]
-                    if ANTI_RULES.contains(rule) =>
-                {
-                    let group_id =
-                        group.ok_or_else(|| anyhow!("Protecciones requieren grupo verificado"))?;
-                    let admission = self.bot_admission(receiving_socket, group, kind)?;
-                    if admission.owner_id != actor {
-                        bail!("Solo el propietario del socket configura protecciones");
-                    }
-                    let store = self
-                        .group_antis
-                        .as_ref()
-                        .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
-                    let output =
-                        store.set_action(receiving_socket, Some(group_id), rule, action)?;
-                    return Ok(DispatchResult::Extension {
-                        command: "set".to_owned(),
-                        output,
-                    });
-                }
-                [rule, values @ ..] if ANTI_RULES.contains(rule) => {
-                    let group_id =
-                        group.ok_or_else(|| anyhow!("Protecciones requieren grupo verificado"))?;
-                    let admission = self.bot_admission(receiving_socket, group, kind)?;
-                    if admission.owner_id != actor {
-                        bail!("Solo el propietario del socket configura protecciones");
-                    }
-                    let store = self
-                        .group_antis
-                        .as_ref()
-                        .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
-                    let mut args = vec![(*rule).to_owned()];
-                    args.extend(values.iter().map(|s| (*s).to_owned()));
-                    let output = store.command(receiving_socket, Some(group_id), &args)?;
-                    return Ok(DispatchResult::Extension {
-                        command: "anti".to_owned(),
-                        output,
-                    });
+                [rule, ..] if ANTI_RULES.contains(rule) => {
+                    bail!("Usa =/>anti <tipo> para consultar, o =/>set anti <tipo> para modificar");
                 }
                 ["credits" | "creditos" | "créditos"] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;

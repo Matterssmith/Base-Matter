@@ -462,6 +462,63 @@ impl AntiStore {
         ))
     }
 
+
+    /// Read-only query. Never accepts on/off/inherit, even from a verified owner.
+    /// The mutation path is separately authorized by ControlDispatcher.
+    pub fn inspect_command(
+        &self,
+        socket: &str,
+        group: Option<&str>,
+        args: &[String],
+    ) -> Result<String> {
+        valid_socket(socket)?;
+        if let Some(group) = group {
+            valid_scope(socket, group)?;
+        }
+        match args {
+            [] => self.all_status(socket, group),
+            [name] if name == "audit" => self.audit_summary(socket, group),
+            [name] => self.display(socket, group, name),
+            [name, status] if status == "status" => self.display(socket, group, name),
+            _ => bail!("Consulta: anti [--mod|--global] [tipo] o anti audit"),
+        }
+    }
+
+    /// Immutable system-wide factory fallback; no shared Vault policy exists yet.
+    /// This is NOT an inventory of independent sockets or permission to edit them.
+    pub fn global_factory_defaults(name: Option<&str>) -> Result<String> {
+        let line = |rule: &str| format!("{}: off [warn]", display_name(rule));
+        let names = if let Some(name) = name {
+            vec![canonical_rule(name)?]
+        } else {
+            RULES.to_vec()
+        };
+        Ok(format!(
+            "Anti · predeterminado general (sin política global Vault; no refleja overrides por socket):\n{}",
+            names.into_iter().map(line).collect::<Vec<_>>().join("\n")
+        ))
+    }
+
+    /// Writes are reached only through the authenticated 'set anti' dispatcher.
+    pub fn configure_command(
+        &self,
+        socket: &str,
+        group: Option<&str>,
+        args: &[String],
+    ) -> Result<String> {
+        match args {
+            [name, action] if matches!(action.as_str(), "on" | "off" | "inherit") => {
+                self.command(socket, group, &[name.clone(), action.clone()])
+            }
+            [name, keyword, action]
+                if matches!(keyword.as_str(), "action" | "accion" | "acciones" | "accions") =>
+            {
+                self.set_action(socket, group, name, action)
+            }
+            _ => bail!("Uso: set anti [--mod] <tipo> on|off|inherit|action warn|delete|kick"),
+        }
+    }
+
     /// Group context uses Some(group), socket-global configuration uses None.
     /// No command in this parser may authorize its own caller.
     pub fn command(&self, socket: &str, group: Option<&str>, args: &[String]) -> Result<String> {

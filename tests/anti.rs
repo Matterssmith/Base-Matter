@@ -364,3 +364,33 @@ fn anti_audit_tracks_readable_opaque_edits_and_camouflage_by_group() {
         .unwrap()
         .contains("Editados legibles: 0"));
 }
+
+#[test]
+fn anti_readonly_and_global_baseline_are_separate_from_socket_changes() {
+    let store = AntiStore::open(":memory:").unwrap();
+    assert!(store.inspect_command(SOCKET, Some(GROUP), &args(&["link", "on"])).is_err());
+    assert!(store.inspect_command(SOCKET, Some(GROUP), &args(&["link", "inherit"])).is_err());
+    assert_eq!(
+        store.inspect_command(SOCKET, Some(GROUP), &args(&["link"])).unwrap(),
+        "link: off [warn]"
+    );
+    store.configure_command(SOCKET, None, &args(&["link", "on"])).unwrap();
+    assert_eq!(
+        store.inspect_command(SOCKET, None, &args(&["link"])).unwrap(),
+        "link: on [warn]"
+    );
+    assert!(AntiStore::global_factory_defaults(Some("link"))
+        .unwrap()
+        .contains("link: off [warn]"));
+    assert!(AntiStore::global_factory_defaults(Some("unknown")).is_err());
+    store.configure_command(SOCKET, Some(GROUP), &args(&["link", "off"])).unwrap();
+    assert_eq!(
+        store.inspect_command(SOCKET, Some(GROUP), &args(&["link"])).unwrap(),
+        "link: off [warn]"
+    );
+    store.configure_command(SOCKET, Some(GROUP), &args(&["link", "inherit"])).unwrap();
+    assert_eq!(
+        store.inspect_command(SOCKET, Some(GROUP), &args(&["link"])).unwrap(),
+        "link: on [warn]"
+    );
+}
