@@ -34,6 +34,21 @@ fn native_click(id: &str, name: &str) -> wa::Message {
     }
 }
 
+fn list_click(id: &str) -> wa::Message {
+    wa::Message {
+        list_response_message: MessageField::some(wa::message::ListResponseMessage {
+            single_select_reply: MessageField::some(
+                wa::message::list_response_message::SingleSelectReply {
+                    selected_row_id: Some(id.to_owned()),
+                    ..Default::default()
+                },
+            ),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
+}
+
 fn legacy_click(id: &str) -> wa::Message {
     wa::Message {
         buttons_response_message: MessageField::some(wa::message::ButtonsResponseMessage {
@@ -132,6 +147,7 @@ fn both_native_and_legacy_buttons_map_only_readonly_ids() {
             Some(command)
         );
         assert_eq!(readonly_button_command(&legacy_click(id)), Some(command));
+        assert_eq!(readonly_button_command(&list_click(id)), Some(command));
     }
     for id in [
         "matter.bot.on",
@@ -144,6 +160,7 @@ fn both_native_and_legacy_buttons_map_only_readonly_ids() {
             None
         );
         assert_eq!(readonly_button_command(&legacy_click(id)), None);
+        assert_eq!(readonly_button_command(&list_click(id)), None);
     }
     assert_eq!(
         readonly_button_command(&native_click("matter.read.menu", "admin_mutate")),
@@ -202,6 +219,7 @@ fn owner_ui_probe_has_two_quick_replies_and_two_selectable_rows() {
             Some(command)
         );
         assert_eq!(readonly_button_command(&legacy_click(id)), Some(command));
+        assert_eq!(readonly_button_command(&list_click(id)), Some(command));
     }
     assert_eq!(
         readonly_button_command(&native_click("matter.test.run.code", "quick_reply")),
@@ -245,6 +263,7 @@ fn legacy_row_uses_three_response_buttons_without_network_or_media() {
         ("matter.test.row.link", "=/>test ack link"),
     ] {
         assert_eq!(readonly_button_command(&legacy_click(id)), Some(command));
+        assert_eq!(readonly_button_command(&list_click(id)), Some(command));
     }
 }
 

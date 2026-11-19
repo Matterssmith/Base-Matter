@@ -552,11 +552,12 @@ async fn main() -> Result<()> {
                 let sender = source.sender.to_non_ad_string();
                 let own_pn = ctx.client.pn().map(|jid| jid.to_non_ad_string());
                 let own_lid = ctx.client.lid().map(|jid| jid.to_non_ad_string());
+                let selected_button = readonly_button_command(&ctx.message);
                 let data = Event {
                     chat_jid: &chat,
                     sender_jid: &sender,
                     message_id: &ctx.info.id,
-                    text: readonly_button_command(&ctx.message)
+                    text: selected_button
                         .or_else(|| ctx.message.text_content())
                         .unwrap_or_default(),
                     from_me: source.is_from_me,
@@ -651,6 +652,17 @@ async fn main() -> Result<()> {
                                     _ => "Base-Matter: solicitud procesada.".to_owned(),
                                 }
                             };
+                            // Never mistake a typed ACK for a real button click.
+                            // The controller already verified this callback.
+                            let response = if selected_button.is_some()
+                                && actual_command.starts_with("=/>test ack ")
+                            {
+                                format!(
+                                    "✅ Botón verificado: `{actual_command}`\n                                     WhatsApp entregó una respuesta interactiva                                      autenticada. Sin ejecutar acciones."
+                                )
+                            } else {
+                                response
+                            };
                             let response = if debug_requested
                                 && (actual_command == "=/>start"
                                     || actual_command == "=/>add++"
@@ -735,6 +747,9 @@ async fn main() -> Result<()> {
                             // Private enabled chats may inspect read-only
                             // NativeFlow test buttons when the operator opted in.
                             // HTML, audio and legacy comparison remain owner-self only.
+                            if sent && selected_button.is_some() {
+                                println!("Base-Matter: interactive control received and authenticated");
+                            }
                             if sent && menu_lab && is_root && !data.is_group {
                                 let owner_self_chat =
                                     frame.from_me && frame.chat_jid == config.owner_jid;

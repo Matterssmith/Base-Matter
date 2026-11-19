@@ -1,3 +1,9 @@
+## BASE-D013 — Decodificar ListResponse + ACK interactivo verificado (2026-11-19)
+
+- Una burbuja «=/>menu anti» no equivale a que el proveedor haya recibido el clic.
+- Interpretar ListResponse y TemplateButtonReply además de NativeFlow y botones clásicos, con IDs cerrados y HMAC.
+- Distinguir ACK tecleado del callback real para test UI; sin permisos adicionales. SHA base 37698e3967af5b2857c252473d5ad792a289a3e1. CI pendiente. README 2/2.
+
 ## BASE-D012 — Rustfmt y regresión de botones NativeFlow (2026-11-19)
 
 - SHA base: 351d4d4a416cf8aa6b15fc33a6607bf1150763b7; el CI de proveedor marcó fallas de formato solamente.

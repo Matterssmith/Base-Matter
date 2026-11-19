@@ -489,6 +489,8 @@ pub fn legacy_row_probe_message() -> wa::Message {
 /// The normal WhatsApp identity, HMAC and replay checks run after mapping.
 /// Legacy button replies are recognized for Go-style ButtonsRow compatibility.
 pub fn readonly_button_command(message: &wa::Message) -> Option<&'static str> {
+    // WhatsApp list rows are not guaranteed to arrive as NativeFlow.
+    // Select by opaque protocol IDs only; never trust visible text.
     let id = if let Some(response) = message.interactive_response_message.as_option() {
         let NativeResponse::NativeFlowResponseMessage(native) =
             response.interactive_response_message.as_ref()?;
@@ -503,13 +505,27 @@ pub fn readonly_button_command(message: &wa::Message) -> Option<&'static str> {
             return None;
         }
         let value: serde_json::Value = serde_json::from_str(json).ok()?;
-        value.get("id")?.as_str().map(str::to_owned)
-    } else {
-        message
-            .buttons_response_message
+        value
+            .get("id")
+            .or_else(|| value.get("selectedRowId"))
+            .or_else(|| value.get("selected_row_id"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned)
+    } else if let Some(response) = message.list_response_message.as_option() {
+        response
+            .single_select_reply
             .as_option()?
-            .selected_button_id
+            .selected_row_id
             .clone()
+    } else if let Some(response) = message.buttons_response_message.as_option() {
+        response.selected_button_id.clone()
+    } else if let Some(response) = message.template_button_reply_message.as_option() {
+        response.selected_id.clone()
+    } else {
+        None
     }?;
+    if id.len() > 128 {
+        return None;
+    }
     button_command(&id)
 }

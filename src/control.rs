@@ -443,7 +443,9 @@ impl ControlDispatcher {
                 let output = match parts.as_slice() {
                     ["=/>test", "ui"] => "🧪 Prueba NativeFlow: botones y selector. Si aparecen, púlsalos. No se modifica ningún dato.".to_owned(),
                     ["=/>test", "row"] => "🧪 Prueba ButtonsRow: Audio, MP4 y Enlace. No se ejecutan descargas.".to_owned(),
-                    ["=/>test", "ack", selected] => format!("✅ Prueba: selección {selected} recibida por el controlador (solo lectura)."),
+                    ["=/>test", "ack", selected] => format!(
+                        "🧪 ACK {selected}: comando de texto autorizado. Solo una respuesta                          interactiva detectada por el proveedor prueba la pulsación."
+                    ),
                     _ => "🧪 Pruebas del chat: =/>test ui (NativeFlow), =/>test row (ButtonsRow). Requieren bot activo. =/>test html es exclusivo del propietario en su chat privado.".to_owned(),
                 };
                 Ok(DispatchResult::Extension {
@@ -667,9 +669,9 @@ impl ControlDispatcher {
                         ]
                         .join("\n"),
                         ["test", "ack", selection] => format!(
-                            "✅ Controlador: selección {selection} recibida y autenticada.\n\
-                             Si tocaste un botón o una fila, confirma visualmente la respuesta.\n\
-                             Escribir el comando manualmente NO demuestra que funcione el botón."
+                            "🧪 ACK {selection}: comando firmado y autorizado.\n\
+                             Escribirlo manualmente NO demuestra una pulsación.\n\
+                             El proveedor confirmará el evento interactivo si lo recibe."
                         ),
                         _ => [
                             "🧪 Pruebas visuales",
