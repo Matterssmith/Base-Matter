@@ -649,7 +649,10 @@ fn group_anti_observation_is_signed_without_owner_privileges() {
     assert_eq!(signed.actor_id, msg.sender_jid);
     assert!(!signed.from_me);
     assert_eq!(signed.chat_jid, msg.chat_jid);
-    assert_eq!(signed.signature, sign_frame(&signed, &config.bridge_key).unwrap());
+    assert_eq!(
+        signed.signature,
+        sign_frame(&signed, &config.bridge_key).unwrap()
+    );
     let mut self_edit = msg;
     self_edit.text = "";
     assert!(config

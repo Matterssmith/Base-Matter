@@ -112,7 +112,9 @@ fn help_queries_support_command_metadata_and_category_pages() {
     assert!(menu::render_help("not-registered", options).is_err());
     let anti_menu = menu::render("menu anti", options).unwrap();
     assert!(anti_menu.contains("=/>antilink"));
-    assert!(anti_menu.contains("=/>set anti link"));
+    assert!(menu::render("menu anti 4", options)
+        .unwrap()
+        .contains("=/>set anti link"));
     let all_anti = menu::render("menu all", options).unwrap();
     for retired in [
         "antilinkwa",
