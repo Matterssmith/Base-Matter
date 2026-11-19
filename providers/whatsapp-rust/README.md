@@ -1,3 +1,11 @@
+## 2026-11-19 — Puente público para capacidades protegidas (alpha, no desplegado)
+
+- Se creó la API Rust de invocación anti.link en src/capabilities/anti_link.rs; sólo arma peticiones, no contiene implementación privada, claves ni permisos. Ausencia de gateway = rechazo. Los antis y =/>anti link existentes no cambian.
+- Integradores podrán asociar su comando #antilink al puente mediante un gateway autenticado cuando exista, sin recibir código de ejecución ni acceso a repositorios privados. El ejecutor protegido deberá comprobar decisiones actuales y verificadas por alcance; los datos públicos de contexto no autentican a nadie.
+- Scope: grupo, socket (--mod) y valores generales de lectura (--global). No se permiten mutaciones generales. Especificación: docs/PRIVATE_CAPABILITY_BRIDGE.md.
+- README raíz y del proveedor revisados; pruebas unitarias de contrato añadidas. CI y pruebas reales pendientes; gateway privado y autoridad remota todavía NO desplegados. Alpha solamente, beta/stable intactos; Bot-Matter bloqueado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-19 — Corrección del menú estático por ámbito
 
 - Base previa c8554033bb0594886443a90c14dd0811576021c8. La plantilla `templates/matterssmith-menu.txt` mostraba el socket como `status --global`, heredado de una convención retirada. Se sustituyó por `status --mod`, se añadió consulta de predeterminado general `status --global` y se renombró el encendido por defecto del socket como `bot --mod on/off`.
