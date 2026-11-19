@@ -227,10 +227,11 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
         .iter()
         .skip(start)
         .take(PAGE_SIZE)
-        .map(|(_, label, id)| {
+        .map(|(category, _, id)| {
+            // WhatsApp shows the selected row's title as the outgoing
+            // chat bubble. It must be the exact command, not decoration.
             serde_json::json!({
-                "title": label,
-                "description": "Abrir menú",
+                "title": format!("=/>menu {category}"),
                 "id": id
             })
         })
@@ -381,6 +382,66 @@ pub fn menu_lab_card(variant: MenuCardVariant) -> wa::Message {
             footer_text: Some("Base-Matter · interfaz de prueba".to_owned()),
             header_type: Some(wa::message::buttons_message::HeaderType::EMPTY),
             buttons,
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
+}
+
+/// NativeFlow versions of the TS18/TS19 laboratory cards.
+/// Unlike legacy ButtonsMessage, these use the same interactive transport
+/// as the category selector already visible on Android.
+/// A successful send is NOT proof of client-side rendering.
+pub fn native_menu_lab_card(variant: MenuCardVariant) -> wa::Message {
+    let choices: &[(&str, &str)] = if variant == MenuCardVariant::Ts18 {
+        &[("matter.test.row.audio", "Audio"), ("matter.test.row.mp4", "MP4")]
+    } else {
+        &[
+            ("matter.test.row.audio", "Audio"),
+            ("matter.test.row.mp4", "MP4"),
+            ("matter.test.row.link", "Enlace"),
+        ]
+    };
+    let buttons = choices
+        .iter()
+        .map(|(id, label)| {
+            wa::message::interactive_message::native_flow_message::NativeFlowButton {
+                name: Some("quick_reply".to_owned()),
+                button_params_json: Some(
+                    serde_json::json!({
+                        "display_text": label,
+                        "id": id
+                    })
+                    .to_string(),
+                ),
+            }
+        })
+        .collect();
+    let title = if variant == MenuCardVariant::Ts18 {
+        "TS18"
+    } else {
+        "TS19"
+    };
+    wa::Message {
+        interactive_message: MessageField::some(wa::message::InteractiveMessage {
+            body: MessageField::some(wa::message::interactive_message::Body {
+                text: Some(format!(
+                    "{title} · Matterssmith\\nBotones de prueba: no ejecutan descargas."
+                ).replace("\\n", "\n")),
+            }),
+            footer: MessageField::some(wa::message::interactive_message::Footer {
+                text: Some("Base-Matter · laboratorio NativeFlow".to_owned()),
+                ..Default::default()
+            }),
+            interactive_message: Some(
+                wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(Box::new(
+                    wa::message::interactive_message::NativeFlowMessage {
+                        buttons,
+                        message_version: Some(1),
+                        ..Default::default()
+                    },
+                )),
+            ),
             ..Default::default()
         }),
         ..Default::default()

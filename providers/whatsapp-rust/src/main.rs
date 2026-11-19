@@ -19,8 +19,9 @@ use whatsapp_matter_rust_provider::{
     render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
     ui::{
-        legacy_row_probe_message, menu_lab_card, native_navigation_message,
-        native_ui_probe_message, readonly_button_command, MenuCardVariant,
+        legacy_row_probe_message, menu_lab_card, native_menu_lab_card,
+        native_navigation_message, native_ui_probe_message, readonly_button_command,
+        MenuCardVariant,
     },
     Config, ControlAck, Event, SessionLease,
 };
@@ -62,21 +63,42 @@ async fn deliver(
     timeout(deadline, transport).await?
 }
 
-// Opt-in test only. The caller already verified owner, socket and self-chat.
-async fn send_menu_lab(ctx: &whatsapp_rust::bot::MessageContext, menu: &str, rich_html: bool) {
-    if rich_html {
+// Optional laboratory: native buttons are read-only and may be tested
+// in an activated private chat. Experimental Rich HTML, legacy comparison
+// and audio stay limited to a verified owner self-chat.
+async fn send_menu_lab(
+    ctx: &whatsapp_rust::bot::MessageContext,
+    menu: &str,
+    rich_html: bool,
+    owner_self_chat: bool,
+) {
+    if owner_self_chat && rich_html {
         if let Ok(message) = experimental_self_chat_rich_message(menu) {
             if ctx.send_message(message).await.is_err() {
                 eprintln!("Base-Matter: rich HTML menu experiment rejected");
+            } else {
+                eprintln!("Base-Matter: rich HTML send accepted; mobile rendering unverified");
             }
         } else {
             eprintln!("Base-Matter: rich HTML preview exceeds bounds");
         }
     }
     for variant in [MenuCardVariant::Ts18, MenuCardVariant::Ts19] {
-        if ctx.send_message(menu_lab_card(variant)).await.is_err() {
-            eprintln!("Base-Matter: menu test card rejected");
+        if ctx.send_message(native_menu_lab_card(variant)).await.is_err() {
+            eprintln!("Base-Matter: NativeFlow test card rejected; trying legacy buttons");
+            if ctx.send_message(menu_lab_card(variant)).await.is_err() {
+                eprintln!("Base-Matter: legacy button card rejected");
+            }
+        } else if owner_self_chat {
+            // Self-chat only: compare transports to identify clients that
+            // silently accept a message but fail to display its buttons.
+            if ctx.send_message(menu_lab_card(variant)).await.is_err() {
+                eprintln!("Base-Matter: legacy comparison card rejected");
+            }
         }
+    }
+    if !owner_self_chat {
+        return;
     }
     let upload = timeout(
         Duration::from_secs(15),
@@ -707,10 +729,19 @@ async fn main() -> Result<()> {
                                     eprintln!("Base-Matter: control reply unavailable");
                                 }
                             }
-                            if sent && menu_lab && is_root && frame.from_me
-                                && !data.is_group && frame.chat_jid == config.owner_jid
-                            {
-                                send_menu_lab(&ctx, &response, rich_html_trial).await;
+                            // Private enabled chats may inspect read-only
+                            // NativeFlow test buttons when the operator opted in.
+                            // HTML, audio and legacy comparison remain owner-self only.
+                            if sent && menu_lab && is_root && !data.is_group {
+                                let owner_self_chat =
+                                    frame.from_me && frame.chat_jid == config.owner_jid;
+                                send_menu_lab(
+                                    &ctx,
+                                    &response,
+                                    rich_html_trial,
+                                    owner_self_chat,
+                                )
+                                .await;
                             }
                         }
                         Ok(ControlAck::Duplicate) => {

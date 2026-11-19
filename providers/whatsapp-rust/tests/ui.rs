@@ -69,6 +69,9 @@ fn menu_has_exactly_one_categories_selector() {
     assert_eq!(rows.len(), ids.len());
     for (row, id) in rows.iter().zip(ids) {
         assert_eq!(row["id"], format!("matter.read.menu.{id}"));
+        assert_eq!(row["title"], format!("=/>menu {id}"));
+        assert!(row.get("description").is_none());
+        assert_ne!(row["title"], "☾︎ Anti");
     }
     assert!(rows.iter().all(|row| ![
         "matter.read.menu.group",

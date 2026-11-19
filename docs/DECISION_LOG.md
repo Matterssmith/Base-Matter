@@ -1,3 +1,10 @@
+## BASE-D011 — El título del selector debe ser el comando, y laboratorio NativeFlow opt-in
+
+- Reporte: WhatsApp muestra al pulsar una fila «☾︎ Anti / Abrir menú». Decisión: `title` exactamente `=/>menu anti`; quitar `description`, preservar IDs opacos, HMAC y read-only.
+- La prueba TS18/TS19 anteriormente solo usaba ButtonsMessage legacy y self-chat. Se agrega NativeFlow quick_reply (compatible a nivel de transporte con el selector probado). En `MATTER_WA_MENU_LAB=1` se muestran tarjetas readonly en privados habilitados, con fallback legacy por fallo de transporte; el dueño en self-chat recibe también comparación legacy.
+- HTML/audio siguen limitados al self-chat del dueño; compatibilidad HTML del cliente aún no demostrada.
+- Base alpha: c2d8c2c84fe1bbd8ed11f667004654848c9bc9ae. CI y prueba real pendientes. README revisados: 2/2.
+
 ## BASE-D010 — Instrucciones compactas en citas de WhatsApp (2026-11-19)
 
 - Solicitud de Dev MS Leito Delfin 3 Siss: convertir el bloque largo de instrucciones en líneas compactas, usando `> texto`.
