@@ -15,7 +15,7 @@ fn global_menu_restores_owner_original_frame_and_single_credit_footer() {
     assert!(menu.contains("꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡"));
     assert!(menu.contains("*Base-Matter* · ✦"));
     assert!(menu.contains("│·♪·╠[ ◉ =/>status — Estado de este chat"));
-    assert!(menu.contains("│·♪·╠[ ⓘ =/>status --global — Configuración del socket [propietario]"));
+    assert!(menu.contains("│·♪·╠[ ⓘ =/>status --mod — Configuración del socket [propietario]"));
     assert!(menu.contains("│·♪·╚[ ⴵ =/>audit — Auditoría [propietario]"));
     assert!(menu.contains("💠 =/>status funciona incluso cuando el bot está apagado."));
     assert!(menu.ends_with("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
