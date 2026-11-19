@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antigif",
+    name: "anti gif",
     es: "Protección gif; desactivada inicialmente",
     en: "Protection gif; initially disabled",
-    usages: &["antigif on|off|inherit"],
+    usages: &["anti gif", "set anti gif on|off|inherit"],
     implemented: true,
 };

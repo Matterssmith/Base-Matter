@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antipoll",
+    name: "anti poll",
     es: "Protección poll; desactivada inicialmente",
     en: "Protection poll; initially disabled",
-    usages: &["antipoll on|off|inherit"],
+    usages: &["anti poll", "set anti poll on|off|inherit"],
     implemented: true,
 };

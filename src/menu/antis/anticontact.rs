@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "anticontact",
+    name: "anti contact",
     es: "Protección contact; desactivada inicialmente",
     en: "Protection contact; initially disabled",
-    usages: &["anticontact on|off|inherit"],
+    usages: &["anti contact", "set anti contact on|off|inherit"],
     implemented: true,
 };

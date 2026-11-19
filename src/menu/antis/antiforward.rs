@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antiforward",
+    name: "anti forward",
     es: "Protección forward; desactivada inicialmente",
     en: "Protection forward; initially disabled",
-    usages: &["antiforward on|off|inherit"],
+    usages: &["anti forward", "set anti forward on|off|inherit"],
     implemented: true,
 };

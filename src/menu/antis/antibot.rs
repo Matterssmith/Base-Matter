@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antibot",
+    name: "anti bot",
     es: "Protección bot; desactivada inicialmente",
     en: "Protection bot; initially disabled",
-    usages: &["antibot on|off|inherit"],
+    usages: &["anti bot", "set anti bot on|off|inherit"],
     implemented: true,
 };

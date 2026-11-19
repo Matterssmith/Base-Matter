@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antilocation",
+    name: "anti location",
     es: "Protección location; desactivada inicialmente",
     en: "Protection location; initially disabled",
-    usages: &["antilocation on|off|inherit"],
+    usages: &["anti location", "set anti location on|off|inherit"],
     implemented: true,
 };

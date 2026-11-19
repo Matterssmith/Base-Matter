@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antidelete",
+    name: "anti delete",
     es: "Protección delete; desactivada inicialmente",
     en: "Protection delete; initially disabled",
-    usages: &["antidelete on|off|inherit"],
+    usages: &["anti delete", "set anti delete on|off|inherit"],
     implemented: true,
 };

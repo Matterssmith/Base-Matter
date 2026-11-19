@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antimedia",
+    name: "anti media",
     es: "Protección media; desactivada inicialmente",
     en: "Protection media; initially disabled",
-    usages: &["antimedia on|off|inherit"],
+    usages: &["anti media", "set anti media on|off|inherit"],
     implemented: true,
 };

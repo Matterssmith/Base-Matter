@@ -2,9 +2,9 @@
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
-    name: "antispam",
+    name: "anti spam",
     es: "Protección spam; desactivada inicialmente",
     en: "Protection spam; initially disabled",
-    usages: &["antispam on|off|inherit"],
+    usages: &["anti spam", "set anti spam on|off|inherit"],
     implemented: true,
 };
