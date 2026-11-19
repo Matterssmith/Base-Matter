@@ -453,10 +453,10 @@ impl AntiStore {
         for rule in RULES {
             lines.push(self.display(socket, group, rule)?);
         }
-        let scope = if group.is_some() {
-            "chat actual"
-        } else {
-            "socket actual"
+        let scope = match group {
+            Some(value) if value.ends_with("@g.us") => "grupo",
+            Some(_) => "chat privado",
+            None => "socket actual",
         };
         Ok(format!(
             "Antis del {scope} (solo configuración; moderación automática no conectada):\n{}",

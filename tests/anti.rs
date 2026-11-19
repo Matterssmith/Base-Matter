@@ -34,7 +34,7 @@ fn all_anti_rules_are_disabled_until_explicitly_configured() {
     assert!(store
         .command(SOCKET, None, &[])
         .unwrap()
-        .contains("socket global"));
+        .contains("socket actual"));
 }
 
 #[test]

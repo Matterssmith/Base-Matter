@@ -407,7 +407,9 @@ impl Config {
                     && filters.len() <= 1
                     && filters.iter().all(|filter| {
                         (1..=24).contains(&filter.len())
-                            && filter.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+                            && filter
+                                .bytes()
+                                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
                     })
             }
             ["=/>menu" | "=/>menú", category] => public_category(category) || *category == "all",
