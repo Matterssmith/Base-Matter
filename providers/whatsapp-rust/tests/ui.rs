@@ -6,8 +6,9 @@
  */
 use buffa::MessageField;
 use whatsapp_matter_rust_provider::ui::{
-    legacy_row_probe_message, menu_lab_card, native_menu_message, native_navigation_message,
-    native_ui_probe_message, readonly_button_command, short_html_to_whatsapp, MenuCardVariant,
+    legacy_row_probe_message, menu_lab_card, native_menu_lab_card, native_menu_message,
+    native_navigation_message, native_ui_probe_message, readonly_button_command,
+    short_html_to_whatsapp, MenuCardVariant,
 };
 use whatsapp_rust::prelude::wa;
 
@@ -264,5 +265,41 @@ fn ts18_ts19_menu_lab_cards_preserve_readonly_click_mapping() {
         }
         assert!(card.rich_response_message.as_option().is_none());
         assert!(card.audio_message.as_option().is_none());
+    }
+}
+
+#[test]
+fn native_ts18_ts19_buttons_use_quick_reply_and_readonly_ack_ids() {
+    for (variant, expected_len) in [(MenuCardVariant::Ts18, 2), (MenuCardVariant::Ts19, 3)] {
+        let card = native_menu_lab_card(variant);
+        let interactive = card.interactive_message.as_option().unwrap();
+        let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
+            interactive.interactive_message.as_ref()
+        else {
+            panic!("Expected a NativeFlow card");
+        };
+        assert_eq!(native.buttons.len(), expected_len);
+        for (index, (id, label, expected_command)) in [
+            ("matter.test.row.audio", "Audio", "=/>test ack audio"),
+            ("matter.test.row.mp4", "MP4", "=/>test ack mp4"),
+            ("matter.test.row.link", "Enlace", "=/>test ack link"),
+        ]
+        .iter()
+        .take(expected_len)
+        .enumerate()
+        {
+            let button = &native.buttons[index];
+            assert_eq!(button.name.as_deref(), Some("quick_reply"));
+            let data: serde_json::Value =
+                serde_json::from_str(button.button_params_json.as_deref().unwrap()).unwrap();
+            assert_eq!(data["id"], *id);
+            assert_eq!(data["display_text"], *label);
+            assert_eq!(
+                readonly_button_command(&native_click(id, "quick_reply")),
+                Some(*expected_command)
+            );
+        }
+        assert!(card.buttons_message.as_option().is_none());
+        assert!(card.rich_response_message.as_option().is_none());
     }
 }

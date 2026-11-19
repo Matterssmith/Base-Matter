@@ -1,3 +1,10 @@
+## BASE-D012 — Rustfmt y regresión de botones NativeFlow (2026-11-19)
+
+- SHA base: 351d4d4a416cf8aa6b15fc33a6607bf1150763b7; el CI de proveedor marcó fallas de formato solamente.
+- Decisión: aplicar rustfmt exacto y probar tamaños 2/3, labels y correspondencia al ACK; mantener todas las rutas bajo control HMAC/antirreplay.
+- Evidencia UI Android del selector disponible; render visual TS18/TS19 y HTML siguen pendientes.
+- README revisados: 2/2; CI nuevo pendiente.
+
 ## BASE-D011 — El título del selector debe ser el comando, y laboratorio NativeFlow opt-in
 
 - Reporte: WhatsApp muestra al pulsar una fila «☾︎ Anti / Abrir menú». Decisión: `title` exactamente `=/>menu anti`; quitar `description`, preservar IDs opacos, HMAC y read-only.

@@ -19,9 +19,8 @@ use whatsapp_matter_rust_provider::{
     render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
     ui::{
-        legacy_row_probe_message, menu_lab_card, native_menu_lab_card,
-        native_navigation_message, native_ui_probe_message, readonly_button_command,
-        MenuCardVariant,
+        legacy_row_probe_message, menu_lab_card, native_menu_lab_card, native_navigation_message,
+        native_ui_probe_message, readonly_button_command, MenuCardVariant,
     },
     Config, ControlAck, Event, SessionLease,
 };
@@ -84,7 +83,11 @@ async fn send_menu_lab(
         }
     }
     for variant in [MenuCardVariant::Ts18, MenuCardVariant::Ts19] {
-        if ctx.send_message(native_menu_lab_card(variant)).await.is_err() {
+        if ctx
+            .send_message(native_menu_lab_card(variant))
+            .await
+            .is_err()
+        {
             eprintln!("Base-Matter: NativeFlow test card rejected; trying legacy buttons");
             if ctx.send_message(menu_lab_card(variant)).await.is_err() {
                 eprintln!("Base-Matter: legacy button card rejected");

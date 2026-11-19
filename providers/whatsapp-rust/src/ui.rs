@@ -394,7 +394,10 @@ pub fn menu_lab_card(variant: MenuCardVariant) -> wa::Message {
 /// A successful send is NOT proof of client-side rendering.
 pub fn native_menu_lab_card(variant: MenuCardVariant) -> wa::Message {
     let choices: &[(&str, &str)] = if variant == MenuCardVariant::Ts18 {
-        &[("matter.test.row.audio", "Audio"), ("matter.test.row.mp4", "MP4")]
+        &[
+            ("matter.test.row.audio", "Audio"),
+            ("matter.test.row.mp4", "MP4"),
+        ]
     } else {
         &[
             ("matter.test.row.audio", "Audio"),
@@ -425,9 +428,10 @@ pub fn native_menu_lab_card(variant: MenuCardVariant) -> wa::Message {
     wa::Message {
         interactive_message: MessageField::some(wa::message::InteractiveMessage {
             body: MessageField::some(wa::message::interactive_message::Body {
-                text: Some(format!(
-                    "{title} · Matterssmith\\nBotones de prueba: no ejecutan descargas."
-                ).replace("\\n", "\n")),
+                text: Some(
+                    format!("{title} · Matterssmith\\nBotones de prueba: no ejecutan descargas.")
+                        .replace("\\n", "\n"),
+                ),
             }),
             footer: MessageField::some(wa::message::interactive_message::Footer {
                 text: Some("Base-Matter · laboratorio NativeFlow".to_owned()),
