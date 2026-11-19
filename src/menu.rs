@@ -681,8 +681,6 @@ fn help_usage(language: Language) -> String {
         "=/>help <categoria>",
         "=/>help <categoria> <pagina>",
         "=/>help all",
-        "",
-        "=/>menu",
     ]
     .join("\n")
 }
@@ -707,19 +705,24 @@ fn category_help(query: &str, page: usize, options: Preferences) -> Result<Strin
         lines.push(format!("• {}", command.name));
         lines.push(description(command, options.language).to_owned());
         if !command.implemented {
-            lines.push(if options.language == Language::Es {
-                "No disponible"
-            } else {
-                "Not available"
-            }
-            .to_owned());
+            lines.push(
+                if options.language == Language::Es {
+                    "No disponible"
+                } else {
+                    "Not available"
+                }
+                .to_owned(),
+            );
         }
         for usage in command.usages {
             lines.push(format!("=/>{}", usage));
         }
     }
     if pages > 1 {
-        lines.push(format!("=/>help {query} {} ({page}/{pages})", if page < pages { page + 1 } else { 1 }));
+        lines.push(format!(
+            "=/>help {query} {} ({page}/{pages})",
+            if page < pages { page + 1 } else { 1 }
+        ));
     }
     let output = lines.join("\n");
     if output.len() > 3450 {
@@ -762,12 +765,14 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
         description(command, options.language).to_owned(),
     ];
     if !command.implemented {
-        lines.push(if options.language == Language::Es {
-            "No disponible"
-        } else {
-            "Not available"
-        }
-        .to_owned());
+        lines.push(
+            if options.language == Language::Es {
+                "No disponible"
+            } else {
+                "Not available"
+            }
+            .to_owned(),
+        );
     }
     lines.push("Uso:".to_owned());
     for usage in command.usages {
@@ -846,7 +851,11 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
             .collect();
         for (index, usage) in usages.iter().enumerate() {
             if options.style == Style::Classic {
-                let branch = if index + 1 == usages.len() { "╚" } else { "╠" };
+                let branch = if index + 1 == usages.len() {
+                    "╚"
+                } else {
+                    "╠"
+                };
                 out.push(format!("│♪{branch}[ =/>{usage}"));
             } else {
                 out.push(format!("=/>{usage}"));

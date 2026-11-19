@@ -117,7 +117,14 @@ fn help_queries_support_command_metadata_and_category_pages() {
     let empty_section = menu::render("menu gacha", options).unwrap();
     assert!(!empty_section.contains("Sin comandos"));
     assert!(!empty_section.contains("No commands"));
-    let help_none = menu::render_help("", Preferences { style: Style::None, language: Language::Es }).unwrap();
+    let help_none = menu::render_help(
+        "",
+        Preferences {
+            style: Style::None,
+            language: Language::Es,
+        },
+    )
+    .unwrap();
     assert_eq!(root_help, help_none);
 }
 

@@ -1,3 +1,6 @@
+### 2026-11-18 — Rustfmt y ayuda sin categorías
+Se aplicó formato Rustfmt en la ayuda por página, la disponibilidad de comandos, las variantes del menú y las pruebas. `=/>help` sin argumentos muestra exclusivamente formas de ayuda, sin copiar el menú. Ambos README revisados 2/2; se requiere nueva verificación.
+
 ### 2026-11-18 — Menú de atributos separado de ayuda contextual
 Las páginas de `=/>menu` sólo enumeran variantes reales, sin descripciones ni pendientes; `=/>menu all` es un índice compacto. `=/>help` sin argumentos indica la sintaxis de ayuda y no copia categorías. `=/>help <categoria|comando>` mantiene los detalles. Invocaciones sin una operación de cero argumentos asignada, como `=/>set` y `=/>bot`, muestran uso. Ambos estilos (`classic` y `none`) siguen disponibles. READMEs revisados 2/2. Validar Linux, Windows y proveedor antes de usar en WhatsApp.
 
