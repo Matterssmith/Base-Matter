@@ -30,16 +30,187 @@ pub struct Category {
     pub icon: &'static str,
     pub commands: &'static [CommandSpec],
 }
+// All visible categories come exclusively from docs/CATEGORY_CONTRACT.md.
+// "all" aggregates these 20 categories and is never a command bucket.
+const ANTI_COMMANDS: &[CommandSpec] = &[
+    antis::listing_command::COMMAND,
+    antis::anti::COMMAND,
+    antis::antilink::COMMAND,
+    antis::antilinkwa::COMMAND,
+    antis::antilinktelegram::COMMAND,
+    antis::antilinkdiscord::COMMAND,
+    antis::antilinkinstagram::COMMAND,
+    antis::antilinkfacebook::COMMAND,
+    antis::antilinktiktok::COMMAND,
+    antis::antilinkyoutube::COMMAND,
+    antis::antilinkx::COMMAND,
+    antis::antilinkshort::COMMAND,
+    antis::antilinkphishing::COMMAND,
+    antis::antigroup::COMMAND,
+    antis::antichannel::COMMAND,
+    antis::antistatus::COMMAND,
+    antis::antiviewonce::COMMAND,
+    antis::anticall::COMMAND,
+    antis::antisticker::COMMAND,
+    antis::antiimage::COMMAND,
+    antis::antivideo::COMMAND,
+    antis::antiaudio::COMMAND,
+    antis::antidocument::COMMAND,
+    antis::antigif::COMMAND,
+    antis::antilocation::COMMAND,
+    antis::anticontact::COMMAND,
+    antis::antipoll::COMMAND,
+    antis::antiforward::COMMAND,
+    antis::antispam::COMMAND,
+    antis::antiflood::COMMAND,
+    antis::antimention::COMMAND,
+    antis::antibot::COMMAND,
+    antis::antimedia::COMMAND,
+    antis::antidelete::COMMAND,
+    set::set_anti::COMMAND,
+];
+
 pub static CATEGORIES: &[Category] = &[
-    status::CATEGORY,
-    bot::CATEGORY,
-    set::CATEGORY,
-    antis::CATEGORY,
-    roles::CATEGORY,
-    system::CATEGORY,
-    sandbox::CATEGORY,
-    ai::CATEGORY,
-    navigation::CATEGORY,
+    Category {
+        id: "ia",
+        es: "IA",
+        en: "AI",
+        icon: "ⴵ",
+        commands: ai::CATEGORY.commands,
+    },
+    Category {
+        id: "anti",
+        es: "Anti",
+        en: "Anti",
+        icon: "☾︎",
+        commands: ANTI_COMMANDS,
+    },
+    Category {
+        id: "config",
+        es: "Configuración",
+        en: "Configuration",
+        icon: "⚙︎",
+        commands: &[set::main_command::COMMAND, set::set_style::COMMAND, set::set_lang::COMMAND],
+    },
+    Category {
+        id: "downloads",
+        es: "Descargas",
+        en: "Downloads",
+        icon: "⇩",
+        commands: &[],
+    },
+    Category {
+        id: "economy",
+        es: "Economía",
+        en: "Economy",
+        icon: "◈",
+        commands: &[],
+    },
+    Category {
+        id: "fun",
+        es: "Diversión",
+        en: "Fun",
+        icon: "♫",
+        commands: &[],
+    },
+    Category {
+        id: "gacha",
+        es: "Gacha",
+        en: "Gacha",
+        icon: "✰",
+        commands: &[],
+    },
+    Category {
+        id: "games",
+        es: "Juegos",
+        en: "Games",
+        icon: "🎮",
+        commands: &[],
+    },
+    Category {
+        id: "group",
+        es: "Grupo",
+        en: "Group",
+        icon: "♧",
+        commands: &[],
+    },
+    Category {
+        id: "info",
+        es: "Información",
+        en: "Information",
+        icon: "ⓘ",
+        commands: &[status::main_command::COMMAND, navigation::credits::COMMAND],
+    },
+    Category {
+        id: "links",
+        es: "Enlaces",
+        en: "Links",
+        icon: "🔗",
+        commands: &[],
+    },
+    Category {
+        id: "main",
+        es: "Principal",
+        en: "Main",
+        icon: "✪",
+        commands: &[navigation::menu::COMMAND],
+    },
+    Category {
+        id: "mode",
+        es: "Modo",
+        en: "Mode",
+        icon: "◉",
+        commands: bot::CATEGORY.commands,
+    },
+    Category {
+        id: "owner",
+        es: "Propietario",
+        en: "Owner",
+        icon: "♛",
+        commands: &[roles::main_command::COMMAND, roles::audit::COMMAND, set::set_role::COMMAND],
+    },
+    Category {
+        id: "profile",
+        es: "Perfil",
+        en: "Profile",
+        icon: "♙",
+        commands: &[],
+    },
+    Category {
+        id: "reactions",
+        es: "Reacciones",
+        en: "Reactions",
+        icon: "♡",
+        commands: &[],
+    },
+    Category {
+        id: "search",
+        es: "Búsqueda",
+        en: "Search",
+        icon: "⌕",
+        commands: &[],
+    },
+    Category {
+        id: "sockets",
+        es: "Conexiones",
+        en: "Connections",
+        icon: "ⴵ",
+        commands: &[],
+    },
+    Category {
+        id: "system",
+        es: "Sistema",
+        en: "System",
+        icon: "⚙︎",
+        commands: system::CATEGORY.commands,
+    },
+    Category {
+        id: "utils",
+        es: "Utilidades",
+        en: "Utilities",
+        icon: "✧",
+        commands: sandbox::CATEGORY.commands,
+    },
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -253,19 +424,44 @@ fn header(options: Preferences) -> Vec<String> {
     }
 }
 
+fn canonical_category(id: &str) -> &str {
+    match id {
+        "ai" => "ia",
+        "antis" => "anti",
+        "set" => "config",
+        "bot" => "mode",
+        "roles" => "owner",
+        "status" => "info",
+        "navigation" => "main",
+        "sandbox" => "utils",
+        _ => id,
+    }
+}
+
 fn concise_menu(options: Preferences) -> Result<String> {
     // Owner-provided visual layout. Never invent unregistered categories.
-    const ENTRIES: [(&str, &str, &str); 10] = [
-        ("ai", "ⴵ ·· 𝙸𝙰", "ⴵ ·· AI"),
-        ("antis", "☾︎ ··· 𝙰𝚗𝚝𝚒", "☾︎ ··· Anti"),
+    const ENTRIES: [(&str, &str, &str); 21] = [
+        ("ia", "ⴵ ·· 𝙸𝙰", "ⴵ ·· IA"),
+        ("anti", "☾︎ ··· 𝙰𝚗𝚝𝚒", "☾︎ ··· Anti"),
         ("all", "✦ · 𝚃𝚘𝚍𝚘", "✦ · All"),
-        ("set", "⚙︎ · 𝙲𝚘𝚗𝚏𝚒𝚐𝚞𝚛𝚊𝚌𝚒ó𝚗", "⚙︎ · Settings"),
-        ("bot", "◉ · 𝙱𝚘𝚝", "◉ · Bot"),
-        ("roles", "♛ · 𝚁𝚘𝚕𝚎𝚜", "♛ · Roles"),
-        ("sandbox", "◈ · 𝚂𝚊𝚗𝚍𝚋𝚘𝚡", "◈ · Sandbox"),
-        ("status", "ⓘ · 𝙴𝚜𝚝𝚊𝚍𝚘", "ⓘ · Status"),
-        ("system", "⚙︎ · 𝚂𝚒𝚜𝚝𝚎𝚖𝚊", "⚙︎ · System"),
-        ("navigation", "✧ · 𝙽𝚊𝚟𝚎𝚐𝚊𝚌𝚒ó𝚗", "✧ · Navigation"),
+        ("config", "⚙︎ · 𝙲𝚘𝚗𝚏𝚒𝚐𝚞𝚛𝚊𝚌𝚒ó𝚗", "⚙︎ · Config"),
+        ("downloads", "⇩ · 𝙳𝚎𝚜𝚌𝚊𝚛𝚐𝚊𝚜", "⇩ · Downloads"),
+        ("economy", "◈ · 𝙴𝚌𝚘𝚗𝚘𝚖í𝚊", "◈ · Economy"),
+        ("fun", "♫ · 𝙳𝚒𝚟𝚎𝚛𝚜𝚒ó𝚗", "♫ · Fun"),
+        ("gacha", "✰ · 𝙶𝚊𝚌𝚑𝚊", "✰ · Gacha"),
+        ("games", "🎮 𝙹𝚞𝚎𝚐𝚘𝚜", "🎮 · Games"),
+        ("group", "♧ 𝙶𝚛𝚞𝚙𝚘", "♧ · Group"),
+        ("info", "ⓘ 𝙸𝚗𝚏𝚘𝚛𝚖𝚊𝚌𝚒ó𝚗", "ⓘ · Information"),
+        ("links", "🔗 𝙴𝚗𝚕𝚊𝚌𝚎𝚜", "🔗 · Links"),
+        ("main", "✪ ·· 𝙿𝚛𝚒𝚗𝚌𝚒𝚙𝚊𝚕", "✪ ·· Main"),
+        ("mode", "◉ · 𝙼𝚘𝚍𝚘", "◉ · Mode"),
+        ("owner", "♛ · 𝙿𝚛𝚘𝚙𝚒𝚎𝚝𝚊𝚛𝚒𝚘", "♛ · Owner"),
+        ("profile", "♙ · 𝙿𝚎𝚛𝚏𝚒𝚕", "♙ · Profile"),
+        ("reactions", "♡ 𝚁𝚎𝚊𝚌𝚌𝚒𝚘𝚗𝚎𝚜", "♡ · Reactions"),
+        ("search", "⌕ · 𝙱ú𝚜𝚚𝚞𝚎𝚍𝚊", "⌕ · Search"),
+        ("sockets", "ⴵ · 𝙲𝚘𝚗𝚎𝚡𝚒𝚘𝚗𝚎𝚜", "ⴵ · Sockets"),
+        ("system", "⚙︎ 𝚂𝚒𝚜𝚝𝚎𝚖𝚊", "⚙︎ System"),
+        ("utils", "✧ 𝚄𝚝𝚒𝚕𝚒𝚍𝚊𝚍𝚎𝚜", "✧ · Utilities"),
     ];
     if ENTRIES
         .iter()
@@ -371,11 +567,11 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
     if query == "all" {
         return verbose_menu(options);
     }
-    if CATEGORIES.iter().any(|cat| cat.id == query) {
+    if CATEGORIES.iter().any(|cat| cat.id == canonical_category(query)) {
         return render(&format!("menu {query}"), options);
     }
     if let [category, page] = query.split_whitespace().collect::<Vec<_>>().as_slice() {
-        if CATEGORIES.iter().any(|cat| cat.id == *category) {
+        if CATEGORIES.iter().any(|cat| cat.id == canonical_category(category)) {
             return render(&format!("menu {category} {page}"), options);
         }
     }
@@ -405,7 +601,8 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
     match section.trim() {
         "menu" | "menú" => return concise_menu(options),
         "menu all" | "menú all" => return verbose_menu(options),
-        "menu antis" | "menú antis" => return readable_antis(),
+        "menu anti" | "menú anti" | "menu antis" | "menú antis" => return readable_antis(),
+        "menu page 1" | "menu page 2" | "menu page 3" => return concise_menu(options),
         _ => {}
     }
 
@@ -424,6 +621,7 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
     if page == 0 {
         bail!("Menu page must be positive");
     }
+    let category_id = category_id.map(canonical_category);
     let root = category_id.is_none();
     let shown: Vec<&Category> = if let Some(id) = category_id {
         vec![CATEGORIES
@@ -444,6 +642,15 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
             out.push("│♪║".to_owned());
         } else {
             out.push(label(category, options.language).to_owned());
+        }
+        if category.commands.is_empty() {
+            out.push(if options.language == Language::Es {
+                "Sin comandos registrados".to_owned()
+            } else {
+                "No commands registered".to_owned()
+            });
+            out.push(String::new());
+            continue;
         }
         if root {
             let item = category
@@ -529,7 +736,7 @@ mod tests {
 
     #[test]
     fn anti_catalog_matches_all_registered_rules() {
-        assert_eq!(CATEGORIES.len(), 9);
+        assert_eq!(CATEGORIES.len(), 20);
         assert!(command_count() >= 40);
         assert!(pending_count() > 0);
         assert_eq!(antis::CATEGORY.commands.len(), crate::anti::RULES.len() + 2);
@@ -545,12 +752,12 @@ mod tests {
     fn classic_menu_has_single_prefix_without_brand_or_credits() {
         let menu = render("menu", Preferences::default()).unwrap();
         assert!(menu.starts_with("╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀"));
-        assert!(menu.contains("│·♪·╠[ ⴵ ·· 𝙸𝙰 [menu ai]"));
-        assert!(menu.contains("│·♪·╚[ ✧ · 𝙽𝚊𝚟𝚎𝚐𝚊𝚌𝚒ó𝚗 [menu navigation]"));
+        assert!(menu.contains("│·♪·╠[ ⴵ ·· 𝙸𝙰 [menu ia]"));
+        assert!(menu.contains("│·♪·╚[ ✧ 𝚄𝚝𝚒𝚕𝚒𝚍𝚊𝚍𝚎𝚜 [menu utils]"));
         assert!(menu.contains("╰───────────⟨ 🌀"));
         assert!(menu.contains("menu all"));
-        assert!(menu.contains("menu antis"));
-        assert!(menu.contains("menu bot"));
+        assert!(menu.contains("menu anti"));
+        assert!(menu.contains("menu mode"));
         assert_eq!(menu.matches("=/>").count(), 1);
         assert!(!menu.contains("Matterssmith"));
         assert!(!menu.contains("Créditos:"));
@@ -567,6 +774,9 @@ mod tests {
             .contains("antiflood"));
         assert!(render("menu antis 9", options).is_err());
         assert!(render("menu unknown", options).is_err());
+        assert!(render("menu gacha", options).unwrap().contains("Sin comandos registrados"));
+        assert!(render("menu anti 5", options).unwrap().contains("antiflood"));
+        assert!(render("menu config", options).unwrap().contains("set lang es|en"));
     }
 
     #[test]

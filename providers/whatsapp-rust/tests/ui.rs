@@ -63,11 +63,11 @@ fn menu_has_exactly_one_categories_selector() {
         serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
     let rows = categories["sections"][0]["rows"].as_array().unwrap();
     assert_eq!(rows.len(), 10);
-    assert_eq!(rows[0]["id"], "matter.read.menu.ai");
-    assert_eq!(rows[1]["id"], "matter.read.menu.antis");
+    assert_eq!(rows[0]["id"], "matter.read.menu.ia");
+    assert_eq!(rows[1]["id"], "matter.read.menu.anti");
     assert_eq!(rows[2]["id"], "matter.read.menu.all");
     assert_eq!(rows[2]["title"], "✦ Todo");
-    assert_eq!(rows[9]["id"], "matter.read.menu.navigation");
+    assert_eq!(rows[9]["id"], "matter.read.menu.page.2");
     assert!(rows
         .iter()
         .all(|row| row["id"].as_str().unwrap().starts_with("matter.read.menu.")));
@@ -86,6 +86,24 @@ fn submenus_offer_only_one_categories_selector() {
     assert_eq!(native.buttons.len(), 1);
     assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
     assert!(native_navigation_message("Unsafe", "=/>set role owner").is_err());
+    for (page, expected_len, first_id, last_id) in [
+        (2, 10, "matter.read.menu.group", "matter.read.menu.page.3"),
+        (3, 5, "matter.read.menu.search", "matter.read.menu.page.2"),
+    ] {
+        let request = format!("=/>menu page {page}");
+        let message = native_navigation_message("Categorias", &request).unwrap();
+        let interactive = message.interactive_message.as_option().unwrap();
+        let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
+            interactive.interactive_message.as_ref()
+        else { panic!("Expected single category selector"); };
+        assert_eq!(native.buttons.len(), 1);
+        let params: serde_json::Value =
+            serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
+        let rows = params["sections"][0]["rows"].as_array().unwrap();
+        assert_eq!(rows.len(), expected_len);
+        assert_eq!(rows[0]["id"], first_id);
+        assert_eq!(rows[rows.len() - 1]["id"], last_id);
+    }
 }
 
 #[test]
@@ -93,7 +111,10 @@ fn both_native_and_legacy_buttons_map_only_readonly_ids() {
     for (id, command) in [
         ("matter.read.status", "=/>status"),
         ("matter.read.menu.all", "=/>menu all"),
-        ("matter.read.menu.antis", "=/>menu antis"),
+        ("matter.read.menu.anti", "=/>menu anti"),
+        ("matter.read.menu.antis", "=/>menu anti"),
+        ("matter.read.menu.gacha", "=/>menu gacha"),
+        ("matter.read.menu.page.2", "=/>menu page 2"),
         ("matter.read.help.antis", "=/>help antis"),
     ] {
         assert_eq!(

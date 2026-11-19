@@ -9,14 +9,20 @@ fn live_menu_registry_builds_categories_without_personal_brand_or_footer_credits
         .with_dynamic_menu(Arc::clone(&prefs));
     let root = control.render(None, "menu").unwrap();
     assert!(root.starts_with("╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀"));
-    assert!(root.contains("│·♪·╠[ ⴵ ·· 𝙸𝙰 [menu ai]"));
+    assert!(root.contains("│·♪·╠[ ⴵ ·· 𝙸𝙰 [menu ia]"));
     assert!(root.contains("╰───────────⟨ 🌀"));
-    assert!(root.contains("menu set"));
-    assert!(root.contains("menu antis"));
-    assert!(root.contains("menu bot"));
+    assert!(root.contains("menu config"));
+    assert!(root.contains("menu anti"));
+    assert!(root.contains("menu mode"));
     assert!(!root.contains("Matterssmith"));
     assert!(!root.contains("Créditos:"));
     assert_eq!(root.matches("=/>").count(), 1);
+    assert_eq!(matter_base::menu::CATEGORIES.len(), 20);
+    for forbidden in ["[menu bot]", "[menu roles]", "[menu sandbox]", "[menu navigation]", "[menu set]", "[menu status]", "[menu antis]", "[menu ai]"] {
+        assert!(!root.contains(forbidden), "Legacy categories must not be visible: {forbidden}");
+    }
+    assert!(root.contains("[menu sockets]"));
+    assert!(root.contains("[menu utils]"));
     assert_eq!(control.decorate(None, &root).unwrap(), root);
 
     let set = control.render(None, "menu set").unwrap();

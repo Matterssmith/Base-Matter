@@ -11,17 +11,28 @@ use whatsapp_rust::prelude::wa;
 
 const MAX_MENU_BYTES: usize = 3200;
 
-const NAV_CATEGORIES: [(&str, &str, &str); 10] = [
-    ("ai", "ⴵ IA", "matter.read.menu.ai"),
-    ("antis", "☾︎ Anti", "matter.read.menu.antis"),
+const NAV_CATEGORIES: [(&str, &str, &str); 21] = [
+    ("ia", "ⴵ IA", "matter.read.menu.ia"),
+    ("anti", "☾︎ Anti", "matter.read.menu.anti"),
     ("all", "✦ Todo", "matter.read.menu.all"),
-    ("set", "⚙︎ Configuración", "matter.read.menu.set"),
-    ("bot", "◉ Bot", "matter.read.menu.bot"),
-    ("roles", "♛ Roles", "matter.read.menu.roles"),
-    ("sandbox", "◈ Sandbox", "matter.read.menu.sandbox"),
-    ("status", "ⓘ Estado", "matter.read.menu.status"),
+    ("config", "⚙︎ Configuración", "matter.read.menu.config"),
+    ("downloads", "⇩ Descargas", "matter.read.menu.downloads"),
+    ("economy", "◈ Economía", "matter.read.menu.economy"),
+    ("fun", "♫ Diversión", "matter.read.menu.fun"),
+    ("gacha", "✰ Gacha", "matter.read.menu.gacha"),
+    ("games", "🎮 Juegos", "matter.read.menu.games"),
+    ("group", "♧ Grupo", "matter.read.menu.group"),
+    ("info", "ⓘ Información", "matter.read.menu.info"),
+    ("links", "🔗 Enlaces", "matter.read.menu.links"),
+    ("main", "✪ Principal", "matter.read.menu.main"),
+    ("mode", "◉ Modo", "matter.read.menu.mode"),
+    ("owner", "♛ Propietario", "matter.read.menu.owner"),
+    ("profile", "♙ Perfil", "matter.read.menu.profile"),
+    ("reactions", "♡ Reacciones", "matter.read.menu.reactions"),
+    ("search", "⌕ Búsqueda", "matter.read.menu.search"),
+    ("sockets", "ⴵ Conexiones", "matter.read.menu.sockets"),
     ("system", "⚙︎ Sistema", "matter.read.menu.system"),
-    ("navigation", "✧ Navegación", "matter.read.menu.navigation"),
+    ("utils", "✧ Utilidades", "matter.read.menu.utils"),
 ];
 
 fn button_command(id: &str) -> Option<&'static str> {
@@ -30,16 +41,39 @@ fn button_command(id: &str) -> Option<&'static str> {
         "matter.read.menu" => Some("=/>menu"),
         "matter.read.antis" => Some("=/>menu antis"),
         "matter.read.help" => Some("=/>help"),
+        "matter.read.menu.ia" => Some("=/>menu ia"),
+        "matter.read.menu.anti" => Some("=/>menu anti"),
         "matter.read.menu.all" => Some("=/>menu all"),
-        "matter.read.menu.status" => Some("=/>menu status"),
-        "matter.read.menu.bot" => Some("=/>menu bot"),
-        "matter.read.menu.set" => Some("=/>menu set"),
-        "matter.read.menu.antis" => Some("=/>menu antis"),
-        "matter.read.menu.roles" => Some("=/>menu roles"),
+        "matter.read.menu.config" => Some("=/>menu config"),
+        "matter.read.menu.downloads" => Some("=/>menu downloads"),
+        "matter.read.menu.economy" => Some("=/>menu economy"),
+        "matter.read.menu.fun" => Some("=/>menu fun"),
+        "matter.read.menu.gacha" => Some("=/>menu gacha"),
+        "matter.read.menu.games" => Some("=/>menu games"),
+        "matter.read.menu.group" => Some("=/>menu group"),
+        "matter.read.menu.info" => Some("=/>menu info"),
+        "matter.read.menu.links" => Some("=/>menu links"),
+        "matter.read.menu.main" => Some("=/>menu main"),
+        "matter.read.menu.mode" => Some("=/>menu mode"),
+        "matter.read.menu.owner" => Some("=/>menu owner"),
+        "matter.read.menu.profile" => Some("=/>menu profile"),
+        "matter.read.menu.reactions" => Some("=/>menu reactions"),
+        "matter.read.menu.search" => Some("=/>menu search"),
+        "matter.read.menu.sockets" => Some("=/>menu sockets"),
         "matter.read.menu.system" => Some("=/>menu system"),
-        "matter.read.menu.sandbox" => Some("=/>menu sandbox"),
-        "matter.read.menu.ai" => Some("=/>menu ai"),
-        "matter.read.menu.navigation" => Some("=/>menu navigation"),
+        "matter.read.menu.utils" => Some("=/>menu utils"),
+        "matter.read.menu.page.1" => Some("=/>menu page 1"),
+        "matter.read.menu.page.2" => Some("=/>menu page 2"),
+        "matter.read.menu.page.3" => Some("=/>menu page 3"),
+        // Historical response IDs are aliases only; no legacy categories appear.
+        "matter.read.menu.ai" => Some("=/>menu ia"),
+        "matter.read.menu.antis" => Some("=/>menu anti"),
+        "matter.read.menu.set" => Some("=/>menu config"),
+        "matter.read.menu.bot" => Some("=/>menu mode"),
+        "matter.read.menu.status" => Some("=/>menu info"),
+        "matter.read.menu.roles" => Some("=/>menu owner"),
+        "matter.read.menu.sandbox" => Some("=/>menu utils"),
+        "matter.read.menu.navigation" => Some("=/>menu main"),
         "matter.read.help.status" => Some("=/>help status"),
         "matter.read.help.bot" => Some("=/>help bot"),
         "matter.read.help.set" => Some("=/>help set"),
@@ -158,7 +192,19 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     {
         bail!("Native navigation is read-only");
     }
-    let rows: Vec<_> = NAV_CATEGORIES
+    // WhatsApp selectors have a small row limit: one button, three pages.
+    // Navigation rows are not categories and grant no capabilities.
+    let page = match request {
+        "=/>menu page 2" => 2,
+        "=/>menu page 3" => 3,
+        _ => 1,
+    };
+    let (start, end) = match page {
+        1 => (0, 9),
+        2 => (9, 17),
+        _ => (17, NAV_CATEGORIES.len()),
+    };
+    let mut rows: Vec<_> = NAV_CATEGORIES[start..end]
         .iter()
         .map(|(_, label, id)| {
             serde_json::json!({
@@ -168,6 +214,18 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
             })
         })
         .collect();
+    if page > 1 {
+        rows.push(serde_json::json!({
+            "title": "Anterior",
+            "id": format!("matter.read.menu.page.{}", page - 1)
+        }));
+    }
+    if page < 3 {
+        rows.push(serde_json::json!({
+            "title": "Más categorías",
+            "id": format!("matter.read.menu.page.{}", page + 1)
+        }));
+    }
     let selector = wa::message::interactive_message::native_flow_message::NativeFlowButton {
         name: Some("single_select".to_owned()),
         button_params_json: Some(
@@ -188,9 +246,7 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
                 text: Some(menu.to_owned()),
             }),
             footer: MessageField::some(wa::message::interactive_message::Footer {
-                text: Some(short_html_to_whatsapp(
-                    "<b>Control</b> · <i>Categorías</i>",
-                )?),
+                text: Some(format!("Control · Categorías {page}/3")),
                 ..Default::default()
             }),
             interactive_message: Some(
