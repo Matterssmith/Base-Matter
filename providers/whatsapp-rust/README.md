@@ -1,3 +1,6 @@
+### 2026-11-18 — Formato final del menú sin símbolos
+El CI detectó una única diferencia de Rustfmt en el nombre de Todo del estilo none; se aplicó literalmente sin cambiar comportamiento. Se mantienen 21 rutas, sección de autoridad no otorgante y botón de categorías. README principal y proveedor revisados 2/2; revalidación por SHA.
+
 ### 2026-11-18 — Rustfmt de menú autenticado y texto sin diseño
 CI detectó formato en control_ipc.rs, control_style.rs, src/menu.rs y tests/menu_catalog.rs. Se aplicó el formato exacto. `style none` ahora enumera nombres simples de las 21 entradas, sin glifos de la lista clásica. El formato visual clásico, la autoridad por socket y los controles de seguridad no cambiaron. READMEs revisados 2/2; verificar nuevo SHA.
 

@@ -536,7 +536,11 @@ pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> 
             lines.push(format!("│·♪·{branch}[ {label} [menu {id}]"));
         } else {
             let plain_label = if *id == "all" {
-                if spanish { "Todo" } else { "All" }
+                if spanish {
+                    "Todo"
+                } else {
+                    "All"
+                }
             } else {
                 CATEGORIES
                     .iter()
