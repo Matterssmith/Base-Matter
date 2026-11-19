@@ -1,3 +1,9 @@
+### 2026-11-18 — Rustfmt del menú de categorías y regresión de test
+El CI del SHA bf6fe38 encontró dos diferencias de Rustfmt:
+el iterador de categorías y un salto de línea en tests/whatsapp_bridge.rs.
+Se aplicó exactamente el formato requerido sin alterar comportamiento.
+READMEs raíz y proveedor revisados (2/2), nuevo SHA necesita CI.
+
 ### 2026-11-18 — Restauración del menú visual de categorías
 Se adopta exclusivamente el DISEÑO aportado por el propietario:
 «╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀», renglones «│·♪·╠[»,

@@ -394,7 +394,6 @@ fn signature_encoding_matches_hmac_sha256_protocol_vector() {
     );
 }
 
-
 #[test]
 fn test_command_responds_in_owner_private_and_verified_group() {
     let (bridge, _) = fixture();

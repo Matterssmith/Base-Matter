@@ -267,9 +267,10 @@ fn concise_menu(options: Preferences) -> Result<String> {
         ("system", "⚙︎ · 𝚂𝚒𝚜𝚝𝚎𝚖𝚊", "⚙︎ · System"),
         ("navigation", "✧ · 𝙽𝚊𝚟𝚎𝚐𝚊𝚌𝚒ó𝚗", "✧ · Navigation"),
     ];
-    if ENTRIES.iter().any(|(id, _, _)| {
-        *id != "all" && !CATEGORIES.iter().any(|category| category.id == *id)
-    }) {
+    if ENTRIES
+        .iter()
+        .any(|(id, _, _)| *id != "all" && !CATEGORIES.iter().any(|category| category.id == *id))
+    {
         bail!("Menu presentation contains unregistered categories");
     }
     let spanish = options.language == Language::Es;
