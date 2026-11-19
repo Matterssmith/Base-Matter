@@ -315,8 +315,15 @@ impl Config {
         let public_category = |value: &str| {
             matches!(
                 value,
-                "status" | "bot" | "set" | "antis" | "roles" | "system"
-                    | "sandbox" | "ai" | "navigation"
+                "status"
+                    | "bot"
+                    | "set"
+                    | "antis"
+                    | "roles"
+                    | "system"
+                    | "sandbox"
+                    | "ai"
+                    | "navigation"
             )
         };
         let allowed = match parts.as_slice() {

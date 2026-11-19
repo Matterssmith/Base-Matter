@@ -1,3 +1,16 @@
+### CI final del menú por categorías
+
+El commit `dcf39b2` pasó las verificaciones del
+núcleo en Linux. El CI del proveedor señaló una
+única diferencia Rustfmt para el match de
+categorías en `src/lib.rs`; corregida exactamente.
+La lista sigue cerrada a nueve categorías
+registradas; no permite comandos administrativos
+a terceros ni páginas arbitrarias. Sin cambios
+de sesión o credenciales. Este README fue revisado
+antes de publicar la corrección, pendiente de
+nueva ejecución del CI y prueba en teléfono.
+
 ### CI de submenús públicos (alpha 2026-11-18)
 
 La prueba offline de `578c680` detectó que el proveedor

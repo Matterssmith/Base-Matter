@@ -20,6 +20,20 @@ width="100%"
 
 ---
 
+### 2026-11-18 — Corrección final de formato del proveedor
+
+Para `dcf39b2`, la verificación Linux del núcleo quedó
+**verde**: Rustfmt, check, suite de pruebas y Clippy.
+El proveedor independiente rechazó únicamente la
+distribución de líneas del match de nueve categorías
+permitidas; se aplicó el formato exacto requerido
+sin ampliar permisos ni modificar la allowlist.
+Windows seguía ejecutándose en la consulta anterior.
+Volver a verificar todos los flujos para el siguiente
+SHA antes de probar en WhatsApp o pasar a beta.
+Sesiones, roles, Vault y claves sin modificar.
+Se revisaron ambos README antes del commit.
+
 ### Control de pruebas de WhatsApp — validación de submenús (alpha)
 
 En `578c680` el CI de Rust pasó el formato inicial

@@ -1,3 +1,15 @@
+### 2026-11-18 — CI núcleo Linux verde / proveedor formato
+
+En `dcf39b2`, núcleo Linux: Rustfmt, cargo check,
+cargo test y Clippy `-D warnings` exitosos.
+El proveedor Rust independiente se detuvo
+en una única diferencia Rustfmt de la lista
+de categorías; se normalizó sin alterar
+la autorización. Windows seguía en ejecución
+al consultar. Necesaria nueva ronda CI para
+SHA corregido y prueba de WhatsApp antes de beta.
+README raíz y proveedor revisados (2/2).
+
 ### 2026-11-18 — Integridad de submenús y tests del proveedor
 
 - `578c680`: núcleo Linux pasó compilación y
