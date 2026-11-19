@@ -85,7 +85,8 @@ pub fn render_message(title: &str, body: &str, font: &str) -> Result<String> {
         }
     }
     let title = format_segment(&font_text(title, font)?, TextFormat::Bold)?;
-    let template = include_str!("../templates/message-frame.txt");
+    // Windows checkout may normalize tracked UTF-8 templates to CRLF.
+    let template = include_str!("../templates/message-frame.txt").replace("\r\n", "\n");
     let output = template
         .replace("{{TITLE}}", &title)
         .replace("{{BODY}}", body);

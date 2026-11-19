@@ -1,3 +1,11 @@
+## 2026-11-19 — Corrección de plantilla CRLF en Windows
+
+- Base alpha: 96bd61fc8a61ca745f91e4b89a62d4bf3611832f.
+- CI Windows del SHA anterior: el test de tipografía falló porque la plantilla de texto conservó CRLF en Windows, y el cierre terminaba en retorno de carro.
+- Solución: normalizar `\r\n` a `\n` antes de renderizar mensajes arbitrarios. No afecta texto, caracteres o permisos.
+- Linux había completado sus verificaciones; proveedor en validación del SHA previo. Repetir los tres trabajos para el nuevo SHA.
+- README revisados: 2/2; WhatsApp real pendiente.
+
 ## 2026-11-19 — Rustfmt final de selector de categorías
 
 - Base alpha: 605ae3bf3da68de49276f1ef9d68d6e1b77f8161; Linux Rust completó correctamente sus pruebas de formato, compilación, tests, Clippy y documentación.
