@@ -75,13 +75,18 @@ fn style_none_removes_artwork_and_language_en_changes_descriptions() {
 fn individual_antis_are_public_metadata_but_never_execution_grants() {
     use matter_base::menu;
     for rule in matter_base::anti::RULES {
+        let name = match *rule {
+            "antiviewonce" => "anti oneview".to_owned(),
+            "antivideo" => "anti movie".to_owned(),
+            other => format!("anti {}", &other[4..]),
+        };
         assert!(menu::antis::CATEGORY
             .commands
             .iter()
-            .any(|descriptor| descriptor.name == *rule));
+            .any(|descriptor| descriptor.name == name));
     }
     let page = menu::render("menu antis 1", Preferences::default()).unwrap();
-    assert!(page.contains("antilink"));
+    assert!(page.contains("anti link"));
     assert!(!page.contains("📖 Ayuda: Anti"));
     let explanation = menu::render_help("antis 2", Preferences::default()).unwrap();
     assert!(explanation.contains("📖 Ayuda: Anti"));
@@ -101,17 +106,17 @@ fn help_queries_support_command_metadata_and_category_pages() {
     assert!(!root_help.contains("╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹"));
     let root_help_all = menu::render_help("all", options).unwrap();
     assert_eq!(root_help_all, root_help);
-    let help = menu::render_help("antilink", options).unwrap();
-    assert!(help.contains("Ayuda completa: antilink"));
-    assert!(help.contains("=/>antilink on|off|inherit"));
+    let help = menu::render_help("anti link", options).unwrap();
+    assert!(help.contains("Ayuda completa: anti link"));
+    assert!(help.contains("=/>set anti link on|off|inherit"));
     let page = menu::render_help("antis 1", options).unwrap();
-    assert!(page.contains("antilink"));
+    assert!(page.contains("anti link"));
     let test = menu::render_help("test", options).unwrap();
     assert!(test.contains("test ui"));
     assert!(test.contains("test html"));
     assert!(menu::render_help("not-registered", options).is_err());
     let anti_menu = menu::render("menu anti", options).unwrap();
-    assert!(anti_menu.contains("=/>antilink"));
+    assert!(anti_menu.contains("=/>anti link"));
     assert!(menu::render("menu anti 4", options)
         .unwrap()
         .contains("=/>set anti link"));
@@ -260,7 +265,7 @@ fn quoted_command_help_uses_catalog_and_never_runs_the_original() {
     assert!(menu::render_help(&format!("--quoted {unknown}"), Preferences::default()).is_err());
     let normal = menu::render_help("set anti link", Preferences::default()).unwrap();
     assert!(normal.contains("Categoría:"));
-    assert!(normal.contains("set anti link --global"));
+    assert!(normal.contains("set anti --mod link"));
     let scoped = menu::render_help("anti audit", Preferences::default()).unwrap();
     assert!(scoped.contains("Ayuda completa: anti"));
     let role = menu::render_help("set role", Preferences::default()).unwrap();

@@ -770,7 +770,7 @@ impl ControlDispatcher {
                 ["antis", ..] => {
                     bail!("Comando retirado. Consulta los filtros con =/>anti");
                 }
-                ["set", "anti", values @ ..] | ["set", "antilink", values @ ..] => {
+                ["set", "anti", values @ ..] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
                         bail!("Solo el propietario del socket configura protecciones");
@@ -779,8 +779,7 @@ impl ControlDispatcher {
                         .group_antis
                         .as_ref()
                         .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
-                    // Legacy 'set antilink' remains a domain-list compatibility alias.
-                    // Neither that alias nor '--global' can mutate another socket.
+                    // Scope flags never authorize writes across socket boundaries.
                     if values.iter().any(|word| *word == "--global") {
                         bail!("La configuración global requiere autoridad Vault verificada; usa --mod para este socket");
                     }
@@ -790,13 +789,6 @@ impl ControlDispatcher {
                         .copied()
                         .filter(|word| *word != "--mod")
                         .collect();
-                    let config_scope = if socket_scope {
-                        None
-                    } else {
-                        Some(group.ok_or_else(|| {
-                            anyhow!("Para cambiar un filtro de grupo, usa ese grupo; --mod modifica el socket")
-                        })?)
-                    };
                     // Domain lists may be scoped to a verified private chat as well.
                     if let [name, operation, domains @ ..] = words.as_slice() {
                         if *name == "link"
@@ -829,12 +821,22 @@ impl ControlDispatcher {
                     if words.iter().any(|word| word.starts_with("--")) {
                         bail!("Opción de protección no reconocida");
                     }
+                    let config_scope = if socket_scope {
+                        None
+                    } else {
+                        Some(group.ok_or_else(|| {
+                            anyhow!("Para cambiar un filtro de grupo, usa ese grupo; --mod modifica el socket")
+                        })?)
+                    };
                     let args = words.iter().map(|word| (*word).to_owned()).collect::<Vec<_>>();
                     let output = store.configure_command(receiving_socket, config_scope, &args)?;
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
                         output,
                     });
+                }
+                ["set", "antilink", ..] => {
+                    bail!("Comando anterior retirado. Usa =/>set anti link");
                 }
                 ["set", rule, ..] if ANTI_RULES.contains(rule) => {
                     bail!("Usa =/>set anti <tipo> para configurar protecciones");

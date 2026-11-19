@@ -33,7 +33,6 @@ pub struct Category {
 // All visible categories come exclusively from docs/CATEGORY_CONTRACT.md.
 // "all" aggregates these 20 categories and is never a command bucket.
 const ANTI_COMMANDS: &[CommandSpec] = &[
-    antis::listing_command::COMMAND,
     antis::anti::COMMAND,
     antis::antilink::COMMAND,
     antis::antigroup::COMMAND,
@@ -721,10 +720,10 @@ fn full_help_note(name: &str, language: Language) -> &'static str {
     match (name, spanish) {
         ("set anti link", true) => "Ámbito: chat actual; --global aplica al socket. Solo propietario verificado. Los dominios se agregan a una lista, sin activar la moderación. Revisa la lista con «list».",
         ("set anti link", false) => "Scope: current chat; --global selects the socket. Verified owner only. Adding domains does not enable moderation.",
-        ("anti", true) => "Los filtros están apagados inicialmente. «anti audit» muestra ediciones y camuflajes observados. La detección no elimina ni expulsa.",
-        ("anti", false) => "All filters initially OFF. «anti audit» reports edits and disguises; no automatic moderation.",
-        ("antilink", true) => "Protección única de dominios: configura la lista con «set anti link». Actívala aparte; detección de solo lectura.",
-        ("antilink", false) => "Single domain filter: configure with «set anti link». Enable separately; detection remains read-only.",
+        ("anti", true) => "«anti» consulta el grupo; «anti --mod» el socket y «anti --global» el valor base general, todavía sin política Vault compartida. «anti audit» muestra ediciones y camuflajes. Solo «set anti» modifica; no hay moderación automática.",
+        ("anti", false) => "«anti» inspects the group, «anti --mod» this socket, «anti --global» the unconfigured global factory baseline. Only «set anti» writes. No automatic moderation.",
+        ("anti link", true) => "Protección única de dominios: configura la lista con «set anti link». Actívala aparte; detección de solo lectura.",
+        ("anti link", false) => "Single domain filter: configure with «set anti link». Enable separately; detection remains read-only.",
         ("help", true) => "También puedes responder a un mensaje con un comando escribiendo «=/>help». Se interpreta como consulta de ayuda, nunca como ejecución.",
         ("help", false) => "You can also reply to a message containing a command with «=/>help». Quoted commands are never executed.",
         ("register", true) => "Registro voluntario, aún sin alta real en Vault. El acceso invitado a funciones básicas no exige identificación civil.",
@@ -1064,10 +1063,15 @@ mod tests {
         assert!(pending_count() > 0);
         assert_eq!(antis::CATEGORY.commands.len(), crate::anti::RULES.len() + 2);
         for rule in crate::anti::RULES {
+            let name = match *rule {
+                "antiviewonce" => "anti oneview".to_owned(),
+                "antivideo" => "anti movie".to_owned(),
+                other => format!("anti {}", &other[4..]),
+            };
             assert!(antis::CATEGORY
                 .commands
                 .iter()
-                .any(|entry| entry.name == *rule));
+                .any(|entry| entry.name == name));
         }
     }
 

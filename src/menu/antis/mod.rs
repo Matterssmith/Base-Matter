@@ -32,7 +32,6 @@ pub const CATEGORY: Category = Category {
     en: "PROTECTIONS",
     icon: "♧",
     commands: &[
-        listing_command::COMMAND,
         anti::COMMAND,
         antilink::COMMAND,
         antigroup::COMMAND,
@@ -56,5 +55,6 @@ pub const CATEGORY: Category = Category {
         antibot::COMMAND,
         antimedia::COMMAND,
         antidelete::COMMAND,
+        crate::menu::set::set_anti::COMMAND,
     ],
 };
