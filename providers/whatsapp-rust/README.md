@@ -1,3 +1,14 @@
+### 2026-11-18 — Proveedor: expectativas corregidas para help privado
+
+El último CI del proveedor compiló, pero la prueba provider.rs todavía
+prohibía =/>help y =/>h desde el chat propio, aunque la nueva ruta
+firmada y autorizada de ayuda ya los permite. Se trasladan esos
+comandos a los casos positivos, incluidas help all y help antis.
+Las órdenes on/off retiradas siguen prohibidas. No se cambió
+la función de autorización ni se amplió a terceros; es actualización
+de prueba acorde al contrato de ayuda previamente incorporado.
+READMEs revisados 2/2, nuevas pruebas CI por SHA necesarias.
+
 ### 2026-11-18 — Corrección de tipado en selector público
 
 El CI del SHA 8c4c79d superó el formato del proveedor pero reveló

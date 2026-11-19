@@ -264,8 +264,6 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
     let (vars, root) = fixture();
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
     for command in [
-        "=/>help",
-        "=/>h",
         "=/>on",
         "=/>off",
         "=/>start",
@@ -284,6 +282,10 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
     for allowed in [
         "=/>menu",
         "=/>menú",
+        "=/>help",
+        "=/>h",
+        "=/>help all",
+        "=/>help antis",
         "=/>menu set",
         "=/>menu antis",
         "=/>menu antis 2",
