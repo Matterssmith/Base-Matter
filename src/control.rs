@@ -540,7 +540,6 @@ impl ControlDispatcher {
         })
     }
 
-
     /// Provider-inspected group message, not a control invocation.
     /// No moderation action, bot routing, permissions or outgoing reply.
     pub fn inspect_anti_observation(

@@ -309,14 +309,11 @@ fn edited_obfuscated_links_are_detected_only_with_active_generic_rule() {
     store
         .edit_link_domains(SOCKET, Some(GROUP), "add", &args(&["t.me"]))
         .unwrap();
-    store.command(SOCKET, Some(GROUP), &args(&["link", "on"])).unwrap();
+    store
+        .command(SOCKET, Some(GROUP), &args(&["link", "on"]))
+        .unwrap();
     let (review, found) = store
-        .inspect_message(
-            SOCKET,
-            GROUP,
-            "https://t․me/abc",
-            EditState::EditedReadable,
-        )
+        .inspect_message(SOCKET, GROUP, "https://t․me/abc", EditState::EditedReadable)
         .unwrap();
     assert!(review.link_camouflage);
     assert_eq!(found.len(), 1);

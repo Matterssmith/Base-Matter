@@ -430,14 +430,9 @@ fn incoming_group_anti_events_are_verified_audited_and_never_executed() {
     let store = Arc::new(AntiStore::open(":memory:").unwrap());
     let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
     let controller = Arc::new(
-        ControlDispatcher::new(
-            activation,
-            Arc::new(BotRegistry::in_memory()),
-            router,
-            None,
-        )
-        .with_group_antis(Arc::clone(&store))
-        .with_unified_live_controls(),
+        ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
+            .with_group_antis(Arc::clone(&store))
+            .with_unified_live_controls(),
     );
     let bridge = WhatsAppControlBridge::new(
         WhatsAppBridgeConfig {
@@ -458,8 +453,14 @@ fn incoming_group_anti_events_are_verified_audited_and_never_executed() {
         GROUP,
         false,
     );
-    assert_eq!(bridge.ingest(&first).unwrap(), WhatsAppBridgeOutcome::AntiObserved);
-    assert_eq!(bridge.ingest(&first).unwrap(), WhatsAppBridgeOutcome::Duplicate);
+    assert_eq!(
+        bridge.ingest(&first).unwrap(),
+        WhatsAppBridgeOutcome::AntiObserved
+    );
+    assert_eq!(
+        bridge.ingest(&first).unwrap(),
+        WhatsAppBridgeOutcome::Duplicate
+    );
     let opaque = frame(
         "anti-edit-2",
         "\u{001f}matter-anti:opaque:",
@@ -467,7 +468,10 @@ fn incoming_group_anti_events_are_verified_audited_and_never_executed() {
         GROUP,
         false,
     );
-    assert_eq!(bridge.ingest(&opaque).unwrap(), WhatsAppBridgeOutcome::AntiObserved);
+    assert_eq!(
+        bridge.ingest(&opaque).unwrap(),
+        WhatsAppBridgeOutcome::AntiObserved
+    );
     let mut forged = frame(
         "anti-edit-3",
         "\u{001f}matter-anti:original:hello",
