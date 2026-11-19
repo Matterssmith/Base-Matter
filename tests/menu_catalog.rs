@@ -102,7 +102,7 @@ fn help_queries_support_command_metadata_and_category_pages() {
     let root_help_all = menu::render_help("all", options).unwrap();
     assert_eq!(root_help_all, root_help);
     let help = menu::render_help("antilink", options).unwrap();
-    assert!(help.contains("Ayuda: antilink"));
+    assert!(help.contains("Ayuda completa: antilink"));
     assert!(help.contains("=/>antilink on|off|inherit"));
     let page = menu::render_help("antis 1", options).unwrap();
     assert!(page.contains("antilink"));

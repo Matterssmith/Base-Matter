@@ -819,9 +819,15 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
         let command = resolve_quoted_help(quoted)?;
         return render_help(command, options);
     }
-    if CATEGORIES
-        .iter()
-        .any(|category| category.id == canonical_category(query))
+    // Exact command metadata wins over a category alias of the same name.
+    // For example, 'anti' is a control verb AND the Anti category.
+    let is_command = CATEGORIES.iter().any(|category| {
+        category.commands.iter().any(|command| command.name == query)
+    });
+    if !is_command
+        && CATEGORIES
+            .iter()
+            .any(|category| category.id == canonical_category(query))
     {
         return category_help(query, 1, options);
     }
