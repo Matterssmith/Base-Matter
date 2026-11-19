@@ -486,13 +486,31 @@ fn incoming_group_anti_events_are_verified_audited_and_never_executed() {
 fn public_anti_inspections_are_read_only_and_scoped_to_enabled_chat() {
     let bridge = fixture();
     bridge
-        .ingest(&frame("owner-enable", "=/>bot on", "owner", OWNER_JID, true))
+        .ingest(&frame(
+            "owner-enable",
+            "=/>bot on",
+            "owner",
+            OWNER_JID,
+            true,
+        ))
         .unwrap();
     bridge
-        .ingest(&frame("owner-socket", "=/>bot --mod on", "owner", OWNER_JID, true))
+        .ingest(&frame(
+            "owner-socket",
+            "=/>bot --mod on",
+            "owner",
+            OWNER_JID,
+            true,
+        ))
         .unwrap();
     bridge
-        .ingest(&frame("owner-group", "=/>bot group on", "owner", OWNER_JID, true))
+        .ingest(&frame(
+            "owner-group",
+            "=/>bot group on",
+            "owner",
+            OWNER_JID,
+            true,
+        ))
         .unwrap();
     for (id, query) in [
         ("read-chat", "=/>anti"),
@@ -507,9 +525,21 @@ fn public_anti_inspections_are_read_only_and_scoped_to_enabled_chat() {
         ));
     }
     assert!(bridge
-        .ingest(&frame("read-write", "=/>anti link on", READER, GROUP, false))
+        .ingest(&frame(
+            "read-write",
+            "=/>anti link on",
+            READER,
+            GROUP,
+            false
+        ))
         .is_err());
     assert!(bridge
-        .ingest(&frame("read-set", "=/>set anti link on", READER, GROUP, false))
+        .ingest(&frame(
+            "read-set",
+            "=/>set anti link on",
+            READER,
+            GROUP,
+            false
+        ))
         .is_err());
 }
