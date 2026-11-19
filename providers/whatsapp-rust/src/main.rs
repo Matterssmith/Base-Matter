@@ -553,19 +553,11 @@ async fn main() -> Result<()> {
                 let own_pn = ctx.client.pn().map(|jid| jid.to_non_ad_string());
                 let own_lid = ctx.client.lid().map(|jid| jid.to_non_ad_string());
                 let selected_button = readonly_button_command(&ctx.message);
-                let reply_help = if source.is_group || source.is_from_me {
-                    help_from_quoted_message(
-                        &ctx.message,
-                        ctx.message.text_content().unwrap_or_default(),
-                        &chat,
-                    )
-                } else {
-                    help_from_quoted_message(
-                        &ctx.message,
-                        ctx.message.text_content().unwrap_or_default(),
-                        &chat,
-                    )
-                };
+                let reply_help = help_from_quoted_message(
+                    &ctx.message,
+                    ctx.message.text_content().unwrap_or_default(),
+                    &chat,
+                );
 
                 // Legacy edits provide edited_message directly. Newer clients
                 // may carry an encrypted MESSAGE_EDIT envelope which requires

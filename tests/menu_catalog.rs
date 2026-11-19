@@ -246,8 +246,12 @@ fn quoted_command_help_uses_catalog_and_never_runs_the_original() {
     ];
     for (quoted, name) in examples {
         let encoded = URL_SAFE_NO_PAD.encode(quoted);
-        let reply = menu::render_help(&format!("--quoted {encoded}"), Preferences::default()).unwrap();
-        assert!(reply.contains(&format!("Ayuda completa: {name}")), "{quoted}: {reply}");
+        let reply =
+            menu::render_help(&format!("--quoted {encoded}"), Preferences::default()).unwrap();
+        assert!(
+            reply.contains(&format!("Ayuda completa: {name}")),
+            "{quoted}: {reply}"
+        );
         assert!(!reply.contains("Bot activado"));
     }
     assert!(menu::render_help("--quoted !!!", Preferences::default()).is_err());

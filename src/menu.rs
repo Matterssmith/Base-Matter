@@ -679,7 +679,6 @@ fn verbose_menu(options: Preferences) -> Result<String> {
     Ok(output)
 }
 
-
 fn resolve_quoted_help(message: &str) -> Result<&'static str> {
     if message.len() > 1000 || message.chars().any(char::is_control) && message.contains('\r') {
         bail!("La cita no contiene un comando válido");
@@ -707,8 +706,7 @@ fn resolve_quoted_help(message: &str) -> Result<&'static str> {
             .iter()
             .flat_map(|category| category.commands.iter())
             .filter(|entry| {
-                normalized == entry.name
-                    || normalized.starts_with(&format!("{} ", entry.name))
+                normalized == entry.name || normalized.starts_with(&format!("{} ", entry.name))
             })
             .max_by_key(|entry| entry.name.len())
         {
@@ -808,8 +806,11 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
     }
     if let Some(encoded) = query.strip_prefix("--quoted ") {
         use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
-        if encoded.len() > 1500 || encoded.is_empty()
-            || !encoded.bytes().all(|byte| byte.is_ascii_alphanumeric() || b"-_".contains(&byte))
+        if encoded.len() > 1500
+            || encoded.is_empty()
+            || !encoded
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || b"-_".contains(&byte))
         {
             bail!("Cita inválida para ayuda");
         }
@@ -844,13 +845,25 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
         .ok_or_else(|| anyhow!("Comando no encontrado. Usa =/>help"))?;
     let category = CATEGORIES
         .iter()
-        .find(|category| category.commands.iter().any(|item| item.name == command.name))
+        .find(|category| {
+            category
+                .commands
+                .iter()
+                .any(|item| item.name == command.name)
+        })
         .ok_or_else(|| anyhow!("Comando sin categoría"))?;
     let mut lines = vec![
         format!("📖 Ayuda completa: {}", command.name),
         format!("Categoría: {}", label(category, options.language)),
         format!("Descripción: {}", description(command, options.language)),
-        format!("Estado: {}", if command.implemented { "En catálogo" } else { "Pendiente" }),
+        format!(
+            "Estado: {}",
+            if command.implemented {
+                "En catálogo"
+            } else {
+                "Pendiente"
+            }
+        ),
     ];
     if !command.implemented {
         lines.push(

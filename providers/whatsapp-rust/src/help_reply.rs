@@ -4,7 +4,6 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
-use buffa::MessageField;
 use whatsapp_rust::prelude::{wa, MessageExt};
 
 /// Only the user's literal '=/>help' turns the quoted message into metadata.
@@ -45,6 +44,7 @@ pub fn help_from_quoted_message(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use buffa::MessageField;
 
     fn quoted(text: &str, remote: Option<&str>) -> wa::Message {
         wa::Message {

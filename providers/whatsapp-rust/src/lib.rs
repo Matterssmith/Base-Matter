@@ -388,9 +388,12 @@ impl Config {
                 public_category(category) || *category == "all" || safe_help_name(category)
             }
             ["=/>help" | "=/>h" | "=/>ayuda", category, page] => {
-                public_category(category)
-                    && page.parse::<usize>().is_ok_and(|v| (1..=8).contains(&v))
+                (public_category(category)
+                    && page.parse::<usize>().is_ok_and(|v| (1..=8).contains(&v)))
+                    || (*category == "set" && *page == "role")
+                    || (*category == "anti" && *page == "audit")
             }
+            ["=/>help" | "=/>h" | "=/>ayuda", "set", "anti", "link"] => true,
             ["=/>menu" | "=/>menú", category] => public_category(category) || *category == "all",
             ["=/>menu" | "=/>menú", "page", page] => matches!(*page, "1" | "2" | "3"),
             ["=/>menu" | "=/>menú", category, page] => {
