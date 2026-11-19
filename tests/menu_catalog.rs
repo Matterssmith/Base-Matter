@@ -115,9 +115,16 @@ fn help_queries_support_command_metadata_and_category_pages() {
     assert!(anti_menu.contains("=/>set anti link"));
     let all_anti = menu::render("menu all", options).unwrap();
     for retired in [
-        "antilinkwa", "antilinktelegram", "antilinkdiscord", "antilinkinstagram",
-        "antilinkfacebook", "antilinktiktok", "antilinkyoutube", "antilinkx",
-        "antilinkshort", "antilinkphishing",
+        "antilinkwa",
+        "antilinktelegram",
+        "antilinkdiscord",
+        "antilinkinstagram",
+        "antilinkfacebook",
+        "antilinktiktok",
+        "antilinkyoutube",
+        "antilinkx",
+        "antilinkshort",
+        "antilinkphishing",
     ] {
         assert!(!anti_menu.contains(retired), "{retired}");
         assert!(!all_anti.contains(retired), "{retired}");

@@ -1,3 +1,11 @@
+## 2026-11-19 — Primer cierre de CI AntiLink
+
+- SHA previo: b5b2615e6989a1fc1c29227bd921c8bab2c4bb07.
+- CI detectó diferencias de formato Rust en `src/anti.rs`, `src/control.rs`, `tests/anti.rs` y `tests/menu_catalog.rs`. Se aplicaron las diferencias exactas, sin cambios de lógica.
+- Los cambios funcionales anteriores: retiro de Anti por redes sociales, lista de dominios chat/socket, OFF predeterminado, SQLite privado y auditado.
+- Próxima fase inmediata: análisis de mensajes editados, camuflaje y detección de protocolo. Historial y pruebas del proveedor; no ejecutar comandos alterados ni prometer lectura de ediciones cifradas sin su clave.
+- README revisados 2/2; GitHub Actions nuevo SHA pendientes.
+
 ## BASE-D018 — AntiLink único y dominios por ámbito (2026-11-19)
 
 - Petición del propietario: eliminar filtros Anti por red social y usar `set anti link` para añadir varios dominios por chat o `--global` por socket.

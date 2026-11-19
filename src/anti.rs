@@ -151,7 +151,6 @@ fn display_name(name: &str) -> &str {
     }
 }
 
-
 /// Hostnames are stored by exact suffix, not platform name.
 /// URLs are accepted only to extract the host, never to fetch content.
 fn normalize_domain(input: &str) -> Result<String> {
@@ -171,14 +170,19 @@ fn normalize_domain(input: &str) -> Result<String> {
     if host.len() > 253
         || parts.len() < 2
         || parts.last().is_none_or(|tld| {
-            tld.len() < 2 || !tld.bytes().all(|byte| byte.is_ascii_alphabetic() || byte == b'-')
+            tld.len() < 2
+                || !tld
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphabetic() || byte == b'-')
         })
         || parts.iter().any(|part| {
             part.is_empty()
                 || part.len() > 63
                 || part.starts_with('-')
                 || part.ends_with('-')
-                || !part.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+                || !part
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
         })
     {
         bail!("Dominio inválido: usa un host como t.me o instagram.com");
@@ -193,9 +197,7 @@ fn valid_link_chat(socket: &str, chat: &str) -> Result<()> {
         || !chat
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || b"@._:-".contains(&byte))
-        || !(chat.ends_with("@g.us")
-            || chat.ends_with("@s.whatsapp.net")
-            || chat.ends_with("@lid"))
+        || !(chat.ends_with("@g.us") || chat.ends_with("@s.whatsapp.net") || chat.ends_with("@lid"))
     {
         bail!("Chat actual no verificado para configurar enlaces");
     }
@@ -540,7 +542,11 @@ impl AntiStore {
         if let Some(chat) = chat {
             valid_link_chat(socket, chat)?;
         }
-        let label = if chat.is_some() { "chat actual" } else { "socket global" };
+        let label = if chat.is_some() {
+            "chat actual"
+        } else {
+            "socket global"
+        };
         if matches!(operation, "list" | "lista") {
             if !values.is_empty() {
                 bail!("Uso: set anti link [--global] list");
@@ -657,9 +663,9 @@ impl AntiStore {
         }
         let blocked = self.link_domains(socket, Some(group))?;
         let matched = domains.iter().any(|host| {
-            blocked.iter().any(|domain| {
-                host == domain || host.ends_with(&format!(".{domain}"))
-            })
+            blocked
+                .iter()
+                .any(|domain| host == domain || host.ends_with(&format!(".{domain}")))
         });
         let mut found = Vec::new();
         if matched {

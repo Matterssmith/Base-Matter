@@ -735,8 +735,7 @@ impl ControlDispatcher {
                         output,
                     });
                 }
-                ["set", "anti", "link", values @ ..]
-                | ["set", "antilink", values @ ..] => {
+                ["set", "anti", "link", values @ ..] | ["set", "antilink", values @ ..] => {
                     // The source JID is provided by the authenticated bridge.
                     // The current chat is the exact signed group or private JID.
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
@@ -767,16 +766,10 @@ impl ControlDispatcher {
                         });
                     }
                     let operation = words[0];
-                    let domains: Vec<String> = words[1..]
-                        .iter()
-                        .map(|word| (*word).to_owned())
-                        .collect();
-                    let output = store.edit_link_domains(
-                        receiving_socket,
-                        scope,
-                        operation,
-                        &domains,
-                    )?;
+                    let domains: Vec<String> =
+                        words[1..].iter().map(|word| (*word).to_owned()).collect();
+                    let output =
+                        store.edit_link_domains(receiving_socket, scope, operation, &domains)?;
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
                         output,

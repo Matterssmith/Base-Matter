@@ -170,9 +170,16 @@ fn untrusted_groups_and_unknown_filters_are_rejected() {
 fn social_network_filters_are_retired_and_domains_are_scoped() {
     let store = AntiStore::open(":memory:").unwrap();
     for retired in [
-        "antilinkwa", "antilinktelegram", "antilinkinstagram",
-        "antilinkyoutube", "antilinkdiscord", "antilinkphishing",
-        "instagram", "telegram", "facebook", "twitter",
+        "antilinkwa",
+        "antilinktelegram",
+        "antilinkinstagram",
+        "antilinkyoutube",
+        "antilinkdiscord",
+        "antilinkphishing",
+        "instagram",
+        "telegram",
+        "facebook",
+        "twitter",
     ] {
         assert!(canonical_rule(retired).is_err(), "{retired}");
     }
@@ -181,7 +188,12 @@ fn social_network_filters_are_retired_and_domains_are_scoped() {
         .edit_link_domains(SOCKET, None, "add", &args(&["https://t.me/example"]))
         .unwrap();
     store
-        .edit_link_domains(SOCKET, Some(GROUP), "add", &args(&["Instagram.com", "youtube.com"]))
+        .edit_link_domains(
+            SOCKET,
+            Some(GROUP),
+            "add",
+            &args(&["Instagram.com", "youtube.com"]),
+        )
         .unwrap();
     assert_eq!(
         store.link_domains(SOCKET, Some(GROUP)).unwrap(),
@@ -195,10 +207,14 @@ fn social_network_filters_are_retired_and_domains_are_scoped() {
         .inspect_links(SOCKET, GROUP, "https://instagram.com/p")
         .unwrap()
         .is_empty()); // Link filter still OFF.
-    store.command(SOCKET, Some(GROUP), &args(&["link", "on"])).unwrap();
+    store
+        .command(SOCKET, Some(GROUP), &args(&["link", "on"]))
+        .unwrap();
     assert_eq!(
-        store.inspect_links(SOCKET, GROUP, "https://www.instagram.com/p")
-            .unwrap().len(),
+        store
+            .inspect_links(SOCKET, GROUP, "https://www.instagram.com/p")
+            .unwrap()
+            .len(),
         1
     );
     assert!(store
@@ -216,14 +232,20 @@ fn social_network_filters_are_retired_and_domains_are_scoped() {
     store
         .edit_link_domains(SOCKET, Some(GROUP), "del", &args(&["Instagram.com"]))
         .unwrap();
-    assert!(!store.link_domains(SOCKET, Some(GROUP)).unwrap().contains(&"instagram.com".to_owned()));
+    assert!(!store
+        .link_domains(SOCKET, Some(GROUP))
+        .unwrap()
+        .contains(&"instagram.com".to_owned()));
     assert!(store
         .edit_link_domains(SOCKET, Some(GROUP), "add", &args(&["bad@domain.com"]))
         .is_err());
     assert!(store
         .edit_link_domains(SOCKET, Some(GROUP), "add", &args(&["http://localhost"]))
         .is_err());
-    assert!(store.link_domains("other-socket", Some(GROUP)).unwrap().is_empty());
+    assert!(store
+        .link_domains("other-socket", Some(GROUP))
+        .unwrap()
+        .is_empty());
 }
 #[test]
 fn custom_link_domains_survive_restarts_and_do_not_enable_anti() {
@@ -235,8 +257,12 @@ fn custom_link_domains_survive_restarts_and_do_not_enable_anti() {
     ));
     {
         let store = AntiStore::open(&path).unwrap();
-        store.edit_link_domains(SOCKET, None, "add", &args(&["youtube.com"])).unwrap();
-        store.edit_link_domains(SOCKET, Some(GROUP), "add", &args(&["t.me"])).unwrap();
+        store
+            .edit_link_domains(SOCKET, None, "add", &args(&["youtube.com"]))
+            .unwrap();
+        store
+            .edit_link_domains(SOCKET, Some(GROUP), "add", &args(&["t.me"]))
+            .unwrap();
         assert!(!store.get(SOCKET, GROUP, "link").unwrap().enabled);
     }
     {
