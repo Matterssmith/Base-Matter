@@ -1,3 +1,11 @@
+## BASE-D010 — Instrucciones compactas en citas de WhatsApp (2026-11-19)
+
+- Solicitud de Dev MS Leito Delfin 3 Siss: convertir el bloque largo de instrucciones en líneas compactas, usando `> texto`.
+- Diseño: cuatro citas breves; sin párrafos o líneas vacías entre instrucciones. Se mantiene la decoración ajena al contenido, las categorías no vacías y el botón único.
+- Compatibilidad: los estilos `classic` y `none` comparten semántica; `none` no recibe citas decorativas.
+- Reutilización: `TextFormat::Quote` con saltos de línea seguros y catálogo de formato extendido.
+- Base alpha: `8a1176ff7cdfe1d86c5c5d689c4ec2e9cd1620c0`. Revisión 2/2 README. Pruebas automáticas y prueba visual nuevas: pendientes.
+
 ## 2026-11-19 — Corrección de plantilla CRLF en Windows
 
 - Base alpha: 96bd61fc8a61ca745f91e4b89a62d4bf3611832f.

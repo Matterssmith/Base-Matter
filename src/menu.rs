@@ -613,25 +613,21 @@ pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> 
             format!("✧☽︎╩[ ♧ 𝐒𝐨𝐜𝐤𝐞𝐭: *{}*", viewer.socket),
             String::new(),
             "╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀".to_owned(),
-            "│".to_owned(),
-            "│ ✦ Todos los comandos utilizan".to_owned(),
-            "│   el prefijo global indicado.".to_owned(),
-            "│".to_owned(),
-            "│ ◉ status funciona incluso".to_owned(),
-            "│   cuando el bot está apagado.".to_owned(),
-            "│".to_owned(),
-            "│ ♛ Los controles administrativos".to_owned(),
-            "│   requieren identidad verificada.".to_owned(),
-            "│".to_owned(),
-            "│ ♧ Los chats externos permanecen".to_owned(),
-            "│   desactivados por defecto.".to_owned(),
-            "│".to_owned(),
-            "│ ◈ Cada socket conserva sus".to_owned(),
-            "│   configuraciones independientes.".to_owned(),
-            "│".to_owned(),
-            "│ ⴵ Los cambios administrativos".to_owned(),
-            "│   deben registrarse en auditoría.".to_owned(),
-            "│".to_owned(),
+        ]);
+        // WhatsApp quotes distinguish operational notes from ornamental lines.
+        // Keep every line short for narrow Android screens.
+        for instruction in [
+            "◉ `status` incluso con bot OFF.",
+            "♛ Admin: identidad verificada.",
+            "♧ Externos: OFF por defecto.",
+            "◈ Sockets aislados · cambios auditados.",
+        ] {
+            lines.push(crate::message_typography::format_segment(
+                instruction,
+                crate::message_typography::TextFormat::Quote,
+            )?);
+        }
+        lines.extend([
             "╰───────────⟨ 🌀".to_owned(),
             String::new(),
             "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*".to_owned(),
@@ -648,11 +644,10 @@ pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> 
         lines.push(format!("Socket: {}", viewer.socket));
         lines.push(String::new());
         lines.push("Instrucciones:".to_owned());
-        lines.push("status funciona aunque el bot esté apagado.".to_owned());
-        lines.push("Los controles administrativos requieren identidad verificada.".to_owned());
-        lines.push("Los chats externos están desactivados por defecto.".to_owned());
-        lines.push("Cada socket mantiene configuración independiente.".to_owned());
-        lines.push("Los cambios administrativos deben auditarse.".to_owned());
+        lines.push("status incluso con bot OFF.".to_owned());
+        lines.push("Admin: identidad verificada.".to_owned());
+        lines.push("Externos: OFF por defecto.".to_owned());
+        lines.push("Sockets aislados; cambios auditados.".to_owned());
     }
     let result = lines.join("\n");
     if result.len() > 3800 || result.chars().any(|ch| ch.is_control() && ch != '\n') {

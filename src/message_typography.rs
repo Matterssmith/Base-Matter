@@ -16,6 +16,7 @@ pub enum TextFormat {
     Strikethrough,
     InlineCode,
     CodeBlock,
+    Quote,
 }
 
 /// Formats one trusted text segment. Avoid nested unbalanced WhatsApp markup.
@@ -28,6 +29,17 @@ pub fn format_segment(value: &str, format: TextFormat) -> Result<String> {
     }
     let delimiter = match format {
         TextFormat::Plain => return Ok(value.to_owned()),
+        TextFormat::Quote => {
+            let quoted = value
+                .lines()
+                .map(|line| format!("> {line}"))
+                .collect::<Vec<_>>()
+                .join("\n");
+            if quoted.len() > 3800 {
+                bail!("Quoted text exceeds WhatsApp safe length");
+            }
+            return Ok(quoted);
+        }
         TextFormat::Bold => "*",
         TextFormat::Italic => "_",
         TextFormat::Strikethrough => "~",
@@ -135,6 +147,14 @@ mod tests {
             "```codigo```"
         );
         assert!(format_segment("un`safe", TextFormat::InlineCode).is_err());
+        assert_eq!(
+            format_segment("Primera\nSegunda", TextFormat::Quote).unwrap(),
+            "> Primera\n> Segunda"
+        );
+        assert_eq!(
+            format_segment("`status` incluso con bot OFF.", TextFormat::Quote).unwrap(),
+            "> `status` incluso con bot OFF."
+        );
         let result = render_message("Aviso", "`=/>status` — Estado del chat", "sans_bold").unwrap();
         assert!(result.starts_with("*꒦꒷✰"));
         assert!(result.contains("`=/>status`"));

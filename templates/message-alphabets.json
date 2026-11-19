@@ -32,6 +32,7 @@
     "italic": "_texto_",
     "strikethrough": "~texto~",
     "inline_code": "`texto`",
-    "code_block": "```texto```"
+    "code_block": "```texto```",
+    "quote": "> texto"
   }
 }

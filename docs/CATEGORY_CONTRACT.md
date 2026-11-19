@@ -1,3 +1,7 @@
+## 2026-11-19 — Notas compactas con citas WhatsApp
+
+Las capturas del propietario prueban que el menú y botón «Categorías» aparecen en su cliente Android; no demuestran todavía el nuevo formato de cita. Se adopta la sugerencia de Leito: un encabezado de «Instrucciones» y cuatro líneas cortas que comienzan con `> ` para que WhatsApp las muestre como texto citado. Sin marcos verticales ni párrafos de separación. Preservar el contrato de categorías visibles y el estilo `none` plano. Prueba de pantalla pendiente.
+
 ## 2026-11-19 — Tipografía WhatsApp y categorías vacías ocultas (alpha)
 
 - Idea de Dev MS Leito Delfin 3 Siss: separar decoración y texto funcional usando negrita `*texto*`, código inline \`texto\` y bloque \`\`\`texto\`\`\`; no enviar los marcadores como instrucciones a ejecutar.

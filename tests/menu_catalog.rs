@@ -149,6 +149,25 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     assert!(classic.contains("💬 𝗦𝗶𝘀𝘁𝗲𝗺𝗮 𝗱𝗲 𝗖𝗼𝗻𝘁𝗿𝗼𝗹 𝗚𝗹𝗼𝗯𝗮𝗹"));
     assert!(classic.contains("╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹"));
     assert!(classic.contains("╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀"));
+    let quoted_instructions = classic
+        .split_once("╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀")
+        .unwrap()
+        .1
+        .split_once("╰───────────⟨ 🌀")
+        .unwrap()
+        .0;
+    let quote_lines: Vec<_> = quoted_instructions
+        .lines()
+        .filter(|line| !line.is_empty())
+        .collect();
+    assert_eq!(quote_lines.len(), 4);
+    assert!(quote_lines.iter().all(|line| line.starts_with("> ")));
+    assert!(quoted_instructions.contains("> ◉ `status` incluso con bot OFF."));
+    assert!(quoted_instructions.contains("> ♛ Admin: identidad verificada."));
+    assert!(quoted_instructions.contains("> ♧ Externos: OFF por defecto."));
+    assert!(quoted_instructions.contains("> ◈ Sockets aislados · cambios auditados."));
+    assert!(!quoted_instructions.contains("│   "));
+    assert!(quoted_instructions.len() < 300);
     assert!(classic.contains("*@owner_checked*"));
     assert!(classic.contains("*Owner del socket*"));
     assert!(classic.contains("*ACTIVADO*"));
@@ -174,6 +193,8 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     assert!(!plain.contains("menu sockets"));
     assert!(plain.contains("Usuario: @owner_checked"));
     assert!(plain.contains("Socket: test-socket"));
+    assert!(plain.contains("Admin: identidad verificada."));
+    assert!(!plain.contains("> ◉"));
     assert!(!plain.contains('╭'));
     assert!(!plain.contains('♪'));
     assert!(plain.contains("IA: menu ia"));

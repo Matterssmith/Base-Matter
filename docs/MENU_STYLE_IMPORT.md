@@ -1,3 +1,7 @@
+## Citas de WhatsApp incorporadas (2026-11-19)
+
+`format_segment("Línea uno\\nLínea dos", TextFormat::Quote)` produce dos líneas con `> ` al inicio para que WhatsApp las represente como citas. Compatible con texto de código inline; no es HTML ni ejecuta comandos. El alfabeto y el marco siguen disponibles para mensajes independientes del menú.
+
 ## 2026-11-19 — Tipografía WhatsApp y categorías vacías ocultas (alpha)
 
 - Idea de Dev MS Leito Delfin 3 Siss: separar decoración y texto funcional usando negrita `*texto*`, código inline \`texto\` y bloque \`\`\`texto\`\`\`; no enviar los marcadores como instrucciones a ejecutar.

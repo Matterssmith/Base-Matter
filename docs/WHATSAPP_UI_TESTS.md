@@ -1,5 +1,13 @@
 # Base-Matter alpha — probar el menú en WhatsApp
 
+## Nueva prueba de cita e instrucciones compactas (2026-11-19)
+
+En el teléfono, abre `=/>menu` y comprueba que «Instrucciones» tiene **cuatro líneas** breves, sin espacios grandes entre ellas. Todas comienzan con `> ` en el texto enviado; WhatsApp debería representarlas como una cita. El contenido resume status con bot apagado, identidad administrativa, externos OFF y sockets/auditoría. En `style none` el contenido sigue breve, sin decoración ni citas.
+
+Las capturas aportadas verifican el menú y el botón en Android anteriores a este cambio; falta confirmar el nuevo formato citado. Los botones TS18/TS19, audio y HTML experimental no cambian.
+
+
+
 ## Inicio en Debian (solo una instancia por sesión)
 
 ```bash
