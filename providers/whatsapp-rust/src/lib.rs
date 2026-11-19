@@ -380,7 +380,7 @@ impl Config {
                     && payload
                         .bytes()
                         .all(|byte| byte.is_ascii_alphanumeric() || b"-_".contains(&byte))
-            },
+            }
             ["=/>test"] | ["=/>test", "ui" | "row"] => true,
             ["=/>register"] | ["=/>register", "start"] => true,
             ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => true,

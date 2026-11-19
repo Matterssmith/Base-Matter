@@ -12,7 +12,8 @@ use tokio::{
     time::{timeout, Duration},
 };
 use whatsapp_matter_rust_provider::{
-    help_reply::help_from_quoted_message, menu_sound, parse_control_ack,
+    help_reply::help_from_quoted_message,
+    menu_sound, parse_control_ack,
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },

@@ -31,10 +31,7 @@ pub fn help_from_quoted_message(
         return None;
     }
     let quoted = context.quoted_message.as_option()?.text_content()?;
-    if quoted.len() > 1000
-        || quoted.is_empty()
-        || quoted.contains('\0')
-    {
+    if quoted.len() > 1000 || quoted.is_empty() || quoted.contains('\0') {
         return None;
     }
     let encoded = URL_SAFE_NO_PAD.encode(quoted);
@@ -71,7 +68,9 @@ mod tests {
         let message = quoted("=/>set anti link add t.me", Some(chat));
         let result = help_from_quoted_message(&message, "=/>help", chat).unwrap();
         assert!(result.starts_with("=/>help --quoted "));
-        let raw = URL_SAFE_NO_PAD.decode(result.split_whitespace().last().unwrap()).unwrap();
+        let raw = URL_SAFE_NO_PAD
+            .decode(result.split_whitespace().last().unwrap())
+            .unwrap();
         assert_eq!(raw, b"=/>set anti link add t.me");
         assert!(help_from_quoted_message(&message, "=/>bot on", chat).is_none());
         assert!(help_from_quoted_message(&message, "=/>help", "other@g.us").is_none());
