@@ -22,6 +22,7 @@ pub mod command_audit;
 pub mod commands;
 pub mod connections;
 pub mod control;
+pub mod control_scope;
 pub mod control_extensions;
 pub mod control_ipc;
 pub mod control_style;

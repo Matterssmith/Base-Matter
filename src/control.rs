@@ -732,6 +732,7 @@ impl ControlDispatcher {
                 }
 
                 ["anti", values @ ..] => {
+                    use crate::control_scope::{parse_scope, CommandScope};
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
                         bail!("Solo el propietario del socket consulta protecciones");
@@ -740,31 +741,32 @@ impl ControlDispatcher {
                         .group_antis
                         .as_ref()
                         .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
-                    let (scope, query) = match values {
-                        ["--global", query @ ..] => {
-                            let filter = match query {
+                    let scoped = parse_scope(values)?;
+                    let output = match scoped.scope {
+                        CommandScope::Global => {
+                            let filter = match scoped.arguments.as_slice() {
                                 [] => None,
                                 [name] => Some(*name),
                                 _ => bail!("Uso: anti --global [tipo]"),
                             };
-                            return Ok(DispatchResult::Extension {
-                                command: "anti".to_owned(),
-                                output: AntiStore::global_factory_defaults(filter)?,
-                            });
+                            AntiStore::global_factory_defaults(filter)?
                         }
-                        ["--mod", query @ ..] => (None, query),
-                        _ => (
-                            Some(group.ok_or_else(|| {
-                                anyhow!("Este chat no tiene filtros de grupo; usa anti --mod")
-                            })?),
-                            values,
-                        ),
+                        scope => {
+                            let group_scope = match scope {
+                                CommandScope::Socket => None,
+                                CommandScope::Chat => Some(group.ok_or_else(|| {
+                                    anyhow!("Este chat no tiene filtros de grupo; usa anti --mod")
+                                })?),
+                                CommandScope::Global => unreachable!("handled above"),
+                            };
+                            let args = scoped
+                                .arguments
+                                .iter()
+                                .map(|word| (*word).to_owned())
+                                .collect::<Vec<_>>();
+                            store.inspect_command(receiving_socket, group_scope, &args)?
+                        }
                     };
-                    let args = query
-                        .iter()
-                        .map(|word| (*word).to_owned())
-                        .collect::<Vec<_>>();
-                    let output = store.inspect_command(receiving_socket, scope, &args)?;
                     return Ok(DispatchResult::Extension {
                         command: "anti".to_owned(),
                         output,
@@ -782,16 +784,13 @@ impl ControlDispatcher {
                         .group_antis
                         .as_ref()
                         .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
-                    // Scope flags never authorize writes across socket boundaries.
-                    if values.contains(&"--global") {
+                    use crate::control_scope::{parse_scope, CommandScope};
+                    let scoped = parse_scope(values)?;
+                    if scoped.scope == CommandScope::Global {
                         bail!("La configuración global requiere autoridad Vault verificada; usa --mod para este socket");
                     }
-                    let socket_scope = values.contains(&"--mod");
-                    let words: Vec<&str> = values
-                        .iter()
-                        .copied()
-                        .filter(|word| *word != "--mod")
-                        .collect();
+                    let socket_scope = scoped.scope == CommandScope::Socket;
+                    let words = scoped.arguments;
                     // Domain lists may be scoped to a verified private chat as well.
                     if let [name, operation, domains @ ..] = words.as_slice() {
                         if *name == "link"

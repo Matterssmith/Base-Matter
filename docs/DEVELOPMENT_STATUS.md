@@ -1,3 +1,7 @@
+## 2026-11-19 — Ámbitos y estado de usuario (contrato de migración)
+
+`--mod` identifica el socket autenticado; `--global` los valores predeterminados generales (no un alias del socket). Consulta sin bandera = chat actual. Ver `docs/CONTROL_SCOPE_CONTRACT.md`. Cualquier usuario podrá consultar solo campos públicos de otro participante por respuesta, mención, número o `user <id>` cuando exista un resolvedor de identidad verificado; esa ruta **aún no está conectada**. Se introdujo el parser común y la protección Anti lo usa; otras familias requieren migración explícita, pruebas y permisos por comando. Las escrituras globales no están implementadas y siguen bloqueadas.
+
 ## 2026-11-19 — Comandos Anti separados por consulta, edición y ámbito
 
 - `=/>anti`: inventario de filtros del grupo actual, sin modificar valores.
