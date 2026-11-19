@@ -1,3 +1,9 @@
+## 2026-11-19 — Formato de resolver de comandos en ayuda
+
+- Base alpha anterior 97472dbdca9a5a8a7f6f535fa91d73bccb9abbe4. La verificación Rustfmt solicitó reducir el filtro de nombre exacto o prefijo en `src/menu.rs` a una línea.
+- Corrección puramente de estilo; ya está escrita la prueba de la ayuda por cita y de los subcomandos, y el transporte Whatsapp sigue sin ejecutar mensajes citados.
+- README 2/2 revisados. CI del nuevo commit pendiente.
+
 ## 2026-11-19 — Resolver nombres de subcomandos en help
 
 - SHA previo 42c95c8452528d70dcce19ae82b0dad187545610. El test de ayuda citado reveló que `help set role` intentaba interpretar `role` como un número de página de categoría.

@@ -849,9 +849,7 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
     let command = CATEGORIES
         .iter()
         .flat_map(|category| category.commands.iter())
-        .filter(|command| {
-            command.name == query || query.starts_with(&format!("{} ", command.name))
-        })
+        .filter(|command| command.name == query || query.starts_with(&format!("{} ", command.name)))
         .max_by_key(|command| command.name.len())
         .ok_or_else(|| anyhow!("Comando no encontrado. Usa =/>help"))?;
     let category = CATEGORIES
