@@ -2,11 +2,12 @@
 use crate::menu::Category;
 pub mod credits;
 pub mod menu;
+pub mod register;
 
 pub const CATEGORY: Category = Category {
     id: "navigation",
     es: "𝗡𝗔𝗩𝗘𝗚𝗔𝗖𝗜𝗢́𝗡",
     en: "NAVIGATION",
     icon: "☷",
-    commands: &[menu::COMMAND, credits::COMMAND],
+    commands: &[menu::COMMAND, credits::COMMAND, register::COMMAND],
 };

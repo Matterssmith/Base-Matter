@@ -366,3 +366,44 @@ fn all_21_canonical_categories_and_three_pages_have_real_dynamic_menu_routing() 
                 && output.contains("[menu utils]")
     ));
 }
+
+#[test]
+fn guest_can_read_registration_info_without_enrollment_or_active_bot() {
+    let bridge = fixture();
+    assert!(matches!(
+        bridge.ingest(&frame("guest-register-1", "=/>register", READER, READER, false)).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
+            if command == "register"
+                && output.contains("Modo invitado")
+                && output.contains("No necesitas registrarte")
+    ));
+    assert!(matches!(
+        bridge.ingest(&frame("guest-register-2", "=/>register start", READER, READER, false)).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
+            if command == "register"
+                && output.contains("No se guardó")
+    ));
+    assert_eq!(
+        bridge.ingest(&frame("guest-menu-off", "=/>menu", READER, READER, false)).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
+    );
+    assert!(bridge.ingest(&frame("guest-mutation-denied", "=/>set role 123 admin", READER, READER, false)).is_err());
+}
+
+#[test]
+fn guest_capability_contract_does_not_require_identity_enrollment() {
+    use matter_base::guest::{can_use_without_registration, GuestCapability as G};
+    for capability in [G::Status, G::RegistrationInfo] {
+        assert!(can_use_without_registration(capability, false));
+    }
+    for capability in [G::Menu, G::Help, G::UiDiagnostic, G::Credits, G::BotInfo] {
+        assert!(!can_use_without_registration(capability, false));
+        assert!(can_use_without_registration(capability, true));
+    }
+    for capability in [
+        G::AdministrativeWrite, G::VaultProfile, G::IdentityVerification, G::CodeExecution,
+    ] {
+        assert!(!can_use_without_registration(capability, false));
+        assert!(!can_use_without_registration(capability, true));
+    }
+}

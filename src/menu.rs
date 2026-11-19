@@ -157,7 +157,11 @@ pub static CATEGORIES: &[Category] = &[
         es: "Principal",
         en: "Main",
         icon: "✪",
-        commands: &[navigation::menu::COMMAND, ai::help::COMMAND],
+        commands: &[
+            navigation::menu::COMMAND,
+            ai::help::COMMAND,
+            navigation::register::COMMAND,
+        ],
     },
     Category {
         id: "mode",

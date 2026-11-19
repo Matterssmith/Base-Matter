@@ -1,3 +1,9 @@
+## BASE-D015 — Sin registro obligatorio: invitado demo (2026-11-19)
+
+- Invitados pueden consumir funciones básicas autorizadas, sin CURP, biometría ni registro Vault; heredan las restricciones normales del socket/chat.
+- `=/>register` no da roles ni confirma alta. El futuro gateway de Vault es voluntario y verificará consentimiento para funciones personales.
+- Base alpha previa: ea7c0da6c579f24406093940e7677fe6a349dfbd. Nuevos tests guest + puente. README 2/2. Bot-Matter todavía bloqueado. CI y prueba de teléfono pendientes.
+
 ## 2026-11-19 — Clippy Rust del receptor ListResponse
 
 - CI del SHA 031ebb79ad1edc7c81d68a8997ba9c11918681b5: proveedor compiló y todos sus tests pasaron; Clippy estricta falló en tests/ui.rs por un `..Default::default()` innecesario en `SingleSelectReply`. Se quitó sin modificar protocolo ni permisos.

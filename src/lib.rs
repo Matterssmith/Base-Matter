@@ -27,6 +27,7 @@ pub mod control_style;
 pub mod control_sync;
 pub mod core;
 pub mod events;
+pub mod guest;
 pub mod external_compat;
 pub mod i18n;
 pub mod ingress;

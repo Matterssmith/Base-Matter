@@ -222,6 +222,7 @@ impl Config {
                     | "=/>creditos"
                     | "=/>créditos"
                     | "=/>test"
+                    | "=/>register"
             )
         } else {
             matches!(
@@ -241,6 +242,7 @@ impl Config {
                     | "=/>audit"
                     | "=/>matter"
                     | "=/>test"
+                    | "=/>register"
                     | "=/>anti"
                     | "=/>antis"
                     | "=/>credits"
@@ -372,6 +374,7 @@ impl Config {
             | ["=/>credits" | "=/>creditos" | "=/>créditos"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda"] => true,
             ["=/>test"] | ["=/>test", "ui" | "row"] => true,
+            ["=/>register"] | ["=/>register", "start"] => true,
             ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda", category] => {
                 public_category(category) || *category == "all" || safe_help_name(category)

@@ -378,6 +378,14 @@ impl ControlDispatcher {
         let decision = self.bot_admission(socket, group, kind)?;
         let parts: Vec<_> = message.split_whitespace().collect();
         match parts.as_slice() {
+            ["=/>register"] | ["=/>register", "start"] => {
+                let start_requested = parts.len() == 2;
+                // Safe even while disabled: this is public explanatory text.
+                Ok(DispatchResult::Extension {
+                    command: "register".to_owned(),
+                    output: crate::guest::registration_notice(start_requested).to_owned(),
+                })
+            }
             ["=/>status" | "=/>estado"] => {
                 if let Some(group_id) = group {
                     Ok(DispatchResult::GroupStatus {
@@ -399,7 +407,10 @@ impl ControlDispatcher {
                 output: "La configuración global del socket es privada del propietario. Usa =/>status para consultar el estado de este chat.".to_owned(),
             }),
             ["=/>menu" | "=/>menú", rest @ ..] if rest.len() <= 2 => {
-                if !decision.decision.enabled {
+                if !crate::guest::can_use_without_registration(
+                    crate::guest::GuestCapability::Menu,
+                    decision.decision.enabled,
+                ) {
                     return Ok(DispatchResult::Inactive);
                 }
                 let theme = self
@@ -631,6 +642,12 @@ impl ControlDispatcher {
                 }
             }
             match tokens.as_slice() {
+                ["register"] | ["register", "start"] => {
+                    return Ok(DispatchResult::Extension {
+                        command: "register".to_owned(),
+                        output: crate::guest::registration_notice(tokens.len() == 2).to_owned(),
+                    });
+                }
                 ["test"]
                 | ["test", "ui" | "html" | "row"]
                 | ["test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => {
