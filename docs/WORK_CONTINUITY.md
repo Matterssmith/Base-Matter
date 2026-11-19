@@ -1,5 +1,18 @@
 # Checkpoint de continuidad — Base-Matter
 
+## Checkpoint 2026-11-18 — experimento TS18/TS19 + HTML + audio
+- SHA anterior: 206d50707ec556880fe4e65b912e40245bef722a.
+- Rama: alpha. Commit: buscar mensaje "feat(alpha): start menu html audio TS18 TS19 lab".
+- Cambio: fuente Ogg/Opus original, envío opt-in en self-chat
+  de HTML experimental, tarjetas ts18/ts19, audio pulsable y
+  menú normal primero. Flags MATTER_WA_NATIVE_BUTTONS=1,
+  MATTER_WA_MENU_LAB=1, MATTER_WA_RICH_HTML=1.
+- Estado CI de este cambio: pendiente. Bot-Matter bloqueado.
+- Siguiente: corregir allowlist de las 21 categorías y navegación
+  en lectores, añadir pruebas UI, revisar Rustfmt, CI y teléfono.
+- README revisados: 2/2. beta/stable intactos.
+
+
 ## Punto de recuperación (18 nov 2026 México / 19 nov UTC)
 
 - **Repositorio**: Matterssmith/Base-Matter.

@@ -1,5 +1,16 @@
 # Base-Matter — repository instructions
 
+## 2026-11-18 — Laboratorio del menú en el chat propio
+La prueba =/>menu mantiene primero las 21 categorías originales y UN
+selector «Categorías». Con MATTER_WA_MENU_LAB=1, solo en self-chat
+autenticado del dueño, se ensayan HTML RichResponse opcional,
+tarjetas TS18/TS19 Audio/MP4/Enlace y audio Ogg/Opus original.
+No hay autoplay, JS, descarga real ni permisos extra por pulsaciones;
+nunca enviar estas pruebas a terceros. Requerir fallback texto.
+Registrar cada cambio también en DECISION_LOG, WORK_CONTINUITY,
+DEVELOPMENT_STATUS y revisar ambos README.
+
+
 ## REGLA PRIORITARIA — CONTINUIDAD Y DECISIONES POR COMMIT (2026-11-18)
 
 Consultar siempre, **antes de modificar**, docs/WORK_CONTINUITY.md,

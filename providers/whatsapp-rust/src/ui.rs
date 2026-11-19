@@ -324,6 +324,42 @@ pub fn native_ui_probe_message() -> Result<wa::Message> {
     })
 }
 
+/// Read-only button cards based on the original ts18/ts19 layout.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MenuCardVariant {
+    Ts18,
+    Ts19,
+}
+
+pub fn menu_lab_card(variant: MenuCardVariant) -> wa::Message {
+    let button = |id: &str, name: &str| wa::message::buttons_message::Button {
+        button_id: Some(id.to_owned()),
+        button_text: MessageField::some(wa::message::buttons_message::button::ButtonText {
+            display_text: Some(name.to_owned()),
+        }),
+        r#type: Some(wa::message::buttons_message::button::Type::RESPONSE),
+        ..Default::default()
+    };
+    let mut buttons = vec![
+        button("matter.test.row.audio", "Audio"),
+        button("matter.test.row.mp4", "MP4"),
+    ];
+    if variant == MenuCardVariant::Ts19 {
+        buttons.push(button("matter.test.row.link", "Enlace"));
+    }
+    let title = if variant == MenuCardVariant::Ts18 { "TS18" } else { "TS19" };
+    wa::Message {
+        buttons_message: MessageField::some(wa::message::ButtonsMessage {
+            content_text: Some(format!("{title} · Matterssmith\nAudio · MP4 · Enlace\nPrueba de botones, sin descargas.")),
+            footer_text: Some("Base-Matter · interfaz de prueba".to_owned()),
+            header_type: Some(wa::message::buttons_message::HeaderType::EMPTY),
+            buttons,
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
+}
+
 /// A legacy ButtonsMessage row, matching the protocol family used by
 /// classic Go/JS SendButtonsRow examples. Text-only on purpose: a real
 /// thumbnail needs an independently uploaded and encrypted WA media object.

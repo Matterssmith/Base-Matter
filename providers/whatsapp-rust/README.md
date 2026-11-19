@@ -1,3 +1,12 @@
+### 2026-11-18 — Prueba opcional HTML, sonido y botones en menú
+En alpha, el primer =/>menu sigue mostrando 21 categorías y el
+selector Categorías. MATTER_WA_MENU_LAB=1 añade sólo en self-chat
+autenticado tarjetas TS18 y TS19, tono original en audio
+cifrado Ogg/Opus y HTML RichResponse cuando
+MATTER_WA_RICH_HTML=1. El audio requiere pulsar reproducir;
+HTML no ejecuta JavaScript y puede no aparecer en WhatsApp.
+README revisados: 2/2. CI y teléfono pendientes.
+
 ### 2026-11-18 — Continuidad obligatoria y permiso Aura Reed comunicado
 
 El usuario exige registrar cada idea y cambio en instrucciones, un

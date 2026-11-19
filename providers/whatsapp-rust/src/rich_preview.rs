@@ -6,8 +6,9 @@
  */
 use anyhow::{bail, Result};
 use serde_json::{json, Value};
+use base64::Engine;
 
-const MAX_TEXT_BYTES: usize = 3200;
+const MAX_TEXT_BYTES: usize = 3800;
 const MAX_HTML_BYTES: usize = 16 * 1024;
 
 /// Build a safe, fully offline HTML preview of the verified original menu.
@@ -31,6 +32,8 @@ pub fn menu_html_preview(menu: &str) -> Result<String> {
             _ => escaped.push(ch),
         }
     }
+    let audio_data = base64::engine::general_purpose::STANDARD
+        .encode(crate::menu_sound::menu_tone_bytes());
     let result = format!(
         r#"<!doctype html>
 <html lang="es">
@@ -52,11 +55,12 @@ small{{display:block;margin:15px 0;color:#a5b8d8}}
 <body><main>
 <pre>{escaped}</pre>
 <div class="controls">
-<button type="button" disabled>Estado</button>
-<button type="button" disabled>Menú</button>
-<button type="button" disabled>Créditos</button>
+<button type="button" disabled>Audio</button>
+<button type="button" disabled>MP4</button>
+<button type="button" disabled>Enlace</button>
 </div>
-<small>Vista previa HTML local. Los botones reales se prueban por separado mediante NativeFlow; esta pantalla no se envía a WhatsApp.</small>
+<audio controls preload="none" aria-label="Sonido original"><source src="data:audio/ogg;base64,{audio_data}" type="audio/ogg; codecs=opus"></audio>
+<small>Vista HTML experimental. Audio pulsable; nunca autoplay. Los botones activos son mensajes nativos separados.</small>
 </main></body></html>"#
     );
     if result.len() > MAX_HTML_BYTES {

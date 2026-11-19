@@ -19,12 +19,18 @@ use whatsapp_matter_rust_provider::{
     render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
     ui::{
-        legacy_row_probe_message, native_navigation_message, native_ui_probe_message,
-        readonly_button_command,
+        legacy_row_probe_message, menu_lab_card, native_navigation_message,
+        native_ui_probe_message, readonly_button_command, MenuCardVariant,
     },
-    Config, ControlAck, Event, SessionLease,
+    menu_sound, Config, ControlAck, Event, SessionLease,
 };
-use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*};
+use whatsapp_rust::{
+    download::MediaType,
+    media::{self, AudioOptions},
+    pair_code::PairCodeOptions,
+    prelude::*,
+    upload::UploadOptions,
+};
 
 async fn deliver(
     address: std::net::SocketAddrV4,
@@ -54,6 +60,49 @@ async fn deliver(
         Duration::from_secs(4)
     };
     timeout(deadline, transport).await?
+}
+
+// Opt-in test only. The caller already verified owner, socket and self-chat.
+async fn send_menu_lab(ctx: &whatsapp_rust::bot::MessageContext, menu: &str, rich_html: bool) {
+    if rich_html {
+        if let Ok(message) = experimental_self_chat_rich_message(menu) {
+            if ctx.send_message(message).await.is_err() {
+                eprintln!("Base-Matter: rich HTML menu experiment rejected");
+            }
+        } else {
+            eprintln!("Base-Matter: rich HTML preview exceeds bounds");
+        }
+    }
+    for variant in [MenuCardVariant::Ts18, MenuCardVariant::Ts19] {
+        if ctx.send_message(menu_lab_card(variant)).await.is_err() {
+            eprintln!("Base-Matter: menu test card rejected");
+        }
+    }
+    let upload = timeout(
+        Duration::from_secs(15),
+        ctx.client.upload(
+            menu_sound::menu_tone_bytes().to_vec(),
+            MediaType::Audio,
+            UploadOptions::default(),
+        ),
+    )
+    .await;
+    match upload {
+        Ok(Ok(uploaded)) => {
+            let sound = media::audio_message(
+                uploaded,
+                AudioOptions {
+                    duration_seconds: Some(1),
+                    ptt: Some(false),
+                    ..Default::default()
+                },
+            );
+            if ctx.send_message(sound).await.is_err() {
+                eprintln!("Base-Matter: menu audio message rejected");
+            }
+        }
+        _ => eprintln!("Base-Matter: menu audio upload unavailable"),
+    }
 }
 
 async fn require_local_controller(address: std::net::SocketAddrV4) -> Result<()> {
@@ -418,6 +467,7 @@ async fn main() -> Result<()> {
     // Unverified rich-HTML transport, explicitly enabled only for
     // an authenticated owner's self-chat. No forged Meta AI envelope.
     let rich_html_trial = matches!(std::env::var("MATTER_WA_RICH_HTML").as_deref(), Ok("1"));
+    let menu_lab = matches!(std::env::var("MATTER_WA_MENU_LAB").as_deref(), Ok("1"));
     require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
     let database = config
@@ -637,42 +687,30 @@ async fn main() -> Result<()> {
                                 }
                                 eprintln!("Base-Matter: HTML test unavailable; sending text instructions");
                             }
-                            if rich_html_trial
-                                && frame.from_me
-                                && frame.chat_jid == config.owner_jid
-                                && matches!(actual_command, "=/>menu" | "=/>menú")
-                            {
-                                if let Ok(message) = experimental_self_chat_rich_message(&response)
-                                {
-                                    if ctx.send_message(message).await.is_ok() {
-                                        return;
-                                    }
-                                }
-                                // A transport rejection falls back to NativeFlow/text;
-                                // accepted delivery still needs visual validation.
-                                eprintln!(
-                                    "Base-Matter: experimental HTML rejected; using native/text menu"
-                                );
-                            }
-                            if native_buttons
-                                && (matches!(actual_command, "=/>menu" | "=/>menú" | "=/>help" | "=/>h" | "=/>ayuda")
-                                    || actual_command.starts_with("=/>menu ")
-                                    || actual_command.starts_with("=/>menú ")
-                                    || actual_command.starts_with("=/>help ")
-                                    || actual_command.starts_with("=/>h ")
-                                    || actual_command.starts_with("=/>ayuda "))
-                            {
+                            let is_menu = matches!(actual_command, "=/>menu" | "=/>menú")
+                                || actual_command.starts_with("=/>menu ")
+                                || actual_command.starts_with("=/>menú ");
+                            let is_root = matches!(actual_command, "=/>menu" | "=/>menú");
+                            // Help is text-only. A help reply must not display a category selector.
+                            let mut sent = false;
+                            if native_buttons && is_menu {
                                 if let Ok(interactive) = native_navigation_message(&response, actual_command) {
-                                    if ctx.send_message(interactive).await.is_ok() {
-                                        return;
-                                    }
+                                    sent = ctx.send_message(interactive).await.is_ok();
                                 }
-                                // Unsupported or rejected native buttons
-                                // must not suppress the exact original menu.
-                                eprintln!("Base-Matter: native buttons unavailable; using text menu");
+                                if !sent {
+                                    eprintln!("Base-Matter: native selector unavailable; using text");
+                                }
                             }
-                            if ctx.reply(response).await.is_err() {
-                                eprintln!("Base-Matter control applied; chat acknowledgment unavailable");
+                            if !sent {
+                                sent = ctx.reply(&response).await.is_ok();
+                                if !sent {
+                                    eprintln!("Base-Matter: control reply unavailable");
+                                }
+                            }
+                            if sent && menu_lab && is_root && frame.from_me
+                                && !data.is_group && frame.chat_jid == config.owner_jid
+                            {
+                                send_menu_lab(&ctx, &response, rich_html_trial).await;
                             }
                         }
                         Ok(ControlAck::Duplicate) => {

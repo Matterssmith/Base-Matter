@@ -1,3 +1,10 @@
+## 2026-11-18 — Laboratorio =/>menu (en desarrollo)
+Proveedor Rust: se añadió tono Ogg/Opus y ensayo opt-in en chat propio
+con HTML experimental, tarjetas TS18/TS19 y selector normal primero.
+Sin autoplay, JS, descargas ni permisos añadidos.
+CI del nuevo SHA pendiente; faltan allowlist de categorías,
+pruebas e interacción real móvil. README revisados: 2/2.
+
 ## Checkpoint de implementación — 2026-11-18 (México)
 
 **Idea del propietario:** cada nueva idea y cambio debe quedar en las

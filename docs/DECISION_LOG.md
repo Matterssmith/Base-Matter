@@ -1,5 +1,16 @@
 # Historial de decisiones de implementación — Base-Matter
 
+## BASE-D003 — Menú HTML y sonido TS18/TS19, 2026-11-18
+- Origen: prueba visual =/>menu pedida por el propietario.
+- Decisión: un selector y 21 categorías primero; tarjetas TS18
+  (Audio/MP4), TS19 (Audio/MP4/Enlace), RichResponse y un tono
+  de 0.45s como extras sólo en self-chat verificado y opt-in.
+- Implementación: proveedor Rust, audio Opus original, sin JavaScript,
+  suplantación Meta AI, descargas ni roles; fallback texto.
+- Pendiente: CI Linux/Windows/proveedor, móvil real, compatibilidad
+  RichResponse y botones. No afirmar éxito visual sin pantalla.
+
+
 ## 2026-11-18 (MX) — BASE-D002: permiso informado de Jeriel
 - **Origen:** titular del ecosistema comunica autorización de Jeriel,
   creador de Aura Reed, para usar su clave de IA según lo planeado.
