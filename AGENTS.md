@@ -1,5 +1,8 @@
 # Base-Matter — repository instructions
 
+## Contrato visual exacto de menú (noviembre 2026)
+Respetar la cenefa inicial/final, encabezado global, 21 categorías cerradas, autoridad descriptiva, bloque dinámico de identidad/socket/rango/estado e instrucciones conforme a [docs/CATEGORY_CONTRACT.md](docs/CATEGORY_CONTRACT.md). Sólo un botón «Categorías»; no listar ni etiquetar categorías vacías. `style none` debe operar sin símbolos. Nunca confundir propietario verificado del socket con Owner Global de Vault, ni exponer PN/LID a terceros. No inventar rangos, número total ni estado.
+
 ## Aplicación del catálogo (alpha, noviembre 2026)
 La presentación `src/menu.rs` agrupa ahora comandos únicamente en las 20 categorías permitidas; `Todo` es la entrada 21 y agrega comandos. Categorías autorizadas sin comandos visibles quedan vacías. `providers/whatsapp-rust/src/ui.rs` mantiene un solo botón «Categorías» y páginas para llegar a las 21 entradas; ninguna fila de paginación constituye una nueva categoría. Los antiguos nombres de módulos solo son rutas internas y aliases. Los directorios aún necesitan migración física; no confundir ese trabajo con añadir categorías. La aceptación final requiere CI completo y prueba real de WhatsApp.
 

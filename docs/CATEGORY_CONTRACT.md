@@ -1,5 +1,10 @@
 # Contrato cerrado de categorías — Base-Matter
 
+## Formato obligatorio del menú global (noviembre 2026)
+
+El comando `=/>menu` usa el encabezado `*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*`, título de control global, las 21 categorías en orden, cierre `╰─╮╭────────⟨🌀`, autoridad descriptiva, panel del usuario/socket/rol/estado, instrucciones y cenefa final. El panel **debe** usar información autenticada del puente; un `Owner del socket` nunca implica por sí mismo `Owner Global` de Vault. La sección `Owner Global` describe la jerarquía, no prueba un rango concedido. No inventar alias WhatsApp ni mostrar PN/LID a terceros. `style none` mantiene categorías, rutas y estado en texto simple, sin cenefas. Se conservan **las 21 entradas incluso cuando alguna no tiene comandos**; no escribir «Sin comandos registrados» ni un rótulo de vacío. `menu all` omite encabezados sin comandos, y las páginas individuales no mencionan ausencia de comandos. El selector conserva un solo botón «Categorías» y páginas seguras. Toda respuesta debe cumplir límites de bytes del puente.
+
+
 **Fuente de autoridad:** catálogo de 21 entradas entregado por la persona propietaria el 18 de noviembre de 2026. **Estado:** el catálogo visual y el selector con paginación ya están implementados en `alpha`; las carpetas de código heredadas aún conservan sus nombres internos. Falta confirmar CI completo de la última revisión y el comportamiento real de WhatsApp.
 
 ## Regla innegociable

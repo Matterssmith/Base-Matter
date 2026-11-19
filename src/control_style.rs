@@ -4,7 +4,7 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
-use crate::menu::{Language, MenuPreferences, Style};
+use crate::menu::{Language, MenuPreferences, MenuViewer, Style};
 use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -219,6 +219,19 @@ impl ControlThemes {
             return Ok(body.to_owned());
         }
         self.selected(community_id)?.decorate(body)
+    }
+
+    /// Use only after the WhatsApp bridge authenticates the frame and
+    /// admits the read-only menu. Never infer a Vault global rank.
+    pub fn render_verified_root(
+        &self,
+        viewer: MenuViewer<'_>,
+    ) -> Result<String> {
+        let preferences = self
+            .dynamic_menu
+            .as_ref()
+            .ok_or_else(|| anyhow!("Dynamic menu not configured"))?;
+        crate::menu::render_root_with_viewer(preferences.get()?, viewer)
     }
 
     pub fn render(&self, community_id: Option<&str>, section: &str) -> Result<String> {

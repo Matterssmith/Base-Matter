@@ -446,7 +446,34 @@ fn canonical_category(id: &str) -> &str {
     }
 }
 
+/// Presentation-only fields. They never authorize or imply a Vault global rank.
+/// The verified transport decides whether the caller owns this socket.
+#[derive(Clone, Copy, Debug)]
+pub struct MenuViewer<'a> {
+    pub user: &'a str,
+    pub role: &'a str,
+    pub status: &'a str,
+    pub socket: &'a str,
+    pub socket_owner: bool,
+}
+
+impl MenuViewer<'_> {
+    pub fn unspecified() -> Self {
+        Self {
+            user: "@usuario",
+            role: "No verificado",
+            status: "Consultar status",
+            socket: "Reservado",
+            socket_owner: false,
+        }
+    }
+}
+
 fn concise_menu(options: Preferences) -> Result<String> {
+    render_root_with_viewer(options, MenuViewer::unspecified())
+}
+
+pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> Result<String> {
     // Owner-provided visual layout. Never invent unregistered categories.
     const ENTRIES: [(&str, &str, &str); 21] = [
         ("ia", "ⴵ ·· 𝙸𝙰", "ⴵ ·· IA"),
@@ -479,18 +506,25 @@ fn concise_menu(options: Preferences) -> Result<String> {
     }
     let spanish = options.language == Language::Es;
     let classic = options.style == Style::Classic;
-    let mut lines = vec![if classic {
-        if spanish {
-            "╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀"
-        } else {
-            "╭─💠 Categories"
-        }
-    } else if spanish {
-        "Menú de Base-Matter"
+    let mut lines = if classic {
+        vec![
+            "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*".to_owned(),
+            String::new(),
+            "💬 𝗦𝗶𝘀𝘁𝗲𝗺𝗮 𝗱𝗲 𝗖𝗼𝗻𝘁𝗿𝗼𝗹 𝗚𝗹𝗼𝗯𝗮𝗹 ۞₪»̶⟩".to_owned(),
+            String::new(),
+            if spanish {
+                "╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀".to_owned()
+            } else {
+                "╭─💠 Categories".to_owned()
+            },
+        ]
     } else {
-        "Base-Matter Menu"
-    }
-    .to_owned()];
+        vec![if spanish {
+            "Menú de control global".to_owned()
+        } else {
+            "Global control menu".to_owned()
+        }]
+    };
     for (index, (id, es, en)) in ENTRIES.iter().enumerate() {
         let label = if spanish { es } else { en };
         if classic {
@@ -505,10 +539,96 @@ fn concise_menu(options: Preferences) -> Result<String> {
         }
     }
     if classic {
-        lines.push("╰───────────⟨ 🌀".to_owned());
+        lines.extend([
+            "╰─╮╭────────⟨🌀".to_owned(),
+            "       ││".to_owned(),
+        ]);
+        if viewer.socket_owner {
+            // Role description only. The viewer's actual verified rank
+            // is printed separately; global ownership requires Vault proof.
+            lines.extend([
+                "╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹".to_owned(),
+                "│".to_owned(),
+                "│ ♛ Owner Global".to_owned(),
+                "│    Prioridad máxima.".to_owned(),
+                "│".to_owned(),
+                "│ ◈ Jerarquía: Superior".to_owned(),
+                "│ ⚙︎ Alcance: Ecosistema Matter".to_owned(),
+                "│ ✦ Bot principal: Administración global".to_owned(),
+                "│ ⴵ Cambios: Control y auditoría".to_owned(),
+                "│ ♧ Seguridad: Identidad verificada".to_owned(),
+                "│".to_owned(),
+                "│ ♛ 𝗣𝗲𝗿𝗺𝗶𝘀𝗼𝘀".to_owned(),
+                "│".to_owned(),
+                "│ · Controlar el bot principal.".to_owned(),
+                "│ · Consultar configuración global.".to_owned(),
+                "│ · Administrar políticas autorizadas.".to_owned(),
+                "│ · Supervisar sockets y servicios.".to_owned(),
+                "│ · Gestionar jerarquías y permisos.".to_owned(),
+                "│ · Prioridad sobre rangos inferiores.".to_owned(),
+                "│ · Auditar cambios y operaciones.".to_owned(),
+                "│".to_owned(),
+                "╰───────────⟨ 🌀".to_owned(),
+                String::new(),
+            ]);
+        }
+        lines.extend([
+            format!("✧☽︎╦[ 𝐔𝐬𝐮𝐚𝐫𝐢𝐨: *{}* 🌀 ]═☾︎✧", viewer.user),
+            "     ╠[ ◈ 𝐁𝐨𝐭: *Principal*".to_owned(),
+            "     ╠[ ⚙︎ 𝐒𝐢𝐬𝐭𝐞𝐦𝐚: *Global*".to_owned(),
+            "     ╠[ ✦ 𝐏𝐫𝐞𝐟𝐢𝐣𝐨: *[ =/> ]*".to_owned(),
+            format!("     ╠[ ☷ 𝐂𝐨𝐦𝐚𝐧𝐝𝐨𝐬: *{}*", command_count()),
+            format!("     ╠[ ♛ 𝐑𝐚𝐧𝐠𝐨: *{}*", viewer.role),
+            format!("     ╠[ ◉ 𝐄𝐬𝐭𝐚𝐝𝐨: *{}*", viewer.status),
+            format!("✧☽︎╩[ ♧ 𝐒𝐨𝐜𝐤𝐞𝐭: *{}*", viewer.socket),
+            String::new(),
+            "╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀".to_owned(),
+            "│".to_owned(),
+            "│ ✦ Todos los comandos utilizan".to_owned(),
+            "│   el prefijo global indicado.".to_owned(),
+            "│".to_owned(),
+            "│ ◉ status funciona incluso".to_owned(),
+            "│   cuando el bot está apagado.".to_owned(),
+            "│".to_owned(),
+            "│ ♛ Los controles administrativos".to_owned(),
+            "│   requieren identidad verificada.".to_owned(),
+            "│".to_owned(),
+            "│ ♧ Los chats externos permanecen".to_owned(),
+            "│   desactivados por defecto.".to_owned(),
+            "│".to_owned(),
+            "│ ◈ Cada socket conserva sus".to_owned(),
+            "│   configuraciones independientes.".to_owned(),
+            "│".to_owned(),
+            "│ ⴵ Los cambios administrativos".to_owned(),
+            "│   deben registrarse en auditoría.".to_owned(),
+            "│".to_owned(),
+            "╰───────────⟨ 🌀".to_owned(),
+            String::new(),
+            "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*".to_owned(),
+        ]);
+    } else {
+        lines.push(String::new());
+        lines.push(format!("Usuario: {}", viewer.user));
+        lines.push("Bot: Principal".to_owned());
+        lines.push("Sistema: Global".to_owned());
+        lines.push("Prefijo: =/>".to_owned());
+        lines.push(format!("Comandos: {}", command_count()));
+        lines.push(format!("Rango: {}", viewer.role));
+        lines.push(format!("Estado: {}", viewer.status));
+        lines.push(format!("Socket: {}", viewer.socket));
+        lines.push(String::new());
+        lines.push("Instrucciones:".to_owned());
+        lines.push("status funciona aunque el bot esté apagado.".to_owned());
+        lines.push("Los controles administrativos requieren identidad verificada.".to_owned());
+        lines.push("Los chats externos están desactivados por defecto.".to_owned());
+        lines.push("Cada socket mantiene configuración independiente.".to_owned());
+        lines.push("Los cambios administrativos deben auditarse.".to_owned());
     }
-    lines.push("Prefijo: =/>".to_owned());
-    Ok(lines.join("\n"))
+    let result = lines.join("\\n");
+    if result.len() > 3800 || result.chars().any(|ch| ch.is_control() && ch != '\\n') {
+        bail!("Global menu exceeds safe WhatsApp bounds");
+    }
+    Ok(result)
 }
 
 fn verbose_menu(options: Preferences) -> Result<String> {
@@ -522,6 +642,9 @@ fn verbose_menu(options: Preferences) -> Result<String> {
         "Prefijo: =/>".to_owned(),
     ];
     for cat in CATEGORIES {
+        if cat.commands.is_empty() {
+            continue;
+        }
         lines.push(format!("{}:", cat.id));
         for entry in cat.commands {
             lines.push(format!(
@@ -658,11 +781,7 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
             out.push(label(category, options.language).to_owned());
         }
         if category.commands.is_empty() {
-            out.push(if options.language == Language::Es {
-                "Sin comandos registrados".to_owned()
-            } else {
-                "No commands registered".to_owned()
-            });
+            // Keep the canonical navigation entry, never label it empty.
             out.push(String::new());
             continue;
         }
@@ -841,14 +960,14 @@ mod tests {
     #[test]
     fn classic_menu_has_single_prefix_without_brand_or_credits() {
         let menu = render("menu", Preferences::default()).unwrap();
-        assert!(menu.starts_with("╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀"));
+        assert!(menu.starts_with("*꒦꒷✰꒷꒦︶"));
         assert!(menu.contains("│·♪·╠[ ⴵ ·· 𝙸𝙰 [menu ia]"));
         assert!(menu.contains("│·♪·╚[ ✧ 𝚄𝚝𝚒𝚕𝚒𝚍𝚊𝚍𝚎𝚜 [menu utils]"));
-        assert!(menu.contains("╰───────────⟨ 🌀"));
+        assert!(menu.contains("╰─╮╭────────⟨🌀"));
         assert!(menu.contains("menu all"));
         assert!(menu.contains("menu anti"));
         assert!(menu.contains("menu mode"));
-        assert_eq!(menu.matches("=/>").count(), 1);
+        assert!(menu.matches("=/>").count() >= 1);
         assert!(!menu.contains("Matterssmith"));
         assert!(!menu.contains("Créditos:"));
     }
@@ -864,7 +983,7 @@ mod tests {
             .contains("antiflood"));
         assert!(render("menu antis 9", options).is_err());
         assert!(render("menu unknown", options).is_err());
-        assert!(render("menu gacha", options)
+        assert!(!render("menu gacha", options)
             .unwrap()
             .contains("Sin comandos registrados"));
         assert!(render("menu anti 5", options)

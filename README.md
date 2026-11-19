@@ -1,3 +1,6 @@
+### 2026-11-18 — Formato completo de menú global y variante sin diseño
+Se adoptó la cenefa, encabezado, 21 filas inmutables, sección descriptiva de autoridad, campos dinámicos de identidad verificada, comandos, rango, estado y socket, instrucciones y cierre. La ruta de IPC sólo rellena datos después de HMAC/antirreplay/admisión, no deriva Owner Global de un número. Se suprimió «Sin comandos registrados» y el menú all omite encabezados sin comandos. `style none` sigue mostrando categorías y datos. El selector conserva un único botón; se aumentó su límite de texto a 3800 bytes sin alterar límites de transporte ni permisos. Revisados ambos README y AGENTS; la comprobación CI y teléfono real siguen siendo necesarias.
+
 ### 2026-11-18 — Formato de prueba de catálogo cerrado
 CI del SHA 653b6ec marcó únicamente formato de la prueba Rust del catálogo; se aplicaron exactamente los saltos de línea solicitados por Rustfmt. La aserción de IDs compara explícitamente slices en orden. README principal y proveedor revisados (2/2); se vuelve a validar. No hay cambios de transporte, sesión, Vault ni permisos.
 

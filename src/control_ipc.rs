@@ -190,9 +190,47 @@ impl WhatsAppControlIpc {
         } else {
             None
         };
+        // The HMAC bridge has already authenticated, replay-checked and
+        // authorized the menu before we inspect this frame again.
+        // Actor/JID are never derived from a message body or display name.
+        let verified_root = if matches!(&outcome, ControlIpcOutcome::Applied) {
+            serde_json::from_str::<WhatsAppControlFrame>(text)
+                .ok()
+                .filter(|frame| {
+                    matches!(
+                        frame.text.as_str(),
+                        "=/>menu" | "=/>menú" | "=/>menu page 1"
+                            | "=/>menu page 2" | "=/>menu page 3"
+                    )
+                })
+                .and_then(|frame| {
+                    let owner = frame.from_me;
+                    let alias = if owner {
+                        format!("@{}", frame.actor_id.chars().take(24).collect::<String>())
+                    } else {
+                        "@usuario".to_owned()
+                    };
+                    let socket_alias = if owner {
+                        frame.socket_id.chars().take(32).collect::<String>()
+                    } else {
+                        "Privado".to_owned()
+                    };
+                    self.themes
+                        .render_verified_root(crate::menu::MenuViewer {
+                            user: &alias,
+                            role: if owner { "Owner del socket" } else { "Usuario" },
+                            status: "ACTIVADO",
+                            socket: &socket_alias,
+                            socket_owner: owner,
+                        })
+                        .ok()
+                })
+        } else {
+            None
+        };
         // All successful replies use the same per-chat renderer.
         // A menu preformatted through that registry is idempotent.
-        let validated = message
+        let validated = verified_root.or(message)
             .and_then(|body| {
                 self.themes
                     .decorate(authenticated_group.as_deref(), &body)

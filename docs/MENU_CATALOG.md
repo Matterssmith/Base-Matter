@@ -2,6 +2,8 @@
 
 # Menú modular de Base-Matter — categorías, estilos y compatibilidad
 
+**Formato del menú global:** consultar [CATEGORY_CONTRACT.md](CATEGORY_CONTRACT.md). Ninguna sección anuncia categorías vacías. La variante sin diseño conserva todas las rutas y datos verificados.
+
 **Rama de desarrollo:** `alpha`. Esta revisión incorpora un catálogo
 Rust reutilizable y un menú dinámico real en el controlador de WhatsApp.
 No debe confundirse un descriptor del catálogo con la implementación

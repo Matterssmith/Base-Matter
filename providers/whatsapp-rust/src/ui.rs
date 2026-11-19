@@ -9,7 +9,7 @@ use buffa::MessageField;
 use wa::message::interactive_response_message::InteractiveResponseMessage as NativeResponse;
 use whatsapp_rust::prelude::wa;
 
-const MAX_MENU_BYTES: usize = 3200;
+const MAX_MENU_BYTES: usize = 3800;
 
 const NAV_CATEGORIES: [(&str, &str, &str); 21] = [
     ("ia", "ⴵ IA", "matter.read.menu.ia"),
