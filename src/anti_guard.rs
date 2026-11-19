@@ -103,11 +103,10 @@ pub fn review_content(input: &str, edit: EditState) -> ContentReview {
     }
     let normalized = normalized.to_ascii_lowercase();
     let has_control = command_like(&normalized);
-    let original_control = input.trim_start().starts_with("=/>")
-        || input.trim_start().starts_with('#');
+    let original_control =
+        input.trim_start().starts_with("=/>") || input.trim_start().starts_with('#');
     let malformed_prefix = has_control && !original_control;
-    let command_camouflage =
-        malformed_prefix || (has_control && changed && normalized != input);
+    let command_camouflage = malformed_prefix || (has_control && changed && normalized != input);
     let link_camouflage = changed && normalized.contains("://");
     ContentReview {
         inspection_text: Some(normalized),
@@ -165,10 +164,7 @@ mod tests {
     fn zero_width_link_and_unicode_dot_are_visible_to_inspector() {
         let result = review_content("https://t․me/abc", EditState::Original);
         assert!(result.link_camouflage);
-        assert_eq!(
-            result.inspection_text.as_deref(),
-            Some("https://t.me/abc")
-        );
+        assert_eq!(result.inspection_text.as_deref(), Some("https://t.me/abc"));
     }
 
     #[test]

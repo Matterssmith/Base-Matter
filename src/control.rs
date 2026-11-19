@@ -540,6 +540,24 @@ impl ControlDispatcher {
         })
     }
 
+
+    /// Provider-inspected group message, not a control invocation.
+    /// No moderation action, bot routing, permissions or outgoing reply.
+    pub fn inspect_anti_observation(
+        &self,
+        socket: &str,
+        group: &str,
+        text: &str,
+        edit: crate::anti_guard::EditState,
+    ) -> Result<()> {
+        let store = self
+            .group_antis
+            .as_ref()
+            .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
+        let _ = store.inspect_message(socket, group, text, edit)?;
+        Ok(())
+    }
+
     /// Control grammar: socket power, contextual status, bot policy scopes,
     /// and reserved owner extensions. `=` and `/>` remain legacy aliases.
     /// Unknown control verbs never reach the

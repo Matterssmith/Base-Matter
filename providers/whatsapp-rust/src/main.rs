@@ -553,6 +553,64 @@ async fn main() -> Result<()> {
                 let own_pn = ctx.client.pn().map(|jid| jid.to_non_ad_string());
                 let own_lid = ctx.client.lid().map(|jid| jid.to_non_ad_string());
                 let selected_button = readonly_button_command(&ctx.message);
+
+                // Legacy edits provide edited_message directly. Newer clients
+                // may carry an encrypted MESSAGE_EDIT envelope which requires
+                // the parent message's messageSecret to decrypt. Never claim
+                // that an unreadable edit was inspected.
+                let (edit_state, inspected_text) = if let Some(protocol) =
+                    ctx.message.protocol_message.as_option()
+                {
+                    if protocol.r#type
+                        == Some(wa::message::protocol_message::Type::MESSAGE_EDIT)
+                    {
+                        (
+                            "edited",
+                            protocol
+                                .edited_message
+                                .as_option()
+                                .and_then(|message| message.text_content())
+                                .unwrap_or_default(),
+                        )
+                    } else {
+                        ("original", ctx.message.text_content().unwrap_or_default())
+                    }
+                } else if whatsapp_rust::features::message_edit::extract_envelope(&ctx.message)
+                    .is_some()
+                {
+                    ("opaque", "")
+                } else {
+                    ("original", ctx.message.text_content().unwrap_or_default())
+                };
+
+                if source.is_group {
+                    let observation = Event {
+                        chat_jid: &chat,
+                        sender_jid: &sender,
+                        message_id: &ctx.info.id,
+                        text: inspected_text,
+                        from_me: source.is_from_me,
+                        is_group: true,
+                        timestamp: ctx.info.timestamp.timestamp(),
+                    };
+                    match config.signed_anti_observation(&observation, edit_state) {
+                        Ok(Some(frame)) => {
+                            if !matches!(
+                                deliver(config.bridge_addr, &frame).await,
+                                Ok(ControlAck::Applied | ControlAck::Duplicate)
+                            ) {
+                                eprintln!("Base-Matter: anti observation not confirmed");
+                            }
+                        }
+                        Ok(None) => {}
+                        Err(_) => eprintln!("Base-Matter: anti observation rejected before signing"),
+                    }
+                }
+                // Edited messages may be inspected but must never trigger
+                // the normal control dispatcher as new executable commands.
+                if edit_state != "original" {
+                    return;
+                }
                 let data = Event {
                     chat_jid: &chat,
                     sender_jid: &sender,

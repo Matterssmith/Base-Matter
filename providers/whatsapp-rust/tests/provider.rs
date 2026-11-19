@@ -627,3 +627,44 @@ fn legacy_session_lock_is_not_silently_stolen() {
     assert_eq!(fs::read(&lock).unwrap(), b"12345\n");
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn group_anti_observation_is_signed_without_owner_privileges() {
+    let (vars, root) = fixture();
+    let config = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
+    let msg = Event {
+        chat_jid: "120363777@g.us",
+        sender_jid: "987654321012345@lid",
+        message_id: "anti-original-1",
+        text: "https://t․me/invite",
+        from_me: false,
+        is_group: true,
+        timestamp: event("hello").timestamp,
+    };
+    let signed = config
+        .signed_anti_observation(&msg, "original")
+        .unwrap()
+        .unwrap();
+    assert!(signed.text.starts_with("\u{001f}matter-anti:original:"));
+    assert_eq!(signed.actor_id, msg.sender_jid);
+    assert!(!signed.from_me);
+    assert_eq!(signed.chat_jid, msg.chat_jid);
+    assert_eq!(signed.signature, sign_frame(&signed, &config.bridge_key).unwrap());
+    let mut self_edit = msg;
+    self_edit.text = "";
+    assert!(config
+        .signed_anti_observation(&self_edit, "opaque")
+        .unwrap()
+        .is_some());
+    self_edit.text = "=/>bot on";
+    assert!(config
+        .signed_anti_observation(&self_edit, "opaque")
+        .unwrap()
+        .is_none());
+    self_edit.is_group = false;
+    assert!(config
+        .signed_anti_observation(&self_edit, "original")
+        .unwrap()
+        .is_none());
+    fs::remove_dir_all(root).unwrap();
+}

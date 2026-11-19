@@ -420,3 +420,70 @@ fn guest_capability_contract_does_not_require_identity_enrollment() {
         assert!(!can_use_without_registration(capability, true));
     }
 }
+
+#[test]
+fn incoming_group_anti_events_are_verified_audited_and_never_executed() {
+    use matter_base::anti::AntiStore;
+
+    let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
+    activation.provision("socket-1", "owner").unwrap();
+    let store = Arc::new(AntiStore::open(":memory:").unwrap());
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
+    let controller = Arc::new(
+        ControlDispatcher::new(
+            activation,
+            Arc::new(BotRegistry::in_memory()),
+            router,
+            None,
+        )
+        .with_group_antis(Arc::clone(&store))
+        .with_unified_live_controls(),
+    );
+    let bridge = WhatsAppControlBridge::new(
+        WhatsAppBridgeConfig {
+            socket_id: "socket-1".into(),
+            owner_actor_id: "owner".into(),
+            owner_jid: OWNER_JID.into(),
+        },
+        KEY,
+        Arc::new(InboundReplayStore::in_memory([9u8; 32]).unwrap()),
+        controller,
+    )
+    .unwrap();
+
+    let first = frame(
+        "anti-edit-1",
+        "\u{001f}matter-anti:edited:＝／＞bot on https://t․me/test",
+        READER,
+        GROUP,
+        false,
+    );
+    assert_eq!(bridge.ingest(&first).unwrap(), WhatsAppBridgeOutcome::AntiObserved);
+    assert_eq!(bridge.ingest(&first).unwrap(), WhatsAppBridgeOutcome::Duplicate);
+    let opaque = frame(
+        "anti-edit-2",
+        "\u{001f}matter-anti:opaque:",
+        READER,
+        GROUP,
+        false,
+    );
+    assert_eq!(bridge.ingest(&opaque).unwrap(), WhatsAppBridgeOutcome::AntiObserved);
+    let mut forged = frame(
+        "anti-edit-3",
+        "\u{001f}matter-anti:original:hello",
+        READER,
+        GROUP,
+        false,
+    );
+    forged.text = "\u{001f}matter-anti:original:=/>bot on".to_owned();
+    assert!(bridge.ingest(&forged).is_err());
+    let private = frame(
+        "anti-edit-4",
+        "\u{001f}matter-anti:edited:=/>bot on",
+        READER,
+        READER,
+        false,
+    );
+    assert!(bridge.ingest(&private).is_err());
+    assert!(!store.get("socket-1", GROUP, "link").unwrap().enabled);
+}

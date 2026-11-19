@@ -5,6 +5,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 
+use crate::anti_guard::EditState;
 use crate::control::{ControlDispatcher, DispatchResult};
 use crate::ingress::InboundReplayStore;
 use anyhow::{anyhow, bail, Result};
@@ -49,6 +50,7 @@ pub struct WhatsAppBridgeConfig {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum WhatsAppBridgeOutcome {
+    AntiObserved,
     Ignored,
     Duplicate,
     Dispatched(DispatchResult),
@@ -150,6 +152,40 @@ impl WhatsAppControlBridge {
         mac.verify_slice(&supplied)
             .map_err(|_| anyhow!("Invalid WhatsApp control proof"))?;
 
+        // Anti observations have a separate signed, read-only path.
+        // Do NOT call dispatch() here: an incoming group member cannot
+        // become the socket owner through text, mentions or Unicode.
+        if let Some(body) = frame.text.strip_prefix("\u{001f}matter-anti:") {
+            let Some((state, text)) = body.split_once(':') else {
+                bail!("Invalid anti observation state");
+            };
+            let edit = match state {
+                "original" => EditState::Original,
+                "edited" => EditState::EditedReadable,
+                "opaque" if text.is_empty() => EditState::EditedEncryptedUnavailable,
+                _ => bail!("Invalid anti edit state"),
+            };
+            if !valid_group_jid(&frame.chat_jid)
+                || frame.message_id.len() > 180
+                || (!is_owner && !valid_user_jid(&frame.actor_id))
+            {
+                bail!("Anti observation identity denied");
+            }
+            let replay_id = format!("{state}:{}", frame.message_id);
+            if !self
+                .replay
+                .claim("whatsapp-anti", &self.config.socket_id, &replay_id)?
+            {
+                return Ok(WhatsAppBridgeOutcome::Duplicate);
+            }
+            self.control.inspect_anti_observation(
+                &self.config.socket_id,
+                &frame.chat_jid,
+                text,
+                edit,
+            )?;
+            return Ok(WhatsAppBridgeOutcome::AntiObserved);
+        }
         // No bot commands, including historic #ping, are admitted here.
         if !frame.text.starts_with("=/>") {
             return Ok(WhatsAppBridgeOutcome::Ignored);

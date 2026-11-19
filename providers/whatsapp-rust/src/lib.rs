@@ -459,6 +459,66 @@ impl Config {
 
     /// Signs only recent, self-authored messages in the owner's own private
     /// chat. All identifiers come from the trusted whatsapp-rust callback.
+
+    /// Emit a signed, READ-ONLY Anti observation for a real group callback.
+    /// The invisible internal prefix cannot be supplied as a control command
+    /// and the signed observation never gives sender admin permissions.
+    pub fn signed_anti_observation(
+        &self,
+        event: &Event<'_>,
+        edit_state: &str,
+    ) -> Result<Option<SignedFrame>> {
+        if !event.is_group
+            || !event.chat_jid.ends_with("@g.us")
+            || event.chat_jid.len() > 128
+            || !event
+                .chat_jid
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || b"@._:-".contains(&byte))
+            || !matches!(edit_state, "original" | "edited" | "opaque")
+        {
+            return Ok(None);
+        }
+        let valid_sender = event
+            .sender_jid
+            .strip_suffix("@s.whatsapp.net")
+            .or_else(|| event.sender_jid.strip_suffix("@lid"))
+            .is_some_and(|account| {
+                (8..=20).contains(&account.len())
+                    && account.bytes().all(|byte| byte.is_ascii_digit())
+            });
+        if !valid_sender
+            || event.message_id.is_empty()
+            || event.message_id.len() > 180
+            || event.message_id.chars().any(char::is_control)
+            || event.text.len() > 4096
+            || (edit_state == "opaque" && !event.text.is_empty())
+        {
+            return Ok(None);
+        }
+        let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
+        if now.abs_diff(event.timestamp) > 120 {
+            return Ok(None);
+        }
+        let mut signed = SignedFrame {
+            version: 1,
+            socket_id: self.socket_id.clone(),
+            actor_id: if event.from_me {
+                self.actor_id.clone()
+            } else {
+                event.sender_jid.to_owned()
+            },
+            owner_jid: self.owner_jid.clone(),
+            chat_jid: event.chat_jid.to_owned(),
+            message_id: event.message_id.to_owned(),
+            text: format!("\u{001f}matter-anti:{edit_state}:{}", event.text),
+            from_me: event.from_me,
+            timestamp: event.timestamp,
+            signature: String::new(),
+        };
+        signed.signature = sign_frame(&signed, &self.bridge_key)?;
+        Ok(Some(signed))
+    }
     pub fn signed_control(&self, event: &Event<'_>) -> Result<Option<SignedFrame>> {
         if !event.from_me
             || event.is_group

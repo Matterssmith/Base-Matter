@@ -176,6 +176,9 @@ impl WhatsAppControlIpc {
             }
             Ok(WhatsAppBridgeOutcome::Dispatched(_)) => (ControlIpcOutcome::Applied, None),
             Ok(WhatsAppBridgeOutcome::Ignored) => (ControlIpcOutcome::Ignored, None),
+            Ok(WhatsAppBridgeOutcome::AntiObserved) => {
+                (ControlIpcOutcome::Applied, None)
+            }
             Ok(WhatsAppBridgeOutcome::Duplicate) => (ControlIpcOutcome::Duplicate, None),
             Err(_) => (ControlIpcOutcome::Denied, None),
         };
