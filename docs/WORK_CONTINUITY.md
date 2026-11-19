@@ -1,3 +1,9 @@
+## 2026-11-19 — Resolver nombres de subcomandos en help
+
+- SHA previo 42c95c8452528d70dcce19ae82b0dad187545610. El test de ayuda citado reveló que `help set role` intentaba interpretar `role` como un número de página de categoría.
+- Solo una segunda palabra numérica selecciona página. Las consultas `help anti audit`, `help set role` y las citas con subcomandos ahora buscan el descriptor específico más largo; no ejecutan nada.
+- Test ampliado. READMEs 2/2 revisados; CI de nuevo SHA pendiente.
+
 ## 2026-11-19 — Corrección final de formato y Clippy en ayuda citada
 
 - Base alpha anterior 61d7af72039aa9b810a29396e263bc553ed71162. Se aplicaron diferencias exactas de Rustfmt en `src/menu.rs` y `clippy::unnecessary_lazy_evaluations` en el proveedor WhatsApp Rust (respuesta citada).

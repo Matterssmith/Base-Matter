@@ -835,22 +835,24 @@ pub fn render_help(query: &str, options: Preferences) -> Result<String> {
         return category_help(query, 1, options);
     }
     if let [category, page] = query.split_whitespace().collect::<Vec<_>>().as_slice() {
-        if CATEGORIES
-            .iter()
-            .any(|entry| entry.id == canonical_category(category))
-        {
-            return category_help(
-                category,
-                page.parse::<usize>()
-                    .map_err(|_| anyhow!("Invalid help page"))?,
-                options,
-            );
+        // Only numeric suffixes are pagination; "set role" and
+        // "anti audit" are command queries, never category pages.
+        if let Ok(number) = page.parse::<usize>() {
+            if CATEGORIES
+                .iter()
+                .any(|entry| entry.id == canonical_category(category))
+            {
+                return category_help(category, number, options);
+            }
         }
     }
     let command = CATEGORIES
         .iter()
         .flat_map(|category| category.commands.iter())
-        .find(|command| command.name == query)
+        .filter(|command| {
+            command.name == query || query.starts_with(&format!("{} ", command.name))
+        })
+        .max_by_key(|command| command.name.len())
         .ok_or_else(|| anyhow!("Comando no encontrado. Usa =/>help"))?;
     let category = CATEGORIES
         .iter()

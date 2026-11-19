@@ -261,4 +261,8 @@ fn quoted_command_help_uses_catalog_and_never_runs_the_original() {
     let normal = menu::render_help("set anti link", Preferences::default()).unwrap();
     assert!(normal.contains("Categoría:"));
     assert!(normal.contains("set anti link --global"));
+    let scoped = menu::render_help("anti audit", Preferences::default()).unwrap();
+    assert!(scoped.contains("Ayuda completa: anti"));
+    let role = menu::render_help("set role", Preferences::default()).unwrap();
+    assert!(role.contains("Ayuda completa: set role"));
 }
