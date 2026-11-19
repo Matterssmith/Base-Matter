@@ -5,7 +5,6 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
-use buffa::MessageField;
 use whatsapp_matter_rust_provider::sticker_badge::offline_sticker_badge_proto;
 use whatsapp_rust::prelude::wa;
 

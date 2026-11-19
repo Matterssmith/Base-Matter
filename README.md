@@ -1,3 +1,11 @@
+### 2026-11-18 — Clippy final del prototipo de sticker
+
+CI confirmó compilación y pruebas del proveedor; Clippy -D warnings
+encontró únicamente una importación no usada en el test
+sticker_badge.rs. Se eliminó. El transporte productivo, roles,
+llaves y bases no cambiaron. Dos README revisados (2/2).
+Revalidar CI para este SHA antes de elevar a beta.
+
 ### 2026-11-18 — Formato requerido para prototipo de insignias
 
 El CI del prototipo se detuvo únicamente en cuatro diferencias de
