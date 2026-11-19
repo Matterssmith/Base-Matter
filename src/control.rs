@@ -783,7 +783,7 @@ impl ControlDispatcher {
                         .as_ref()
                         .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
                     // Scope flags never authorize writes across socket boundaries.
-                    if values.iter().any(|word| *word == "--global") {
+                    if values.contains(&"--global") {
                         bail!("La configuración global requiere autoridad Vault verificada; usa --mod para este socket");
                     }
                     let socket_scope = values.contains(&"--mod");
