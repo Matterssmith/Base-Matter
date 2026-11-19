@@ -1,3 +1,10 @@
+## 2026-11-19 — Rustfmt final de selector de categorías
+
+- Base alpha: 605ae3bf3da68de49276f1ef9d68d6e1b77f8161; Linux Rust completó correctamente sus pruebas de formato, compilación, tests, Clippy y documentación.
+- El proveedor Rust falló sólo en formato de la expresión que valida el manifiesto. Se aplicó el diff exacto del CI.
+- Windows y proveedor del nuevo SHA requieren nueva confirmación. Sin cambios en permisos, sesiones, Vault o plantilla visual.
+- README revisados: 2/2. Continuidad: validar CI para este SHA y probar =/>menu en WhatsApp real.
+
 ## 2026-11-19 — Rustfmt y tipado del cambio de menú
 
 - Base alpha previa: 83cc0f993e24b1ea70659c6e11d5bf8277015302.

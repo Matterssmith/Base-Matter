@@ -198,9 +198,11 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     let active: Vec<String> = serde_json::from_str(VISIBLE_CATEGORIES)?;
     if active.is_empty()
         || active.len() > NAV_CATEGORIES.len()
-        || active
-            .iter()
-            .any(|id| !NAV_CATEGORIES.iter().any(|(known, _, _)| *known == id.as_str()))
+        || active.iter().any(|id| {
+            !NAV_CATEGORIES
+                .iter()
+                .any(|(known, _, _)| *known == id.as_str())
+        })
     {
         bail!("Invalid visible menu categories");
     }
