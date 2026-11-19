@@ -4,6 +4,7 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
+use crate::anti_guard::{review_content, ContentReview, EditState};
 use anyhow::{anyhow, bail, Result};
 use rusqlite::{params, Connection, OptionalExtension};
 use std::{fs, path::Path, sync::Mutex, time::Duration};
@@ -257,6 +258,13 @@ impl AntiStore {
                scope_id TEXT NOT NULL,
                domain TEXT NOT NULL,
                PRIMARY KEY(socket_id,scope_id,domain)
+             );
+             CREATE TABLE IF NOT EXISTS anti_observation_audit (
+               id INTEGER PRIMARY KEY,
+               socket_id TEXT NOT NULL,
+               group_jid TEXT NOT NULL,
+               event_state TEXT NOT NULL,
+               created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
              );
              CREATE TABLE IF NOT EXISTS group_anti_audit (
                id INTEGER PRIMARY KEY,
@@ -554,17 +562,17 @@ impl AntiStore {
             let all = self.link_domains(socket, chat)?;
             let lines = all.iter().take(25).cloned().collect::<Vec<_>>();
             let more = if all.len() > lines.len() {
-                format!("\\n... y {} más", all.len() - lines.len())
+                format!("\n... y {} más", all.len() - lines.len())
             } else {
                 String::new()
             };
             return Ok(format!(
-                "AntiLink · dominios del {label}: {} efectivos. Filtros OFF por defecto.\\n{}{}",
+                "AntiLink · dominios del {label}: {} efectivos. Filtros OFF por defecto.\n{}{}",
                 all.len(),
                 if lines.is_empty() {
                     "(lista vacía)".to_owned()
                 } else {
-                    lines.join("\\n")
+                    lines.join("\n")
                 },
                 more,
             ));
@@ -626,6 +634,53 @@ impl AntiStore {
             "AntiLink · {label}: {changes} dominio(s) {}. Activación del filtro sin cambios.",
             if add { "agregados" } else { "eliminados" }
         ))
+    }
+
+    /// Read a transport-verified message or edit across the current Anti
+    /// configuration. All enabled filters observe the edit metadata; only
+    /// filters with implemented detectors produce content findings.
+    /// Never applies warn/delete/kick; findings are candidates only.
+    pub fn inspect_message(
+        &self,
+        socket: &str,
+        group: &str,
+        text: &str,
+        edit: EditState,
+    ) -> Result<(ContentReview, Vec<AntiFinding>)> {
+        valid_scope(socket, group)?;
+        if text.len() > 4096 {
+            bail!("Mensaje excede límite");
+        }
+        let review = review_content(text, edit);
+        let findings = if let Some(normalized) = &review.inspection_text {
+            self.inspect_links(socket, group, normalized)?
+        } else {
+            Vec::new()
+        };
+        let state = if review.unreadable {
+            "edited-encrypted-unreadable"
+        } else if review.command_camouflage {
+            "command-camouflage"
+        } else if review.link_camouflage {
+            "link-camouflage"
+        } else if review.edited {
+            "edited-readable"
+        } else {
+            ""
+        };
+        if !state.is_empty() {
+            // No message body, sender JID, raw ID or unencrypted proof kept.
+            let db = self
+                .db
+                .lock()
+                .map_err(|_| anyhow!("Protecciones no disponibles"))?;
+            db.execute(
+                "INSERT INTO anti_observation_audit(socket_id,group_jid,event_state)
+                 VALUES(?1,?2,?3)",
+                params![socket, group, state],
+            )?;
+        }
+        Ok((review, findings))
     }
 
     /// Text-only link classification. No chat mutations occur here.

@@ -275,3 +275,60 @@ fn custom_link_domains_survive_restarts_and_do_not_enable_anti() {
     }
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn all_anti_rules_have_shared_edit_metadata_without_enabling_moderation() {
+    use matter_base::anti_guard::EditState;
+    let store = AntiStore::open(":memory:").unwrap();
+    for rule in RULES {
+        assert!(!store.get(SOCKET, GROUP, rule).unwrap().enabled);
+    }
+    let (review, findings) = store
+        .inspect_message(
+            SOCKET,
+            GROUP,
+            "＝／＞anti link on https://t․me/abc",
+            EditState::EditedReadable,
+        )
+        .unwrap();
+    assert!(review.edited);
+    assert!(review.command_camouflage);
+    assert!(review.link_camouflage);
+    assert!(findings.is_empty()); // OFF by default.
+    let (opaque, findings) = store
+        .inspect_message(SOCKET, GROUP, "", EditState::EditedEncryptedUnavailable)
+        .unwrap();
+    assert!(opaque.unreadable);
+    assert!(findings.is_empty());
+}
+
+#[test]
+fn edited_obfuscated_links_are_detected_only_with_active_generic_rule() {
+    use matter_base::anti_guard::EditState;
+    let store = AntiStore::open(":memory:").unwrap();
+    store
+        .edit_link_domains(SOCKET, Some(GROUP), "add", &args(&["t.me"]))
+        .unwrap();
+    store.command(SOCKET, Some(GROUP), &args(&["link", "on"])).unwrap();
+    let (review, found) = store
+        .inspect_message(
+            SOCKET,
+            GROUP,
+            "https://t․me/abc",
+            EditState::EditedReadable,
+        )
+        .unwrap();
+    assert!(review.link_camouflage);
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].rule, "antilink");
+    assert!(store
+        .inspect_message(
+            SOCKET,
+            GROUP,
+            "https://not-t․me/abc",
+            EditState::EditedReadable
+        )
+        .unwrap()
+        .1
+        .is_empty());
+}
