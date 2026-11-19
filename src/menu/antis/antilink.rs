@@ -3,8 +3,8 @@ use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
     name: "antilink",
-    es: "Protección link; desactivada inicialmente",
-    en: "Protection link; initially disabled",
+    es: "Un único filtro de enlaces configurables, apagado inicialmente",
+    en: "One configurable link filter, initially disabled",
     usages: &["antilink on|off|inherit"],
     implemented: true,
 };

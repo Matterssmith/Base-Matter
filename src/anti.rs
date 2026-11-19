@@ -12,16 +12,6 @@ use std::{fs, path::Path, sync::Mutex, time::Duration};
 /// by the authenticated socket owner for the exact signed group.
 pub const RULES: &[&str] = &[
     "antilink",
-    "antilinkwa",
-    "antilinktelegram",
-    "antilinkdiscord",
-    "antilinkinstagram",
-    "antilinkfacebook",
-    "antilinktiktok",
-    "antilinkyoutube",
-    "antilinkx",
-    "antilinkshort",
-    "antilinkphishing",
     "antigroup",
     "antichannel",
     "antistatus",
@@ -121,16 +111,6 @@ fn valid_scope(socket: &str, group: &str) -> Result<()> {
 pub fn canonical_rule(rule: &str) -> Result<&'static str> {
     let key = match rule {
         "link" => "antilink",
-        "linkwa" | "whatsapp" => "antilinkwa",
-        "telegram" => "antilinktelegram",
-        "discord" => "antilinkdiscord",
-        "instagram" => "antilinkinstagram",
-        "facebook" => "antilinkfacebook",
-        "tiktok" => "antilinktiktok",
-        "youtube" => "antilinkyoutube",
-        "x" | "twitter" => "antilinkx",
-        "short" | "shortlink" => "antilinkshort",
-        "phishing" => "antilinkphishing",
         "group" | "groups" | "invite" => "antigroup",
         "channel" | "channels" => "antichannel",
         // WhatsApp Group Status (ephemeral updates to a specific group),
@@ -169,6 +149,57 @@ fn display_name(name: &str) -> &str {
         "antivideo" => "movie",
         other => other.strip_prefix("anti").unwrap_or(other),
     }
+}
+
+
+/// Hostnames are stored by exact suffix, not platform name.
+/// URLs are accepted only to extract the host, never to fetch content.
+fn normalize_domain(input: &str) -> Result<String> {
+    if input.len() > 300 || input.is_empty() {
+        bail!("Dominio inválido");
+    }
+    let host = if let Some(rest) = input
+        .strip_prefix("https://")
+        .or_else(|| input.strip_prefix("http://"))
+    {
+        rest.split(&['/', '?', '#'][..]).next().unwrap_or("")
+    } else {
+        input
+    };
+    let host = host.to_ascii_lowercase();
+    let parts: Vec<&str> = host.split('.').collect();
+    if host.len() > 253
+        || parts.len() < 2
+        || parts.last().is_none_or(|tld| {
+            tld.len() < 2 || !tld.bytes().all(|byte| byte.is_ascii_alphabetic() || byte == b'-')
+        })
+        || parts.iter().any(|part| {
+            part.is_empty()
+                || part.len() > 63
+                || part.starts_with('-')
+                || part.ends_with('-')
+                || !part.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+        })
+    {
+        bail!("Dominio inválido: usa un host como t.me o instagram.com");
+    }
+    Ok(host)
+}
+
+/// Verified group or private JID; the sentinel @global is never a chat.
+fn valid_link_chat(socket: &str, chat: &str) -> Result<()> {
+    valid_socket(socket)?;
+    if chat.len() > 128
+        || !chat
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"@._:-".contains(&byte))
+        || !(chat.ends_with("@g.us")
+            || chat.ends_with("@s.whatsapp.net")
+            || chat.ends_with("@lid"))
+    {
+        bail!("Chat actual no verificado para configurar enlaces");
+    }
+    Ok(())
 }
 
 impl AntiStore {
@@ -218,6 +249,12 @@ impl AntiStore {
                enabled INTEGER NOT NULL CHECK(enabled IN (0,1)),
                action TEXT NOT NULL CHECK(action IN ('warn','delete','kick')),
                PRIMARY KEY(socket_id, rule)
+             );
+             CREATE TABLE IF NOT EXISTS anti_link_domains (
+               socket_id TEXT NOT NULL,
+               scope_id TEXT NOT NULL,
+               domain TEXT NOT NULL,
+               PRIMARY KEY(socket_id,scope_id,domain)
              );
              CREATE TABLE IF NOT EXISTS group_anti_audit (
                id INTEGER PRIMARY KEY,
@@ -464,6 +501,127 @@ impl AntiStore {
         ))
     }
 
+    /// Effective blocked-domain list = socket global + the signed chat scope.
+    /// An empty list blocks nothing, even if antilink was separately enabled.
+    pub fn link_domains(&self, socket: &str, chat: Option<&str>) -> Result<Vec<String>> {
+        valid_socket(socket)?;
+        if let Some(chat) = chat {
+            valid_link_chat(socket, chat)?;
+        }
+        let db = self
+            .db
+            .lock()
+            .map_err(|_| anyhow!("Protecciones no disponibles"))?;
+        let mut query = db.prepare(
+            "SELECT domain FROM anti_link_domains
+             WHERE socket_id=?1 AND (scope_id='@global' OR scope_id=?2)
+             ORDER BY domain",
+        )?;
+        let rows = query.query_map(params![socket, chat.unwrap_or("@global")], |r| {
+            r.get::<_, String>(0)
+        })?;
+        let mut result = std::collections::BTreeSet::new();
+        for row in rows {
+            result.insert(row?);
+        }
+        Ok(result.into_iter().collect())
+    }
+
+    /// Configures hosts only. Does not enable antilink or moderate messages.
+    /// Any edit and its audit events are committed in a single transaction.
+    pub fn edit_link_domains(
+        &self,
+        socket: &str,
+        chat: Option<&str>,
+        operation: &str,
+        values: &[String],
+    ) -> Result<String> {
+        valid_socket(socket)?;
+        if let Some(chat) = chat {
+            valid_link_chat(socket, chat)?;
+        }
+        let label = if chat.is_some() { "chat actual" } else { "socket global" };
+        if matches!(operation, "list" | "lista") {
+            if !values.is_empty() {
+                bail!("Uso: set anti link [--global] list");
+            }
+            let all = self.link_domains(socket, chat)?;
+            let lines = all.iter().take(25).cloned().collect::<Vec<_>>();
+            let more = if all.len() > lines.len() {
+                format!("\\n... y {} más", all.len() - lines.len())
+            } else {
+                String::new()
+            };
+            return Ok(format!(
+                "AntiLink · dominios del {label}: {} efectivos. Filtros OFF por defecto.\\n{}{}",
+                all.len(),
+                if lines.is_empty() {
+                    "(lista vacía)".to_owned()
+                } else {
+                    lines.join("\\n")
+                },
+                more,
+            ));
+        }
+        let add = match operation {
+            "add" | "agregar" => true,
+            "del" | "delete" | "remove" | "quitar" => false,
+            _ => bail!("Uso: set anti link [--global] add|del|list <dominios>"),
+        };
+        if values.is_empty() || values.len() > 12 {
+            bail!("Indica entre 1 y 12 dominios por operación");
+        }
+        let domains = values
+            .iter()
+            .map(|input| normalize_domain(input))
+            .collect::<Result<std::collections::BTreeSet<_>>>()?;
+        let scope = chat.unwrap_or("@global");
+        let mut db = self
+            .db
+            .lock()
+            .map_err(|_| anyhow!("Protecciones no disponibles"))?;
+        let tx = db.transaction()?;
+        let mut changes = 0_usize;
+        for domain in domains {
+            changes += if add {
+                tx.execute(
+                    "INSERT OR IGNORE INTO anti_link_domains(socket_id,scope_id,domain)
+                     VALUES(?1,?2,?3)",
+                    params![socket, scope, domain],
+                )?
+            } else {
+                tx.execute(
+                    "DELETE FROM anti_link_domains
+                     WHERE socket_id=?1 AND scope_id=?2 AND domain=?3",
+                    params![socket, scope, domain],
+                )?
+            };
+            tx.execute(
+                "INSERT INTO group_anti_audit(socket_id,group_jid,rule,operation)
+                 VALUES(?1,?2,'antilink',?3)",
+                params![
+                    socket,
+                    scope,
+                    format!("domain:{}:{domain}", if add { "add" } else { "del" })
+                ],
+            )?;
+        }
+        let total: i64 = tx.query_row(
+            "SELECT COUNT(*) FROM anti_link_domains
+             WHERE socket_id=?1 AND scope_id=?2",
+            params![socket, scope],
+            |row| row.get(0),
+        )?;
+        if total > 64 {
+            bail!("Máximo de 64 dominios en cada ámbito");
+        }
+        tx.commit()?;
+        Ok(format!(
+            "AntiLink · {label}: {changes} dominio(s) {}. Activación del filtro sin cambios.",
+            if add { "agregados" } else { "eliminados" }
+        ))
+    }
+
     /// Text-only link classification. No chat mutations occur here.
     /// Broader message/media protections require verified metadata.
     pub fn inspect_links(&self, socket: &str, group: &str, text: &str) -> Result<Vec<AntiFinding>> {
@@ -493,35 +651,22 @@ impl AntiStore {
                 domains.push(host.to_owned());
             }
         }
+        let setting = self.get(socket, group, "antilink")?;
+        if !setting.enabled {
+            return Ok(Vec::new());
+        }
+        let blocked = self.link_domains(socket, Some(group))?;
+        let matched = domains.iter().any(|host| {
+            blocked.iter().any(|domain| {
+                host == domain || host.ends_with(&format!(".{domain}"))
+            })
+        });
         let mut found = Vec::new();
-        for name in RULES.iter().copied().filter(|s| s.starts_with("antilink")) {
-            let rule = self.get(socket, group, name)?;
-            if !rule.enabled {
-                continue;
-            }
-            let relevant = domains.iter().any(|host| {
-                let suffix = |name: &str| host == name || host.ends_with(&format!(".{name}"));
-                match name {
-                    "antilink" => true,
-                    "antilinkwa" => suffix("chat.whatsapp.com") || suffix("whatsapp.com"),
-                    "antilinktelegram" => suffix("t.me") || suffix("telegram.me"),
-                    "antilinkdiscord" => suffix("discord.gg") || suffix("discord.com"),
-                    "antilinkinstagram" => suffix("instagram.com"),
-                    "antilinkfacebook" => suffix("facebook.com") || suffix("fb.com"),
-                    "antilinktiktok" => suffix("tiktok.com"),
-                    "antilinkyoutube" => suffix("youtube.com") || suffix("youtu.be"),
-                    "antilinkx" => suffix("x.com") || suffix("twitter.com"),
-                    "antilinkshort" => suffix("bit.ly") || suffix("tinyurl.com") || suffix("t.co"),
-                    "antilinkphishing" => false, // No claim without verified threat intelligence.
-                    _ => false,
-                }
+        if matched {
+            found.push(AntiFinding {
+                rule: "antilink",
+                requested_action: setting.action,
             });
-            if relevant {
-                found.push(AntiFinding {
-                    rule: name,
-                    requested_action: rule.action,
-                });
-            }
         }
         Ok(found)
     }

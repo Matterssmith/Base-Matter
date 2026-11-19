@@ -3,6 +3,7 @@ use crate::menu::Category;
 #[path = "set.rs"]
 pub mod main_command;
 pub mod set_anti;
+pub mod set_antilink;
 pub mod set_lang;
 pub mod set_role;
 pub mod set_style;

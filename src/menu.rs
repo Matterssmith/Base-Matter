@@ -36,16 +36,6 @@ const ANTI_COMMANDS: &[CommandSpec] = &[
     antis::listing_command::COMMAND,
     antis::anti::COMMAND,
     antis::antilink::COMMAND,
-    antis::antilinkwa::COMMAND,
-    antis::antilinktelegram::COMMAND,
-    antis::antilinkdiscord::COMMAND,
-    antis::antilinkinstagram::COMMAND,
-    antis::antilinkfacebook::COMMAND,
-    antis::antilinktiktok::COMMAND,
-    antis::antilinkyoutube::COMMAND,
-    antis::antilinkx::COMMAND,
-    antis::antilinkshort::COMMAND,
-    antis::antilinkphishing::COMMAND,
     antis::antigroup::COMMAND,
     antis::antichannel::COMMAND,
     antis::antistatus::COMMAND,
@@ -68,6 +58,7 @@ const ANTI_COMMANDS: &[CommandSpec] = &[
     antis::antimedia::COMMAND,
     antis::antidelete::COMMAND,
     set::set_anti::COMMAND,
+    set::set_antilink::COMMAND,
 ];
 
 pub static CATEGORIES: &[Category] = &[
@@ -963,7 +954,7 @@ mod tests {
     #[test]
     fn anti_catalog_matches_all_registered_rules() {
         assert_eq!(CATEGORIES.len(), 20);
-        assert!(command_count() >= 40);
+        assert!(command_count() >= 30);
         assert!(pending_count() > 0);
         assert_eq!(antis::CATEGORY.commands.len(), crate::anti::RULES.len() + 2);
         for rule in crate::anti::RULES {
@@ -995,12 +986,12 @@ mod tests {
         let set = render("menu set", options).unwrap();
         assert!(set.contains("set style classic|none"));
         assert!(set.contains("set lang es|en"));
-        assert!(render("menu antis 5", options).is_ok());
+        assert!(render("menu antis 4", options).is_ok());
         assert!(render("menu antis 9", options).is_err());
         assert!(render("menu unknown", options).is_err());
         assert!(!render("menu gacha", options).unwrap().contains("Gacha"));
         assert!(!render("menu", options).unwrap().contains("[menu group]"));
-        assert!(render("menu anti 5", options).is_ok());
+        assert!(render("menu anti 4", options).is_ok());
         assert!(render("menu config", options)
             .unwrap()
             .contains("=/>set lang es|en"));

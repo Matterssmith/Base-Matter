@@ -126,13 +126,21 @@ fn actions_are_persisted_independently_from_activation_and_never_moderate() {
 fn link_detection_is_passive_and_uses_exact_domain_boundaries() {
     let store = AntiStore::open(":memory:").unwrap();
     store
-        .command(SOCKET, Some(GROUP), &args(&["linkwa", "on"]))
+        .edit_link_domains(
+            SOCKET,
+            Some(GROUP),
+            "add",
+            &args(&["chat.whatsapp.com", "t.me"]),
+        )
+        .unwrap();
+    store
+        .command(SOCKET, Some(GROUP), &args(&["link", "on"]))
         .unwrap();
     let accepted = store
         .inspect_links(SOCKET, GROUP, "https://chat.whatsapp.com/invite")
         .unwrap();
     assert_eq!(accepted.len(), 1);
-    assert_eq!(accepted[0].rule, "antilinkwa");
+    assert_eq!(accepted[0].rule, "antilink");
     assert!(store
         .inspect_links(SOCKET, GROUP, "https://notwhatsapp.com/invite")
         .unwrap()
@@ -156,4 +164,88 @@ fn untrusted_groups_and_unknown_filters_are_rejected() {
     assert!(store
         .command(SOCKET, Some(GROUP), &args(&["link", "nonsense"]))
         .is_err());
+}
+
+#[test]
+fn social_network_filters_are_retired_and_domains_are_scoped() {
+    let store = AntiStore::open(":memory:").unwrap();
+    for retired in [
+        "antilinkwa", "antilinktelegram", "antilinkinstagram",
+        "antilinkyoutube", "antilinkdiscord", "antilinkphishing",
+        "instagram", "telegram", "facebook", "twitter",
+    ] {
+        assert!(canonical_rule(retired).is_err(), "{retired}");
+    }
+    assert!(store.link_domains(SOCKET, Some(GROUP)).unwrap().is_empty());
+    store
+        .edit_link_domains(SOCKET, None, "add", &args(&["https://t.me/example"]))
+        .unwrap();
+    store
+        .edit_link_domains(SOCKET, Some(GROUP), "add", &args(&["Instagram.com", "youtube.com"]))
+        .unwrap();
+    assert_eq!(
+        store.link_domains(SOCKET, Some(GROUP)).unwrap(),
+        vec!["instagram.com", "t.me", "youtube.com"]
+    );
+    assert_eq!(
+        store.link_domains(SOCKET, Some(SECOND_GROUP)).unwrap(),
+        vec!["t.me"]
+    );
+    assert!(store
+        .inspect_links(SOCKET, GROUP, "https://instagram.com/p")
+        .unwrap()
+        .is_empty()); // Link filter still OFF.
+    store.command(SOCKET, Some(GROUP), &args(&["link", "on"])).unwrap();
+    assert_eq!(
+        store.inspect_links(SOCKET, GROUP, "https://www.instagram.com/p")
+            .unwrap().len(),
+        1
+    );
+    assert!(store
+        .inspect_links(SOCKET, GROUP, "https://notinstagram.com/p")
+        .unwrap()
+        .is_empty());
+    assert!(store
+        .inspect_links(SOCKET, GROUP, "https://facebook.com/p")
+        .unwrap()
+        .is_empty());
+    assert!(store
+        .inspect_links(SOCKET, SECOND_GROUP, "https://t.me/foo")
+        .unwrap()
+        .is_empty()); // This chat remains OFF.
+    store
+        .edit_link_domains(SOCKET, Some(GROUP), "del", &args(&["Instagram.com"]))
+        .unwrap();
+    assert!(!store.link_domains(SOCKET, Some(GROUP)).unwrap().contains(&"instagram.com".to_owned()));
+    assert!(store
+        .edit_link_domains(SOCKET, Some(GROUP), "add", &args(&["bad@domain.com"]))
+        .is_err());
+    assert!(store
+        .edit_link_domains(SOCKET, Some(GROUP), "add", &args(&["http://localhost"]))
+        .is_err());
+    assert!(store.link_domains("other-socket", Some(GROUP)).unwrap().is_empty());
+}
+#[test]
+fn custom_link_domains_survive_restarts_and_do_not_enable_anti() {
+    static SEQUENCE: AtomicUsize = AtomicUsize::new(0);
+    let path = std::env::temp_dir().join(format!(
+        "base-matter-link-domains-{}-{}.sqlite",
+        std::process::id(),
+        SEQUENCE.fetch_add(1, Ordering::Relaxed),
+    ));
+    {
+        let store = AntiStore::open(&path).unwrap();
+        store.edit_link_domains(SOCKET, None, "add", &args(&["youtube.com"])).unwrap();
+        store.edit_link_domains(SOCKET, Some(GROUP), "add", &args(&["t.me"])).unwrap();
+        assert!(!store.get(SOCKET, GROUP, "link").unwrap().enabled);
+    }
+    {
+        let store = AntiStore::open(&path).unwrap();
+        assert_eq!(
+            store.link_domains(SOCKET, Some(GROUP)).unwrap(),
+            vec!["t.me", "youtube.com"]
+        );
+        assert!(!store.get(SOCKET, GROUP, "link").unwrap().enabled);
+    }
+    std::fs::remove_file(path).unwrap();
 }

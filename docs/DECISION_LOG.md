@@ -1,3 +1,10 @@
+## BASE-D018 — AntiLink único y dominios por ámbito (2026-11-19)
+
+- Petición del propietario: eliminar filtros Anti por red social y usar `set anti link` para añadir varios dominios por chat o `--global` por socket.
+- Decisión: nombres de reglas sociales retirados del catálogo operativo; sin modificación destructiva de datos viejos. Lista persistente `socket_id,scope_id,domain` por SQLite, con auditoría y autorización del dueño.
+- Filtro general OFF por defecto, detección pasiva, sin acciones automáticas. Dominio global heredado, local independiente.
+- Base 8b0fc5516e6d8ab7e313469bfbd05bd1103d7f30. CI pendiente. READMEs 2/2. Bot-Matter bloqueado.
+
 ## BASE-D017 — Frontera de negocio Matterssmith Commerce (2026-11-19)
 
 - Idea tienda/hardware/generador del propietario convertida a contrato transversal; Base-Matter no implementa lógicas de mercado ni datos Vault.

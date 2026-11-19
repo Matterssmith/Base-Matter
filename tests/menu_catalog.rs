@@ -80,7 +80,7 @@ fn individual_antis_are_public_metadata_but_never_execution_grants() {
             .iter()
             .any(|descriptor| descriptor.name == *rule));
     }
-    let page = menu::render("menu antis 2", Preferences::default()).unwrap();
+    let page = menu::render("menu antis 1", Preferences::default()).unwrap();
     assert!(page.contains("antilink"));
     assert!(!page.contains("📖 Ayuda: Anti"));
     let explanation = menu::render_help("antis 2", Preferences::default()).unwrap();
@@ -112,6 +112,16 @@ fn help_queries_support_command_metadata_and_category_pages() {
     assert!(menu::render_help("not-registered", options).is_err());
     let anti_menu = menu::render("menu anti", options).unwrap();
     assert!(anti_menu.contains("=/>antilink"));
+    assert!(anti_menu.contains("=/>set anti link"));
+    let all_anti = menu::render("menu all", options).unwrap();
+    for retired in [
+        "antilinkwa", "antilinktelegram", "antilinkdiscord", "antilinkinstagram",
+        "antilinkfacebook", "antilinktiktok", "antilinkyoutube", "antilinkx",
+        "antilinkshort", "antilinkphishing",
+    ] {
+        assert!(!anti_menu.contains(retired), "{retired}");
+        assert!(!all_anti.contains(retired), "{retired}");
+    }
     assert!(!anti_menu.contains("Protección link"));
     assert!(!anti_menu.contains("La lista de enlaces"));
     assert!(!anti_menu.contains(" [pendiente]"));

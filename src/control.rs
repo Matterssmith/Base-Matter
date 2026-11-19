@@ -735,6 +735,53 @@ impl ControlDispatcher {
                         output,
                     });
                 }
+                ["set", "anti", "link", values @ ..]
+                | ["set", "antilink", values @ ..] => {
+                    // The source JID is provided by the authenticated bridge.
+                    // The current chat is the exact signed group or private JID.
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Solo el propietario del socket configura dominios");
+                    }
+                    let store = self
+                        .group_antis
+                        .as_ref()
+                        .ok_or_else(|| anyhow!("Protecciones no configuradas"))?;
+                    let mut words = values.to_vec();
+                    let global_position = words.iter().position(|word| *word == "--global");
+                    if let Some(position) = global_position {
+                        words.remove(position);
+                        if words.contains(&"--global") {
+                            bail!("--global solo puede aparecer una vez");
+                        }
+                    }
+                    let scope = if global_position.is_some() {
+                        None
+                    } else {
+                        Some(group.unwrap_or(source))
+                    };
+                    if words.is_empty() {
+                        return Ok(DispatchResult::Extension {
+                            command: "set".to_owned(),
+                            output: "Uso:\n=/>set anti link list\n=/>set anti link add t.me instagram.com\n=/>set anti link del t.me\n=/>set anti link --global add youtube.com\n=/>set anti link --global list\nAgregar dominios no activa el filtro. Para grupos: =/>anti link on".to_owned(),
+                        });
+                    }
+                    let operation = words[0];
+                    let domains: Vec<String> = words[1..]
+                        .iter()
+                        .map(|word| (*word).to_owned())
+                        .collect();
+                    let output = store.edit_link_domains(
+                        receiving_socket,
+                        scope,
+                        operation,
+                        &domains,
+                    )?;
+                    return Ok(DispatchResult::Extension {
+                        command: "set".to_owned(),
+                        output,
+                    });
+                }
                 ["set", "anti", values @ ..] => {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
