@@ -397,14 +397,18 @@ fn anti_readonly_and_global_baseline_are_separate_from_socket_changes() {
         .configure_command(SOCKET, Some(GROUP), &args(&["link", "off"]))
         .unwrap();
     assert_eq!(
-        store.inspect_command(SOCKET, Some(GROUP), &args(&["link"])).unwrap(),
+        store
+            .inspect_command(SOCKET, Some(GROUP), &args(&["link"]))
+            .unwrap(),
         "link: off [warn]"
     );
     store
         .configure_command(SOCKET, Some(GROUP), &args(&["link", "inherit"]))
         .unwrap();
     assert_eq!(
-        store.inspect_command(SOCKET, Some(GROUP), &args(&["link"])).unwrap(),
+        store
+            .inspect_command(SOCKET, Some(GROUP), &args(&["link"]))
+            .unwrap(),
         "link: on [warn]"
     );
 }

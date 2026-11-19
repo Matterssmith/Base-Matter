@@ -1,3 +1,7 @@
+## 2026-11-19 — Verificación de formato del test Anti
+
+Se aplicó el ajuste exacto solicitado por Rustfmt en dos aserciones de herencia de `tests/anti.rs`. Semántica del comando sin cambios: `anti` solo lectura, `set anti` escritura autorizada, `--mod` socket, `--global` solo valores base generales no sincronizados. CI del nuevo SHA pendiente; no actualizar el servidor hasta pasar los verificadores.
+
 ## 2026-11-19 — Comandos Anti separados por consulta, edición y ámbito
 
 - `=/>anti`: inventario de filtros del grupo actual, sin modificar valores.
