@@ -8,6 +8,7 @@
 use crate::anti_guard::EditState;
 use crate::control::{ControlDispatcher, DispatchResult};
 use crate::ingress::InboundReplayStore;
+use crate::vault_ipc::VaultClient;
 use anyhow::{anyhow, bail, Result};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
@@ -64,6 +65,7 @@ pub struct WhatsAppControlBridge {
     key: Zeroizing<[u8; 32]>,
     replay: Arc<InboundReplayStore>,
     control: Arc<ControlDispatcher>,
+    global_vault: Option<VaultClient>,
 }
 
 impl WhatsAppControlBridge {
@@ -84,7 +86,18 @@ impl WhatsAppControlBridge {
             key: Zeroizing::new(key),
             replay,
             control,
+            global_vault: None,
         })
+    }
+
+    /// Only the trusted controller may install a per-socket authenticated
+    /// Vault client. No sender may select an IPC key, tenant or socket.
+    pub fn with_global_vault(mut self, client: Option<VaultClient>) -> Result<Self> {
+        if client.as_ref().is_some_and(|c| c.socket != self.config.socket_id) {
+            bail!("Vault credential does not belong to current socket");
+        }
+        self.global_vault = client;
+        Ok(self)
     }
 
     pub fn ingest_json(&self, incoming: &str) -> Result<WhatsAppBridgeOutcome> {
@@ -195,6 +208,32 @@ impl WhatsAppControlBridge {
         } else {
             None
         };
+        // Exact global Vault health commands have their own HMAC-verified
+        // path. Neither being the owner of this bot/socket nor typing an
+        // owner claim in a message grants access: the private Vault authority
+        // independently checks the actual WhatsApp principal every time.
+        let mut tokens = frame.text.split_whitespace();
+        if tokens.next() == Some("=/>vault") {
+            if group_id.is_some() {
+                bail!("Vault is private-only");
+            }
+            let client = self.global_vault.as_ref()
+                .ok_or_else(|| anyhow!("Vault global authority unavailable"))?;
+            let principal = if is_owner {
+                self.config.owner_jid.as_str()
+            } else {
+                frame.actor_id.as_str()
+            };
+            let args = tokens.collect::<Vec<_>>();
+            let answer = client.global_owner_vault_command(principal, &args)?;
+            if !self.replay.claim("whatsapp", &self.config.socket_id, &frame.message_id)? {
+                return Ok(WhatsAppBridgeOutcome::Duplicate);
+            }
+            return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
+                command: "vault".to_owned(),
+                output: answer,
+            }));
+        }
         if is_public_reader {
             // Public commands have a dedicated, read-only policy path.
             // Never pass their actor into the owner dispatcher.

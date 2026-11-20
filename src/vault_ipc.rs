@@ -138,6 +138,60 @@ impl VaultClient {
         Ok(Some(client))
     }
 
+    /// Vault alone decides whether a platform identity is an enrolled global
+    /// owner. The registry is encrypted and inaccessible to public Base.
+    /// Caller MUST supply a signed, verified WhatsApp sender identity.
+    pub fn require_global_owner(&self, identity: &str) -> Result<()> {
+        let valid = identity
+            .strip_suffix("@s.whatsapp.net")
+            .or_else(|| identity.strip_suffix("@lid"))
+            .is_some_and(|digits| {
+                (8..=20).contains(&digits.len()) && digits.bytes().all(|b| b.is_ascii_digit())
+            });
+        if !valid {
+            bail!("invalid_global_owner_identity");
+        }
+        let result = self.invoke(
+            "owner_check",
+            "global-owner-check-v1",
+            None,
+            Some(identity.as_bytes()),
+        )?;
+        if !matches!(
+            result.value.as_deref().map(|bytes| bytes.as_slice()),
+            Some(b"global-owner:verified")
+        ) {
+            bail!("global_owner_denied");
+        }
+        Ok(())
+    }
+
+    /// Restrict global administration to safe health/status commands.
+    /// Granting a role or invoking arbitrary private code remains impossible.
+    pub fn global_owner_vault_command(
+        &self,
+        verified_identity: &str,
+        args: &[&str],
+    ) -> Result<String> {
+        self.require_global_owner(verified_identity)?;
+        let test = matches!(args, ["test"]);
+        if !(args.is_empty() || matches!(args, ["status"]) || test) {
+            bail!("Uso: =/>vault [status|test]");
+        }
+        let answer = if test {
+            if self.verify_roundtrip().is_ok() {
+                "Vault-Matter: lectura y escritura cifradas verificadas con registro de prueba. Sólo configuración; roles y comandos privados siguen bloqueados."
+            } else {
+                "Vault-Matter: prueba de lectura/escritura denegada o fallida."
+            }
+        } else if self.invoke("ping", "health", None, None).is_ok() {
+            "Vault-Matter: servicio cifrado autenticado. Permiso limitado a configuración; roles y comandos privados siguen bloqueados."
+        } else {
+            "Vault-Matter: servicio no disponible o permiso denegado."
+        };
+        Ok(answer.to_owned())
+    }
+
     fn validate(&self, operation: &str, record: &str, value: Option<&[u8]>) -> Result<()> {
         if !self.socket_path.is_absolute()
             || !self.client_key_file.is_absolute()
@@ -150,7 +204,7 @@ impl VaultClient {
             ]
             .iter()
             .all(|id| safe_id(id))
-            || !matches!(operation, "ping" | "get" | "put")
+            || !matches!(operation, "ping" | "get" | "put" | "owner_check")
             || value.is_some_and(|bytes| bytes.len() > MAX_VALUE)
         {
             bail!("invalid_vault_client_request");
@@ -200,8 +254,13 @@ impl VaultClient {
         value: Option<&[u8]>,
     ) -> Result<VaultResponse> {
         self.validate(operation, record, value)?;
-        if (operation != "put" && (expected_revision.is_some() || value.is_some()))
+        if (operation != "put" && operation != "owner_check"
+            && (expected_revision.is_some() || value.is_some()))
             || (operation == "put" && value.is_none())
+            || (operation == "owner_check"
+                && (record != "global-owner-check-v1"
+                    || expected_revision.is_some()
+                    || value.is_none_or(|identity| identity.len() > 64)))
         {
             bail!("invalid_vault_operation_arguments");
         }

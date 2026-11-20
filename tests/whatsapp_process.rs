@@ -156,15 +156,11 @@ fn real_controller_process_preserves_replay_and_recovers_after_abrupt_stop() {
     // Private Vault status must reach the real controller even while the bot
     // is OFF. No Vault credentials are passed to this synthetic test.
     let vault = deliver(&addr, &signed("vault-status", "=/>vault"));
-    assert_eq!(vault["outcome"], "applied");
-    assert!(vault["message"]
-        .as_str()
-        .is_some_and(|msg| msg.contains("Vault-Matter: servicio no configurado")));
+    assert_eq!(vault["outcome"], "denied");
+    assert!(vault.get("message").is_none());
     let vault_test = deliver(&addr, &signed("vault-test", "=/>vault test"));
-    assert_eq!(vault_test["outcome"], "applied");
-    assert!(vault_test["message"]
-        .as_str()
-        .is_some_and(|msg| msg.contains("Vault-Matter: servicio no configurado")));
+    assert_eq!(vault_test["outcome"], "denied");
+    assert!(vault_test.get("message").is_none());
     assert_eq!(
         deliver(&addr, &signed("first", "=/>bot on"))["outcome"],
         "applied"

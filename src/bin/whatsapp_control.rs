@@ -317,32 +317,10 @@ fn main() -> Result<()> {
         };
         menu_theme.render(context.group_id, &section)
     })?;
-    let vault_owner_chat = jid.clone();
+    // Vault-Matter owns global identity authority, not this socket's owner.
+    // The bridge verifies signed provider origin and authorizes each request
+    // through encrypted Vault IPC; no standalone owner-local extension.
     let vault_client = matter_base::vault_ipc::VaultClient::from_environment()?;
-    extensions.register("vault", &[], move |context, args| {
-        if context.group_id.is_some() || context.source_id != vault_owner_chat {
-            bail!("El estado de Vault sólo se consulta en el chat propio");
-        }
-        let test = args.len() == 1 && args[0] == "test";
-        if !(args.is_empty() || (args.len() == 1 && args[0] == "status") || test) {
-            bail!("Uso: =/>vault [status|test]");
-        }
-        let output = match vault_client.as_ref() {
-            None => "Vault-Matter: servicio no configurado para este socket.",
-            Some(client) if client.socket != context.socket_id => {
-                "Vault-Matter: identidad de socket no coincide; acceso denegado."
-            }
-            Some(client) if test && client.verify_roundtrip().is_ok() => {
-                "Vault-Matter: lectura y escritura cifradas verificadas con registro de prueba. Sólo configuración; roles y comandos privados siguen bloqueados."
-            }
-            Some(_) if test => "Vault-Matter: prueba de lectura/escritura denegada o fallida.",
-            Some(client) if client.invoke("ping", "health", None, None).is_ok() => {
-                "Vault-Matter: servicio cifrado autenticado. Permiso limitado a configuración; roles y comandos privados siguen bloqueados."
-            }
-            Some(_) => "Vault-Matter: servicio no disponible o permiso denegado.",
-        };
-        Ok(output.to_owned())
-    })?;
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
             .with_control_extensions(extensions)
@@ -360,7 +338,8 @@ fn main() -> Result<()> {
         bridge_key,
         replay,
         dispatcher,
-    )?);
+    )?
+    .with_global_vault(vault_client)?);
     let service = WhatsAppControlIpc::new(bridge).with_themes(Arc::clone(&style));
     println!("Base-Matter owner control listening on local loopback.");
     service.serve(bind)

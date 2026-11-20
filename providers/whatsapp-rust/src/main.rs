@@ -64,8 +64,11 @@ async fn deliver(
         && !frame.chat_jid.ends_with("@g.us")
     {
         Duration::from_secs(83)
-    } else if is_private_vault_command(frame, &frame.owner_jid) {
-        // Vault performs authenticated Unix IPC and may require more time.
+    } else if frame.text.split_whitespace().next() == Some("=/>vault")
+        && !frame.chat_jid.ends_with("@g.us")
+    {
+        // Both owner-linked and external verified-owner private messages
+        // require a private Vault authority check before any command.
         Duration::from_secs(12)
     } else {
         Duration::from_secs(4)

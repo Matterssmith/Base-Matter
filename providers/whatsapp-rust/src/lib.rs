@@ -383,6 +383,9 @@ impl Config {
             }
             ["=/>test"] | ["=/>test", "ui" | "row"] => true,
             ["=/>register"] | ["=/>register", "start"] => true,
+            // The provider proves the private sender; the controller MUST
+            // consult encrypted Vault global authority before answering.
+            ["=/>vault"] | ["=/>vault", "status" | "test"] => !event.is_group,
             ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda", category] => {
                 public_category(category) || *category == "all" || safe_help_name(category)

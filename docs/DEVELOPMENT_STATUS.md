@@ -1,3 +1,13 @@
+## 2026-11-20 — Acceso Vault reservado al owner global de dos números
+
+- El servicio privado Vault-Matter implementó `set-global-owners` y `owner_check` bajo autoridad cifrada (commit `e7134ce4d81193f0f34e3c434c81d77c860baa9e`); ningún número aparece en Base público ni en docs. Requiere enrolar **exactamente dos JID verificados**, en el host, antes de habilitar.
+- Base incorpora `VaultClient::require_global_owner`: petición AEAD de exacta identidad WhatsApp al servicio privado, sin permitir que el cliente elija su socket; no concede rangos ni otras acciones.
+- `WhatsAppControlBridge` dirige sólo `=/>vault [status|test]` a ese cliente en chats privados: permite al owner global desde el chat propio de cualquier bot Matter enrolado, incluso como remitente externo, siempre con HMAC firmado por el proveedor y autorización positiva del Vault. Dueño del socket ≠ owner global. Grupos, terceros, alias y permisos de roles continúan denegados.
+- El proveedor whitelist permite mensajes privados entrantes `=/>vault` sin conceder control de socket. La respuesta negativa a un tercero es silencio; ninguna lista de números, secretos o configuraciones se expone. La ejecución de pruebas de escritura sigue limitada al registro sintético del grant del bot/socket.
+- Se sustituyó el antiguo handler local de Vault por la ruta de autorización global. Las pruebas de controlador sin Vault ahora exigen `denied` en lugar de aceptar un status falso. Un sender PN y otro LID no se equiparan automáticamente: el operador debe verificar la correspondencia en WhatsApp y enrolar el identificador que realmente llega, sin asumirla.
+- Sin implementación ni integración automática de nuevos bots: cada bot deberá enrolar su propio cliente Vault (sin copiar el secreto de alpha) antes de usar el comando. No hay despliegue en instabox-se de esta revisión ni números enrolados.
+- README revisados: 2/2; documentación de continuidad AGENTS, DECISION_LOG, WORK_CONTINUITY y DEVELOPMENT_STATUS sincronizada en este commit. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Corrección real de =/>vault en WhatsApp: allowlist del puente
 
 - Diagnóstico confirmado con usuario: `wa-alpha` está autenticada a WhatsApp, nuevo cliente Vault `base-wa-alpha` pasó `vault_roundtrip_verified revision=1`, y el preflight imprime `ALPHA_VAULT=AUTHENTICATED_CONFIGURATION_ONLY`. Sin embargo, `=/>vault` y `=/>vault test` devolvían rechazo genérico.
