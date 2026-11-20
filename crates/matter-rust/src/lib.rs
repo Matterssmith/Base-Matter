@@ -157,7 +157,7 @@ impl UntrustedInbound {
     }
 }
 
-type ReplayKey = (SessionKey, String, String, String);
+type ReplayKey = (SessionKey, String, String, String, bool);
 
 /// One engine instance serves many independent platforms and sockets.
 /// No transport SDK is linked here, so no socket is opened by construction.
@@ -231,6 +231,7 @@ impl MatterRust {
             raw.chat_id.clone(),
             raw.sender_id.clone(),
             raw.message_id.clone(),
+            raw.edited,
         );
         if self.replay.contains(&replay_key) {
             return Err(EngineError::ReplayedMessage);
@@ -390,6 +391,16 @@ mod tests {
         engine
             .observe(event(Platform::WhatsApp, "wa-2", "id-1"))
             .unwrap();
+        // The first edited event is different from the original and is not
+        // silently discarded; subsequent same-revision duplicate is rejected.
+        let mut edit = event(Platform::WhatsApp, "wa-1", "id-1");
+        edit.edited = true;
+        let observed = engine.observe(edit.clone()).unwrap();
+        assert!(observed.edited);
+        assert_eq!(
+            engine.observe(edit).unwrap_err(),
+            EngineError::ReplayedMessage
+        );
     }
 
     #[test]
