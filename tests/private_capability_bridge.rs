@@ -5,8 +5,8 @@
  */
 use matter_base::capabilities::{
     anti_link::{invoke, AntiLinkCommand, LinkAction, CAPABILITY_ID},
-    CapabilityCall, CapabilityError, CapabilityScope, CommandContext,
-    ProtectedCapabilityGateway, UnavailableGateway,
+    CapabilityCall, CapabilityError, CapabilityScope, CommandContext, ProtectedCapabilityGateway,
+    UnavailableGateway,
 };
 use std::sync::Mutex;
 
@@ -32,7 +32,12 @@ impl ProtectedCapabilityGateway for RecordingGateway {
 #[test]
 fn forwards_only_named_capability() {
     let gateway = RecordingGateway::default();
-    let result = invoke(&gateway, &context(), CapabilityScope::Group, AntiLinkCommand::Status);
+    let result = invoke(
+        &gateway,
+        &context(),
+        CapabilityScope::Group,
+        AntiLinkCommand::Status,
+    );
     assert_eq!(result.unwrap(), "disabled");
     let calls = gateway.calls.lock().unwrap();
     assert_eq!(calls.len(), 1);
@@ -42,7 +47,12 @@ fn forwards_only_named_capability() {
 #[test]
 fn no_protected_gateway_denies() {
     assert_eq!(
-        invoke(&UnavailableGateway, &context(), CapabilityScope::Group, AntiLinkCommand::Status),
+        invoke(
+            &UnavailableGateway,
+            &context(),
+            CapabilityScope::Group,
+            AntiLinkCommand::Status
+        ),
         Err(CapabilityError::Unavailable)
     );
 }
@@ -66,7 +76,12 @@ fn group_scope_requires_group_jid() {
     let mut c = context();
     c.group_id = None;
     assert_eq!(
-        invoke(&gateway, &c, CapabilityScope::Group, AntiLinkCommand::Status),
+        invoke(
+            &gateway,
+            &c,
+            CapabilityScope::Group,
+            AntiLinkCommand::Status
+        ),
         Err(CapabilityError::InvalidContext)
     );
 }

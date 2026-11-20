@@ -1,3 +1,10 @@
+## 2026-11-19 — Corrección de rustfmt en puente privado (alpha)
+
+- El CI Rust de SHA 5d0897cd8c71a895d5e7dc76777494e2ce7ffceb falló exclusivamente en etapa inicial rustfmt del puente `src/capabilities/mod.rs` y las pruebas `tests/private_capability_bridge.rs`; Windows y proveedor independiente estaban verdes. Se aplican únicamente las diferencias exactas del registro GitHub Actions, sin cambiar funcionalidad, reglas, autorización ni secretos.
+- Continuidad: mantener `on|off|inherit`, `set` solo configuración; migración funcional de modos Anti pendiente. WhatsApp-Matter ya contiene copia separada de proveedor Rust y contratos Go, TS, JS; el corte de sesión no está autorizado ni probado.
+- Revisados README raíz y proveedor. CI de este SHA nuevo pendiente, beta/stable intactos; Bot-Matter bloqueado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-19 — Corrección de sintaxis Anti: on|off|inherit
 
 - **Decisión actual:** los tres operadores de activación son exclusivamente `on|off|inherit`, tanto por filtro como por modo. El guion `-` queda DESCARTADO como operador; no implementarlo, mostrarlo ni usarlo como alias.
