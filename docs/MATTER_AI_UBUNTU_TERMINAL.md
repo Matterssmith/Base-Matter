@@ -17,6 +17,14 @@ bash tools/install-matter-ai.sh
 
 El instalador no utiliza `sudo`, no ejecuta `curl | bash` y no solicita contraseñas del sistema. Si `~/.local/bin` está en PATH, basta `matter-ai`; si no, usar `~/.local/bin/matter-ai`.
 
+### Instalación inicial sin copiar largas instrucciones en la laptop
+
+Si tienes SSH activado en Ubuntu, abre **una sola vez** una aplicación SSH desde el teléfono y conéctate a tu laptop en tu red local. Desde esa sesión podrás pegar directamente los cuatro comandos anteriores y la clave API; al terminar, cierras la app y ya no necesitas el teléfono para dar instrucciones al asistente.
+
+En Ubuntu puedes averiguar tu IP de red con `hostname -I`. Si SSH no está instalado, la administración local de Ubuntu debe instalar `openssh-server`; **no expongas el puerto SSH a internet** sin configurarlo de forma segura. No se ha verificado que tu laptop tenga SSH ni la conectividad necesaria.
+
+Para clonar los repos privados desde la laptop, instala GitHub CLI (`gh`) desde el repositorio oficial de Ubuntu, ejecuta `gh auth login` y elige GitHub.com/HTTPS. Completa el flujo del código de dispositivo en `https://github.com/login/device` desde tu teléfono. Al terminar, `gh auth setup-git` configura Git para utilizar esas credenciales. `gh` podría guardar credenciales en un archivo local si el servidor no dispone de almacén seguro; protege tu usuario de Linux.
+
 ### Evitar copiar la API key con el teclado del servidor
 
 La API key es un secreto largo: créala desde un navegador seguro en [platform.openai.com/api-keys](https://platform.openai.com/api-keys), y transfíerela una vez mediante una sesión SSH confiable desde un dispositivo en el que **sí** puedas pegar. En la sesión SSH ejecuta `~/.local/bin/matter-ai setup` y pega la clave cuando aparezca el prompt oculto. **No escribas la clave en el historial shell, GitHub, un chat, URL, issue ni archivo público**. Si no es posible transferirla, no existe forma segura de usar OpenAI API desde la terminal sin introducir o aprovisionar una credencial.
