@@ -230,13 +230,16 @@ impl WhatsAppControlBridge {
                 frame.actor_id.as_str()
             };
             let args = tokens.collect::<Vec<_>>();
-            let answer = client.global_owner_vault_command(principal, &args)?;
+            // Identity authorization must precede replay admission.
+            // Replay admission must precede the synthetic write in "test".
+            client.require_global_owner(principal)?;
             if !self
                 .replay
                 .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
             {
                 return Ok(WhatsAppBridgeOutcome::Duplicate);
             }
+            let answer = client.global_owner_vault_command(principal, &args)?;
             return Ok(WhatsAppBridgeOutcome::Dispatched(
                 DispatchResult::Extension {
                     command: "vault".to_owned(),

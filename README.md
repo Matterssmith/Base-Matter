@@ -1,3 +1,8 @@
+## 2026-11-20 — Protección de replay en comandos Vault globales
+
+- El puente autentica al JID global con el servicio privado, reclama `message_id` durable contra replay, y **solo después** permite `=/>vault test` (escritura sintética). Repite autorización antes de ejecutar para negar si se revocó el principal entre ambos pasos. Replays y terceros no pueden provocar un nuevo write.
+- Sin cambios de scopes, roles, secretos, permisos de grupos ni registro público. README revisados 2/2, documentos de continuidad sincronizados en este commit; créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Correcciones de formato Rust de autoridad global
 
 - CI original: Rustfmt falló antes de compilar en las rutas del puente/cliente y una prueba; se aplicaron los diffs exactos del log. La comparación de la prueba de respuesta AEAD usa `is_some_and` para evitar ambigüedad del patrón de slice.
