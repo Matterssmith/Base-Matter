@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080d1a">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+<title>Matter Register · Identidad bajo tu control</title>
+<style>
+:root{color-scheme:dark;--bg:#070b14;--surface:#111827dd;--ink:#e8f8ff;--muted:#abc3d4;--a:#46e7ff;--b:#7386ff;--a-rgb:70,231,255;font:16px/1.5 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% 5%,rgba(var(--a-rgb),.18),transparent 43%),radial-gradient(ellipse at 0 80%,#7039ae2b,transparent 48%),var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
+body[data-theme="ideas"]{--a:#71ff3b;--b:#00a97a;--a-rgb:113,255,59}
+body[data-theme="kids"]{--a:#ffd447;--b:#ff922f;--a-rgb:255,212,71}
+body[data-theme="sfw"]{--a:#46e7ff;--b:#3e8bff;--a-rgb:70,231,255}
+body[data-theme="testers"]{--a:#ff991e;--b:#ff5437;--a-rgb:255,153,30}
+body[data-theme="channel"]{--a:#30deff;--b:#fc4bfb;--a-rgb:48,222,255}
+button,select,input{font:inherit}button{cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--a);outline-offset:3px}
+button:disabled{opacity:.45;cursor:not-allowed}
+a{color:var(--a)}
+#stars{pointer-events:none;position:fixed;inset:0;opacity:.35;background-image:radial-gradient(1px 1px at 10px 14px,#fff,transparent),radial-gradient(2px 2px at 90px 80px,var(--a),transparent);background-size:157px 137px,239px 193px;animation:drift 30s linear infinite}
+@keyframes drift{to{background-position:157px 137px,-239px -193px}}
+.wrap{max-width:1200px;margin:auto;padding:22px clamp(16px,4vw,36px) 30px;position:relative}
+header{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;font-weight:900;font-size:1.25rem;letter-spacing:.02em}
+.mark{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;border:2px solid var(--a);color:var(--a);box-shadow:0 0 20px rgba(var(--a-rgb),.45),inset 0 0 14px rgba(var(--a-rgb),.16);font-size:28px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid rgba(var(--a-rgb),.45);padding:11px 16px;border-radius:14px;color:var(--ink);background:#142033e0;font-weight:700;transition:transform .15s,border-color .15s,box-shadow .15s}
+.btn:hover:not(:disabled){transform:translateY(-2px);border-color:var(--a);box-shadow:0 0 14px rgba(var(--a-rgb),.2)}
+.btn.primary{background:linear-gradient(125deg,var(--a),var(--b));color:#05111e;border:0;box-shadow:0 6px 22px rgba(var(--a-rgb),.25)}
+.btn.small{padding:8px 12px;font-size:.83rem}
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);align-items:center;gap:30px;margin:42px 0 30px}
+h1{font-size:clamp(2.5rem,6vw,5.6rem);line-height:1.02;letter-spacing:-.055em;margin:0 0 14px}
+h1 strong{color:var(--a);text-shadow:0 0 32px rgba(var(--a-rgb),.45)}
+.lead{max-width:49ch;color:var(--muted);font-size:1.06rem}
+.eyebrow{color:var(--a);font-size:.81rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.pills{display:flex;flex-wrap:wrap;gap:9px;margin:20px 0}
+.pill{border:1px solid #55657b;border-radius:99px;background:#0e1827d8;padding:6px 11px;font-size:.8rem;color:#e5eaf5}
+.pill b{color:var(--a)}
+.mascot-card{position:relative;min-height:310px;display:grid;place-items:center;border:1px solid rgba(var(--a-rgb),.6);border-radius:35px;background:radial-gradient(circle at center,rgba(var(--a-rgb),.17),#101828 75%);box-shadow:0 0 60px rgba(var(--a-rgb),.14),inset 0 0 42px #071221;overflow:hidden}
+.mascot-card:after{content:"";position:absolute;inset:11px;border:1px dashed rgba(var(--a-rgb),.35);border-radius:27px;pointer-events:none}
+.mascot{width:min(93%,400px);filter:drop-shadow(0 0 20px rgba(var(--a-rgb),.36));animation:float 4.3s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-10px) rotate(1deg)}}
+.sticker{position:absolute;border-radius:18px;background:#0e1b2fdd;border:1px solid var(--a);box-shadow:0 0 17px rgba(var(--a-rgb),.25);padding:9px 13px;font-weight:800;font-size:.78rem}
+.sticker.left{bottom:20px;left:18px}.sticker.right{top:20px;right:14px}
+.theme-choices{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+.theme-choices button{border:1px solid #46566f;background:#101b2c;color:#dceafa;padding:9px 13px;border-radius:13px;font-weight:700}
+.theme-choices button[aria-pressed="true"]{border-color:var(--a);background:rgba(var(--a-rgb),.14);color:var(--a)}
+.panel{border:1px solid rgba(var(--a-rgb),.4);background:linear-gradient(155deg,#142037ee,#0b1221f2);border-radius:25px;box-shadow:0 16px 55px #0008,0 0 25px rgba(var(--a-rgb),.1);overflow:hidden}
+.panel-head{padding:24px 28px 17px;border-bottom:1px solid #364459;display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+h2{font-size:1.6rem;line-height:1.2;margin:0}.sub{font-size:.89rem;color:var(--muted);margin:8px 0 0}
+.progress{font-size:.82rem;color:var(--a);font-weight:800}
+.panel-body{padding:24px 28px 28px}
+.steps{display:flex;gap:8px;align-items:center;margin-bottom:22px}
+.bar{height:5px;flex:1;border-radius:10px;background:#344355}
+.bar.active{background:var(--a);box-shadow:0 0 14px rgba(var(--a-rgb),.45)}
+.choice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.choice{min-height:130px;text-align:left;border:1px solid #46536c;background:#0c182a;border-radius:17px;color:var(--ink);padding:17px;display:flex;flex-direction:column;gap:6px}
+.choice:hover,.choice[aria-pressed="true"]{border-color:var(--a);box-shadow:inset 0 0 28px rgba(var(--a-rgb),.09)}
+.choice .symbol{font-size:1.7rem}.choice b{font-size:1.01rem}.choice span:last-child{color:var(--muted);font-size:.83rem}
+.field{margin-top:22px}.field label{display:block;margin-bottom:9px;font-weight:700}
+select{width:100%;border-radius:13px;border:1px solid #71819a;padding:13px;background:#0b172a;color:var(--ink)}
+.notice{border-left:3px solid var(--a);background:rgba(var(--a-rgb),.09);border-radius:0 12px 12px 0;padding:13px 15px;margin:20px 0;color:#d5e6f3;font-size:.9rem}
+.hidden{display:none!important}
+.check{display:flex;gap:12px;align-items:flex-start;margin:16px 0;color:var(--muted);font-size:.92rem}
+.check input{width:19px;height:19px;accent-color:var(--a);margin-top:3px;flex:none}
+.info-card{padding:15px 16px;border:1px solid #46566f;border-radius:15px;background:#0c1729;margin:13px 0}
+.info-card b{color:var(--a)}
+.info-card p{margin:5px 0;color:var(--muted);font-size:.9rem}
+.tag{display:inline-block;color:#090f1a;background:var(--a);font-size:.74rem;font-weight:900;border-radius:8px;padding:4px 8px;margin-bottom:10px}
+.nav{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:24px}
+.nav>div{display:flex;gap:9px}
+#feedback{min-height:24px;max-width:72ch;font-size:.91rem;color:var(--a);margin-top:10px}
+footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:23px;font-size:.8rem;color:var(--muted)}
+footer strong{color:var(--a)}
+@media(max-width:760px){.hero{grid-template-columns:1fr;margin-top:27px}.mascot-card{min-height:260px;max-height:330px}.panel-head,.panel-body{padding:19px}.choice-grid{grid-template-columns:1fr}.choice{min-height:80px;display:grid;grid-template-columns:32px 1fr;align-items:center;gap:0 10px}.choice span:last-child{grid-column:2}.sticker{font-size:.72rem}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body data-theme="sfw">
+<div id="stars" aria-hidden="true"></div>
+<div class="wrap">
+<header>
+  <div class="brand"><span class="mark" aria-hidden="true">✦</span><span>Matter<span style="color:var(--a)">ssmith</span> <small style="display:block;font-size:.72rem;color:var(--muted);font-weight:500">Identidad · Comunidad · Seguridad</small></span></div>
+  <div class="actions">
+    <button type="button" class="btn small" id="sound" aria-pressed="false">♫ Sonido: OFF</button>
+    <button type="button" class="btn small" id="fullscreen">⛶ Pantalla completa</button>
+  </div>
+</header>
+<section class="hero">
+<div>
+  <p class="eyebrow">Matter Ecosystem · Registro v0.1</p>
+  <h1>Tu mundo.<br><strong>Tu identidad.</strong></h1>
+  <p class="lead">Una puerta para conectar con Matter. Escoge cómo participar: como invitado, con una cuenta o con una verificación para funciones que realmente la necesiten.</p>
+  <div class="pills"><span class="pill"><b>✦</b> Privacidad primero</span><span class="pill"><b>◆</b> Por país y edad</span><span class="pill"><b>♡</b> Acceso invitado</span></div>
+</div>
+<div class="mascot-card" role="img" aria-label="Mascota original Matter con orejas de gato, cabello lavanda, sudadera cian y un oso de peluche">
+<svg class="mascot" viewBox="0 0 440 380" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<defs><linearGradient id="hood" x2="1" y2="1"><stop stop-color="#151b35"/><stop offset=".55" stop-color="var(--b)"/><stop offset="1" stop-color="var(--a)"/></linearGradient><linearGradient id="hair" x2=".8" y2="1"><stop stop-color="#fff"/><stop offset=".55" stop-color="#b8b1ff"/><stop offset="1" stop-color="#8882e6"/></linearGradient></defs>
+<circle cx="209" cy="180" r="156" fill="none" stroke="var(--a)" stroke-width="2" stroke-dasharray="7 12" opacity=".6"/>
+<path d="M95 124 L112 11 Q160 10 172 89 L270 90 Q289 12 341 13 L347 140" fill="url(#hood)" stroke="#08152e" stroke-width="13" stroke-linejoin="round"/>
+<path d="M115 41 L145 71 L131 114 Z M319 44 L293 75 L319 114 Z" fill="#e5baff"/>
+<path d="M90 303 Q105 265 155 265 L275 265 Q330 275 345 347 L68 347 Z" fill="url(#hood)" stroke="#091222" stroke-width="13"/>
+<path d="M112 108 Q118 60 225 55 Q313 57 329 113 Q353 151 339 210 L299 282 Q212 326 125 265 Q77 223 112 108Z" fill="url(#hair)" stroke="#5f5aab" stroke-width="6"/>
+<ellipse cx="223" cy="185" rx="105" ry="106" fill="#ffe4e8" stroke="#db9ea9" stroke-width="5"/>
+<path d="M114 147 Q114 59 218 63 Q314 62 330 146 Q281 123 244 102 Q222 142 182 149 Q159 164 114 147Z" fill="url(#hair)" stroke="#776fc9" stroke-width="4"/>
+<path d="M147 186 q18 -18 37 0" stroke="#33214e" stroke-width="7" fill="none" stroke-linecap="round"/>
+<ellipse cx="265" cy="184" rx="21" ry="31" fill="#532eaa"/><ellipse cx="267" cy="185" rx="12" ry="21" fill="#40deff"/><circle cx="270" cy="171" r="7" fill="white"/>
+<ellipse cx="158" cy="223" rx="19" ry="8" fill="#f7a6b8" opacity=".8"/><ellipse cx="297" cy="223" rx="19" ry="8" fill="#f7a6b8" opacity=".8"/>
+<path d="M207 224 Q222 247 242 222" stroke="#bb5878" stroke-width="5" fill="#e47593" stroke-linejoin="round"/><path d="M213 230 l7 9 7 -9" fill="#fff"/>
+<path d="M151 269 Q105 284 102 332 M292 270 Q330 294 333 333" fill="none" stroke="#dad8ff" stroke-width="17" stroke-linecap="round"/>
+<path d="M184 296 l-18 40 M255 295 l18 40" stroke="var(--a)" stroke-width="8" stroke-linecap="round"/>
+<g transform="translate(303 247)"><circle cx="25" cy="-6" r="18" fill="#ab6e49"/><circle cx="94" cy="-7" r="18" fill="#ab6e49"/><circle cx="61" cy="37" r="61" fill="#cf9369"/><ellipse cx="60" cy="53" rx="31" ry="24" fill="#ffdec4"/><circle cx="42" cy="30" r="6" fill="#1a1830"/><circle cx="77" cy="30" r="6" fill="#1a1830"/><path d="M55 48 q5 8 10 0" stroke="#5e3c37" stroke-width="4" fill="none"/><path d="M36 99 l27 -15 27 15" fill="none" stroke="var(--a)" stroke-width="12"/></g>
+<g fill="var(--a)"><path d="m57 72 8 -19 8 19 20 8 -20 8 -8 20 -8 -20 -20 -8Z"/><circle cx="373" cy="137" r="7"/><circle cx="68" cy="268" r="5"/></g>
+</svg>
+<span class="sticker left">🧸 Matter Friends</span><span class="sticker right">✧ Neon Lab</span>
+</div>
+</section>
+<p class="eyebrow">Identidades visuales</p>
+<div class="theme-choices" id="themes" aria-label="Selecciona estilo visual">
+<button type="button" data-theme-choice="ideas">💡 Ideas</button>
+<button type="button" data-theme-choice="kids">⭐ Bot Kids</button>
+<button type="button" data-theme-choice="sfw" aria-pressed="true">🐾 Bot SFW</button>
+<button type="button" data-theme-choice="testers">✓ Testers</button>
+<button type="button" data-theme-choice="channel">🌈 Kids Channel</button>
+</div>
+<main class="panel" aria-labelledby="register-title">
+<div class="panel-head">
+<div><span class="tag" id="mode-tag">VISTA PREVIA · SIN ENVÍO DE DATOS</span><h2 id="register-title">Elige tu acceso</h2><p class="sub" id="step-caption">Sin cuenta también puedes conocer Matter.</p></div><div class="progress" id="step-count">01 / 04</div>
+</div>
+<div class="panel-body">
+<div class="steps" aria-hidden="true"><span class="bar active"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
+<section id="step1">
+<div class="choice-grid">
+<button type="button" class="choice" data-audience="guest" aria-pressed="true"><span class="symbol">🌙</span><b>Invitado</b><span>Conoce las funciones públicas sin entregar identificación.</span></button>
+<button type="button" class="choice" data-audience="adult" aria-pressed="false"><span class="symbol">✦</span><b>Persona adulta</b><span>Cuenta y, cuando haga falta, verificación de identidad.</span></button>
+<button type="button" class="choice" data-audience="minor" aria-pressed="false"><span class="symbol">🧸</span><b>Menor de edad</b><span>Proceso limitado, seguro y sin reconocimiento facial.</span></button>
+</div>
+<div class="field"><label for="country">País de residencia</label><select id="country">
+<option value="MX">México</option><option value="CO">Colombia</option><option value="AR">Argentina</option><option value="CL">Chile</option><option value="ES">España</option><option value="US">Estados Unidos</option><option value="OTHER">Otro país (revisión específica)</option>
+</select></div>
+<div class="notice" id="country-note" role="status"></div>
+</section>
+<section id="step2" class="hidden">
+<h3>Identidad digital y consentimiento</h3>
+<div class="info-card"><b>Conexión con tu cuenta</b><p>WhatsApp, Telegram y Discord deben demostrar la identidad mediante un evento o sesión autenticada. Escribir un número o un @usuario no confirma propiedad.</p></div>
+<div class="info-card"><b>Sin documentos para invitados</b><p>El registro no es obligatorio para las funciones públicas. Las opciones sensibles requieren una autorización independiente de Vault-Matter.</p></div>
+<label class="check"><input type="checkbox" id="privacy"> <span>He leído el <button class="btn small" type="button" id="privacy-open">aviso de privacidad (resumen de prueba)</button>. El aviso jurídico definitivo debe publicarse antes de activar capturas.</span></label>
+<label class="check"><input type="checkbox" id="terms"> <span>Acepto los <button class="btn small" type="button" id="terms-open">términos (resumen de prueba)</button> para comenzar una sesión de inscripción cuando el servicio oficial esté habilitado.</span></label>
+</section>
+<section id="step3" class="hidden">
+<h3 id="proof-title">Verificación por país</h3>
+<p class="sub" id="proof-desc"></p>
+<div id="proof-adult">
+<div class="info-card"><b>Documento oficial · anverso y reverso</b><p>La aplicación real abrirá la captura segura del proveedor autorizado; no subirá fotografías a GitHub ni guardará copias en esta página.</p><button class="btn small" type="button" disabled>Capturar documento · pendiente de proveedor</button></div>
+<div class="info-card"><b>Presencia real y coincidencia facial</b><p>La prueba deberá comprobar movimiento/presencia, ataques con fotografía o vídeo y coincidencia con el documento. Una selfie aislada no basta.</p><button class="btn small" type="button" disabled>Iniciar prueba de vida · pendiente</button></div>
+</div>
+<div id="proof-minor" class="hidden">
+<div class="info-card"><b id="minor-doc">Documento apto para menores</b><p>Sin captura biométrica ni reconocimiento facial. La CURP simple no es por sí sola una validación oficial de identidad; se requiere una fuente autorizada cuando sea necesaria.</p></div>
+<div class="info-card"><b>Consentimiento de madre, padre o tutor</b><p>Cuando la ley y la función lo requieran, el sistema debe verificar por separado la autorización del representante legal. No bastará una casilla marcada por el menor.</p></div>
+</div>
+<div id="proof-guest" class="hidden"><div class="info-card"><b>Sin verificación civil</b><p>Conservas acceso invitado a lo que esté habilitado en el bot. Ninguna cuenta se crea ni se envía información personal.</p></div></div>
+</section>
+<section id="step4" class="hidden">
+<h3>Revisión y estado real</h3><div class="info-card"><b id="review-title">Acceso de invitado</b><p id="review-detail"></p></div>
+<div class="notice" id="gateway-status">Comprobando conexión privada…</div>
+<p class="sub">El servicio no confirmará una cuenta ni almacenará documentos hasta completar autenticación, consentimiento, verificación y persistencia cifrada.</p>
+</section>
+<div id="feedback" role="status" aria-live="polite"></div>
+<div class="nav"><button type="button" id="back" class="btn" disabled>← Atrás</button><div><button type="button" id="guest" class="btn">Seguir como invitado</button><button type="button" id="next" class="btn primary">Continuar →</button></div></div>
+</div>
+</main>
+<footer><span>Créditos: <strong>Hecho por Lournyx Matterssmith [Lou-Nyx].</strong></span><span>Sin analítica, sin cookies, sin biometría en el navegador de prueba.</span></footer>
+</div>
+<dialog id="details" style="max-width:560px;border:1px solid var(--a);border-radius:20px;background:#101a2b;color:#eaf5fa;padding:22px"><h3 id="details-title"></h3><p id="details-body"></p><button class="btn primary" id="details-close" type="button">Cerrar</button></dialog>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const state={step:1,audience:"guest",country:"MX",sound:false,capabilities:null};
+const t={1:["Elige tu acceso","Sin cuenta también puedes conocer Matter."],2:["Protección y consentimiento","El registro exige una identidad vinculada y decisiones explícitas."],3:["Verificación apropiada","Distinguimos edad, país y finalidad."],4:["Confirma el siguiente paso","La cuenta sólo existe tras respuesta firmada de Vault."]};
+const countryNotes={MX:"México: una persona menor puede presentar CURP, pero su formato no demuestra por sí solo que la persona la posea. Los adultos requieren un documento oficial admitido por el proveedor.",CO:"Colombia: el documento admisible y la edad aplicable deben validarse con la política local. No se admite una prueba genérica como verificación definitiva.",AR:"Argentina: documento y representación legal sujetos a verificación del emisor y reglas locales.",CL:"Chile: el documento y las reglas para menores requieren un flujo propio.",ES:"España: verificación de documento y edad según la finalidad y la normativa aplicable.",US:"Estados Unidos: requisitos dependientes del estado, edad y finalidad; no se presume una regla única.",OTHER:"País no habilitado para validación de documentos. El modo invitado permanece disponible."};
+let audioCtx;
+function tone(){if(!state.sound)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;audioCtx??=new C();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type="sine";o.frequency.setValueAtTime(600,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(900,audioCtx.currentTime+.11);g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.045,audioCtx.currentTime+.018);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.16);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.17)}catch{}}
+function feedback(message){$("feedback").textContent=message}
+function render(){
+ $("register-title").textContent=t[state.step][0];$("step-caption").textContent=t[state.step][1];
+ $("step-count").textContent=String(state.step).padStart(2,"0")+" / 04";
+ document.querySelectorAll(".bar").forEach((x,i)=>x.classList.toggle("active",i<state.step));
+ for(let i=1;i<=4;i++)$("step"+i).classList.toggle("hidden",i!==state.step);
+ $("back").disabled=state.step===1;$("next").textContent=state.step===4?"Iniciar registro seguro":"Continuar →";
+ $("country-note").textContent=countryNotes[state.country];
+ $("guest").classList.toggle("hidden",state.audience==="guest"&&state.step===1);
+ document.querySelectorAll("[data-audience]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.audience===state.audience)));
+ $("proof-adult").classList.toggle("hidden",state.audience!=="adult");
+ $("proof-minor").classList.toggle("hidden",state.audience!=="minor");
+ $("proof-guest").classList.toggle("hidden",state.audience!=="guest");
+ $("proof-title").textContent=state.audience==="minor"?"Identidad para menores":state.audience==="adult"?"Documento + verificación de presencia":"Invitado sin documentos";
+ $("proof-desc").textContent=state.audience==="minor"?"No solicitaremos biometría infantil.":state.audience==="adult"?"Las verificaciones sólo son para capacidades que las necesitan.":"Ninguna identificación es necesaria.";
+ $("minor-doc").textContent=state.country==="MX"?"México · CURP de menor":"Documento apropiado para menor · política por país";
+ $("review-title").textContent=state.audience==="guest"?"Modo invitado":state.audience==="adult"?"Cuenta adulta · pendiente de validación":"Cuenta para menor · pendiente de autorización";
+ $("review-detail").textContent=state.audience==="guest"?"No se requiere documento ni rostro. Puedes utilizar funciones públicas habilitadas.":state.audience==="minor"?"País "+state.country+". Sin identificación facial; autorización de representante cuando corresponda.":"País "+state.country+". Documento de ambos lados y prueba real de presencia, exclusivamente mediante proveedor habilitado.";
+ $("mode-tag").textContent=state.capabilities?.ready===true?"GATEWAY DETECTADO · VERIFICAR AUTORIDAD":"VISTA PREVIA · SIN ENVÍO DE DATOS";
+ $("gateway-status").textContent=state.capabilities?.ready===true?"Gateway comunicado. La verificación sigue dependiendo de su autoridad del lado servidor.":"Gateway privado no conectado. No se enviará información ni se simulará un registro.";
+}
+document.querySelectorAll("[data-audience]").forEach(b=>b.addEventListener("click",()=>{state.audience=b.dataset.audience;feedback("");tone();render()}));
+$("country").addEventListener("change",e=>{state.country=e.target.value;feedback("");tone();render()});
+document.querySelectorAll("[data-theme-choice]").forEach(b=>b.addEventListener("click",()=>{document.body.dataset.theme=b.dataset.themeChoice;document.querySelectorAll("[data-theme-choice]").forEach(z=>z.setAttribute("aria-pressed",String(z===b)));tone()}));
+$("sound").addEventListener("click",()=>{state.sound=!state.sound;$("sound").textContent=state.sound?"♫ Sonido: ON":"♫ Sonido: OFF";$("sound").setAttribute("aria-pressed",String(state.sound));tone()});
+$("fullscreen").addEventListener("click",async()=>{try{if(document.fullscreenElement){await document.exitFullscreen()}else if(document.documentElement.requestFullscreen){await document.documentElement.requestFullscreen()}else{feedback("Este navegador no admite pantalla completa; usa el modo pantalla completa del navegador.")}}catch{feedback("La aplicación de mensajería bloqueó pantalla completa. Abre este sitio en tu navegador.")}tone()});
+$("back").addEventListener("click",()=>{state.step=Math.max(1,state.step-1);tone();feedback("");render()});
+$("guest").addEventListener("click",()=>{state.audience="guest";state.step=4;feedback("El invitado no genera registros de identidad.");tone();render()});
+$("next").addEventListener("click",async()=>{
+ tone();feedback("");
+ if(state.step===2&&state.audience!=="guest"&&(!$("privacy").checked||!$("terms").checked)){feedback("Debes revisar los documentos legales antes de avanzar. Los textos de prueba aún no equivalen a aceptación formal.");return}
+ if(state.step<4){state.step++;render();return}
+ if(state.audience==="guest"){feedback("Modo invitado: usa las funciones públicas disponibles en Matter. No se ha creado cuenta ni se ha enviado información.");return}
+ if(state.country==="OTHER"){feedback("País todavía no disponible para verificación. Puedes continuar como invitado.");return}
+ if(state.capabilities?.ready!==true){feedback("Registro bloqueado: falta el gateway privado Vault-Matter. Ningún dato se envió.");return}
+ try{
+  const response=await fetch("/api/register/sessions",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({country:state.country,audience:state.audience,legal_acknowledgement:true})});
+  if(!response.ok){feedback("Vault rechazó iniciar la sesión. No existe inscripción confirmada.");return}
+  const v=await response.json();
+  if(typeof v.redirect_url!=="string")throw Error("respuesta incompleta");
+  const target=new URL(v.redirect_url,location.origin);
+  if(target.protocol!=="https:"&&!(target.origin===location.origin&&location.hostname==="localhost"))throw Error("destino no seguro");
+  window.location.assign(target.href);
+ }catch{feedback("No se pudo confirmar una sesión segura con Vault. Ninguna cuenta fue creada por esta página.")}
+});
+$("privacy-open").addEventListener("click",()=>openInfo("Privacidad · vista previa","Antes de recopilar documentos, Matter debe publicar un aviso de privacidad completo y comprobable: responsable, finalidades, proveedor, transferencias, retención y ejercicio de derechos. Este resumen NO lo sustituye."));
+$("terms-open").addEventListener("click",()=>openInfo("Términos · vista previa","El acceso invitado es voluntario; la inscripción no asigna roles administrativos. Los permisos dependen del contexto y de autorización independiente. Se publicarán términos versionados antes de operar."));
+function openInfo(title,body){$("details-title").textContent=title;$("details-body").textContent=body;$("details").showModal();tone()}
+$("details-close").addEventListener("click",()=>$("details").close());
+(async()=>{try{const c=new AbortController();const timer=setTimeout(()=>c.abort(),2500);const r=await fetch("/api/register/capabilities",{signal:c.signal,credentials:"same-origin",cache:"no-store"});clearTimeout(timer);if(r.ok){const v=await r.json();state.capabilities={ready:v.ready===true&&v.verification_provider_ready===true&&v.authenticated_session===true&&v.legal_documents_published===true}}}catch{}render()})();
+render();
+</script>
+</body>
+</html>
+<!-- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]. -->
