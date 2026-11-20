@@ -1,0 +1,24 @@
+# Matter-Autopilot — servicio de usuario Sakura, sin privilegios root.
+# Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+[Unit]
+Description=Matterssmith Matter-AI continuous workstream assistant
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/matter-autopilot run
+WorkingDirectory=%h
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=GIT_TERMINAL_PROMPT=0
+Restart=on-failure
+RestartSec=60
+TimeoutStopSec=20
+NoNewPrivileges=yes
+PrivateTmp=yes
+UMask=0077
+MemoryMax=1400M
+TasksMax=80
+
+[Install]
+WantedBy=default.target
