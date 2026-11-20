@@ -2,7 +2,8 @@
 
 - Usuario Linux `Sakura` creado por `tools/setup-sakura.sh` al ejecutarlo como administrador en Ubuntu; NO se ha ejecutado aún. Por defecto contraseña bloqueada, no vacía; se permite opción `--password-prompt` o clave SSH pública.
 - Cada trabajo en `/home/Sakura/Matter/workspaces/<ID>`, rama exacta `workstreams/NN-id`; checkpoints de metadatos privados en `/home/Sakura/Matter/checkpoints/<ID>`.
-- Comandos CLI `matter-ai sync ID`, `branches ID`, `workstatus ID`, `checkpoint ID`, `save ID`, `promote ID alpha|beta|stable|feat/rama`. Save requiere confirmación de commit/push; promoción prepara PR draft con `gh` y no merge. No escribir directamente sobre alpha/beta/stable.
+- Guardado masivo: `matter-ai checkpoint all` (sólo metadatos) o `matter-ai save all` (commit/push individual por cada checkout detectado, con confirmaciones por proyecto). Workstreams no clonados y Bot-Matter se omiten; un error no se oculta.
+- Comandos CLI `matter-ai sync ID`,  `branches ID`, `workstatus ID`, `checkpoint ID`, `save ID`, `promote ID alpha|beta|stable|feat/rama`. Save requiere confirmación de commit/push; promoción prepara PR draft con `gh` y no merge. No escribir directamente sobre alpha/beta/stable.
 - El avance no está respaldado en GitHub hasta que `git push` se complete. Checkpoint local NO sustituye copia real de código. CI/verificación y revisiones siguen siendo gates independientes.
 - Vault/Matter permisos protegidos; no mover sesiones ni datos sensibles. Bot-Matter bloqueado.
 - Leer `docs/MATTER_SAKURA_BRANCH_RECOVERY.md` antes de configurar Ubuntu.
