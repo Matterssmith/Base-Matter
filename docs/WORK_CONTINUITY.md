@@ -1,3 +1,10 @@
+## 2026-11-20 — Validación CI de Matter-Autopilot
+
+- GitHub Actions [run 44829007299](https://github.com/Matterssmith/Base-Matter/actions/runs/44829007299), commit `d1d7092aae5ca63dd41fa39f2953ef92f38cf307`: **Linux y Windows correctos** para pruebas offline Matter-AI, pruebas de autonomía, instaladores y systemd unit (Linux).
+- Corregido bloqueo de archivos protegidos antes de su resolución de ruta y preparado el ejecutable en CI antes de validar el servicio systemd.
+- Pendiente: instalación Ubuntu real y autenticación OpenAI/GitHub del usuario Sakura; comprobar persistencia tras reboot, backoff API y éxito real de push. No se tocó Bot-Matter ni ramas protegidas.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Nuevo daemon Matter-Autopilot para Ubuntu Server
 
 - Rama de trabajo `workstreams/02-base`; servicio de usuario `Sakura`: `tools/matter_autopilot.py`, `tools/matter-autopilot.service`; instalador actualizado. Suite offline en `tests/test_matter_autopilot.py` y workflow Linux/Windows.
