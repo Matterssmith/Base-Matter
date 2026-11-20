@@ -1,7 +1,7 @@
 ## 2026-11-20 — Matter Register: proveedor Rust sigue siendo principal
 
-- El portal de registro fue creado en rama aislada \`feat/matter-register-web\`. No se cambiaron las API ni la sesión del proveedor Rust. \`providers/baileys-compat/register-card.mjs\` es un adaptador alternativo desactivado por defecto.
-- Baileys y otras implementaciones Go/JS/TS permiten ciertos botones NativeFlow. El botón de webview \`open_webview\` es experimental, mientras que \`cta_url\` abre un sitio HTTPS con fallback textual. El modo pantalla completa de la página requiere interacción del usuario y autorización del navegador. No falsificar Meta AI ni indicadores reenviados.
+- El portal de registro fue creado en rama aislada `feat/matter-register-web`. No se cambiaron las API ni la sesión del proveedor Rust. `providers/baileys-compat/register-card.mjs` es un adaptador alternativo desactivado por defecto.
+- Baileys y otras implementaciones Go/JS/TS permiten ciertos botones NativeFlow. El botón de webview `open_webview` es experimental, mientras que `cta_url` abre un sitio HTTPS con fallback textual. El modo pantalla completa de la página requiere interacción del usuario y autorización del navegador. No falsificar Meta AI ni indicadores reenviados.
 - La verificación real y guardado cifrado no están activos; no publicar un enlace de registro productivo hasta desplegar gateway seguro y textos legales.
 - README revisados: 2/2. Las pruebas no requieren ni alteran el socket conectado.
 
