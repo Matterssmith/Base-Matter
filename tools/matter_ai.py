@@ -29,6 +29,7 @@ CONFIG_DIR = HOME / ".config" / "matter-ai"
 CONFIG_PATH = CONFIG_DIR / "config.json"
 KEY_PATH = CONFIG_DIR / "api.key"
 HANDOFF_PATH = HOME / ".local" / "share" / "matter-ai" / "MATTER_AI_HANDOFF.md"
+CHAT_HISTORY_PATH = HOME / ".local" / "state" / "matter-ai" / "chat-history.json"
 ROOT = HOME / "Matter" / "workspaces"
 API_URL = "https://api.openai.com/v1/responses"
 MODEL_DEFAULT = "gpt-6.2-sol"
@@ -688,6 +689,38 @@ def ask(prompt: str, history: list[dict]) -> str:
     return "Se alcanzó el límite por turno. Los cambios locales permanecen; revisa Git y continúa."
 
 
+def load_local_chat_history() -> list[dict]:
+    if not CHAT_HISTORY_PATH.is_file() or CHAT_HISTORY_PATH.is_symlink():
+        return []
+    try:
+        if CHAT_HISTORY_PATH.stat().st_mode & 0o077:
+            return []
+        data = json.loads(CHAT_HISTORY_PATH.read_text(encoding="utf-8"))
+        if not isinstance(data, list):
+            return []
+        return [
+            {"user": t["user"][:1200], "assistant": t["assistant"][:1200]}
+            for t in data[-12:]
+            if (isinstance(t, dict)
+                and isinstance(t.get("user"), str)
+                and isinstance(t.get("assistant"), str)
+                and not SECRET_FRAGMENT_RE.search(t["user"])
+                and not SECRET_FRAGMENT_RE.search(t["assistant"]))
+        ]
+    except (OSError, ValueError, TypeError):
+        return []
+
+
+def save_local_chat_history(history: list[dict]) -> None:
+    selected = [
+        {"user": t["user"][:1200], "assistant": t["assistant"][:1200]}
+        for t in history[-12:]
+        if not SECRET_FRAGMENT_RE.search(t["user"])
+        and not SECRET_FRAGMENT_RE.search(t["assistant"])
+    ]
+    atomic_private_file(CHAT_HISTORY_PATH, json.dumps(selected, ensure_ascii=False, indent=2) + "\n")
+
+
 def interactive() -> int:
     if not backend_available():
         print("Backend no disponible. Usa matter-ai backend local y ollama pull qwen3:0.6b, "
@@ -697,7 +730,10 @@ def interactive() -> int:
     print("Traspaso Matter:", "cargado" if HANDOFF_PATH.is_file() else "no disponible")
     print("Repositorios: matter-ai projects · Descargar: matter-ai sync matter-rust")
     print("Modo opcional /auto on para no aprobar cada edición local; /auto off lo desactiva.")
-    history: list[dict] = []
+    history: list[dict] = (load_local_chat_history()
+                          if backend_name() == "local" else [])
+    if history:
+        print(f"Historial local recuperado: {len(history)} turnos privados.")
     while True:
         try:
             question = input("\nMatter> ").strip()
@@ -722,6 +758,8 @@ def interactive() -> int:
             answer = ask(question, history)
             print("\n" + answer)
             history.append({"user": question, "assistant": answer[:4000]})
+            if backend_name() == "local":
+                save_local_chat_history(history)
         except (RuntimeError, OSError, ValueError) as error:
             print("Error: " + str(error))
 
