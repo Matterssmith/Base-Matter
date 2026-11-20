@@ -1,3 +1,7 @@
+## 2026-11-20 — Backend local Ollama para Matter-AI sin facturación por mensaje
+
+Se integró `tools/matter_local.py` con la API oficial `http://127.0.0.1:11434/api/chat`, herramientas `read_file`/`write_file` y aislamiento `workstreams/*`; la consola ahora permite `matter-ai backend local` y `matter-ai local-model qwen3:0.6b`. `matter-autopilot` acepta modelo local sin clave OpenAI, ofrece `doctor` y hasta 1440 ciclos configurables por día (según hardware). El equipo no tiene el mismo GPT-6 de la app; la calidad de Qwen3 pequeño es inferior, y no está instalado/probado en la laptop. [Guía de Sakura, Ollama y 24/7](docs/MATTER_AI_OLLAMA_LOCAL.md). CI offline Linux/Windows confirmado para backend y herramientas; falta E2E real. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI verde para Matter-Autopilot en Ubuntu y Windows
 
 El workflow de CLI completó sintaxis Python, pruebas offline de límites/guardado por rama, instalador `setup-sakura.sh`, creación del lanzador y validación de servicio systemd en Ubuntu: [run 44829007299](https://github.com/Matterssmith/Base-Matter/actions/runs/44829007299) (Linux y Windows en verde, SHA d1d7092aae). Esta evidencia **no** prueba uso real de API, 24/7 ni ejecución en el servidor del usuario. [Guía](docs/MATTER_AUTOPILOT_UBUNTU.md). Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
