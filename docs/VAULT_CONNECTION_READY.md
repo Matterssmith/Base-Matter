@@ -1,3 +1,11 @@
+## 2026-11-20 — Opt-in del cliente Vault del socket wa-alpha
+
+- `scripts/whatsapp-alpha-existing.sh` admite un opt-in exclusivo `--vault-env /etc/base-matter/vault-alpha.env`; carga y valida credencial 0600 `/etc/base-matter/alpha-client.key` con `MATTER_VAULT_CLIENT_ID=base-wa-alpha`, `MATTER_VAULT_SOCKET_ID=wa-alpha` y alcance `matterssmith/base-matter/wa-alpha`.
+- El modo predeterminado limpia toda variable Vault; nunca cambia la identidad del socket, evita la credencial legacy `base-wa-test-1` y no genera QR/códigos. El preflight exige handshake cifrado real y no inicia WhatsApp.
+- El enrolamiento independiente y el uploader GitHub privado se mantienen exclusivamente en Vault-Matter, ver `docs/ALPHA_VAULT_AND_GITHUB_SYNC.md` de aquel repositorio. No se ha desplegado aún en instabox-se ni confirmado mensaje `=/>vault`.
+- **Límite:** este grant sólo puede hacer configuración sintética; no atribuir autoridad de roles, identidad de remitente o ejecución de módulos privados.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-19 — Estado cruzado de integración con Vault-Matter privado
 
 - Cliente IPC real Base: `matter-vault-client` y `=/>vault` / `=/>vault test`, restringidos a identidad/socket autorizado. La conexión Vault/Base bajo UIDs Unix separados ya está verificada **en GitHub Actions**, pero **NO instalada en el Debian del propietario** ni probada mediante mensaje real de WhatsApp.
