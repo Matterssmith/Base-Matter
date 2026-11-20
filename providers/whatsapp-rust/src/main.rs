@@ -905,7 +905,9 @@ async fn main() -> Result<()> {
         .build()
         .await?;
     if resume_only {
-        println!("WhatsApp-Matter Rust: attempting existing session only; no pairing code requested.");
+        println!(
+            "WhatsApp-Matter Rust: attempting existing session only; no pairing code requested."
+        );
     } else {
         println!("WhatsApp-Matter Rust session starting. Pairing code only.");
     }
