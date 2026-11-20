@@ -4,17 +4,17 @@
 
 ## Ubicación y propósito
 
-- UI estática: \`web/matter-register/index.html\`. Vista local con cinco skins inspiradas por las referencias aportadas por el propietario: Ideas verde, Kids dorado, SFW cian, Testers naranja y Kids Channel neón.
+- UI estática: `web/matter-register/index.html`. Vista local con cinco skins inspiradas por las referencias aportadas por el propietario: Ideas verde, Kids dorado, SFW cian, Testers naranja y Kids Channel neón.
 - Interacciones reales de navegador: pasos por audiencia y país, vista de confirmación, fullscreen mediante gesto del usuario, sonido original opcional WebAudio y fallback para navegadores que restringen fullscreen. No usa rastreadores ni almacenamiento de identidad.
-- Transporte JS/TS Baileys alternativo: \`providers/baileys-compat/register-card.mjs\`. No se carga en el runtime Rust; mantiene a Rust como proveedor principal y deja Baileys como adaptador opt-in.
-- En WhatsApp el botón \`cta_url\` puede abrir el portal web; \`open_webview\` es un modo experimental opt-in (`preferInAppWebview: true`) cuando el SDK y el cliente realmente lo permiten; \`quick_reply\` devuelve el comando público de invitado si existe en el dispatcher autorizado. Ni \`cta_url\` ni \`open_webview\` significan que WhatsApp ejecute libremente HTML, CSS, audio y JS dentro del mensaje. Verificar comportamiento real en dispositivo Android, iPhone y Web.
-- Los ejemplos previos TS18/TS19 y de RichResponse siguen siendo solo ensayos de transporte. No falsificar \`botForwardedMessage\`, \`0@bot\` ni procedencia Meta AI.
-- Para Go, JS/TS o futuros proveedores se define el mismo evento abstracto \`registration.open\` con URL HTTPS aprobada. Los SDK deben mapearlo a su mecanismo de botones; nunca admitir un enlace definido por el remitente.
+- Transporte JS/TS Baileys alternativo: `providers/baileys-compat/register-card.mjs`. No se carga en el runtime Rust; mantiene a Rust como proveedor principal y deja Baileys como adaptador opt-in.
+- En WhatsApp el botón `cta_url` puede abrir el portal web; `open_webview` es un modo experimental opt-in (`preferInAppWebview: true`) cuando el SDK y el cliente realmente lo permiten; `quick_reply` devuelve el comando público de invitado si existe en el dispatcher autorizado. Ni `cta_url` ni `open_webview` significan que WhatsApp ejecute libremente HTML, CSS, audio y JS dentro del mensaje. Verificar comportamiento real en dispositivo Android, iPhone y Web.
+- Los ejemplos previos TS18/TS19 y de RichResponse siguen siendo solo ensayos de transporte. No falsificar `botForwardedMessage`, `0@bot` ni procedencia Meta AI.
+- Para Go, JS/TS o futuros proveedores se define el mismo evento abstracto `registration.open` con URL HTTPS aprobada. Los SDK deben mapearlo a su mecanismo de botones; nunca admitir un enlace definido por el remitente.
 
 ## Contrato seguro
 
-1. \`GET /api/register/capabilities\` sin PII. La UI exige simultáneamente \`ready=true\`, \`verification_provider_ready=true\`, \`authenticated_session=true\` y \`legal_documents_published=true\` para permitir intentar iniciar la sesión. Esto es una pista UI, **no** una comprobación de seguridad.
-2. \`POST /api/register/sessions\` solo después de que un backend privado valide autenticación de origen (nonce de un solo uso, vinculación plataforma + ID firmado, TTL, audience, origen permitido), token CSRF, rate limiting, consentimientos legales versionados y aprobación de país/edad/capacidad. El backend debe responder con una URL HTTPS de redirección de corta duración, nunca con datos civiles. El frontend por sí solo no comprueba nada.
+1. `GET /api/register/capabilities` sin PII. La UI exige simultáneamente `ready=true`, `verification_provider_ready=true`, `authenticated_session=true` y `legal_documents_published=true` para permitir intentar iniciar la sesión. Esto es una pista UI, **no** una comprobación de seguridad.
+2. `POST /api/register/sessions` solo después de que un backend privado valide autenticación de origen (nonce de un solo uso, vinculación plataforma + ID firmado, TTL, audience, origen permitido), token CSRF, rate limiting, consentimientos legales versionados y aprobación de país/edad/capacidad. El backend debe responder con una URL HTTPS de redirección de corta duración, nunca con datos civiles. El frontend por sí solo no comprueba nada.
 3. Invitado: no crea sesión civil, no envía datos y no recibe rangos. Los comandos públicos de Base son el único acceso en el estado actual.
 4. Adulto: paso de documento oficial válido por país, anverso y reverso cuando corresponda, validación de documento por emisor/proveedor autorizado, autenticación de presencia real y coincidencia cuando sea necesaria y proporcional. La biometría no debe almacenarse ni entregarse a Base. Incorporar opt-out y alternativas cuando las reglas lo exijan.
 5. Menor: no pedir biometría. Reglas por jurisdicción y servicio; en México puede utilizarse CURP como dato o comprobante sujeto a fuente de validación oficial, pero una CURP introducida o fotografiada no acredita identidad por sí sola. Validar autorización verificable de representante legal cuando proceda.
@@ -31,10 +31,10 @@
 
 ## Pruebas
 
-\`\`\`bash
+```bash
 python3 -m unittest discover -s test -p 'test_register_web.py'
 node --test providers/baileys-compat/register-card.test.mjs
-\`\`\`
+```
 
 La página puede abrirse localmente para probar animaciones, pero no debe procesar datos personales hasta contar con backend habilitado y auditoría.
 
