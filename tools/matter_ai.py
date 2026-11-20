@@ -120,7 +120,7 @@ def atomic_private_file(path: Path, data: str) -> None:
 def config() -> dict:
     if CONFIG_PATH.exists():
         return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-    return {"model": MODEL_DEFAULT}
+    return {"model": MODEL_DEFAULT, "backend": "openai", "local_model": "qwen3:0.6b", "local_context": 4096}
 
 
 def api_key() -> str | None:
@@ -134,10 +134,25 @@ def api_key() -> str | None:
     return None
 
 
+def backend_available() -> bool:
+    if config().get("backend", "openai") == "local":
+        import matter_local
+        return matter_local.available()
+    return bool(api_key())
+
+
+def backend_name() -> str:
+    return config().get("backend", "openai")
+
+
 def setup() -> int:
-    print("Matter-AI · configuración local. API OpenAI: facturación separada de ChatGPT.")
-    print("La clave se introduce sin mostrar caracteres; nunca se sube a GitHub.")
-    key = getpass.getpass("OpenAI API key (deja vacío para configurar después): ").strip()
+    print("Matter-AI · OpenAI API de pago o modelo local Ollama sin cuota por mensaje.")
+    cfg = config()
+    print("Backend actual:", cfg.get("backend", "openai"))
+    print("Cambia a modo local con: matter-ai backend local")
+    print("La clave no se muestra ni se sube a GitHub.")
+    key = (getpass.getpass("OpenAI API key (vacía para omitir): ").strip()
+           if cfg.get("backend", "openai") == "openai" else "")
     if key:
         if not key.startswith("sk-") or len(key) < 20:
             print("Clave de API con formato no reconocido; no guardada.")
@@ -532,7 +547,7 @@ TOOLS = [
 ]
 
 SYSTEM = """Eres Matter-AI, un asistente para el ecosistema Matterssmith en Ubuntu Server.
-Responde en español, directo. NO eres esta misma sesión de ChatGPT; usa OpenAI API.
+Responde en español, directo. NO eres esta misma sesión de ChatGPT; utiliza el backend OpenAI API o modelo local que esté configurado.
 Tu fuente de verdad es el contenido de los repositorios descargados y su rama.
 No inventes implementación, estados, pruebas ni IDs. Distingue pendiente vs real.
 Créditos de archivos nuevos: Hecho por Lournyx Matterssmith [Lou-Nyx].
@@ -622,6 +637,9 @@ def call_openai(payload: dict) -> dict:
 
 
 def ask(prompt: str, history: list[dict]) -> str:
+    if config().get("backend", "openai") == "local":
+        import matter_local
+        return matter_local.ask(prompt, history)
     payload_input = [{"role": "user", "content": prompt}]
     if HANDOFF_PATH.is_file() and not HANDOFF_PATH.is_symlink():
         # Project status, not conversation memory. Capped for API cost.
@@ -671,8 +689,9 @@ def ask(prompt: str, history: list[dict]) -> str:
 
 
 def interactive() -> int:
-    if not api_key():
-        print("Antes de conversar: matter-ai setup")
+    if not backend_available():
+        print("Backend no disponible. Usa matter-ai backend local y ollama pull qwen3:0.6b, "
+              "o configura una clave API con matter-ai setup.")
         return 2
     print("Matter-AI · terminal interactiva · /salir para terminar")
     print("Traspaso Matter:", "cargado" if HANDOFF_PATH.is_file() else "no disponible")
@@ -710,11 +729,40 @@ def interactive() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Matter-AI terminal multi-repositorios, sin Codex")
     parser.add_argument("action", nargs="?", default="chat",
-                        help="chat, setup, plan, projects, sync, branches, workstatus, checkpoint, save, promote, autopilot, model")
+                        help="chat, setup, backend, local-model, plan, projects, sync, save, promote, autopilot, model")
     parser.add_argument("rest", nargs="*")
     args = parser.parse_args()
     if args.action == "setup":
         return setup()
+    if args.action == "backend":
+        if not args.rest:
+            print(config().get("backend", "openai"))
+            return 0
+        backend = args.rest[0].lower()
+        if backend not in {"local", "openai"}:
+            print("Opciones: local, openai")
+            return 2
+        cfg = config()
+        cfg["backend"] = backend
+        if backend == "local":
+            cfg.setdefault("local_model", "qwen3:0.6b")
+            cfg.setdefault("local_context", 4096)
+        atomic_private_file(CONFIG_PATH, json.dumps(cfg, indent=2) + "\n")
+        print("Backend:", backend)
+        return 0
+    if args.action == "local-model":
+        if not args.rest:
+            print(config().get("local_model", "qwen3:0.6b"))
+            return 0
+        name = args.rest[0]
+        if not re.fullmatch(r"[A-Za-z0-9_.:/-]{1,80}", name):
+            print("Nombre de modelo inválido")
+            return 2
+        cfg = config()
+        cfg["local_model"] = name
+        atomic_private_file(CONFIG_PATH, json.dumps(cfg, indent=2) + "\n")
+        print("Modelo local:", name)
+        return 0
     if args.action == "autopilot":
         import matter_autopilot
         return matter_autopilot.main(args.rest)
