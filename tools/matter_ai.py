@@ -228,8 +228,15 @@ def sync_one(project: str) -> bool:
         if check.get("output", "").strip():
             print(f"{project}: cambios locales sin guardar. Se omite fetch/sync.")
             return False
-        result = run(["git", "fetch", "origin", branch], destination, 150)
-        print(f"{project}: fetch {'OK' if result.get('returncode') == 0 else 'ERROR'} (no se hace reset ni pull).")
+        remote = run(["git", "remote", "get-url", "origin"], destination)
+        allowed = {f"https://github.com/Matterssmith/{repo}.git".lower(),
+                   f"https://github.com/Matterssmith/{repo}".lower(),
+                   f"git@github.com:Matterssmith/{repo}.git".lower()}
+        if remote.get("returncode") != 0 or remote.get("output", "").strip().lower() not in allowed:
+            print(f"{project}: remoto inesperado; sync bloqueado.")
+            return False
+        result = run(["git", "pull", "--ff-only", "origin", branch], destination, 150)
+        print(f"{project}: {'sincronización fast-forward OK' if result.get('returncode') == 0 else 'divergencia/error, sin reset ni sobrescritura'}")
         return result.get("returncode") == 0
     url = f"https://github.com/Matterssmith/{repo}.git"
     print(f"{project}: clonando {repo} / {branch} (sin escribir credenciales)…")
@@ -469,6 +476,23 @@ TOOLS = [
             }, "required": ["project", "message"], "additionalProperties": False,
         }, "strict": True,
     },
+    {
+        "type": "function", "name": "save_project_progress",
+        "description": "Safely commit and optionally push all validated changed text files in this workstream, including past sessions. Prompts separately for commit and push. Prohibits secrets, protected branches, deletions and force.",
+        "parameters": {
+            "type": "object", "properties": {"project": {"type": "string"}},
+            "required": ["project"], "additionalProperties": False,
+        }, "strict": True,
+    },
+    {
+        "type": "function", "name": "draft_promotion",
+        "description": "With explicit operator approval, open GitHub draft pull request into existing alpha, beta, stable, matter or an approved feature branch; never auto-merge.",
+        "parameters": {
+            "type": "object", "properties": {
+                "project": {"type": "string"}, "target": {"type": "string"}},
+            "required": ["project", "target"], "additionalProperties": False,
+        }, "strict": True,
+    },
 ]
 
 SYSTEM = """Eres Matter-AI, un asistente para el ecosistema Matterssmith en Ubuntu Server.
@@ -480,7 +504,7 @@ Respeta AGENTS.md, README.md, docs/WORK_CONTINUITY.md de cada repo antes de edit
 Python/C++/Rust son principales; Go y JS son interoperabilidad. Respeta MSEL.
 Bot-Matter sigue bloqueado. No abrir ni publicar secretos de Vault.
 No modifiques live sessions, no migres ni reinicies sockets sin revisión manual.
-Puedes proponer publicar en GitHub SOLO mediante publish_workstream, que solicita aprobación humana y restringe a rama workstreams/*. No publiques sin solicitud clara.
+Puedes proponer publicar en GitHub mediante publish_workstream o save_project_progress, que requieren aprobación humana y restringen a rama workstreams/*. Para subir avances a alpha/beta/stable crea PR draft con draft_promotion, nunca directamente. No publiques sin solicitud clara.
 Trabaja en workstreams/*, nunca en main/matter/alpha/stable. No auto-push.
 Para editar primero lee fuentes; usa write_file con archivo completo.
 No afirmes que ejecutaste algo cuando la herramienta lo negó.
@@ -513,6 +537,14 @@ def dispatch(name: str, args: dict) -> dict:
             return run_workstream(args["project"], args["argv"])
         if name == "publish_workstream":
             return publish_workstream(args["project"], args["message"])
+        if name in {"save_project_progress", "draft_promotion"}:
+            import matter_branches
+            operation = "save" if name == "save_project_progress" else "promote"
+            params = [args["project"]]
+            if operation == "promote":
+                params.append(args["target"])
+            status = matter_branches.execute(operation, params)
+            return {"ok": status == 0, "note": "Operación mostrada en la terminal; verificar GitHub y CI."}
         return {"error": "herramienta_desconocida"}
     except (ValueError, OSError, UnicodeError) as err:
         return {"error": str(err)[:200]}
@@ -623,11 +655,14 @@ def interactive() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Matter-AI terminal multi-repositorios, sin Codex")
     parser.add_argument("action", nargs="?", default="chat",
-                        help="chat, setup, plan, projects, status, sync, model, o una orden de texto")
+                        help="chat, setup, plan, projects, sync, branches, workstatus, checkpoint, save, promote, model")
     parser.add_argument("rest", nargs="*")
     args = parser.parse_args()
     if args.action == "setup":
         return setup()
+    if args.action in {"branches", "workstatus", "checkpoint", "save", "promote"}:
+        import matter_branches
+        return matter_branches.execute(args.action, args.rest)
     if args.action == "plan":
         if HANDOFF_PATH.is_file():
             print(HANDOFF_PATH.read_text(encoding="utf-8"))
