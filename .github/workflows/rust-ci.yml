@@ -126,4 +126,3 @@ jobs:
 
       - name: Verify strict Clippy on Windows
         run: cargo clippy --all-targets --locked -- -D warnings
-
