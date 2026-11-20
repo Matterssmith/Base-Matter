@@ -930,7 +930,11 @@ async fn main() -> Result<()> {
                                 std::env::var("MATTER_REGISTER_PUBLIC_URL")
                                     .ok()
                                     .and_then(|candidate| {
-                                        trusted_preview_url(&candidate).ok().map(|_| candidate)
+                                        if trusted_preview_url(&candidate).is_ok() {
+                                            Some(candidate)
+                                        } else {
+                                            None
+                                        }
                                     })
                             } else {
                                 None
