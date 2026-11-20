@@ -1,3 +1,12 @@
+## 2026-11-20 — Matter-AI para consola Ubuntu
+
+- Rama: `workstreams/02-base` (no alpha ni stable). Objetivo: gestionar desarrollo Matter desde laptop sin Codex; escribir instrucciones cortas en terminal.
+- Código: `tools/matter_ai.py`, `tools/install-matter-ai.sh`, `tests/test_matter_ai_cli.py`, `.github/workflows/matter-ai-terminal-ci.yml`, `docs/MATTER_AI_UBUNTU_TERMINAL.md`, `docs/MATTER_AI_HANDOFF.md`.
+- Funciones locales: CLI `matter-ai`, `setup`, `plan`, `projects`, `sync ID`, `model`; 27 clones separados bajo `~/Matter/workspaces`, exacta verificación de rama, lectura paginada de documentos, escritura con autorización y pruebas permitidas; lotes /auto sólo para archivos locales.
+- No instalado en laptop; sin prueba de acceso a API ni conexión a GitHub privado; no se realizó servicio de sistema, push, merge o cambio WhatsApp. CI Linux/Windows agregado, resultado pendiente de verificación.
+- Próximo: confirmar tests offline, configurar API key privadamente en la máquina, clonar sólo los proyectos necesarios y comenzar tareas con instrucciones de traspaso. Bot-Matter sigue bloqueado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.
