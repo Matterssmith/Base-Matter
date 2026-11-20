@@ -1,3 +1,12 @@
+## 2026-11-20 — Mater Register interfaz, transportes y puerta privada
+
+- Trabajo nuevo aislado en `feat/matter-register-web` desde `alpha`, sin desplegar ni modificar binarios/sockets existentes.
+- UI estática `web/matter-register/index.html` con 5 temas, sonido opt-in, fullscreen con gesto, invitado/adulto/menor y países. **No registra datos reales** hasta que Vault autorice sesión.
+- Alternativas `providers/baileys-compat/register-card.mjs` (JS/TS) y `providers/whatsapp-go-compat/register_card.go` (Go), `cta_url`, `open_webview` opt-in, fallback a texto; funcionan como constructores/contrato, NO integraciones con socket en ejecución. Rust continúa por defecto.
+- Vault privado tiene rama `feat/matter-register-gateway-contract` con esquema y contrato de backend y menores; no existe aún proveedor KYC, liveness, textos definitivos, portal público HTTPS ni workflow transaccional autorizado de registro.
+- No introducir fotos/CURP/rostros/keys en Git; GitHub solo recibe código y futuros snapshots cifrados por la ruta segura existente. Próximo: PR/CI, integración gateway privado autenticado, validación legal y pruebas Android/iOS/Web antes de despliegue.
+- README de Base y proveedor Rust revisados. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.
