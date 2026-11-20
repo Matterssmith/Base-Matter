@@ -1,0 +1,21 @@
+[package]
+name = "matter-rust-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Matter-Rust: platform-neutral runtime contracts for the Matter ecosystem"
+
+[lib]
+name = "matter_rust_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "matter-rust"
+path = "src/main.rs"
+
+# Intentionally no transport SDK, network or secret dependencies.
+# Transport adapters live in their own platform repositories.
+#
+# Créditos:
+# Hecho por Lournyx Matterssmith [Lou-Nyx].
