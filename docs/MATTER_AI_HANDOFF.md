@@ -1,3 +1,11 @@
+## 2026-11-20 — Reparación de alta Ubuntu Sakura
+
+- Se reportó `failed to look up user Sakura: No such process`, `sudo: unknown user Sakura` y `sudoet_audit` al usar `loginctl` y `sudo -iu Sakura`. Diagnóstico probable: `Sakura` todavía no existe, no falla la conexión OpenAI.
+- Crear usuario **antes** de linger o cambio de sesión. Método manual: `sudo useradd -m -U -s /bin/bash Sakura` si no existe, `sudo passwd Sakura`, `sudo usermod -aG sudo Sakura`, `id Sakura`, `sudo loginctl enable-linger Sakura`, `sudo -iu Sakura`. No pasar contraseñas en la línea de comandos ni borrar administrador original.
+- Reparación con script: `sudo bash tools/setup-sakura.sh --admin --password-prompt --linger` en rama `workstreams/02-base`. Crear/actualizar cuenta idempotentemente sin sudo sin contraseña.
+- No afirmar que el usuario está creado ni que autostart 24/7 funciona hasta que el servidor muestre UID/grupos y servicio activo.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## Matter-AI local sin consumo de API comercial — 2026-11-20
 
 - `matter-ai backend local` selecciona Ollama en loopback (`http://127.0.0.1:11434`) y `matter-ai local-model qwen3:0.6b` selecciona el modelo de bajo consumo; `matter-ai backend openai` revierte a API OpenAI con facturación aparte.
