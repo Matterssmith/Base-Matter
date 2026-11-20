@@ -1,3 +1,9 @@
+## 2026-11-19 — Frontera de servicio Vault compartida sin claves en consumidores
+
+- Base y Bot tendrán identidades independientes frente a la autoridad Vault. Base público no depende de Bot ni lleva URLs privadas, llaves maestras o source de servicios privados. Ningún bot accede al repo cifrado ni sustituye a Vault como proxy privilegiado.
+- El almacenamiento local Rust cifrado del custodio pasó CI offline inicial. El gateway mTLS/IPC, roles remotos, revocación y auditoría cifrada aún no existen; por ello el puente continúa denegando. Documento: docs/VAULT_SERVICE_BOUNDARY.md.
+- Revisados ambos README; cambios exclusivamente documentales. Alpha, beta/stable intactos; Bot-Matter bloqueado. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-19 — Política obligatoria de cifrado para capacidades protegidas
 
 - Toda información operativa que atraviese una capacidad protegida se clasifica como credencial: cifrado autenticado en tránsito/almacenamiento, claves externas y segregación por bot/socket/recurso. Sin cifrado o autoridad real se **deniega**, nunca se permite fallback en texto claro.
