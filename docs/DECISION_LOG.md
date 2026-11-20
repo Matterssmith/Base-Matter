@@ -1,3 +1,9 @@
+## 2026-11-20 — Formato CI del diagnóstico Vault
+
+- El CI del commit anterior rechazó únicamente el formato de una línea de la prueba de aislamiento en `providers/whatsapp-rust/src/main.rs`; se aplicó el diff exacto de rustfmt.
+- No se alteran claves, políticas, estado de WhatsApp, autoridad Vault ni comportamiento del comando. Se revalida CI y solo se instala un proveedor si el workflow finaliza success.
+- README revisados: 2/2; cuatro documentos de continuidad actualizados en el mismo commit. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Diagnóstico de respuesta =/>vault por WhatsApp
 
 - La conexión real Vault del socket wa-alpha se confirmó por el operador: `ALPHA_VAULT_ENROLLED=YES`, `ALPHA_VAULT_IPC=AUTHENTICATED`, `vault_roundtrip_verified revision=1`. El preflight alpha verificó `ALPHA_VAULT=AUTHENTICATED_CONFIGURATION_ONLY`. WhatsApp reconectó y respondió `WhatsApp session connected. Base-Matter owner control available.`.

@@ -1055,7 +1055,10 @@ mod readiness_tests {
         frame.from_me = false;
         assert!(!is_private_vault_command(&frame, &frame.owner_jid));
         frame.from_me = true;
-        assert!(!is_private_vault_command(&frame, "different@s.whatsapp.net"));
+        assert!(!is_private_vault_command(
+            &frame,
+            "different@s.whatsapp.net"
+        ));
     }
 
     #[test]
