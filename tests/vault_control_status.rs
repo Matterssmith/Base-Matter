@@ -7,8 +7,7 @@ use anyhow::{bail, Result};
 use matter_base::{
     activation::SocketActivationStore,
     control::{ControlDispatcher, DispatchResult},
-    BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter,
-    ControlExtensionRegistry,
+    BotRegistry, CommandAuthorizer, CommandInvocation, CommandRouter, ControlExtensionRegistry,
 };
 use std::sync::Arc;
 struct NoBot;
@@ -20,9 +19,7 @@ impl CommandAuthorizer for NoBot {
 fn dispatcher() -> ControlDispatcher {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket-test", "owner").unwrap();
-    let router = Arc::new(
-        CommandRouter::new(vec!["#".into()], Arc::new(NoBot)).unwrap(),
-    );
+    let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(NoBot)).unwrap());
     let extensions = Arc::new(ControlExtensionRegistry::new());
     extensions
         .register("vault", &[], |ctx, args| {
@@ -35,21 +32,22 @@ fn dispatcher() -> ControlDispatcher {
             Ok("Vault-Matter: servicio no configurado".to_owned())
         })
         .unwrap();
-    ControlDispatcher::new(
-        activation,
-        Arc::new(BotRegistry::in_memory()),
-        router,
-        None,
-    )
-    .with_control_extensions(extensions)
-    .with_unified_live_controls()
-    .with_silent_bot_commands()
+    ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
+        .with_control_extensions(extensions)
+        .with_unified_live_controls()
+        .with_silent_bot_commands()
 }
 #[test]
 fn vault_status_is_private_and_available_when_bot_off() {
     let c = dispatcher();
     let status = c
-        .dispatch("socket-test", "owner", "self@s.whatsapp.net", None, "=/>vault")
+        .dispatch(
+            "socket-test",
+            "owner",
+            "self@s.whatsapp.net",
+            None,
+            "=/>vault"
+        )
         .unwrap();
     match status {
         DispatchResult::Extension { command, output } => {
@@ -59,15 +57,39 @@ fn vault_status_is_private_and_available_when_bot_off() {
         other => panic!("unexpected dispatch result: {other:?}"),
     }
     assert!(c
-        .dispatch("socket-test", "attacker", "self@s.whatsapp.net", None, "=/>vault")
+        .dispatch(
+            "socket-test",
+            "attacker",
+            "self@s.whatsapp.net",
+            None,
+            "=/>vault"
+        )
         .is_err());
     assert!(c
-        .dispatch("socket-test", "owner", "other@s.whatsapp.net", None, "=/>vault")
+        .dispatch(
+            "socket-test",
+            "owner",
+            "other@s.whatsapp.net",
+            None,
+            "=/>vault"
+        )
         .is_err());
     assert!(c
-        .dispatch("socket-test", "owner", "1203635@g.us", Some("1203635@g.us"), "=/>vault")
+        .dispatch(
+            "socket-test",
+            "owner",
+            "1203635@g.us",
+            Some("1203635@g.us"),
+            "=/>vault"
+        )
         .is_err());
     assert!(c
-        .dispatch("socket-test", "owner", "self@s.whatsapp.net", None, "=vault")
+        .dispatch(
+            "socket-test",
+            "owner",
+            "self@s.whatsapp.net",
+            None,
+            "=vault"
+        )
         .is_err());
 }
