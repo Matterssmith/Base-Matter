@@ -231,7 +231,7 @@ $("next").addEventListener("click",async()=>{
  if(state.country==="OTHER"){feedback("País todavía no disponible para verificación. Puedes continuar como invitado.");return}
  if(state.capabilities?.ready!==true){feedback("Registro bloqueado: falta el gateway privado Vault-Matter. Ningún dato se envió.");return}
  try{
-  const response=await fetch("/api/register/sessions",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({country:state.country,audience:state.audience,legal_acknowledgement:true})});
+  const response=await fetch("./api/register/sessions",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({country:state.country,audience:state.audience,legal_acknowledgement:true})});
   if(!response.ok){feedback("Vault rechazó iniciar la sesión. No existe inscripción confirmada.");return}
   const v=await response.json();
   if(typeof v.redirect_url!=="string")throw Error("respuesta incompleta");
@@ -244,6 +244,6 @@ $("privacy-open").addEventListener("click",()=>openInfo("Privacidad · vista pre
 $("terms-open").addEventListener("click",()=>openInfo("Términos · vista previa","El acceso invitado es voluntario; la inscripción no asigna roles administrativos. Los permisos dependen del contexto y de autorización independiente. Se publicarán términos versionados antes de operar."));
 function openInfo(title,body){$("details-title").textContent=title;$("details-body").textContent=body;$("details").showModal();tone()}
 $("details-close").addEventListener("click",()=>$("details").close());
-(async()=>{try{const c=new AbortController();const timer=setTimeout(()=>c.abort(),2500);const r=await fetch("/api/register/capabilities",{signal:c.signal,credentials:"same-origin",cache:"no-store"});clearTimeout(timer);if(r.ok){const v=await r.json();state.capabilities={ready:v.ready===true&&v.verification_provider_ready===true&&v.authenticated_session===true&&v.legal_documents_published===true}}}catch{}render()})();
+(async()=>{try{const c=new AbortController();const timer=setTimeout(()=>c.abort(),2500);const r=await fetch("./api/register/capabilities",{signal:c.signal,credentials:"same-origin",cache:"no-store"});clearTimeout(timer);if(r.ok){const v=await r.json();state.capabilities={ready:v.ready===true&&v.verification_provider_ready===true&&v.authenticated_session===true&&v.legal_documents_published===true}}}catch{}render()})();
 render();
 
