@@ -28,6 +28,7 @@ HOME = Path.home()
 CONFIG_DIR = HOME / ".config" / "matter-ai"
 CONFIG_PATH = CONFIG_DIR / "config.json"
 KEY_PATH = CONFIG_DIR / "api.key"
+HANDOFF_PATH = HOME / ".local" / "share" / "matter-ai" / "MATTER_AI_HANDOFF.md"
 ROOT = HOME / "Matter" / "workspaces"
 API_URL = "https://api.openai.com/v1/responses"
 MODEL_DEFAULT = "gpt-6.2-sol"
@@ -455,6 +456,11 @@ def call_openai(payload: dict) -> dict:
 
 def ask(prompt: str, history: list[dict]) -> str:
     payload_input = [{"role": "user", "content": prompt}]
+    if HANDOFF_PATH.is_file() and not HANDOFF_PATH.is_symlink():
+        # Project status, not conversation memory. Capped for API cost.
+        handoff = HANDOFF_PATH.read_text(encoding="utf-8")[:9000]
+        payload_input.insert(0, {"role": "user",
+                                "content": "Documento de traspaso Matter (revisar contra GitHub):\n" + handoff})
     # Compact context: never persist raw terminal output or credentials.
     for item in history[-4:]:
         payload_input.insert(-1, {"role": "user", "content": item["user"]})
@@ -499,6 +505,7 @@ def interactive() -> int:
         print("Antes de conversar: matter-ai setup")
         return 2
     print("Matter-AI · terminal interactiva · /salir para terminar")
+    print("Traspaso Matter:", "cargado" if HANDOFF_PATH.is_file() else "no disponible")
     print("Repositorios: matter-ai projects · Descargar: matter-ai sync matter-rust")
     history: list[dict] = []
     while True:
@@ -522,11 +529,17 @@ def interactive() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Matter-AI terminal multi-repositorios, sin Codex")
     parser.add_argument("action", nargs="?", default="chat",
-                        help="chat, setup, projects, status, sync, model, o una orden de texto")
+                        help="chat, setup, plan, projects, status, sync, model, o una orden de texto")
     parser.add_argument("rest", nargs="*")
     args = parser.parse_args()
     if args.action == "setup":
         return setup()
+    if args.action == "plan":
+        if HANDOFF_PATH.is_file():
+            print(HANDOFF_PATH.read_text(encoding="utf-8"))
+            return 0
+        print("No existe documento de traspaso. Reinstala desde la rama workstreams/02-base.")
+        return 2
     if args.action == "projects" or args.action == "status":
         for item in project_status():
             label = "local" if item["cloned"] else "pendiente"
