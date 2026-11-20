@@ -57,8 +57,10 @@ jobs:
             fi
             sleep 1
           done
-          curl -fsS --max-time 3 http://127.0.0.1:39831/ | grep -Fq './app.js'
-          curl -fsS --max-time 3 http://127.0.0.1:39831/app.js | grep -Fq 'document.body.innerHTML'
+          curl -fsS --max-time 3 http://127.0.0.1:39831/ -o /tmp/matter-register-index-test.html
+          grep -Fq './app.js' /tmp/matter-register-index-test.html
+          curl -fsS --max-time 3 http://127.0.0.1:39831/app.js -o /tmp/matter-register-app-test.js
+          grep -Fq 'document.body.innerHTML' /tmp/matter-register-app-test.js
           curl -fsS --max-time 3 http://127.0.0.1:39831/api/register/capabilities | grep -Fq '"ready":false'
           test "$(curl -sS --max-time 3 -X POST -o /dev/null -w '%{http_code}' http://127.0.0.1:39831/api/register/sessions)" = 405
 
