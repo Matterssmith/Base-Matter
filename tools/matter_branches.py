@@ -163,8 +163,8 @@ def branches(project: str) -> int:
 
 
 def save(project: str, local_only: bool = False) -> int:
-    if project == "vault":
-        raise ValueError("Vault requiere validación separada del cifrado antes de guardar.")
+    # Vault documentation/source may be saved after review; ciphertext and
+    # secret-bearing vault/ paths remain excluded by safe_file().
     root = directory_for(project)
     if required(run_git(root, "diff", "--cached", "--name-only", "-z"), "staged"):
         raise ValueError("Hay archivos staged anteriores; resolver antes.")
