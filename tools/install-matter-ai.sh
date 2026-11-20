@@ -22,6 +22,9 @@ fi
 
 install -d -m 0700 -- "$target_dir" "$binary_dir"
 install -m 0700 -- "$source_agent" "$target_agent"
+if [ -f "$source_dir/matter_branches.py" ]; then
+    install -m 0700 -- "$source_dir/matter_branches.py" "$target_dir/matter_branches.py"
+fi
 if [ -f "$source_dir/../docs/MATTER_AI_HANDOFF.md" ]; then
     install -m 0600 -- "$source_dir/../docs/MATTER_AI_HANDOFF.md" "$target_dir/MATTER_AI_HANDOFF.md"
 fi
@@ -38,6 +41,8 @@ printf '\n%s\n' 'Comandos iniciales:'
 printf '%s\n' '  ~/.local/bin/matter-ai setup'
 printf '%s\n' '  ~/.local/bin/matter-ai projects'
 printf '%s\n' '  ~/.local/bin/matter-ai sync matter-rust'
+printf '%s\n' '  ~/.local/bin/matter-ai save matter-rust'
+printf '%s\n' '  ~/.local/bin/matter-ai promote matter-rust beta (crea PR draft si beta existe)'
 printf '%s\n' '  ~/.local/bin/matter-ai'
 printf '\n%s\n' 'La clave API no se almacena en GitHub. Los repos privados requieren credenciales Git por separado.'
 printf '%s\n' 'Si tu PATH incluye ~/.local/bin podrás escribir simplemente: matter-ai'
