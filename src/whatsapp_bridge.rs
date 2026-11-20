@@ -256,7 +256,9 @@ impl WhatsAppControlBridge {
             if group_id.is_some() {
                 bail!("Los owners globales se asignan sólo en chat privado");
             }
-            let client = self.global_vault.as_ref()
+            let client = self
+                .global_vault
+                .as_ref()
                 .ok_or_else(|| anyhow!("Vault global no configurado"))?;
             let principal = if is_owner {
                 self.config.owner_jid.as_str()
@@ -264,11 +266,15 @@ impl WhatsAppControlBridge {
                 frame.actor_id.as_str()
             };
             client.require_global_owner(principal)?;
-            if !self.replay.claim("whatsapp", &self.config.socket_id, &frame.message_id)? {
+            if !self
+                .replay
+                .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
+            {
                 return Ok(WhatsAppBridgeOutcome::Duplicate);
             }
             let output = if parts.len() == 4 {
-                "Uso: =/>set role owner --global NUMERO. Sólo owner global principal; chat privado.".to_owned()
+                "Uso: =/>set role owner --global NUMERO. Sólo owner global principal; chat privado."
+                    .to_owned()
             } else {
                 client.grant_secondary_global_owner(principal, parts[4])?;
                 "Vault-Matter: owner global secundario actualizado. Registro cifrado; identidad reservada.".to_owned()

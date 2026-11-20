@@ -395,7 +395,7 @@ impl Config {
                         .unwrap_or(target)
                         .bytes()
                         .all(|byte| byte.is_ascii_digit())
-            },
+            }
             ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda", category] => {
                 public_category(category) || *category == "all" || safe_help_name(category)

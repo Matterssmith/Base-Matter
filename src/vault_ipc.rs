@@ -188,24 +188,17 @@ impl VaultClient {
     /// The signed WhatsApp principal is verified in the bridge; Vault itself
     /// restricts the mutation to its stored primary WhatsApp PN, regardless
     /// of who owns the bot or socket.
-    pub fn grant_secondary_global_owner(
-        &self,
-        requester: &str,
-        target_phone: &str,
-    ) -> Result<()> {
+    pub fn grant_secondary_global_owner(&self, requester: &str, target_phone: &str) -> Result<()> {
         let valid_pn = |id: &str| {
             id.strip_suffix("@s.whatsapp.net").is_some_and(|digits| {
-                (8..=20).contains(&digits.len())
-                    && digits.bytes().all(|byte| byte.is_ascii_digit())
+                (8..=20).contains(&digits.len()) && digits.bytes().all(|byte| byte.is_ascii_digit())
             })
         };
         if !valid_pn(requester) {
             bail!("Se requiere el PN verificado del owner principal");
         }
         let digits = target_phone.strip_prefix('+').unwrap_or(target_phone);
-        if !(8..=20).contains(&digits.len())
-            || !digits.bytes().all(|byte| byte.is_ascii_digit())
-        {
+        if !(8..=20).contains(&digits.len()) || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
             bail!("Uso: =/>set role owner --global NUMERO");
         }
         let new_subject = format!("{digits}@s.whatsapp.net");
@@ -270,7 +263,10 @@ impl VaultClient {
             ]
             .iter()
             .all(|id| safe_id(id))
-            || !matches!(operation, "ping" | "get" | "put" | "owner_check" | "owner_grant_secondary")
+            || !matches!(
+                operation,
+                "ping" | "get" | "put" | "owner_check" | "owner_grant_secondary"
+            )
             || value.is_some_and(|bytes| bytes.len() > MAX_VALUE)
         {
             bail!("invalid_vault_client_request");

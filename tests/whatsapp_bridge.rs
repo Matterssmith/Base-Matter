@@ -166,7 +166,10 @@ fn no_normal_bot_dispatch_ping_qr_or_legacy_global_aliases() {
         .ingest(&frame("vault-self-test", "=/>vault test"))
         .is_err());
     assert!(bridge
-        .ingest(&frame("global-role", "=/>set role owner --global 5551234567"))
+        .ingest(&frame(
+            "global-role",
+            "=/>set role owner --global 5551234567"
+        ))
         .is_err());
     let mut outsider = frame("vault-outsider", "=/>vault");
     outsider.from_me = false;

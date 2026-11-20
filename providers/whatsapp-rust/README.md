@@ -1,3 +1,9 @@
+## 2026-11-20 — Rustfmt: concesión global owner 2
+
+- Se aplicaron automáticamente los cambios exactos de rustfmt detectados en CI al cliente Vault, puente WhatsApp, pruebas de aislamiento y proveedor Rust. Sin nuevas capacidades ni cambios de secretos.
+- El comando `=/>set role owner --global NUMERO` se autoriza sólo desde el owner 1 autenticado por Vault en chat privado. Tests y binarios nuevos deben terminar con CI success antes de instalarlos.
+- README revisados: 2/2; documentación de continuidad actualizada. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Real Vault =/>set role owner --global
 
 - Ruta global tipada: `=/>set role owner --global NUMERO` en chat privado, con PN auténtico firmado por WhatsApp y validado en el puente; la operación se envía exclusivamente al servicio privado Vault como `owner_grant_secondary`. El owner del socket no hereda autoridad global.
