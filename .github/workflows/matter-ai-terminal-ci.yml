@@ -51,5 +51,6 @@ jobs:
       - name: Systemd unit syntax (Linux only)
         if: runner.os == 'Linux'
         run: |
+          bash tools/install-matter-ai.sh >/dev/null
           systemd-analyze verify tools/matter-autopilot.service
           python3 tools/matter_autopilot.py preview
