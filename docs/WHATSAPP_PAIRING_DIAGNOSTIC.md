@@ -1,3 +1,11 @@
+## 2026-11-20 — Resultado de autenticación en servidor: `LoggedOut`
+
+El operador confirmó conexión de red `DNS_WHATSAPP=OK`, `TLS_WHATSAPP=OK`, `TLSv1.3`. La base contiene registro de cuenta, PN, LID y claves; la ejecución de `--resume-only` con binarios verificados se detuvo **sin `Connected`**, después de emitir `LoggedOut`. Esto no es un error de Vault.
+
+En `whatsapp-rust` versión `0.7.0`, `LoggedOut` puede tener origen en fallo de autenticación (`on_connect=true`), en revocación/desvinculación mediante stream (`on_connect=false`), o en una restricción de cuenta. El evento es una señal de rechazo de la identidad local, pero no permite determinar qué sucedió en el teléfono sin conocer el motivo. La versión actual informa `WA_LOGOUT_CLASS=AUTH_REJECTED_LOGGED_OUT`, `STREAM_LOGGED_OUT`, `ACCOUNT_LOCKED` u otras categorías seguras sin imprimir contenido del servidor.
+
+**Prohibido** eliminar, reemplazar o migrar la base sin copia autenticada, no pedir códigos repetidamente, no activar nuevo dispositivo sin confirmar el estado en WhatsApp → Dispositivos vinculados. Si el dispositivo aún aparece vinculado, registrar su estado y revisar el motivo; si no aparece, el emparejamiento posterior requiere un proceso aislado y consentido que no sobrescriba el almacén original. No se considera WhatsApp funcional hasta `Connected` y una respuesta real `=/>vault` en el chat propio.
+
 ## 2026-11-20 — Verificación de identidad almacenada: 4 señales presentes
 
 - El operador ejecutó el inspector corregido en `instabox-se`: `session.db` 475136 bytes, `SQLITE_INTEGRITY=OK`, 20 tablas; `DEVICE_ROW_EXISTS=yes`, `DEVICE_HAS_PN=yes`, `DEVICE_HAS_LID=yes`, `DEVICE_HAS_ACCOUNT=yes` y `DEVICE_HAS_KEY_MATERIAL=yes`. Los archivos WAL/SHM aparecieron tras el intento anterior; no eliminarlos. Sigue `SESSION_AUTHENTICATED=not_determined_offline`.

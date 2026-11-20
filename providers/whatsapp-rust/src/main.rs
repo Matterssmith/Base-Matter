@@ -36,6 +36,7 @@ use whatsapp_rust::{
     media::{self, AudioOptions},
     pair_code::PairCodeOptions,
     prelude::*,
+    types::events::ConnectFailureReason,
     upload::UploadOptions,
 };
 
@@ -418,6 +419,28 @@ async fn snapshot_community_recovery(
     ))
 }
 
+fn classify_logout(on_connect: bool, reason: ConnectFailureReason) -> &'static str {
+    // Distinguish server rejection during handshake from a stream-level
+    // removal. Never print account identifiers, raw node contents, or tokens.
+    match (on_connect, reason) {
+        (_, ConnectFailureReason::AccountLocked) => {
+            "WA_LOGOUT_CLASS=ACCOUNT_LOCKED; inspect official WhatsApp account status, do not retry."
+        }
+        (true, ConnectFailureReason::LoggedOut) => {
+            "WA_LOGOUT_CLASS=AUTH_REJECTED_LOGGED_OUT; stored device rejected at login."
+        }
+        (true, ConnectFailureReason::UnknownLogout) => {
+            "WA_LOGOUT_CLASS=AUTH_REJECTED_UNKNOWN_LOGOUT; stored device rejected at login."
+        }
+        (false, ConnectFailureReason::LoggedOut) => {
+            "WA_LOGOUT_CLASS=STREAM_LOGGED_OUT; device removed or unauthorized during stream."
+        }
+        (_, _) => {
+            "WA_LOGOUT_CLASS=OTHER; preserve local credentials and inspect linked devices."
+        }
+    }
+}
+
 fn safe_resume_event(kind: EventKind) -> Option<&'static str> {
     match kind {
         EventKind::Disconnected => Some(
@@ -622,8 +645,9 @@ async fn main() -> Result<()> {
                 println!("WhatsApp session connected. Base-Matter owner control available.");
             }
         })
-        .on_logged_out(|_info| async move {
-            eprintln!("WhatsApp-Matter: linked device was logged out. Check linked devices on the phone; do not delete the local database.");
+        .on_logged_out(|info| async move {
+            eprintln!("{}", classify_logout(info.on_connect, info.reason));
+            eprintln!("WhatsApp-Matter: session rejected or removed. Check linked devices on the phone. Preserve session.db and stop pairing attempts.");
         })
         // Only report event types from the authenticated upstream event bus.
         // No raw event payloads, phone numbers, server error bodies, or keys.
@@ -982,6 +1006,21 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod readiness_tests {
     use super::*;
+
+    #[test]
+    fn safe_logout_categories_do_not_expose_server_data() {
+        let auth = classify_logout(true, ConnectFailureReason::LoggedOut);
+        assert!(auth.starts_with("WA_LOGOUT_CLASS=AUTH_REJECTED_LOGGED_OUT"));
+        let removed = classify_logout(false, ConnectFailureReason::LoggedOut);
+        assert!(removed.starts_with("WA_LOGOUT_CLASS=STREAM_LOGGED_OUT"));
+        let locked = classify_logout(true, ConnectFailureReason::AccountLocked);
+        assert!(locked.starts_with("WA_LOGOUT_CLASS=ACCOUNT_LOCKED"));
+        for label in [auth, removed, locked] {
+            assert!(!label.contains('@'));
+            assert!(!label.contains("token="));
+            assert!(!label.contains("key="));
+        }
+    }
 
     #[test]
     fn safe_resume_event_never_emits_remote_payloads() {
