@@ -23,7 +23,7 @@ use whatsapp_matter_rust_provider::{
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
-    register_web::{registration_preview_card, trusted_preview_url},
+    register_web::{registration_preview_card, start_with_controller_port, trusted_preview_url},
     render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
     ui::{
@@ -523,7 +523,15 @@ async fn main() -> Result<()> {
             return Ok(());
         }
         Some("--help") => {
-            println!("WhatsApp-Matter Rust provider: --check, --resume-only (restore stored identity; no pairing-code request), --rich-preview-html, --rich-preview-json, --recovery-verify <encrypted-filename>, or run for pairing code. Local Base-Matter IPC; no QR.");
+            println!("WhatsApp-Matter Rust provider: --check, --resume-only (restore stored identity; no pairing-code request), --serve-register-preview (standalone local UI for testing), --rich-preview-html, --rich-preview-json, --recovery-verify <encrypted-filename>, or run for pairing code. Local Base-Matter IPC; no QR.");
+            return Ok(());
+        }
+        Some("--serve-register-preview") => {
+            if std::env::args().nth(2).is_some() {
+                bail!("Registration preview server accepts no parameters");
+            }
+            let task = whatsapp_matter_rust_provider::register_web::start_loopback(39831).await?;
+            task.await?;
             return Ok(());
         }
         Some("--check") => {
@@ -582,6 +590,16 @@ async fn main() -> Result<()> {
     let menu_lab = matches!(std::env::var("MATTER_WA_MENU_LAB").as_deref(), Ok("1"));
     require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
+    // Matter Register launches with the authenticated provider. It has no
+    // Vault secrets and serves static UI only on controller port + 10.
+    // A bind conflict must not interrupt WhatsApp or alter its session.
+    let _register_web_task = match start_with_controller_port(config.bridge_addr.port()).await {
+        Ok(task) => Some(task),
+        Err(_) => {
+            eprintln!("Matter Register: local preview unavailable; WhatsApp unaffected");
+            None
+        }
+    };
     let database = config
         .session_db
         .to_str()
@@ -911,16 +929,18 @@ async fn main() -> Result<()> {
                             let preview_url = if actual_command == "=/>register" && !data.is_group {
                                 std::env::var("MATTER_REGISTER_PUBLIC_URL")
                                     .ok()
-                                    .and_then(|candidate| trusted_preview_url(&candidate).ok())
+                                    .and_then(|candidate| {
+                                        trusted_preview_url(&candidate).ok().map(|_| candidate)
+                                    })
                             } else {
                                 None
                             };
-                            let response = if let Some(url) = preview_url {
+                            let response = if let Some(url) = preview_url.as_deref() {
                                 format!("{response}\n\n✦ Vista previa Matter Register: {url}\nEl registro real sigue bloqueado hasta validar Vault.")
                             } else {
                                 response
                             };
-                            if let Some(url) = preview_url {
+                            if let Some(url) = preview_url.as_deref() {
                                 if let Ok(card) = registration_preview_card(url) {
                                     if ctx.send_message(card).await.is_err() {
                                         eprintln!("Base-Matter: register CTA card not accepted; sending URL text");
