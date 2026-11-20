@@ -1,5 +1,9 @@
 # Sakura + continuidad de ramas Matter
 
+## Alternativa sin factura de OpenAI: modelo local Ollama
+
+**Actualización 2026-11-20:** Matter-AI ahora ofrece `matter-ai backend local`, con el backend `tools/matter_local.py` y modelo Ollama instalado en tu Ubuntu. **No necesitas clave OpenAI API en ese modo.** Los pasos de configuración API de las secciones siguientes son solamente para `matter-ai backend openai`. No es el mismo GPT-6 del servicio ChatGPT, ni tiene su memoria o herramientas automáticamente. Si la laptop tiene RAM limitada, prueba primero `ollama pull qwen3:0.6b`. La guía principal para trabajar sin coste por mensaje está en [Matter-AI con Ollama local](MATTER_AI_OLLAMA_LOCAL.md). El modo continuo, guardado por rama y bloqueos de Vault/Bot siguen aplicando.
+
 **Fecha:** 2026-11-20. **Ubicación:** `Base-Matter/workstreams/02-base`. **Estado:** scripts en GitHub, pendientes de instalación en la laptop Ubuntu.
 
 ## Cuentas y autenticación
