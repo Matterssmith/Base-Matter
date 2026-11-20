@@ -777,9 +777,9 @@ async fn main() -> Result<()> {
                         &data, own_pn.as_deref(), own_lid.as_deref(),
                     )
                 } else {
-                    // Public status/menu/bot help is signed under the real
-                    // sender identity. The owner control path is never used
-                    // for incoming third-party WhatsApp messages.
+                    // Sender JID is signed from WhatsApp metadata. Mutating
+                    // controls remain denied unless the controller confirms
+                    // this exact sender is a global owner in private Vault.
                     config.signed_public_readonly(
                         &data, own_pn.as_deref(), own_lid.as_deref(),
                     )
@@ -813,9 +813,9 @@ async fn main() -> Result<()> {
                     Ok(Some(frame)) => match deliver(config.bridge_addr, &frame).await {
                         Ok(ack @ (ControlAck::Applied | ControlAck::AppliedWithMessage(_))) => {
                             println!("Base-Matter owner control applied");
-                            // Only a verified owner-authored private/group event
-                            // may receive an authorized response. No reply is sent
-                            // for disabled bot functions or unauthorized senders.
+                            // Only an authorized signed control may receive a
+                            // response. External senders require independent
+                            // Vault-global-owner authorization for mutations.
                             let ipc_already_templated =
                                 matches!(&ack, ControlAck::AppliedWithMessage(_));
                             let debug_requested = frame.text.ends_with(" --debug");

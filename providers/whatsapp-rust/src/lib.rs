@@ -310,10 +310,10 @@ impl Config {
         Ok(signed)
     }
 
-    /// Sign incoming, strictly READ-ONLY chat requests.
-    /// The callback must supply real sender and destination JIDs, never
-    /// sender IDs typed by a person in a WhatsApp message.
-    /// This method cannot sign group power, socket roles, or any mutations.
+    /// Sign verified incoming chat requests, without granting privileges.
+    /// Ordinary senders stay read-only; only Vault-verified global owners may
+    /// run privileged controls in the controller. The provider itself never
+    /// accepts a typed name or phone as proof of ownership.
     pub fn signed_public_readonly(
         &self,
         event: &Event<'_>,
@@ -434,6 +434,19 @@ impl Config {
                         .parse::<usize>()
                         .is_ok_and(|value| (1..=8).contains(&value))
             }
+            // Forward supported control verbs for any signed sender; only
+            // Vault-verified global owners can execute non-readonly actions.
+            // Unknown verbs still fail in the dispatcher, not in WhatsApp.
+            [verb, _rest @ ..] if matches!(
+                *verb,
+                "=/>group" | "=/>grupo" | "=/>bot" | "=/>status" | "=/>estado"
+                    | "=/>set" | "=/>unset" | "=/>role" | "=/>roles"
+                    | "=/>audit" | "=/>matter" | "=/>start"
+                    | "=/>add" | "=/>add++" | "=/>anti" | "=/>register"
+                    | "=/>test" | "=/>menu" | "=/>menú"
+                    | "=/>help" | "=/>h" | "=/>ayuda"
+                    | "=/>vault" | "=/>credits" | "=/>creditos" | "=/>créditos"
+            ) => true,
             _ => false,
         };
         if !allowed {

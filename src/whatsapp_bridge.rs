@@ -247,8 +247,10 @@ impl WhatsAppControlBridge {
                 },
             ));
         }
-        // This narrowly scoped global role assignment is authorized inside
-        // encrypted Vault, never by a socket-local role or chat text claim.
+        // Every enrolled global owner can assign/replace slot 2. This is
+        // authorized in private encrypted Vault regardless of bot ownership;
+        // neither role is subordinate. The HMAC-authenticated principal is
+        // checked against the encrypted owner registry on every request.
         let parts = frame.text.split_whitespace().collect::<Vec<_>>();
         if matches!(parts.as_slice(), ["=/>set", "role", "owner", "--global"])
             || matches!(parts.as_slice(), ["=/>set", "role", "owner", "--global", _])
@@ -273,7 +275,7 @@ impl WhatsAppControlBridge {
                 return Ok(WhatsAppBridgeOutcome::Duplicate);
             }
             let output = if parts.len() == 4 {
-                "Uso: =/>set role owner --global NUMERO. Sólo owner global principal; chat privado."
+                "Uso: =/>set role owner --global NUMERO. Ambos owners globales pueden asignarlo en privado."
                     .to_owned()
             } else {
                 client.grant_secondary_global_owner(principal, parts[4])?;
@@ -287,8 +289,34 @@ impl WhatsAppControlBridge {
             ));
         }
         if is_public_reader {
-            // Public commands have a dedicated, read-only policy path.
-            // Never pass their actor into the owner dispatcher.
+            // A signed, provider-verified incoming WhatsApp sender may be an
+            // owner of the entire ecosystem even if they do NOT own this
+            // particular bot/socket. Vault is the independent authority.
+            // The privileged local actor is substituted only AFTER Vault
+            // authorizes the actual platform sender. Ordinary users never
+            // enter this branch and retain the read-only policy below.
+            let globally_authorized = self
+                .global_vault
+                .as_ref()
+                .is_some_and(|vault| vault.require_global_owner(&frame.actor_id).is_ok());
+            if globally_authorized {
+                if !self
+                    .replay
+                    .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
+                {
+                    return Ok(WhatsAppBridgeOutcome::Duplicate);
+                }
+                let outcome = self.control.dispatch(
+                    &self.config.socket_id,
+                    &self.config.owner_actor_id,
+                    &frame.chat_jid,
+                    group_id,
+                    &frame.text,
+                )?;
+                return Ok(WhatsAppBridgeOutcome::Dispatched(outcome));
+            }
+            // Anonymous/public sender: read-only. No role, socket or Vault
+            // mutation regardless of the command text, mention or username.
             let outcome = self.control.dispatch_public_readonly(
                 &self.config.socket_id,
                 &frame.actor_id,

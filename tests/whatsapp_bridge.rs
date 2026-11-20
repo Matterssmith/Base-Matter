@@ -171,6 +171,14 @@ fn no_normal_bot_dispatch_ping_qr_or_legacy_global_aliases() {
             "=/>set role owner --global 5551234567"
         ))
         .is_err());
+    // A signed external actor without Vault membership must never inherit
+    // the socket owner's role through the global dispatch adapter.
+    let mut global_outsider = frame("global-role-outsider", "=/>bot on");
+    global_outsider.from_me = false;
+    global_outsider.actor_id = "987654321012346@lid".to_owned();
+    global_outsider.chat_jid = global_outsider.actor_id.clone();
+    sign(&mut global_outsider, &SECRET);
+    assert!(bridge.ingest(&global_outsider).is_err());
     let mut outsider = frame("vault-outsider", "=/>vault");
     outsider.from_me = false;
     outsider.actor_id = "987654321012346@lid".to_owned();

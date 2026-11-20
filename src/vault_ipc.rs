@@ -185,9 +185,9 @@ impl VaultClient {
         Ok(())
     }
 
-    /// The signed WhatsApp principal is verified in the bridge; Vault itself
-    /// restricts the mutation to its stored primary WhatsApp PN, regardless
-    /// of who owns the bot or socket.
+    /// Both independently enrolled global owners have identical authority.
+    /// The bridge signs the platform principal; Vault independently enforces
+    /// membership, regardless of which Matter bot/socket received it.
     pub fn grant_secondary_global_owner(&self, requester: &str, target_phone: &str) -> Result<()> {
         let valid_pn = |id: &str| {
             id.strip_suffix("@s.whatsapp.net").is_some_and(|digits| {
@@ -195,7 +195,7 @@ impl VaultClient {
             })
         };
         if !valid_pn(requester) {
-            bail!("Se requiere el PN verificado del owner principal");
+            bail!("Se requiere un WhatsApp PN verificado de un owner global");
         }
         let digits = target_phone.strip_prefix('+').unwrap_or(target_phone);
         if !(8..=20).contains(&digits.len()) || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
@@ -203,7 +203,7 @@ impl VaultClient {
         }
         let new_subject = format!("{digits}@s.whatsapp.net");
         if requester == new_subject {
-            bail!("No puedes asignarte como owner secundario");
+            bail!("El destino ya es la identidad que solicita el cambio");
         }
         let payload = serde_json::to_vec(&serde_json::json!({
             "requester": { "platform": "whatsapp", "subject_id": requester },
@@ -225,8 +225,8 @@ impl VaultClient {
         Ok(())
     }
 
-    /// Restrict status/testing to authorized owners. Other global roles
-    /// remain separate from this typed owner-secondary operation.
+    /// Status/testing require an authorized global owner. Both enrolled
+    /// owners receive the same capabilities from the Vault authority.
     pub fn global_owner_vault_command(
         &self,
         verified_identity: &str,
@@ -239,12 +239,12 @@ impl VaultClient {
         }
         let answer = if test {
             if self.verify_roundtrip().is_ok() {
-                "Vault-Matter: lectura y escritura cifradas verificadas con registro de prueba. Sólo configuración; roles y comandos privados siguen bloqueados."
+                "Vault-Matter: lectura y escritura cifradas verificadas. Owners globales con igual autoridad; las operaciones disponibles siguen las políticas del ecosistema."
             } else {
                 "Vault-Matter: prueba de lectura/escritura denegada o fallida."
             }
         } else if self.invoke("ping", "health", None, None).is_ok() {
-            "Vault-Matter: servicio cifrado autenticado. Permiso limitado a configuración; roles y comandos privados siguen bloqueados."
+            "Vault-Matter: servicio cifrado autenticado. Los owners globales registrados tienen autoridad equivalente en Matter."
         } else {
             "Vault-Matter: servicio no disponible o permiso denegado."
         };

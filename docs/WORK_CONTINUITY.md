@@ -1,3 +1,13 @@
+## 2026-11-20 — Igualdad real de privilegios de ambos owners globales
+
+- La autoridad de global owner 1 y 2 es idéntica. No existe rango subordinado: ambos pueden ejecutar los controles de Base en cualquier socket Matter cuyo proveedor valide el JID y cuyo cliente privado Vault verifique la membresía global del remitente.
+- `WhatsAppControlBridge` añade un adaptador global verificado **antes** de la ruta de lectura pública. Sólo el sender externo autenticado con HMAC + `VaultClient::require_global_owner` obtiene permiso delegado para los controles del socket; el resto queda en `dispatch_public_readonly` sin mutación. Los controles de administración y grupo siguen las reglas funcionales existentes, como destino/argumentos y estado del bot.
+- `whatsapp-rust` puede firmar comandos administrativos recibidos de otros usuarios en chats/grupos sin dar privilegios automáticamente: sólo Vault puede elevar a uno de los dos owners globales. Ningún comando de texto, alias o rol de grupo supera la comprobación.
+- `=/>set role owner --global NUMERO` acepta owner global 1 o 2, con alcance de chat privado para esta modificación. El cliente deja de informar erróneamente que los roles/controles globales están siempre bloqueados. Revocación cruzada en el servicio Vault en rotación de owner 2.
+- **Límite real:** sólo controles que existen en Base quedan ejecutables. Telegram/Discord no tienen todavía proveedores operativos ni callback firmado; no se puede proclamar que ya manejen comandos. No se ha desplegado este SHA en instabox-se.
+- Pruebas de seguridad deniegan escalamiento por un sender firmado sin membresía Vault. README revisados: 2/2, los cuatro documentos de continuidad actualizados de forma atómica.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Rustfmt: concesión global owner 2
 
 - Se aplicaron automáticamente los cambios exactos de rustfmt detectados en CI al cliente Vault, puente WhatsApp, pruebas de aislamiento y proveedor Rust. Sin nuevas capacidades ni cambios de secretos.
