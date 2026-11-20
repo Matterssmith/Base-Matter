@@ -19,6 +19,9 @@ function validatedRegistrationUrl(input, allowedHosts = []) {
 export function createMatterRegisterCard(httpsUrl, options = {}) {
   const url = validatedRegistrationUrl(httpsUrl, options.allowedHosts ?? []);
   const summary = "Registra tu cuenta Matter o continúa como invitado. La identidad y los documentos solo se verifican desde el portal seguro.";
+  const urlButton = options.preferInAppWebview === true
+    ? { name: "open_webview", buttonParamsJson: JSON.stringify({ title: "Abrir Matter Register", link: { in_app_webview: true, url } }) }
+    : { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: "Abrir registro", url }) };
   return {
     viewOnceMessage: {
       message: {
@@ -32,7 +35,7 @@ export function createMatterRegisterCard(httpsUrl, options = {}) {
           footer: { text: "Matterssmith · Registro voluntario" },
           nativeFlowMessage: {
             buttons: [
-              { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: "Abrir registro", url }) },
+              urlButton,
               { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "Soy invitado", id: "matter.register.guest" }) }
             ],
             messageParamsJson: ""
@@ -49,7 +52,7 @@ export function createMatterRegisterCard(httpsUrl, options = {}) {
  * generateWAMessageFromContent from its pinned Baileys version.
  * WhatsApp native-flow rendering is client/version dependent.
  */
-export async function sendMatterRegisterCard({ socket, jid, httpsUrl, generateWAMessageFromContent, allowedHosts = [] }) {
+export async function sendMatterRegisterCard({ socket, jid, httpsUrl, generateWAMessageFromContent, allowedHosts = [], preferInAppWebview = false }) {
   if (!socket || typeof socket.relayMessage !== "function" || typeof socket.sendMessage !== "function") {
     throw new TypeError("invalid_socket");
   }
@@ -61,7 +64,7 @@ export async function sendMatterRegisterCard({ socket, jid, httpsUrl, generateWA
   }
   const url = validatedRegistrationUrl(httpsUrl, allowedHosts);
   try {
-    const card = createMatterRegisterCard(url, { allowedHosts });
+    const card = createMatterRegisterCard(url, { allowedHosts, preferInAppWebview });
     const generated = generateWAMessageFromContent(jid, card, {});
     if (!generated?.message || !generated?.key?.id) throw new TypeError("invalid_generated_message");
     await socket.relayMessage(jid, generated.message, { messageId: generated.key.id });
