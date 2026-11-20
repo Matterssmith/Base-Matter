@@ -35,10 +35,11 @@ jobs:
           cp web/matter-register/app.js public/
           touch public/.nojekyll
           test "$(find public -type f | wc -l)" -eq 3
+      # The site must be enabled once by an organization admin in
+      # Settings -> Pages -> Build and deployment: GitHub Actions.
+      # GITHUB_TOKEN is not authorized to create the Pages site.
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Upload static artifact
         uses: actions/upload-pages-artifact@v3
         with:
