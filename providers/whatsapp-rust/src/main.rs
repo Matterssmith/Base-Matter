@@ -926,7 +926,9 @@ async fn main() -> Result<()> {
                             // This cannot create accounts, collect documents or
                             // grant any role. The operator must explicitly
                             // configure the exact allowlisted live HTTPS URL.
-                            let preview_url = if actual_command == "=/>register" && !data.is_group {
+                            let preview_url = if matches!(actual_command, "=/>register" | "=/>register start")
+                                && !data.is_group
+                            {
                                 std::env::var("MATTER_REGISTER_PUBLIC_URL")
                                     .ok()
                                     .and_then(|candidate| {
