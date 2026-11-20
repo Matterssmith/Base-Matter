@@ -64,7 +64,8 @@ async fn deliver(
         && !frame.chat_jid.ends_with("@g.us")
     {
         Duration::from_secs(83)
-    } else if frame.text.split_whitespace().next() == Some("=/>vault")
+    } else if (frame.text.split_whitespace().next() == Some("=/>vault")
+        || frame.text.starts_with("=/>set role owner --global"))
         && !frame.chat_jid.ends_with("@g.us")
     {
         // Both owner-linked and external verified-owner private messages
@@ -989,6 +990,13 @@ async fn main() -> Result<()> {
                             if is_private_vault_command(&frame, &config.owner_jid) {
                                 let _ = ctx
                                     .reply("Vault-Matter: consulta no completada. Revisa el controlador y la credencial del socket; no se modificaron roles.")
+                                    .await;
+                            } else if frame.from_me
+                                && frame.text.starts_with("=/>set role owner --global")
+                                && !frame.chat_jid.ends_with("@g.us")
+                            {
+                                let _ = ctx
+                                    .reply("Vault-Matter: asignación denegada. Verifica la identidad principal y el servicio privado.")
                                     .await;
                             } else if frame.from_me && frame.text.starts_with("=/>test") {
                                 let _ = ctx

@@ -386,6 +386,16 @@ impl Config {
             // The provider proves the private sender; the controller MUST
             // consult encrypted Vault global authority before answering.
             ["=/>vault"] | ["=/>vault", "status" | "test"] => !event.is_group,
+            ["=/>set", "role", "owner", "--global"] => !event.is_group,
+            ["=/>set", "role", "owner", "--global", target] => {
+                !event.is_group
+                    && (8..=21).contains(&target.len())
+                    && target
+                        .strip_prefix('+')
+                        .unwrap_or(target)
+                        .bytes()
+                        .all(|byte| byte.is_ascii_digit())
+            },
             ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => true,
             ["=/>help" | "=/>h" | "=/>ayuda", category] => {
                 public_category(category) || *category == "all" || safe_help_name(category)

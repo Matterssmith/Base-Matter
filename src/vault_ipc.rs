@@ -185,8 +185,55 @@ impl VaultClient {
         Ok(())
     }
 
-    /// Restrict global administration to safe health/status commands.
-    /// Granting a role or invoking arbitrary private code remains impossible.
+    /// The signed WhatsApp principal is verified in the bridge; Vault itself
+    /// restricts the mutation to its stored primary WhatsApp PN, regardless
+    /// of who owns the bot or socket.
+    pub fn grant_secondary_global_owner(
+        &self,
+        requester: &str,
+        target_phone: &str,
+    ) -> Result<()> {
+        let valid_pn = |id: &str| {
+            id.strip_suffix("@s.whatsapp.net").is_some_and(|digits| {
+                (8..=20).contains(&digits.len())
+                    && digits.bytes().all(|byte| byte.is_ascii_digit())
+            })
+        };
+        if !valid_pn(requester) {
+            bail!("Se requiere el PN verificado del owner principal");
+        }
+        let digits = target_phone.strip_prefix('+').unwrap_or(target_phone);
+        if !(8..=20).contains(&digits.len())
+            || !digits.bytes().all(|byte| byte.is_ascii_digit())
+        {
+            bail!("Uso: =/>set role owner --global NUMERO");
+        }
+        let new_subject = format!("{digits}@s.whatsapp.net");
+        if requester == new_subject {
+            bail!("No puedes asignarte como owner secundario");
+        }
+        let payload = serde_json::to_vec(&serde_json::json!({
+            "requester": { "platform": "whatsapp", "subject_id": requester },
+            "new_subject_id": new_subject
+        }))?;
+        let response = self.invoke(
+            "owner_grant_secondary",
+            "global-owner-secondary-v1",
+            None,
+            Some(&payload),
+        )?;
+        if !response
+            .value
+            .as_ref()
+            .is_some_and(|bytes| bytes.as_slice() == b"owner-secondary:updated")
+        {
+            bail!("Concesión global denegada por Vault");
+        }
+        Ok(())
+    }
+
+    /// Restrict status/testing to authorized owners. Other global roles
+    /// remain separate from this typed owner-secondary operation.
     pub fn global_owner_vault_command(
         &self,
         verified_identity: &str,
@@ -223,7 +270,7 @@ impl VaultClient {
             ]
             .iter()
             .all(|id| safe_id(id))
-            || !matches!(operation, "ping" | "get" | "put" | "owner_check")
+            || !matches!(operation, "ping" | "get" | "put" | "owner_check" | "owner_grant_secondary")
             || value.is_some_and(|bytes| bytes.len() > MAX_VALUE)
         {
             bail!("invalid_vault_client_request");
@@ -275,12 +322,17 @@ impl VaultClient {
         self.validate(operation, record, value)?;
         if (operation != "put"
             && operation != "owner_check"
+            && operation != "owner_grant_secondary"
             && (expected_revision.is_some() || value.is_some()))
             || (operation == "put" && value.is_none())
             || (operation == "owner_check"
                 && (!matches!(record, "global-owner-check-v1" | "global-owner-check-v2")
                     || expected_revision.is_some()
                     || value.is_none_or(|identity| identity.len() > 256)))
+            || (operation == "owner_grant_secondary"
+                && (record != "global-owner-secondary-v1"
+                    || expected_revision.is_some()
+                    || value.is_none_or(|payload| payload.len() > 512)))
         {
             bail!("invalid_vault_operation_arguments");
         }

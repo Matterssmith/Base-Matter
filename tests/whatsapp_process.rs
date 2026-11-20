@@ -158,6 +158,16 @@ fn real_controller_process_preserves_replay_and_recovers_after_abrupt_stop() {
     let vault = deliver(&addr, &signed("vault-status", "=/>vault"));
     assert_eq!(vault["outcome"], "denied");
     assert!(vault.get("message").is_none());
+    let role_grant = deliver(
+        &addr,
+        &signed("global-role-owner", "=/>set role owner --global 5551234567"),
+    );
+    assert_eq!(role_grant["outcome"], "denied");
+    let role_grant_help = deliver(
+        &addr,
+        &signed("global-role-help", "=/>set role owner --global"),
+    );
+    assert_eq!(role_grant_help["outcome"], "denied");
     let vault_test = deliver(&addr, &signed("vault-test", "=/>vault test"));
     assert_eq!(vault_test["outcome"], "denied");
     assert!(vault_test.get("message").is_none());

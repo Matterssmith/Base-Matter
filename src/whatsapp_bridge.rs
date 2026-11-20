@@ -247,6 +247,39 @@ impl WhatsAppControlBridge {
                 },
             ));
         }
+        // This narrowly scoped global role assignment is authorized inside
+        // encrypted Vault, never by a socket-local role or chat text claim.
+        let parts = frame.text.split_whitespace().collect::<Vec<_>>();
+        if matches!(parts.as_slice(), ["=/>set", "role", "owner", "--global"])
+            || matches!(parts.as_slice(), ["=/>set", "role", "owner", "--global", _])
+        {
+            if group_id.is_some() {
+                bail!("Los owners globales se asignan sólo en chat privado");
+            }
+            let client = self.global_vault.as_ref()
+                .ok_or_else(|| anyhow!("Vault global no configurado"))?;
+            let principal = if is_owner {
+                self.config.owner_jid.as_str()
+            } else {
+                frame.actor_id.as_str()
+            };
+            client.require_global_owner(principal)?;
+            if !self.replay.claim("whatsapp", &self.config.socket_id, &frame.message_id)? {
+                return Ok(WhatsAppBridgeOutcome::Duplicate);
+            }
+            let output = if parts.len() == 4 {
+                "Uso: =/>set role owner --global NUMERO. Sólo owner global principal; chat privado.".to_owned()
+            } else {
+                client.grant_secondary_global_owner(principal, parts[4])?;
+                "Vault-Matter: owner global secundario actualizado. Registro cifrado; identidad reservada.".to_owned()
+            };
+            return Ok(WhatsAppBridgeOutcome::Dispatched(
+                DispatchResult::Extension {
+                    command: "set-role-global-owner".to_owned(),
+                    output,
+                },
+            ));
+        }
         if is_public_reader {
             // Public commands have a dedicated, read-only policy path.
             // Never pass their actor into the owner dispatcher.

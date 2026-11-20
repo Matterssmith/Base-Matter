@@ -1,3 +1,11 @@
+## 2026-11-20 — Real Vault =/>set role owner --global
+
+- Ruta global tipada: `=/>set role owner --global NUMERO` en chat privado, con PN auténtico firmado por WhatsApp y validado en el puente; la operación se envía exclusivamente al servicio privado Vault como `owner_grant_secondary`. El owner del socket no hereda autoridad global.
+- El servicio Vault restringe la mutación al principal global slot 1 previamente enrolado, asignando sólo slot 2 / WhatsApp. Rechaza autoasignación, dueño de bot, otros remitentes, números no canónicos y grupos. El slot 1 no se puede modificar desde WhatsApp.
+- Sin número, devuelve el uso al principal autorizado, sin cambio de roles. La respuesta satisfactoria no muestra el número destino; la prueba procesal sin Vault debe denegarlo. No se incluyen números reales en repositorios.
+- **No se ha instalado la versión nueva en instabox-se**. Se requiere compilar Vault y Base desde los SHAs CI aprobados, reemplazar control/proveedor con sesión detenida y registrar primero el PN global 1 de forma privada. No se han implementado otros roles globales ni los adaptadores Telegram/Discord.
+- README revisados: 2/2, cuatro documentos de continuidad actualizados; créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Política owner global principal en todas las redes
 
 - Ancla privada: el teléfono público del propietario es el principal global 1 en Vault, sin colocarlo en el repositorio público. Cada bot y plataforma deben comprobar la identidad real del evento y consultar `owner_check` cifrado antes de responder `=/>vault`.
