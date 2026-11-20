@@ -329,17 +329,19 @@ fn main() -> Result<()> {
             .with_silent_bot_commands()
             .with_unified_live_controls(),
     );
-    let bridge = Arc::new(WhatsAppControlBridge::new(
-        WhatsAppBridgeConfig {
-            socket_id: socket,
-            owner_actor_id: owner,
-            owner_jid: jid,
-        },
-        bridge_key,
-        replay,
-        dispatcher,
-    )?
-    .with_global_vault(vault_client)?);
+    let bridge = Arc::new(
+        WhatsAppControlBridge::new(
+            WhatsAppBridgeConfig {
+                socket_id: socket,
+                owner_actor_id: owner,
+                owner_jid: jid,
+            },
+            bridge_key,
+            replay,
+            dispatcher,
+        )?
+        .with_global_vault(vault_client)?,
+    );
     let service = WhatsAppControlIpc::new(bridge).with_themes(Arc::clone(&style));
     println!("Base-Matter owner control listening on local loopback.");
     service.serve(bind)

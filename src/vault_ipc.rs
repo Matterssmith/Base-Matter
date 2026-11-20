@@ -157,10 +157,11 @@ impl VaultClient {
             None,
             Some(identity.as_bytes()),
         )?;
-        if !matches!(
-            result.value.as_deref().map(|bytes| bytes.as_slice()),
-            Some(b"global-owner:verified")
-        ) {
+        if !result
+            .value
+            .as_ref()
+            .is_some_and(|bytes| bytes.as_slice() == b"global-owner:verified")
+        {
             bail!("global_owner_denied");
         }
         Ok(())
@@ -254,7 +255,8 @@ impl VaultClient {
         value: Option<&[u8]>,
     ) -> Result<VaultResponse> {
         self.validate(operation, record, value)?;
-        if (operation != "put" && operation != "owner_check"
+        if (operation != "put"
+            && operation != "owner_check"
             && (expected_revision.is_some() || value.is_some()))
             || (operation == "put" && value.is_none())
             || (operation == "owner_check"

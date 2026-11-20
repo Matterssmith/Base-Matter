@@ -1,3 +1,9 @@
+## 2026-11-20 — Correcciones de formato Rust de autoridad global
+
+- CI original: Rustfmt falló antes de compilar en las rutas del puente/cliente y una prueba; se aplicaron los diffs exactos del log. La comparación de la prueba de respuesta AEAD usa `is_some_and` para evitar ambigüedad del patrón de slice.
+- Ningún cambio de privilegios, números, claves ni roles. Servicio Vault privado y controlador público continúan pendiente de despliegue coordinado y enrolamiento de dos identidades.
+- README revisados: 2/2 y documentación de continuidad actualizada en este mismo commit. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Acceso Vault reservado al owner global de dos números
 
 - El servicio privado Vault-Matter implementó `set-global-owners` y `owner_check` bajo autoridad cifrada (commit `e7134ce4d81193f0f34e3c434c81d77c860baa9e`); ningún número aparece en Base público ni en docs. Requiere enrolar **exactamente dos JID verificados**, en el host, antes de habilitar.

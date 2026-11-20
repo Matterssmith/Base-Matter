@@ -162,7 +162,9 @@ fn no_normal_bot_dispatch_ping_qr_or_legacy_global_aliases() {
     assert!(bridge.ingest(&group).is_err());
     // Even the socket owner is not automatically an ecosystem owner.
     assert!(bridge.ingest(&frame("vault-self", "=/>vault")).is_err());
-    assert!(bridge.ingest(&frame("vault-self-test", "=/>vault test")).is_err());
+    assert!(bridge
+        .ingest(&frame("vault-self-test", "=/>vault test"))
+        .is_err());
     let mut outsider = frame("vault-outsider", "=/>vault");
     outsider.from_me = false;
     outsider.actor_id = "987654321012346@lid".to_owned();

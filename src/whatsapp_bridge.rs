@@ -93,7 +93,10 @@ impl WhatsAppControlBridge {
     /// Only the trusted controller may install a per-socket authenticated
     /// Vault client. No sender may select an IPC key, tenant or socket.
     pub fn with_global_vault(mut self, client: Option<VaultClient>) -> Result<Self> {
-        if client.as_ref().is_some_and(|c| c.socket != self.config.socket_id) {
+        if client
+            .as_ref()
+            .is_some_and(|c| c.socket != self.config.socket_id)
+        {
             bail!("Vault credential does not belong to current socket");
         }
         self.global_vault = client;
@@ -217,7 +220,9 @@ impl WhatsAppControlBridge {
             if group_id.is_some() {
                 bail!("Vault is private-only");
             }
-            let client = self.global_vault.as_ref()
+            let client = self
+                .global_vault
+                .as_ref()
                 .ok_or_else(|| anyhow!("Vault global authority unavailable"))?;
             let principal = if is_owner {
                 self.config.owner_jid.as_str()
@@ -226,13 +231,18 @@ impl WhatsAppControlBridge {
             };
             let args = tokens.collect::<Vec<_>>();
             let answer = client.global_owner_vault_command(principal, &args)?;
-            if !self.replay.claim("whatsapp", &self.config.socket_id, &frame.message_id)? {
+            if !self
+                .replay
+                .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
+            {
                 return Ok(WhatsAppBridgeOutcome::Duplicate);
             }
-            return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
-                command: "vault".to_owned(),
-                output: answer,
-            }));
+            return Ok(WhatsAppBridgeOutcome::Dispatched(
+                DispatchResult::Extension {
+                    command: "vault".to_owned(),
+                    output: answer,
+                },
+            ));
         }
         if is_public_reader {
             // Public commands have a dedicated, read-only policy path.
