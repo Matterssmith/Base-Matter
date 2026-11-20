@@ -108,6 +108,11 @@ class BranchRecoveryTests(unittest.TestCase):
             with self.subTest(target=target), self.assertRaises(ValueError):
                 branch.promote("matter-rust", target)
 
+    def test_batch_save_only_detected_workspaces(self):
+        with patch.object(branch, "save", return_value=0) as saver:
+            self.assertEqual(branch.execute("save", ["all", "--local"]), 0)
+        saver.assert_called_once_with("matter-rust", True)
+
     def test_bot_saving_never_allowed(self):
         with self.assertRaises(ValueError):
             branch.directory_for("bot")
