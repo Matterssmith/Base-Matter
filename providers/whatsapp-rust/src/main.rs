@@ -418,6 +418,27 @@ async fn snapshot_community_recovery(
     ))
 }
 
+fn safe_resume_event(kind: EventKind) -> Option<&'static str> {
+    match kind {
+        EventKind::Disconnected => Some(
+            "WhatsApp connection interrupted. No pairing requested; existing session retained.",
+        ),
+        EventKind::ConnectFailure => Some(
+            "WhatsApp server rejected a connection attempt. Check linked devices and network.",
+        ),
+        EventKind::ClientOutdated => Some(
+            "WhatsApp client version rejected. Update the Rust provider before trying a new pairing.",
+        ),
+        EventKind::TemporaryBan => Some(
+            "WhatsApp temporary restriction reported. Stop attempts; do not request pairing.",
+        ),
+        EventKind::StreamError => Some(
+            "WhatsApp stream error reported. Existing session retained.",
+        ),
+        _ => None,
+    }
+}
+
 fn pairing_options(resume_only: bool, phone: String) -> Option<PairCodeOptions> {
     if resume_only {
         None
@@ -604,6 +625,22 @@ async fn main() -> Result<()> {
         .on_logged_out(|_info| async move {
             eprintln!("WhatsApp-Matter: linked device was logged out. Check linked devices on the phone; do not delete the local database.");
         })
+        // Only report event types from the authenticated upstream event bus.
+        // No raw event payloads, phone numbers, server error bodies, or keys.
+        .on_event_for(
+            &[
+                EventKind::Disconnected,
+                EventKind::ConnectFailure,
+                EventKind::ClientOutdated,
+                EventKind::TemporaryBan,
+                EventKind::StreamError,
+            ],
+            |event, _client| async move {
+                if let Some(label) = safe_resume_event(event.kind()) {
+                    eprintln!("{label}");
+                }
+            },
+        )
         .on_message(move |ctx| {
             let config = Arc::clone(&config);
             async move {
@@ -920,8 +957,14 @@ async fn main() -> Result<()> {
         .build()
         .await?;
     if resume_only {
+        let local_identity = bot.client();
         println!(
             "WhatsApp-Matter Rust: attempting existing session only; no pairing code requested."
+        );
+        println!(
+            "WhatsApp stored identity signals: PN={}, LID={}; server authentication unverified.",
+            local_identity.pn().is_some(),
+            local_identity.lid().is_some()
         );
     } else {
         println!("WhatsApp-Matter Rust session starting. Pairing code only.");
@@ -939,6 +982,23 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod readiness_tests {
     use super::*;
+
+    #[test]
+    fn safe_resume_event_never_emits_remote_payloads() {
+        for kind in [
+            EventKind::Disconnected,
+            EventKind::ConnectFailure,
+            EventKind::ClientOutdated,
+            EventKind::TemporaryBan,
+            EventKind::StreamError,
+        ] {
+            let label = safe_resume_event(kind).expect("diagnostic should exist");
+            assert!(!label.is_empty());
+            assert!(!label.contains('@'));
+            assert!(!label.contains("key="));
+        }
+        assert!(safe_resume_event(EventKind::Messages).is_none());
+    }
 
     #[test]
     fn resume_only_never_configures_pairing_code_requests() {

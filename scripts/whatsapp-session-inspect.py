@@ -50,7 +50,6 @@ def probe_device_identity(connection, tables):
         row,
     ):
         flags[label] = "yes" if present else "no"
-    flags["SESSION_AUTHENTICATED"] = "not_determined_offline"
     return flags
 
 

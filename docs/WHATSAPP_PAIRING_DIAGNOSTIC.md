@@ -1,3 +1,10 @@
+## 2026-11-20 — Verificación de identidad almacenada: 4 señales presentes
+
+- El operador ejecutó el inspector corregido en `instabox-se`: `session.db` 475136 bytes, `SQLITE_INTEGRITY=OK`, 20 tablas; `DEVICE_ROW_EXISTS=yes`, `DEVICE_HAS_PN=yes`, `DEVICE_HAS_LID=yes`, `DEVICE_HAS_ACCOUNT=yes` y `DEVICE_HAS_KEY_MATERIAL=yes`. Los archivos WAL/SHM aparecieron tras el intento anterior; no eliminarlos. Sigue `SESSION_AUTHENTICATED=not_determined_offline`.
+- Las cuatro señales respaldan que existe un registro local de un dispositivo previamente vinculado. No confirman que WhatsApp lo siga autorizando. Revisar el dispositivo en WhatsApp → Dispositivos vinculados y conectividad del servidor antes de hacer cualquier emparejamiento.
+- Corregida la línea `SESSION_AUTHENTICATED` duplicada. Se añadieron diagnósticos de eventos `Disconnected`, `ConnectFailure`, `ClientOutdated`, `TemporaryBan` y `StreamError` sin imprimir payloads ni identidades; modo `--resume-only` ahora también señala si el cliente cargó PN/LID en memoria antes de intentar la conexión.
+- No solicitar otro código ni reemparedar en bucle. No borrar `session.db*`, `runtime.env`, ni renovar Vault. `vault_roundtrip_verified revision=2` sigue siendo la última prueba real de Vault.
+
 ## 2026-11-20 — Inspección corregida del esquema SQLite v0.7.0 y cierre de reconexión
 
 - **Evidencia final del servidor**: el operador verificó ambos binarios SHA `6fc993b7f335f62dae8c84d91109e929a502a332`; `scripts/whatsapp-vault-existing.sh` pasó checks, inició el controlador y ejecutó `--resume-only`; el proceso volvió inmediatamente al shell sin disparar `on_connected`. No hubo emparejamiento ni autenticación de WhatsApp.

@@ -63,7 +63,7 @@ class WhatsAppSessionInspectionTest(unittest.TestCase):
         )
         flags = MODULE.probe_device_identity(self.db, self.tables())
         self.assertEqual(flags["DEVICE_HAS_ACCOUNT"], "yes")
-        self.assertEqual(flags["SESSION_AUTHENTICATED"], "not_determined_offline")
+        self.assertNotIn("SESSION_AUTHENTICATED", flags)
         self.assertNotIn("secret", str(flags))
 
 
