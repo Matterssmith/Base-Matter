@@ -73,8 +73,9 @@ def safe_file(root: Path, name: str) -> None:
         raise ValueError("Ruta confidencial o traversal bloqueado.")
     if name.lower().endswith(BLOCK_SUFFIXES) or name.startswith("vault/") or name.startswith(".github/"):
         raise ValueError("Archivo protegido: " + name)
-    path = root.joinpath(*parts)
-    if path.is_symlink() or not path.resolve().is_relative_to(root):
+    resolved_root = root.resolve()
+    path = resolved_root.joinpath(*parts)
+    if path.is_symlink() or not path.resolve().is_relative_to(resolved_root):
         raise ValueError("Enlace o ruta fuera del checkout.")
     if not path.is_file() or path.stat().st_size > 2_000_000:
         raise ValueError("Archivo eliminado/binario/grande: " + name)
