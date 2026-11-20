@@ -8,6 +8,7 @@ Hecho por Lournyx Matterssmith [Lou-Nyx].
 import json
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -82,6 +83,19 @@ class MatterLocalTests(unittest.TestCase):
         self.assertTrue(report["running"])
         self.assertTrue(report["installed"])
         self.assertEqual(report["installed_count"], 2)
+
+    def test_chat_memory_is_local_private_and_filters_secrets(self):
+        with tempfile.TemporaryDirectory() as td:
+            history_file = Path(td) / "chat-history.json"
+            with patch.object(matter_ai, "CHAT_HISTORY_PATH", history_file):
+                matter_ai.save_local_chat_history([
+                    {"user": "continúa Matter-Rust", "assistant": "pendiente revisar pruebas"},
+                    {"user": "OPENAI_API_KEY=sk-" + "A" * 30, "assistant": "no guardar"}
+                ])
+                self.assertEqual(history_file.stat().st_mode & 0o077, 0)
+                loaded = matter_ai.load_local_chat_history()
+                self.assertEqual(len(loaded), 1)
+                self.assertIn("Matter-Rust", loaded[0]["user"])
 
     def test_local_backend_does_not_require_openai_key(self):
         with patch.object(matter_ai, "config", return_value={"backend": "local"}), \
