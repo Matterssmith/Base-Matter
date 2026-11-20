@@ -64,10 +64,24 @@ async fn deliver(
         && !frame.chat_jid.ends_with("@g.us")
     {
         Duration::from_secs(83)
+    } else if is_private_vault_command(frame, &frame.owner_jid) {
+        // Vault performs authenticated Unix IPC and may require more time.
+        Duration::from_secs(12)
     } else {
         Duration::from_secs(4)
     };
     timeout(deadline, transport).await?
+}
+
+// Return only a generic diagnostic for the verified socket owner's private
+// Vault command, never for groups or outside senders.
+fn is_private_vault_command(
+    frame: &whatsapp_matter_rust_provider::SignedFrame,
+    verified_owner_jid: &str,
+) -> bool {
+    frame.from_me
+        && frame.chat_jid == verified_owner_jid
+        && frame.text.split_whitespace().next() == Some("=/>vault")
 }
 
 // Optional laboratory: native buttons are read-only and may be tested
@@ -934,6 +948,9 @@ async fn main() -> Result<()> {
                                     eprintln!("Base-Matter: control reply unavailable");
                                 }
                             }
+                            if sent && is_private_vault_command(&frame, &config.owner_jid) {
+                                println!("Base-Matter: Vault owner response submitted to WhatsApp");
+                            }
                             // Private enabled chats may inspect read-only
                             // NativeFlow test buttons when the operator opted in.
                             // HTML, audio and legacy comparison remain owner-self only.
@@ -964,9 +981,13 @@ async fn main() -> Result<()> {
                         }
                         Err(_) => {
                             eprintln!("Base-Matter control denied or unreachable");
-                            // Only a signed owner test may receive this generic
-                            // diagnostic; never expose rejected public controls.
-                            if frame.from_me && frame.text.starts_with("=/>test") {
+                            // The verified owner receives a generic Vault error,
+                            // without exposing IPC details, keys or private data.
+                            if is_private_vault_command(&frame, &config.owner_jid) {
+                                let _ = ctx
+                                    .reply("Vault-Matter: consulta no completada. Revisa el controlador y la credencial del socket; no se modificaron roles.")
+                                    .await;
+                            } else if frame.from_me && frame.text.starts_with("=/>test") {
                                 let _ = ctx
                                     .reply("Base-Matter: prueba rechazada por el controlador. Revisa permisos del chat y el registro local.")
                                     .await;
@@ -1006,6 +1027,36 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod readiness_tests {
     use super::*;
+
+    #[test]
+    fn vault_diagnostic_never_exposes_service_to_group_or_other_sender() {
+        use whatsapp_matter_rust_provider::SignedFrame;
+        let mut frame = SignedFrame {
+            version: 1,
+            socket_id: "wa-alpha".to_owned(),
+            actor_id: "owner".to_owned(),
+            owner_jid: "owner@s.whatsapp.net".to_owned(),
+            chat_jid: "owner@s.whatsapp.net".to_owned(),
+            message_id: "synthetic".to_owned(),
+            text: "=/>vault".to_owned(),
+            from_me: true,
+            timestamp: 0,
+            signature: String::new(),
+        };
+        assert!(is_private_vault_command(&frame, &frame.owner_jid));
+        frame.text = "=/>vault test".to_owned();
+        assert!(is_private_vault_command(&frame, &frame.owner_jid));
+        frame.text = "=/>vaulting".to_owned();
+        assert!(!is_private_vault_command(&frame, &frame.owner_jid));
+        frame.text = "=/>vault".to_owned();
+        frame.chat_jid = "example@g.us".to_owned();
+        assert!(!is_private_vault_command(&frame, &frame.owner_jid));
+        frame.chat_jid = "owner@s.whatsapp.net".to_owned();
+        frame.from_me = false;
+        assert!(!is_private_vault_command(&frame, &frame.owner_jid));
+        frame.from_me = true;
+        assert!(!is_private_vault_command(&frame, "different@s.whatsapp.net"));
+    }
 
     #[test]
     fn safe_logout_categories_do_not_expose_server_data() {
