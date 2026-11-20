@@ -1,3 +1,33 @@
+## 2026-11-20 — Matter Register en el servidor del bot (reemplaza GitHub Pages)
+
+- La vista previa pública deja de depender de GitHub Pages. Se eliminó `.github/workflows/matter-register-pages.yml`. La nueva implementación en `providers/whatsapp-rust/src/register_web.rs` incorpora `index.html` y `app.js` en el binario de WhatsApp Rust; el HTML es cargador mínimo y JavaScript crea absolutamente toda la interfaz.
+- El proveedor inicia automáticamente un servidor HTTP de solo lectura en **loopback** al arrancar la sesión autenticada, puerto de controlador + 10; alpha: `127.0.0.1:39831`. Un error del servidor web nunca detiene WhatsApp. Las pruebas `--check` no lo inician; `--serve-register-preview` permite observar la página sin abrir una sesión WhatsApp.
+- Solo rutas `GET/HEAD` estáticas y `/api/register/capabilities` con `ready=false`, POST denegado. Sin CURP, KYC, cámara, facial, Vault, credenciales, sesiones o registros civiles. No es una inscripción funcional.
+- Para exponer la página desde un teléfono se necesita dominio real + TLS + proxy HTTPS del host hacia el puerto loopback. El bot envía `=/>register` con `cta_url` únicamente si `MATTER_REGISTER_PUBLIC_URL` está configurada y validada, nunca un enlace ficticio. Instrucciones `docs/MATTER_REGISTER_BOT_HOST.md`.
+- En esta etapa **solo código en rama de trabajo**: no se instaló el binario en instabox-se y no se confirmó enlace externo ni despliegue. Mantener alpha/beta/stable y sockets intactos. Antes de despliegue validar CI del SHA final, actualizar el proveedor único de forma controlada y probar con curl/WhatsApp.
+- README revisados 2/2; créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Bot WhatsApp: registro público de demostración y publicación web
+
+- Se incorporó `providers/whatsapp-rust/src/register_web.rs`: tarjeta NativeFlow `cta_url` de solo lectura que acepta ÚNICAMENTE la URL pública exacta de GitHub Pages, sin tokens ni datos civiles. `=/>register` solo adjunta el botón y enlace de texto tras recibir ACK autorizado del controlador, en privado y cuando el operador haya definido `MATTER_REGISTER_PUBLIC_URL` con esa URL exacta. No se ejecuta para grupos ni cambia derechos.
+- El HTML conserva estructura mínima; `app.js` genera toda la página. Ni una visita ni un click conceden registro, rangos o consentimiento. El registro civil permanece bloqueado en Vault hasta que haya gateway, textos legales, verificación y auditabilidad.
+- Se intentó publicar una versión estática aislada por `.github/workflows/matter-register-pages.yml`. GitHub Pages todavía NO publicó el sitio: el propietario de la organización debe habilitar una sola vez GitHub Pages en Settings -> Pages -> Build and deployment -> GitHub Actions. No afirmar URL funcional antes de verla publicada. El flujo se corrigió para no intentar crear Pages con `GITHUB_TOKEN` sin permisos administrativos.
+- Se ajustó un test desactualizado de comandos públicos para distinguir marco HMAC firmado de autorización Vault real; no se concede privilegio a mensajes externos. CI del HEAD final debe resultar verde antes de desplegar.
+- Se mantienen `alpha`, `beta`, `stable` y el socket actual intactos. Ningún token/secret ni datos de menores o biometría en GitHub.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Matter Register: proveedor Rust sigue siendo principal
+
+- El portal de registro fue creado en rama aislada `feat/matter-register-web`. No se cambiaron las API ni la sesión del proveedor Rust. `providers/baileys-compat/register-card.mjs` es un adaptador alternativo desactivado por defecto.
+- Baileys y otras implementaciones Go/JS/TS permiten ciertos botones NativeFlow. El botón de webview `open_webview` es experimental, mientras que `cta_url` abre un sitio HTTPS con fallback textual. El modo pantalla completa de la página requiere interacción del usuario y autorización del navegador. No falsificar Meta AI ni indicadores reenviados.
+- La verificación real y guardado cifrado no están activos; no publicar un enlace de registro productivo hasta desplegar gateway seguro y textos legales.
+- README revisados: 2/2. Las pruebas no requieren ni alteran el socket conectado.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.

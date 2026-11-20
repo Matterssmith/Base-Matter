@@ -1,3 +1,39 @@
+## 2026-11-20 — Matter Register en el servidor del bot (reemplaza GitHub Pages)
+
+- La vista previa pública deja de depender de GitHub Pages. Se eliminó `.github/workflows/matter-register-pages.yml`. La nueva implementación en `providers/whatsapp-rust/src/register_web.rs` incorpora `index.html` y `app.js` en el binario de WhatsApp Rust; el HTML es cargador mínimo y JavaScript crea absolutamente toda la interfaz.
+- El proveedor inicia automáticamente un servidor HTTP de solo lectura en **loopback** al arrancar la sesión autenticada, puerto de controlador + 10; alpha: `127.0.0.1:39831`. Un error del servidor web nunca detiene WhatsApp. Las pruebas `--check` no lo inician; `--serve-register-preview` permite observar la página sin abrir una sesión WhatsApp.
+- Solo rutas `GET/HEAD` estáticas y `/api/register/capabilities` con `ready=false`, POST denegado. Sin CURP, KYC, cámara, facial, Vault, credenciales, sesiones o registros civiles. No es una inscripción funcional.
+- Para exponer la página desde un teléfono se necesita dominio real + TLS + proxy HTTPS del host hacia el puerto loopback. El bot envía `=/>register` con `cta_url` únicamente si `MATTER_REGISTER_PUBLIC_URL` está configurada y validada, nunca un enlace ficticio. Instrucciones `docs/MATTER_REGISTER_BOT_HOST.md`.
+- En esta etapa **solo código en rama de trabajo**: no se instaló el binario en instabox-se y no se confirmó enlace externo ni despliegue. Mantener alpha/beta/stable y sockets intactos. Antes de despliegue validar CI del SHA final, actualizar el proveedor único de forma controlada y probar con curl/WhatsApp.
+- README revisados 2/2; créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Bot WhatsApp: registro público de demostración y publicación web
+
+- Se incorporó `providers/whatsapp-rust/src/register_web.rs`: tarjeta NativeFlow `cta_url` de solo lectura que acepta ÚNICAMENTE la URL pública exacta de GitHub Pages, sin tokens ni datos civiles. `=/>register` solo adjunta el botón y enlace de texto tras recibir ACK autorizado del controlador, en privado y cuando el operador haya definido `MATTER_REGISTER_PUBLIC_URL` con esa URL exacta. No se ejecuta para grupos ni cambia derechos.
+- El HTML conserva estructura mínima; `app.js` genera toda la página. Ni una visita ni un click conceden registro, rangos o consentimiento. El registro civil permanece bloqueado en Vault hasta que haya gateway, textos legales, verificación y auditabilidad.
+- Se intentó publicar una versión estática aislada por `.github/workflows/matter-register-pages.yml`. GitHub Pages todavía NO publicó el sitio: el propietario de la organización debe habilitar una sola vez GitHub Pages en Settings -> Pages -> Build and deployment -> GitHub Actions. No afirmar URL funcional antes de verla publicada. El flujo se corrigió para no intentar crear Pages con `GITHUB_TOKEN` sin permisos administrativos.
+- Se ajustó un test desactualizado de comandos públicos para distinguir marco HMAC firmado de autorización Vault real; no se concede privilegio a mensajes externos. CI del HEAD final debe resultar verde antes de desplegar.
+- Se mantienen `alpha`, `beta`, `stable` y el socket actual intactos. Ningún token/secret ni datos de menores o biometría en GitHub.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Contrato obligatorio de Matter Register: JavaScript controla todo
+
+- El usuario exige HTML mínimo exclusivamente para invocar JavaScript. Se refactorizó `web/matter-register/index.html` a un bootstrap de 557 bytes, con `script src="./app.js" defer` y CSP sin scripts inline.
+- `web/matter-register/app.js` construye DOM, CSS, tema, animaciones, sonido opt-in, fullscreen, botones, flujo guest/adult/minor, política visual por país y conexión controlada al gateway. No introducir elementos visuales ni formularios de regreso al HTML. No requerir framework adicional de JS.
+- Tests Python de arquitectura y CI Node `--check`. Sin alterar sockets WhatsApp, provider Rust predeterminado, Vault ni ramas principales.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Mater Register interfaz, transportes y puerta privada
+
+- Trabajo nuevo aislado en `feat/matter-register-web` desde `alpha`, sin desplegar ni modificar binarios/sockets existentes.
+- UI estática `web/matter-register/index.html` con 5 temas, sonido opt-in, fullscreen con gesto, invitado/adulto/menor y países. **No registra datos reales** hasta que Vault autorice sesión.
+- Alternativas `providers/baileys-compat/register-card.mjs` (JS/TS) y `providers/whatsapp-go-compat/register_card.go` (Go), `cta_url`, `open_webview` opt-in, fallback a texto; funcionan como constructores/contrato, NO integraciones con socket en ejecución. Rust continúa por defecto.
+- Vault privado tiene rama `feat/matter-register-gateway-contract` con esquema y contrato de backend y menores; no existe aún proveedor KYC, liveness, textos definitivos, portal público HTTPS ni workflow transaccional autorizado de registro.
+- No introducir fotos/CURP/rostros/keys en Git; GitHub solo recibe código y futuros snapshots cifrados por la ruta segura existente. Próximo: PR/CI, integración gateway privado autenticado, validación legal y pruebas Android/iOS/Web antes de despliegue.
+- README de Base y proveedor Rust revisados. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.

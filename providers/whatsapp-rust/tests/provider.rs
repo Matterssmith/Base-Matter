@@ -429,21 +429,47 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
             sign_frame(&signed, &config.bridge_key).unwrap()
         );
     }
+    // Forwarding a known control verb is NOT a grant of permission.
+    // External senders receive signed frames with their own identity;
+    // only the Base controller and authenticated Vault can authorize a
+    // privileged command. This is required for external global owners.
     for text in [
         "=/>status --debug",
         "=/>group on",
         "=/>bot on",
         "=/>set role 12345678901 admin",
+        "=/>test html",
+        "=/>test run",
+        "=/>test ack invalid",
+    ] {
+        incoming.text = text;
+        let frame = config
+            .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .expect("known control verb must retain external identity");
+        assert_eq!(frame.actor_id, public_id);
+        assert!(!frame.from_me);
+        assert_eq!(frame.chat_jid, incoming.chat_jid);
+    }
+    // Explicit menu/help shape checks intentionally reject malformed
+    // read-only requests instead of forwarding them to the controller.
+    for text in [
         "=/>menu unknown",
         "=/>menu antis 999",
         "=/>menu unset",
         "=/>menu config extra",
         "=/>help run(unknown)",
-        "=/>test html",
-        "=/>test run",
-        "=/>test ack invalid",
-        "#ping",
     ] {
+        incoming.text = text;
+        assert!(
+            config
+                .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+                .unwrap()
+                .is_none(),
+            "malformed read-only request must be rejected: {text}"
+        );
+    }
+    for text in ["#ping", "=/>unknown admin", "=/>"] {
         incoming.text = text;
         assert!(config
             .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
