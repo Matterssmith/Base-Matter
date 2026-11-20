@@ -34,7 +34,10 @@ API_URL = "https://api.openai.com/v1/responses"
 MODEL_DEFAULT = "gpt-6.2-sol"
 MAX_ACTIONS = 18
 AUTO_LOCAL_EDITS = False
+AUTOPILOT_MODE = False
 LOCAL_EDITS: dict[str, set[str]] = {}
+AUTOPILOT_EDIT_SUFFIXES = {".rs", ".py", ".md", ".go", ".c", ".h", ".cpp", ".hpp", ".ts", ".js", ".html", ".css", ".json", ".yaml", ".yml", ".toml"}
+AUTOPILOT_PROTECTED_FILES = {"Cargo.lock", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "AGENTS.md"}
 
 # Mapa público. Credenciales de GitHub y Vault NUNCA están en este archivo.
 WORKSTREAMS = {
@@ -267,6 +270,8 @@ def sync(project: str) -> int:
 
 
 def approve(question: str) -> bool:
+    if AUTOPILOT_MODE:
+        return AUTO_LOCAL_EDITS and question.startswith("¿Escribir archivo ")
     if AUTO_LOCAL_EDITS and question.startswith("¿Escribir archivo "):
         return True
     try:
@@ -304,10 +309,27 @@ def read_file(project: str, relative: str, offset: int = 0) -> dict:
     return {"content": contents, "path": relative, "next_offset": end_offset if next_part else None}
 
 
+def relative_path_is_unsafe(value: str) -> bool:
+    parts = Path(value).parts
+    return any(part in {"..", ".", ""} for part in parts) or Path(value).is_absolute()
+
+
 def write_file(project: str, relative: str, contents: str) -> dict:
     if project == "bot":
         return {"error": "bot_matter_bloqueado"}
     path = file_path(project, relative)
+    if AUTOPILOT_MODE:
+        parts = Path(relative).parts
+        if (path.suffix.lower() not in AUTOPILOT_EDIT_SUFFIXES
+            or any(part in {".github", ".git", ".ssh", "deploy", "migrations",
+                            "secrets", "vault", "config", "scripts", "tools", "node_modules",
+                            "target", ".venv", "sessions", "session"} for part in parts)
+            or path.name in AUTOPILOT_PROTECTED_FILES
+            or path.name.startswith(".")
+            or relative_path_is_unsafe(relative)):
+            return {"error": "ruta_excluida_del_modo_autonomo"}
+        if path.exists() and path.stat().st_size > 120000:
+            return {"error": "archivo_demasiado_grande_para_autopilot"}
     if len(contents) > 250000:
         return {"error": "contenido_demasiado_grande"}
     if SECRET_FRAGMENT_RE.search(contents):
@@ -329,6 +351,8 @@ def publish_workstream(project: str, message: str) -> dict:
 
     Never force, merge, delete branches, change protected refs or mutate Vault data.
     """
+    if AUTOPILOT_MODE:
+        return {"error": "autopilot_publicacion_directa_bloqueada"}
     if project == "bot":
         return {"error": "bot_matter_bloqueado"}
     if not isinstance(message, str) or not 5 <= len(message) <= 180 or "\n" in message:
@@ -379,6 +403,9 @@ def publish_workstream(project: str, message: str) -> dict:
 
 
 def run_workstream(project: str, argv: list[str]) -> dict:
+    if AUTOPILOT_MODE and (not argv or argv[0] != "git"
+                           or len(argv) < 2 or argv[1] not in {"status", "diff", "log", "rev-parse"}):
+        return {"error": "autopilot_solo_permite_git_lectura; pruebas_manuales"}
     if project == "bot":
         return {"error": "bot_matter_bloqueado"}
     cwd = project_path(project)
@@ -513,6 +540,17 @@ En cada respuesta final reporta resumen, archivos, pruebas, pendientes y siguien
 """
 
 
+def autonomy_policy() -> str:
+    return ("Modo AUTOPILOT: trabajo continuo pero acotado a archivos fuente, "
+            "documentos y pruebas sintéticas en una rama workstreams/* verificada. "
+            "No ejecutar tests, compilación, pipelines, scripts ni procesos externos "
+            "sin aislamiento; no publicar ni modificar Vault, keys, CI, despliegue, "
+            "contenedores, paquetes o sesiones. "
+            "Escribir cambios pequeños y autocontenidos, preservar créditos, "
+            "informar pendientes. Git commit/push se decide en el supervisor "
+            "con política independiente y sin acceso a ramas protegidas.")
+
+
 def project_status() -> list[dict]:
     rows = []
     for name, (repo, branch) in WORKSTREAMS.items():
@@ -525,6 +563,9 @@ def project_status() -> list[dict]:
 
 def dispatch(name: str, args: dict) -> dict:
     try:
+        if AUTOPILOT_MODE and name not in {"list_workstreams", "list_files", "read_file",
+                                            "write_file", "run_command"}:
+            return {"error": "accion_reservada_para_sesion_interactiva"}
         if name == "list_workstreams":
             return {"workstreams": project_status()}
         if name == "list_files":
@@ -580,12 +621,15 @@ def ask(prompt: str, history: list[dict]) -> str:
     for item in history[-4:]:
         payload_input.insert(-1, {"role": "user", "content": item["user"]})
         payload_input.insert(-1, {"role": "assistant", "content": item["assistant"]})
+    active_tools = ([tool for tool in TOOLS if tool["name"] in
+                     {"list_workstreams", "list_files", "read_file", "write_file", "run_command"}]
+                    if AUTOPILOT_MODE else TOOLS)
     for step in range(MAX_ACTIONS):
         response = call_openai({
             "model": config().get("model", MODEL_DEFAULT),
             "instructions": SYSTEM,
             "input": payload_input,
-            "tools": TOOLS,
+            "tools": active_tools,
             "store": False,
             "max_output_tokens": 3500,
             "parallel_tool_calls": False,
