@@ -5,7 +5,9 @@
  */
 use anyhow::{anyhow, bail, Result};
 use matter_base::vault_ipc::VaultClient;
-use std::{env, fs, io::Write, path::Path};
+use std::{env, fs, path::Path};
+#[cfg(unix)]
+use std::io::Write;
 use zeroize::Zeroizing;
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
@@ -55,23 +57,23 @@ fn main() -> Result<()> {
     }
     Ok(())
 }
+#[cfg(unix)]
 fn secure_write(path: &Path, bytes: &[u8]) -> Result<()> {
     if !path.is_absolute() {
         bail!("output_must_be_absolute");
     }
     let mut options = fs::OpenOptions::new();
     options.write(true).create_new(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.mode(0o600);
-    }
-    #[cfg(not(unix))]
-    bail!("secure_output_unavailable");
+    use std::os::unix::fs::OpenOptionsExt;
+    options.mode(0o600);
     let mut file = options.open(path)?;
     file.write_all(bytes)?;
     file.sync_all()?;
     Ok(())
+}
+#[cfg(not(unix))]
+fn secure_write(_path: &Path, _bytes: &[u8]) -> Result<()> {
+    bail!("secure_output_unavailable")
 }
 // Créditos:
 // Hecho por Lournyx Matterssmith [Lou-Nyx].

@@ -3,9 +3,9 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
-use anyhow::{bail, Result};
 #[cfg(unix)]
 use anyhow::anyhow;
+use anyhow::{bail, Result};
 #[cfg(unix)]
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 #[cfg(unix)]
@@ -13,9 +13,9 @@ use chacha20poly1305::{
     aead::{Aead, KeyInit, Payload},
     XChaCha20Poly1305, XNonce,
 };
-use serde::Serialize;
 #[cfg(unix)]
 use serde::Deserialize;
+use serde::Serialize;
 use std::path::PathBuf;
 #[cfg(unix)]
 use std::{
