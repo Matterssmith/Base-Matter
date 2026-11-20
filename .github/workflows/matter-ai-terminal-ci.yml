@@ -5,8 +5,11 @@ on:
     branches: [workstreams/02-base]
     paths:
       - 'tools/matter_ai.py'
+      - 'tools/matter_branches.py'
+      - 'tools/setup-sakura.sh'
       - 'tools/install-matter-ai.sh'
       - 'tests/test_matter_ai_cli.py'
+      - 'tests/test_matter_branches.py'
       - '.github/workflows/matter-ai-terminal-ci.yml'
   pull_request:
     paths:
@@ -32,11 +35,11 @@ jobs:
         with:
           python-version: '3.11'
       - name: Validate Python syntax
-        run: python -m py_compile tools/matter_ai.py tests/test_matter_ai_cli.py
+        run: python -m py_compile tools/matter_ai.py tools/matter_branches.py tests/test_matter_ai_cli.py tests/test_matter_branches.py
       - name: Offline agent permissions and repository graph tests
-        run: python -m unittest discover -s tests -p 'test_matter_ai_cli.py' -v
+        run: python -m unittest discover -s tests -p 'test_matter_*.py' -v
       - name: Offline projects command
         run: python tools/matter_ai.py projects
       - name: Shell installer syntax (Linux only)
         if: runner.os == 'Linux'
-        run: bash -n tools/install-matter-ai.sh
+        run: bash -n tools/install-matter-ai.sh tools/setup-sakura.sh
