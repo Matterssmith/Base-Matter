@@ -1,0 +1,40 @@
+name: Matter-Rust multi-platform core contracts
+
+on:
+  push:
+    branches: [feat/matter-rust-multiplatform]
+    paths:
+      - 'crates/matter-rust/**'
+      - '.github/workflows/matter-rust-core-ci.yml'
+  pull_request:
+    paths:
+      - 'crates/matter-rust/**'
+      - '.github/workflows/matter-rust-core-ci.yml'
+permissions:
+  contents: read
+
+jobs:
+  core:
+    name: Core Rust contracts
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Rustfmt independent crate
+        run: cargo fmt --manifest-path crates/matter-rust/Cargo.toml --all -- --check
+      - name: Check native platform registry
+        run: cargo check --manifest-path crates/matter-rust/Cargo.toml --all-targets
+      - name: Offline cross-platform tests
+        run: cargo test --manifest-path crates/matter-rust/Cargo.toml --all-targets
+      - name: Strict Clippy
+        run: cargo clippy --manifest-path crates/matter-rust/Cargo.toml --all-targets -- -D warnings
+      - name: Offline CLI discovery (no credentials)
+        run: cargo run --manifest-path crates/matter-rust/Cargo.toml -- --status
