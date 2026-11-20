@@ -26,6 +26,7 @@ ChatGPT Plus/Pro y API tienen facturación separada; configura controles de gast
 ## Comandos diarios
 
 ```bash
+matter-ai plan
 matter-ai projects
 matter-ai sync matter-rust
 matter-ai sync msel
@@ -34,10 +35,14 @@ matter-ai sync vault
 matter-ai
 ```
 
+El comando `matter-ai plan` imprime el traspaso persistido del ecosistema, que el agente también carga al consultar OpenAI; así basta decir "continúa con Matter-Rust" sin copiar el historial del teléfono. El traspaso es una síntesis de trabajo, no toda la conversación.
+
 En el prompt interactivo escribe, por ejemplo:
 `Revisa AGENTS y README de matter-rust, lista los pendientes y corrige el error de compilación.`
 
-La IA puede consultar workstreams, listar y leer archivos no secretos, editar archivos completos con confirmación humana y correr ciertos comandos Git/Rust/Python. Los clones quedan bajo `~/Matter/workspaces/<workstream>`, uno por tarea, en la rama Git correspondiente. `matter-ai sync all` es opcional: puede consumir varios GB y necesita credenciales GitHub para repos privados.
+La IA puede consultar workstreams, listar y leer archivos no secretos (incluidos README extensos por fragmentos), editar archivos completos con confirmación humana y correr ciertos comandos Git/Rust/Python. Los clones quedan bajo `~/Matter/workspaces/<workstream>`, uno por tarea, en la rama Git correspondiente. `matter-ai sync all` es opcional: puede consumir varios GB y necesita credenciales GitHub para repos privados.
+
+En el chat de terminal, `/auto on` permite aprobar **una vez** la edición de archivos de los workspaces locales; no concede push, borrado de ramas ni privilegios de servidor. `/auto off` lo revoca. Antes de ejecutar tests seguirá solicitando aprobación.
 
 **Limitaciones deliberadas:**
 - No auto-push, auto-merge, reseteos ni borrados masivos. Pide revisión y push manual para cambios GitHub.
@@ -45,7 +50,7 @@ La IA puede consultar workstreams, listar y leer archivos no secretos, editar ar
 - No ejecutar comandos shell arbitrarios ni servicios del sistema como root.
 - `Bot-Matter` permanece bloqueado hasta pasar los gates.
 - Una tarea puede requerir confirmaciones interactivas para archivos, tests y commits; no es ejecución desatendida.
-- No conserva conversaciones de este ChatGPT ni el contexto privado automáticamente: debe leer documentación del repositorio y el plan de trabajo.
+- No conserva conversaciones de este ChatGPT ni su contexto privado automáticamente: carga `~/.local/share/matter-ai/MATTER_AI_HANDOFF.md` y debe verificar documentación vigente en los repositorios.
 
 ## Verificación
 
