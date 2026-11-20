@@ -1,3 +1,11 @@
+## 2026-11-20 — RECUPERACIÓN REAL: `alpha` conectó con su dispositivo previo, sin pairing
+
+- El operador ejecutó `--check` y `--resume-only` con `scripts/whatsapp-alpha-existing.sh` desde servidor `instabox-se`. Se verificaron preflight, snapshot SQLite privado, controlador local y PN/LID cargados. **El proveedor confirmó `WhatsApp session connected. Base-Matter owner control available.`**
+- El mensaje procede de `on_connected` de `whatsapp-rust`, por tanto prueba de sesión WhatsApp activa de `branches/alpha/whatsapp-test/session.db`. No hubo nueva vinculación ni código y no se sustituyó el almacén original `whatsapp-test/session.db`.
+- Pendiente primer comando real del teléfono: `=/>status` en chat propio, después `=/>menu` o `=/>help`. Esperar respuesta y registro `Base-Matter owner control applied`. No reiniciar proveedor conectado para probar; mantener consola.
+- `ALPHA_VAULT=ISOLATED_NOT_ENROLLED` permanece verdadero: el cliente Base `base-wa-test-1` de la sesión original NO sirve para `wa-alpha`. No ejecutar `=/>vault test` sobre alpha; Vault-Matter sigue funcionando para su identidad original en su demonio separado.
+- Conexión lograda NO equivale a validación de comandos, grupos, permisos, UI avanzada ni preparación de Bot-Matter. Mantener todos los demás ámbitos cerrados.
+
 ## 2026-11-20 — Almacenes de la misma cuenta, pero dispositivos diferentes
 
 - Resultado de servidor del comparador `4967663b687b7662b4b993c8ed20fd9fe550fe52`: `SAME_PN=no`, `SAME_LID=no`, `SAME_DEVICE_KEYS=no`, `SAME_ACCOUNT_RECORD=no`; **`SAME_PN_ACCOUNT=yes` y `SAME_LID_ACCOUNT=yes`**. Son dos identidades de dispositivos distintos vinculadas a la misma cuenta de WhatsApp; no copias intercambiables.
