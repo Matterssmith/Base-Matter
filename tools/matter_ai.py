@@ -318,17 +318,19 @@ def relative_path_is_unsafe(value: str) -> bool:
 def write_file(project: str, relative: str, contents: str) -> dict:
     if project == "bot":
         return {"error": "bot_matter_bloqueado"}
-    path = file_path(project, relative)
     if AUTOPILOT_MODE:
-        parts = Path(relative).parts
-        if (path.suffix.lower() not in AUTOPILOT_EDIT_SUFFIXES
+        candidate = Path(relative)
+        parts = candidate.parts
+        if (candidate.suffix.lower() not in AUTOPILOT_EDIT_SUFFIXES
             or any(part in {".github", ".git", ".ssh", "deploy", "migrations",
                             "secrets", "vault", "config", "scripts", "tools", "node_modules",
                             "target", ".venv", "sessions", "session"} for part in parts)
-            or path.name in AUTOPILOT_PROTECTED_FILES
-            or path.name.startswith(".")
+            or candidate.name in AUTOPILOT_PROTECTED_FILES
+            or candidate.name.startswith(".")
             or relative_path_is_unsafe(relative)):
             return {"error": "ruta_excluida_del_modo_autonomo"}
+    path = file_path(project, relative)
+    if AUTOPILOT_MODE:
         if path.exists() and path.stat().st_size > 120000:
             return {"error": "archivo_demasiado_grande_para_autopilot"}
     if len(contents) > 250000:
