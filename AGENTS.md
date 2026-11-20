@@ -1,3 +1,11 @@
+## 2026-11-20 — Matter-AI local con Ollama
+
+- `tools/matter_local.py` conecta exclusivamente al `127.0.0.1:11434` de Ollama por `/api/chat`, usando tools tipadas del agente y `matter-ai backend local`. No precisa OpenAI API key ni comparte ChatGPT Plus con el proceso local.
+- `matter-autopilot` puede ejecutarse sobre un modelo local según disponibilidad de RAM/CPU y sin cobro por llamada; `matter-autopilot doctor` verifica usuario Sakura, Ollama/modelo, disco, sistema y GitHub. No confundir ciclos 24/7 con GPT-6, unlimited hardware ni trabajo probado.
+- Persisten aislamiento `workstreams/*`, protección Vault, Bot-Matter bloqueado, commits locales y push opcional autorizado solo a rama de tarea. La calidad del modelo pequeño limita las tareas autónomas de ingeniería; CI real y revisiones permanecen obligatorias.
+- Guía: `docs/MATTER_AI_OLLAMA_LOCAL.md`. No instalado aún en laptop ni probado con Ollama real.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Matter-Autopilot continuo bajo Sakura
 
 - Objetivo: ejecutar periódicamente la orden `continúa el proyecto matter` mediante `systemd --user` con estado persistente y límite diario de llamadas OpenAI. Guía: `docs/MATTER_AUTOPILOT_UBUNTU.md`.
