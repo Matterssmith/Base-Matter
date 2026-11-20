@@ -81,16 +81,13 @@ class MatterLocalTests(unittest.TestCase):
             report = matter_local.availability()
         self.assertTrue(report["running"])
         self.assertTrue(report["installed"])
-        self.assertTrue(matter_local.available() is False or True)  # No live Ollama required.
+        self.assertEqual(report["installed_count"], 2)
 
-    def test_main_backend_selection_persists(self):
-        with patch.object(matter_ai, "config", return_value={"model": "gpt-6.2-sol"}), \
-             patch.object(matter_ai, "atomic_private_file") as write:
-            result = matter_ai.main if False else None
-            # Select without writing to a real user's configuration directory.
-            # The CLI integration is exercised via source parser in CI.
-            self.assertIsNone(result)
-            self.assertFalse(write.called)
+    def test_local_backend_does_not_require_openai_key(self):
+        with patch.object(matter_ai, "config", return_value={"backend": "local"}), \
+             patch.object(matter_local, "available", return_value=True), \
+             patch.object(matter_ai, "api_key", side_effect=AssertionError("must not read API key")):
+            self.assertTrue(matter_ai.backend_available())
 
 
 if __name__ == "__main__":
