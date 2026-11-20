@@ -119,11 +119,9 @@ pub fn resolve_setup(
 fn safe_capability_name(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 96
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_lowercase()
-                || byte.is_ascii_digit()
-                || b"._-".contains(&byte))
+        && value.bytes().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"._-".contains(&byte)
+        })
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

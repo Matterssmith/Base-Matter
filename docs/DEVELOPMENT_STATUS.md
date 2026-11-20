@@ -1,3 +1,9 @@
+## 2026-11-19 — Corrección de rustfmt del selector y módulos (alpha)
+
+- Error reproducido en CI Linux: únicamente diferencias de formato en src/bot_setup.rs y orden de pub mod en src/lib.rs. Se aplicaron las diferencias exactas del log; no cambia lógica de elección provider/language/system, permisos, Vault ni bot.
+- Windows y el proveedor offline pasaban en el SHA anterior; Linux quedó bloqueado por rustfmt antes de ejecutar otras etapas. CI de nuevo SHA por comprobar; ambos README revisados, beta/stable intactos, Bot-Matter bloqueado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-19 — Frontera de servicio Vault compartida sin claves en consumidores
 
 - Base y Bot tendrán identidades independientes frente a la autoridad Vault. Base público no depende de Bot ni lleva URLs privadas, llaves maestras o source de servicios privados. Ningún bot accede al repo cifrado ni sustituye a Vault como proxy privilegiado.
