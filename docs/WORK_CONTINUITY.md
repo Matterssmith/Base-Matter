@@ -1,3 +1,10 @@
+## 2026-11-20 — Norma permanente del registro web (JS total)
+
+- Matter Register debe ser JavaScript-first. `index.html` solo carga `app.js`; `app.js` crea la estructura HTML visual, estilo CSS, temas y lógica completa. Pedido explícito del propietario; preservar en futuras modificaciones.
+- Vista y flujos de adulto/menor/invitado existen como preview, no como registro real. Backend Vault KYC aún pendiente; no recopilar documentos ni biometría en el código público.
+- Prueba de integridad JS/HTML reforzada en `test/test_register_web.py`; workflow verificará `node --check`. Mantener el PR como draft hasta pruebas.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Mater Register interfaz, transportes y puerta privada
 
 - Trabajo nuevo aislado en `feat/matter-register-web` desde `alpha`, sin desplegar ni modificar binarios/sockets existentes.
