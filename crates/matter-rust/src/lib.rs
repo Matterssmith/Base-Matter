@@ -63,7 +63,10 @@ impl SessionKey {
         if !valid_identifier(&socket_id) || socket_id.contains("..") {
             return Err(EngineError::InvalidIdentifier);
         }
-        Ok(Self { platform, socket_id })
+        Ok(Self {
+            platform,
+            socket_id,
+        })
     }
     pub fn platform(&self) -> Platform {
         self.platform
@@ -198,7 +201,10 @@ impl MatterRust {
     }
 
     pub fn connection_state(&self, session: &SessionKey) -> Result<ConnectionState, EngineError> {
-        let driver = self.drivers.get(session).ok_or(EngineError::DriverUnavailable)?;
+        let driver = self
+            .drivers
+            .get(session)
+            .ok_or(EngineError::DriverUnavailable)?;
         if driver.session() != *session {
             return Err(EngineError::SessionMismatch);
         }
@@ -210,7 +216,10 @@ impl MatterRust {
     /// No privileged commands can execute through this API.
     pub fn observe(&mut self, raw: UntrustedInbound) -> Result<ObservedInbound, EngineError> {
         raw.validate()?;
-        let driver = self.drivers.get(&raw.session).ok_or(EngineError::DriverUnavailable)?;
+        let driver = self
+            .drivers
+            .get(&raw.session)
+            .ok_or(EngineError::DriverUnavailable)?;
         if driver.session() != raw.session {
             return Err(EngineError::SessionMismatch);
         }
@@ -272,7 +281,11 @@ mod tests {
         }
     }
 
-    fn adapter(platform: Platform, socket: &str, state: ConnectionState) -> Arc<dyn PlatformAdapter> {
+    fn adapter(
+        platform: Platform,
+        socket: &str,
+        state: ConnectionState,
+    ) -> Arc<dyn PlatformAdapter> {
         Arc::new(SimulatedAdapter {
             key: SessionKey::new(platform, socket).unwrap(),
             state,
@@ -298,7 +311,9 @@ mod tests {
             (Platform::Telegram, "tg-test"),
             (Platform::Discord, "dc-test"),
         ] {
-            engine.register(adapter(p, socket, ConnectionState::Connected)).unwrap();
+            engine
+                .register(adapter(p, socket, ConnectionState::Connected))
+                .unwrap();
         }
         assert_eq!(engine.registered_sessions(), 3);
         for (p, socket) in [
@@ -320,12 +335,26 @@ mod tests {
     fn rejects_unauthorized_social_transport_and_duplicate_sockets() {
         let mut engine = MatterRust::new();
         assert_eq!(
-            engine.register(adapter(Platform::SocialMatter, "social-1", ConnectionState::Connected)),
+            engine.register(adapter(
+                Platform::SocialMatter,
+                "social-1",
+                ConnectionState::Connected
+            )),
             Err(EngineError::PlatformNotEnabled)
         );
-        engine.register(adapter(Platform::WhatsApp, "wa-1", ConnectionState::Connected)).unwrap();
+        engine
+            .register(adapter(
+                Platform::WhatsApp,
+                "wa-1",
+                ConnectionState::Connected,
+            ))
+            .unwrap();
         assert_eq!(
-            engine.register(adapter(Platform::WhatsApp, "wa-1", ConnectionState::Connected)),
+            engine.register(adapter(
+                Platform::WhatsApp,
+                "wa-1",
+                ConnectionState::Connected
+            )),
             Err(EngineError::DriverAlreadyRegistered)
         );
         assert_eq!(Platform::parse("social-matter"), Ok(Platform::SocialMatter));
@@ -335,32 +364,63 @@ mod tests {
     #[test]
     fn replay_is_scoped_by_platform_and_socket() {
         let mut engine = MatterRust::new();
-        engine.register(adapter(Platform::WhatsApp, "wa-1", ConnectionState::Connected)).unwrap();
-        engine.register(adapter(Platform::WhatsApp, "wa-2", ConnectionState::Connected)).unwrap();
-        engine.observe(event(Platform::WhatsApp, "wa-1", "id-1")).unwrap();
+        engine
+            .register(adapter(
+                Platform::WhatsApp,
+                "wa-1",
+                ConnectionState::Connected,
+            ))
+            .unwrap();
+        engine
+            .register(adapter(
+                Platform::WhatsApp,
+                "wa-2",
+                ConnectionState::Connected,
+            ))
+            .unwrap();
+        engine
+            .observe(event(Platform::WhatsApp, "wa-1", "id-1"))
+            .unwrap();
         assert_eq!(
-            engine.observe(event(Platform::WhatsApp, "wa-1", "id-1")).unwrap_err(),
+            engine
+                .observe(event(Platform::WhatsApp, "wa-1", "id-1"))
+                .unwrap_err(),
             EngineError::ReplayedMessage
         );
-        engine.observe(event(Platform::WhatsApp, "wa-2", "id-1")).unwrap();
+        engine
+            .observe(event(Platform::WhatsApp, "wa-2", "id-1"))
+            .unwrap();
     }
 
     #[test]
     fn invalid_content_and_missing_driver_are_rejected() {
         let mut engine = MatterRust::new();
-        engine.register(adapter(Platform::Telegram, "tg-1", ConnectionState::Offline)).unwrap();
+        engine
+            .register(adapter(
+                Platform::Telegram,
+                "tg-1",
+                ConnectionState::Offline,
+            ))
+            .unwrap();
         assert_eq!(
-            engine.observe(event(Platform::Telegram, "tg-1", "id-1")).unwrap_err(),
+            engine
+                .observe(event(Platform::Telegram, "tg-1", "id-1"))
+                .unwrap_err(),
             EngineError::DriverNotReady
         );
         assert_eq!(
-            engine.observe(event(Platform::Discord, "dc-1", "id-1")).unwrap_err(),
+            engine
+                .observe(event(Platform::Discord, "dc-1", "id-1"))
+                .unwrap_err(),
             EngineError::DriverUnavailable
         );
         assert!(SessionKey::new(Platform::WhatsApp, "../secret").is_err());
         let mut bad = event(Platform::Telegram, "tg-1", "id-1");
         bad.text = "\0".into();
-        assert_eq!(engine.observe(bad).unwrap_err(), EngineError::InvalidContent);
+        assert_eq!(
+            engine.observe(bad).unwrap_err(),
+            EngineError::InvalidContent
+        );
     }
 }
 // Créditos:
