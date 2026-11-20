@@ -1,8 +1,10 @@
-### Enlace público y comando del bot
+### Ejecución web integrada al bot (sin GitHub Pages)
 
-El workflow `.github/workflows/matter-register-pages.yml` intenta publicar solo `index.html` y `app.js` en GitHub Pages. El administrador debe habilitar previamente **Settings → Pages → Build and deployment → Source: GitHub Actions**. Hasta que despliegue y prueba HTTP devuelvan éxito, NO publicar ni configurar la URL en bots.
+El proveedor `whatsapp-rust` arranca el servidor estático embebido junto a la sesión existente, sin crear otro socket de WhatsApp. Alpha escucha en `127.0.0.1:39831` y sirve `index.html` y `app.js` desde su propio binario. No habilita POST ni captura datos. El servicio local continúa activo mientras el proveedor está en ejecución; una falla HTTP no detiene WhatsApp.
 
-Cuando esté publicada y comprobada, el proveedor principal Rust lee `MATTER_REGISTER_PUBLIC_URL` únicamente del entorno confiable. Solo admite el valor exacto `https://matterssmith.github.io/Base-Matter/` — sin parámetros ni fragmentos. Después de un ACK firmado y autorizado para `=/>register` en chat privado, intenta enviar una tarjeta NativeFlow CTA URL y responde también con enlace legible. Sin variable, se mantiene el mensaje informativo original. No abre el navegador sin que el usuario pulse; no registra personas ni concede owner global. El servicio desplegado no se ha actualizado con estos commits.
+Para poder usar `=/>register` como botón público es necesario configurar primero un dominio HTTPS real y un reverse proxy que dirija `/register/` a dicho puerto, y luego exportar `MATTER_REGISTER_PUBLIC_URL` con la URL verificada. Sin dominio no existe enlace público seguro; no reutilizar el antiguo URL de GitHub Pages. Instrucciones y pruebas: [MATTER_REGISTER_BOT_HOST.md](MATTER_REGISTER_BOT_HOST.md).
+
+**Estado:** código en rama de desarrollo; todavía no instalado en `instabox-se`, URL pública HTTPS no confirmada y registro civil deliberadamente deshabilitado. Se mantiene el acceso invitado, no se obtiene rango owner mediante el formulario.
 
 # Matter Register — Pantalla interactiva y transporte multiplataforma
 
