@@ -10,13 +10,14 @@ Se detectó otra omisión: `signed_verified_control` no permitía `=/>vault` par
 
 ## Diagnóstico offline obligatorio (sin contraseñas, JID ni registros)
 
-Sin iniciar el proveedor ni pedir más códigos:
+Sin iniciar el proveedor ni pedir más códigos, desde Base-Matter alpha:
 
 ```bash
-bash /home/Sakura/Base-Matter/scripts/whatsapp-vault-existing.sh --help
+cd /home/Sakura/Base-Matter
+python3 scripts/whatsapp-session-inspect.py
 ```
 
-La comprobación anterior es sólo ejemplo de ruta; el lanzador requiere dos binarios y no debe iniciarse para diagnosticar. En su lugar usar exclusivamente `python3 scripts/whatsapp-session-inspect.py`, que no carga `runtime.env`, no lee contraseñas ni publica datos de SQLite y abre la base en modo lectura. El informe indica tamaño de las bases, integridad y si hay registros de dispositivo sin imprimir su contenido. Es sólo una pista: no demuestra que WhatsApp acepte esas credenciales.
+El inspector no carga `runtime.env`, no lee contraseñas ni publica datos de SQLite y abre la base en modo lectura. El informe indica tamaño de las bases, integridad y si hay registros de dispositivo sin imprimir su contenido. Es sólo una pista: no demuestra que WhatsApp acepte esas credenciales.
 
 Si el almacén original no tiene dispositivo, o la vinculación fue invalidada en el teléfono, se necesitará autorización expresa del propietario y una vinculación por código **una sola vez después de esperar el intervalo que indique WhatsApp**; no recrear bases de datos ni repetir el proceso por adivinanza. Si existen credenciales, diagnosticar la versión/proveedor/conexión o un logout sin borrar contenido.
 

@@ -277,7 +277,10 @@ fn vault_health_is_signed_only_in_verified_owner_self_chat() {
             .expect("Vault health command must reach the authenticated controller");
         assert_eq!(signed.text, command);
         assert_eq!(signed.owner_jid, OWNER);
-        assert_eq!(signed.signature, sign_frame(&signed, &config.bridge_key).unwrap());
+        assert_eq!(
+            signed.signature,
+            sign_frame(&signed, &config.bridge_key).unwrap()
+        );
 
         let mut group = event(command);
         group.is_group = true;
