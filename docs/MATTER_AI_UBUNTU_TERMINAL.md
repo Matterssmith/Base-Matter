@@ -4,6 +4,32 @@
 
 **Uso previsto:** instalar en tu laptop Ubuntu con teclado una sola vez; después hablar desde terminal con `matter-ai` y ordenar trabajos sobre cada repositorio Matter. Se pueden ejecutar órdenes de lectura y editar archivos completos **en clones locales**, con confirmación del operador. No controla remotamente un servidor ni entra a la cuenta ChatGPT del navegador.
 
+## Usuario Ubuntu Sakura y guardado por ramas
+
+[Guía completa de usuario Sakura, checkpoints y promociones Git](MATTER_SAKURA_BRANCH_RECOVERY.md).
+
+Para crear Sakura sin contraseña habilitada (cuenta de contraseña bloqueada, acceso mediante sudo o clave pública SSH), ejecutar una vez como administrador:
+
+```bash
+sudo bash tools/setup-sakura.sh
+sudo -iu Sakura
+```
+
+Opciones: `--password-prompt` para establecer una contraseña de manera oculta; `--authorized-key-file /ruta/clave.pub` para clave pública SSH. No se habilita una contraseña vacía ni sudo sin contraseña. Ya dentro de Sakura, clona esta rama otra vez y ejecuta `bash tools/install-matter-ai.sh` bajo Sakura.
+
+Para conservar avances por proyecto:
+
+```bash
+matter-ai branches base
+matter-ai checkpoint base
+matter-ai save base
+matter-ai promote base alpha
+matter-ai promote base beta
+matter-ai promote base stable
+```
+
+`save` requiere confirmar commit y push a `workstreams/*`. `promote` crea un PR draft hacia una rama existente; nunca fusiona ni escribe directamente en `alpha`, `beta` o `stable`. `checkpoint` sólo guarda metadatos, no los bytes del trabajo. La rama `Bot-Matter` sigue bloqueada.
+
 ## Preparación con el mínimo de escritura manual
 
 En Ubuntu necesitas Python 3 y Git. Con internet puedes introducir estas instrucciones **una sola vez**:
