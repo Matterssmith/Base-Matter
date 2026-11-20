@@ -93,7 +93,9 @@ main() {
     return 1
   fi
   printf '%s\n' 'Controlador Base/Vault iniciado en el socket preexistente; proveedor WhatsApp en primer plano.'
-  "$provider"
+  # Always attempt the existing session first. Do not consume the phone's
+  # pairing-code budget when the database already contains a device record.
+  "$provider" --resume-only
 }
 
 main "$@"

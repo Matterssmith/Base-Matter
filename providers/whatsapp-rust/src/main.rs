@@ -412,8 +412,20 @@ async fn snapshot_community_recovery(
     ))
 }
 
+fn pairing_options(resume_only: bool, phone: String) -> Option<PairCodeOptions> {
+    if resume_only {
+        None
+    } else {
+        Some(PairCodeOptions {
+            phone_number: phone,
+            ..Default::default()
+        })
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    let resume_only = matches!(std::env::args().nth(1).as_deref(), Some("--resume-only"));
     match std::env::args().nth(1).as_deref() {
         Some("--rich-preview-html") => {
             if std::env::args().nth(2).is_some() {
@@ -442,7 +454,7 @@ async fn main() -> Result<()> {
             return Ok(());
         }
         Some("--help") => {
-            println!("WhatsApp-Matter Rust provider: --check, --rich-preview-html, --rich-preview-json (offline research only), --recovery-verify <encrypted-filename>, or run for pairing code. Local Base-Matter IPC; no QR.");
+            println!("WhatsApp-Matter Rust provider: --check, --resume-only (restore stored identity; no pairing-code request), --rich-preview-html, --rich-preview-json, --recovery-verify <encrypted-filename>, or run for pairing code. Local Base-Matter IPC; no QR.");
             return Ok(());
         }
         Some("--check") => {
@@ -479,6 +491,11 @@ async fn main() -> Result<()> {
             );
             return Ok(());
         }
+        Some("--resume-only") => {
+            if std::env::args().nth(2).is_some() {
+                bail!("Resume-only mode accepts no additional arguments");
+            }
+        }
         None => {}
         Some(_) => bail!("Unsupported provider operation"),
     }
@@ -502,14 +519,13 @@ async fn main() -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("Session database path is not Unicode"))?;
     let backend = SqliteStore::new(database).await?;
     let refresh_phone = config.phone.clone();
-    let phone = config.phone.clone();
-    let bot = Bot::builder()
-        .with_backend(backend)
-        .skip_history_sync()
-        .with_pair_code(PairCodeOptions {
-            phone_number: phone,
-            ..Default::default()
-        })
+    let mut builder = Bot::builder().with_backend(backend).skip_history_sync();
+    // Resume-only never starts the pair-code request. The server may still
+    // reject stale session credentials; do not replace the original store.
+    if let Some(options) = pairing_options(resume_only, config.phone.clone()) {
+        builder = builder.with_pair_code(options);
+    }
+    let bot = builder
         // No QR event callback. Upstream may still create an internal QR
         // challenge, but this provider never displays or exports it.
         .on_pair_code(|code, expiry| async move {
@@ -554,6 +570,10 @@ async fn main() -> Result<()> {
         .on_pair_code_refresh(move |_manual, client| {
             let phone = refresh_phone.clone();
             async move {
+                if resume_only {
+                    eprintln!("Resume-only: pairing-code refresh ignored; session data retained.");
+                    return;
+                }
                 if client
                     .pair_with_code(PairCodeOptions {
                         phone_number: phone,
@@ -884,7 +904,11 @@ async fn main() -> Result<()> {
         })
         .build()
         .await?;
-    println!("WhatsApp-Matter Rust session starting. Pairing code only.");
+    if resume_only {
+        println!("WhatsApp-Matter Rust: attempting existing session only; no pairing code requested.");
+    } else {
+        println!("WhatsApp-Matter Rust session starting. Pairing code only.");
+    }
     bot.run().await;
     Ok(())
 }
@@ -892,6 +916,12 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod readiness_tests {
     use super::*;
+
+    #[test]
+    fn resume_only_never_configures_pairing_code_requests() {
+        assert!(pairing_options(true, "5215512345678".to_owned()).is_none());
+        assert!(pairing_options(false, "5215512345678".to_owned()).is_some());
+    }
 
     #[tokio::test]
     async fn controller_must_listen_before_a_whatsapp_session_is_opened() {

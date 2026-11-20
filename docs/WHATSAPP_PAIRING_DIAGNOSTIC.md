@@ -1,3 +1,13 @@
+## 2026-11-20 — Recuperación de wa-test-1 con credenciales existentes (sin solicitar código)
+
+- El operador confirmó `sudo systemctl is-active matter-vault.service` -> `active` y `matter-vault-client self-test` -> `vault_roundtrip_verified revision=2`. Esta **prueba de escritura y lectura cifradas desde el host real** cierra el pendiente IPC; NO certifica conexión WhatsApp.
+- `python3 scripts/whatsapp-session-inspect.py`: `session.db` existe (475136 bytes), integridad SQLite `OK`, 20 tablas y `DEVICE_ROW_EXISTS=yes`. Se conservaron `runtime.env`, `activation.db` y `replay.db`. Las filas no prueban que WhatsApp admita la identidad actual.
+- El mismo operador verificó SHA-256 y coincidencia de SHA `36cf35f5572c505fe48cd4249a64594ff861525a` en los binarios controlador/proveedor descargados de CI. Ningún contenido de sesión fue publicado en GitHub.
+- Según implementación `whatsapp-rust 0.7.0`, `BotBuilder::with_pair_code` comprueba `client.is_logged_in()` antes de pedir código; el rechazo anterior indica que **no estaba autenticado en ese instante**, aunque exista la fila SQLite. Fuente técnica: https://docs.rs/whatsapp-rust/0.7.0/src/whatsapp_rust/bot.rs.html
+- Modo nuevo `whatsapp-matter-rust-provider --resume-only`: conecta exclusivamente con credenciales existentes; no llama a `with_pair_code` ni a `pair_with_code` en refresh; no genera ni presenta códigos. El lanzador seguro `scripts/whatsapp-vault-existing.sh` invoca ahora siempre `--resume-only`.
+- Sólo cuando el cliente imprima `WhatsApp session connected. Base-Matter owner control available.` probar en chat propio `=/>vault` y `=/>vault test`. Si no conecta, detener con Ctrl+C, conservar DB y confirmar el dispositivo en WhatsApp > Dispositivos vinculados. El archivo SQLite no debe eliminarse ni sustituirse.
+- Un emparejamiento nuevo requiere comprobación de teléfono y autorización por separado. Sin autocompletar, sin reintentos y sin QR. Nada de Bot-Matter, roles o otras ramas.
+
 # WhatsApp-Matter Rust: vínculo por código y recuperación del estado real
 
 ## 2026-11-20 — Incidente del servidor instabox-se
