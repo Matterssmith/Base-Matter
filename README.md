@@ -1,3 +1,7 @@
+## 2026-11-20 — CI verde para Matter-Autopilot en Ubuntu y Windows
+
+El workflow de CLI completó sintaxis Python, pruebas offline de límites/guardado por rama, instalador `setup-sakura.sh`, creación del lanzador y validación de servicio systemd en Ubuntu: [run 44829007299](https://github.com/Matterssmith/Base-Matter/actions/runs/44829007299) (Linux y Windows en verde, SHA d1d7092aae). Esta evidencia **no** prueba uso real de API, 24/7 ni ejecución en el servidor del usuario. [Guía](docs/MATTER_AUTOPILOT_UBUNTU.md). Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Matter-Autopilot: continuar desarrollo Matter desde Ubuntu de forma persistente
 
 Servicio de usuario `Sakura` para repetir la orden exacta **«continúa el proyecto matter»** en intervalos configurables, con límites diarios de API, estado privado de recuperación y aislamiento por workstream. El agente modifica código/docs en checkouts limpios, guarda commits **locales** por defecto y permite **opt-in** para push a la misma rama `workstreams/*`. **Nunca hace merge, activación de Bot-Matter ni push directo a alpha/beta/stable**; tampoco ejecuta tests o scripts externos desatendidos. [Instalación y comandos completos](docs/MATTER_AUTOPILOT_UBUNTU.md). Archivos: `tools/matter_autopilot.py`, `tools/matter-autopilot.service`, `tests/test_matter_autopilot.py`. No instalado ni ejecutado en la laptop; el CI offline no valida una clave API ni la ejecución real de 24 horas. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
