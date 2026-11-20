@@ -48,6 +48,7 @@ pub mod services;
 pub mod sessions;
 pub mod users;
 pub mod vault_ai;
+pub mod vault_ipc;
 pub mod whatsapp_bridge;
 pub mod whatsapp_native;
 

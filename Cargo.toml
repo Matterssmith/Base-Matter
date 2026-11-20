@@ -38,3 +38,7 @@ path = "src/bin/base_matter.rs"
 [[bin]]
 name = "matter-bot-init"
 path = "src/bin/bot_init.rs"
+
+[[bin]]
+name = "matter-vault-client"
+path = "src/bin/vault_client.rs"
