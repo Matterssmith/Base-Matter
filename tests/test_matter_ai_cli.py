@@ -31,7 +31,7 @@ class MatterAITests(unittest.TestCase):
                 project = matter.ROOT / "matter-rust"
                 subprocess.run(["git", "init", "-q", "-b", "workstreams/07-matter-rust", str(project)], check=True)
                 (project / "docs").mkdir()
-                self.assertEqual(matter.file_path("matter-rust", "docs/file.md"), project / "docs/file.md")
+                self.assertEqual(matter.file_path("matter-rust", "docs/file.md"), (project / "docs/file.md").resolve())
                 for candidate in ("../private.txt", "/etc/passwd", ".env", ".git/config",
                                   "logs/session/identity.db", ".ssh/id_rsa", "vault/data/private.json"):
                     with self.subTest(candidate=candidate):
