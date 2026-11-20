@@ -34,3 +34,7 @@ path = "src/bin/whatsapp_control.rs"
 [[bin]]
 name = "base-matter"
 path = "src/bin/base_matter.rs"
+
+[[bin]]
+name = "matter-bot-init"
+path = "src/bin/bot_init.rs"

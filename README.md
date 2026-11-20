@@ -1,3 +1,11 @@
+## 2026-11-19 — Selector público neutral para crear bots (alpha)
+
+- Se añadió `src/bot_setup.rs`: contrato de selección `provider/language/system` con defaults virtuales `default/rust/host`. El núcleo NO lleva URLs, rutas ni dependencias hacia implementaciones privadas; proveedor real y permisos los resuelve un catálogo autenticado del host. Sin catálogo se deniega.
+- Se añadió `matter-bot-init` como CLI **offline de solo descriptor JSON**; no genera runtime, no concede credenciales y no importa fuentes privadas. Guía: `docs/BOT_SETUP.md`.
+- WhatsApp-Matter ya tiene extracción separada del proveedor Rust; no se realizó corte de sesiones ni borrado del proveedor que hoy utiliza el lanzador de Base. El gateway privado no existe aún. Bot-Matter continúa bloqueado.
+- Revisar `cargo fmt --all -- --check`, `cargo check --all-targets --locked`, `cargo test --all-targets --locked`, CI Linux/Windows y proveedor tras este commit. README raíz y del proveedor actualizados, sin modificación beta/stable.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-19 — Corrección de rustfmt en puente privado (alpha)
 
 - El CI Rust de SHA 5d0897cd8c71a895d5e7dc76777494e2ce7ffceb falló exclusivamente en etapa inicial rustfmt del puente `src/capabilities/mod.rs` y las pruebas `tests/private_capability_bridge.rs`; Windows y proveedor independiente estaban verdes. Se aplican únicamente las diferencias exactas del registro GitHub Actions, sin cambiar funcionalidad, reglas, autorización ni secretos.

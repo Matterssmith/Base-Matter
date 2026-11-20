@@ -18,6 +18,7 @@ pub mod anti;
 pub mod anti_guard;
 pub mod authorization;
 pub mod bots;
+pub mod bot_setup;
 pub mod capabilities;
 pub mod command_audit;
 pub mod commands;
