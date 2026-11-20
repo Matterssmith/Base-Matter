@@ -22,6 +22,9 @@ fi
 
 install -d -m 0700 -- "$target_dir" "$binary_dir"
 install -m 0700 -- "$source_agent" "$target_agent"
+if [ -f "$source_dir/matter_local.py" ]; then
+    install -m 0700 -- "$source_dir/matter_local.py" "$target_dir/matter_local.py"
+fi
 if [ -f "$source_dir/matter_branches.py" ]; then
     install -m 0700 -- "$source_dir/matter_branches.py" "$target_dir/matter_branches.py"
 fi
@@ -65,3 +68,11 @@ printf '%s\n' '  ~/.local/bin/matter-autopilot configure  # límites de API y pr
 printf '%s\n' '  ~/.local/bin/matter-autopilot start      # solicita autorización para trabajar'
 printf '%s\n' '  ~/.local/bin/matter-autopilot status / stop'
 printf '%s\n' 'Servicio systemd de usuario instalado, pero NO activado automáticamente.'
+
+printf '%s\n' 'Modo local sin coste por llamada:'
+printf '%s\n' '  Instala Ollama desde https://docs.ollama.com/linux'
+printf '%s\n' '  ollama pull qwen3:0.6b'
+printf '%s\n' '  ~/.local/bin/matter-ai backend local'
+printf '%s\n' '  ~/.local/bin/matter-ai'
+printf '%s\n' '  ~/.local/bin/matter-autopilot doctor'
+printf '%s\n' 'Ollama local NO es GPT-6; en equipos de 4 GB se recomienda comenzar con qwen3:0.6b.'
