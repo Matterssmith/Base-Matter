@@ -36,7 +36,7 @@ Futura plataforma social independiente y privada; API y modelo de usuario, permi
 Conectores separados en Rust (Bot API, Gateway/HTTP), límites propios de APIs oficiales, eventos normalizados y vinculación de cuentas vía Vault. No almacenar tokens en repos ni prometer conexión real sin pruebas.
 
 ### Todo el ecosistema — workstreams/01-orchestration (Server-Matter)
-Matriz `config/ecosystem-workstreams.json` y ramas `workstreams/01-orchestration` ... `workstreams/27-bot`. 27 líneas en 22 repos, ramas ya creadas. `docs/ORDERED_WORKSTREAM_BRANCHES.md` y `scripts/verify_workstream_branches.py` documentan orden. Trabajar en ramas correspondientes, CI y PR draft, sin push automático. Auditar primero SHA real de GitHub.
+Matriz `config/ecosystem-workstreams.json` y ramas `workstreams/01-orchestration` ... `workstreams/27-bot`. 27 líneas en 22 repos, ramas ya creadas. `docs/ORDERED_WORKSTREAM_BRANCHES.md` y `scripts/verify_workstream_branches.py` documentan orden. Trabajar en ramas correspondientes, CI y PR draft, sin push automático. El agente puede publicar exclusivamente mediante `publish_workstream` si el operador confirma la lista exacta de archivos y rama. Auditar primero SHA real de GitHub.
 
 ## Protocolo de trabajo del agente
 
@@ -46,7 +46,7 @@ Matriz `config/ecosystem-workstreams.json` y ramas `workstreams/01-orchestration
 4. Ejecuta pruebas y describe resultados reales. Si una herramienta no autoriza cambios, no afirmes que se ejecutaron.
 5. Mantén estado y siguiente paso en la documentación; no incluyas secretos.
 6. Responde siempre: resumen, archivos, pruebas, pendientes reales, siguiente etapa.
-7. Sin aprobación del operador, **no reiniciar servicios, modificar sesiones, hacer push/merge, alterar Vault ni ejecutar comandos arbitrarios**.
+7. Sin aprobación del operador, **no reiniciar servicios, modificar sesiones, hacer push, alterar Vault ni ejecutar comandos arbitrarios**. Aunque haya aprobación, no usar merge automático ni push a ramas protegidas.
 
 **Nota:** Los repositorios privados requieren autenticación GitHub ya establecida en Ubuntu. Esta aplicación solo posee herramientas locales; los pasos que requieran operaciones no disponibles deberán explicarse y no simularse.
 
