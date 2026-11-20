@@ -5,6 +5,7 @@ on:
     paths:
       - 'web/matter-register/**'
       - 'providers/baileys-compat/**'
+      - 'providers/whatsapp-go-compat/**'
       - 'test/test_register_web.py'
       - '.github/workflows/register-preview-ci.yml'
   pull_request:
@@ -25,13 +26,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
       - name: Static HTML/contract regression
         run: python3 -m unittest discover -s test -p 'test_register_web.py' -v
       - name: Baileys transport unit tests (offline)
         run: node --test providers/baileys-compat/register-card.test.mjs
+      - name: Go NativeFlow builder unit tests (offline)
+        run: GO111MODULE=off go test ./providers/whatsapp-go-compat
       - name: No sensitive data should be committed
         run: |
-          if grep -R -n -E 'gh[pousr]_[A-Za-z0-9]{25,}|-----BEGIN (PRIVATE|OPENSSH) KEY-----' web/matter-register providers/baileys-compat; then
+          if grep -R -n -E 'gh[pousr]_[A-Za-z0-9]{25,}|-----BEGIN (PRIVATE|OPENSSH) KEY-----' web/matter-register providers/baileys-compat providers/whatsapp-go-compat; then
             echo 'Potential credential found'
             false
           fi
