@@ -5,9 +5,9 @@
  */
 use anyhow::{anyhow, bail, Result};
 use matter_base::vault_ipc::VaultClient;
-use std::{env, fs, path::Path};
 #[cfg(unix)]
 use std::io::Write;
+use std::{env, fs, path::Path};
 use zeroize::Zeroizing;
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
