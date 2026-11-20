@@ -28,6 +28,61 @@ FROM main.device AS a CROSS JOIN candidate.device AS b
 WHERE a.id = 1 AND b.id = 1
 """
 
+# Compare the account portion of PN / LID without reading the raw JIDs into
+# Python. WhatsApp JIDs use user[:device]@s.whatsapp.net and
+# user[:device]@lid; legacy PN may use user.device@s.whatsapp.net.
+# The LID username itself may contain dots, so only strip ':device' for LID.
+# Any unexpected domain or malformed user means unknown, not a mismatch.
+ACCOUNT_SCOPE_COMPARE = """
+WITH full_jids AS (
+    SELECT a.pn AS a_pn, b.pn AS b_pn, a.lid AS a_lid, b.lid AS b_lid
+    FROM main.device AS a CROSS JOIN candidate.device AS b
+    WHERE a.id=1 AND b.id=1
+),
+parts AS (
+    SELECT
+        CASE WHEN a_pn GLOB '*@s.whatsapp.net'
+             THEN substr(a_pn, 1, instr(a_pn,'@') - 1) END AS a_pn_part,
+        CASE WHEN b_pn GLOB '*@s.whatsapp.net'
+             THEN substr(b_pn, 1, instr(b_pn,'@') - 1) END AS b_pn_part,
+        CASE WHEN a_lid GLOB '*@lid'
+             THEN substr(a_lid, 1, instr(a_lid,'@') - 1) END AS a_lid_part,
+        CASE WHEN b_lid GLOB '*@lid'
+             THEN substr(b_lid, 1, instr(b_lid,'@') - 1) END AS b_lid_part
+    FROM full_jids
+),
+users AS (
+    SELECT
+      CASE WHEN instr(a_pn_part,':')>0
+           THEN substr(a_pn_part,1,instr(a_pn_part,':')-1)
+           WHEN instr(a_pn_part,'.')>0
+           THEN substr(a_pn_part,1,instr(a_pn_part,'.')-1)
+           ELSE a_pn_part END AS a_pn_user,
+      CASE WHEN instr(b_pn_part,':')>0
+           THEN substr(b_pn_part,1,instr(b_pn_part,':')-1)
+           WHEN instr(b_pn_part,'.')>0
+           THEN substr(b_pn_part,1,instr(b_pn_part,'.')-1)
+           ELSE b_pn_part END AS b_pn_user,
+      CASE WHEN instr(a_lid_part,':')>0
+           THEN substr(a_lid_part,1,instr(a_lid_part,':')-1)
+           ELSE a_lid_part END AS a_lid_user,
+      CASE WHEN instr(b_lid_part,':')>0
+           THEN substr(b_lid_part,1,instr(b_lid_part,':')-1)
+           ELSE b_lid_part END AS b_lid_user
+    FROM parts
+)
+SELECT
+  CASE WHEN length(a_pn_user) BETWEEN 8 AND 20
+             AND length(b_pn_user) BETWEEN 8 AND 20
+             AND a_pn_user NOT GLOB '*[^0-9]*'
+             AND b_pn_user NOT GLOB '*[^0-9]*'
+       THEN a_pn_user=b_pn_user END,
+  CASE WHEN a_lid_user IS NOT NULL AND a_lid_user <> ''
+             AND b_lid_user IS NOT NULL AND b_lid_user <> ''
+       THEN a_lid_user=b_lid_user END
+FROM users
+"""
+
 
 def ensure_regular(path):
     # Never follow a symlink to an unrelated credential store.
@@ -81,6 +136,7 @@ def compare_stores(original, alpha):
         db.execute("ATTACH DATABASE ? AS candidate", (alpha.as_uri() + "?mode=ro",))
         try:
             flags = db.execute(COMPARE).fetchone()
+            account_flags = db.execute(ACCOUNT_SCOPE_COMPARE).fetchone()
         finally:
             db.execute("DETACH DATABASE candidate")
     if flags is None:
@@ -93,6 +149,12 @@ def compare_stores(original, alpha):
             "SAME_ACCOUNT_RECORD": bool(flags[3]),
         })
         result["COMPARISON"] = "complete"
+        for label, flag in zip(
+            ("SAME_PN_ACCOUNT", "SAME_LID_ACCOUNT"), account_flags
+        ):
+            result[label] = "unknown" if flag is None else (
+                "yes" if flag else "no"
+            )
     return result
 
 

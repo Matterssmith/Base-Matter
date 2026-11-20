@@ -57,6 +57,37 @@ class CompareStoresTest(unittest.TestCase):
         self.assertTrue(result["SAME_LID"])
         self.assertFalse(result["SAME_DEVICE_KEYS"])
 
+    def test_different_devices_can_belong_to_same_account(self):
+        make_db(
+            self.original,
+            pn="5215551234567:1@s.whatsapp.net",
+            lid="private.user:1@lid",
+        )
+        make_db(
+            self.alpha,
+            pn="5215551234567:2@s.whatsapp.net",
+            lid="private.user:2@lid",
+            key=b"other-secret",
+        )
+        result = MODULE.compare_stores(self.original, self.alpha)
+        self.assertFalse(result["SAME_PN"])
+        self.assertFalse(result["SAME_LID"])
+        self.assertFalse(result["SAME_DEVICE_KEYS"])
+        self.assertEqual(result["SAME_PN_ACCOUNT"], "yes")
+        self.assertEqual(result["SAME_LID_ACCOUNT"], "yes")
+
+    def test_different_phone_accounts(self):
+        make_db(self.original, pn="5215551234567:1@s.whatsapp.net")
+        make_db(self.alpha, pn="5215559876543:2@s.whatsapp.net")
+        result = MODULE.compare_stores(self.original, self.alpha)
+        self.assertEqual(result["SAME_PN_ACCOUNT"], "no")
+
+    def test_unrecognized_jid_format_is_unknown(self):
+        make_db(self.original, pn="unexpected-jid-format")
+        make_db(self.alpha, pn="unexpected-jid-format")
+        result = MODULE.compare_stores(self.original, self.alpha)
+        self.assertEqual(result["SAME_PN_ACCOUNT"], "unknown")
+
     def test_distinct_phone_is_not_interchangeable(self):
         make_db(self.original)
         make_db(self.alpha, pn="different-phone", lid="different-lid")

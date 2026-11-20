@@ -1,3 +1,10 @@
+## 2026-11-20 — Resultado: dos identidades criptográficas distintas, cuenta telefónica pendiente
+
+- El operador ejecutó `scripts/whatsapp-stores-compare.py` tras sincronizar `alpha`: ambos almacenes `device.id=1` existen. Resultado `SAME_PN=no`, `SAME_LID=no`, `SAME_DEVICE_KEYS=no`, `SAME_ACCOUNT_RECORD=no`, `COMPARISON=complete`. El `whatsapp-test/session.db` original sigue sin autenticarse; el `branches/alpha/whatsapp-test/session.db` NO se ha probado de nuevo.
+- **No concluir que son cuentas telefónicas distintas**: el JID de WhatsApp contiene un sufijo de dispositivo `:n` o `.n`; dos dispositivos vinculados a una cuenta pueden compartir el usuario PN/LID base, pero no los identificadores completos ni sus claves. El código de `whatsapp-rust v0.7.0` en `wacore/binary/src/jid.rs` confirma esta estructura.
+- Se amplió el comparador offline, manteniendo `mode=ro`, para devolver `SAME_PN_ACCOUNT` y `SAME_LID_ACCOUNT` como `yes/no/unknown` usando operaciones SQL sobre sufijos, **sin imprimir ni materializar el número/JID** en el proceso Python. Se diferencia un formato desconocido de una discrepancia real. Tests con cuentas distintas, múltiples dispositivos y formatos desconocidos.
+- Próximo paso: ejecutar `python3 scripts/whatsapp-stores-compare.py` nuevamente tras `git pull --ff-only origin alpha`. No mezclar bases ni ejecutar dos proveedores; tampoco solicitar códigos o cambiar configuración Vault. La UI del teléfono aún mostraba un dispositivo vinculado; falta asociarlo a uno de los dos almacenes.
+
 ## 2026-11-20 — Se encontró un segundo almacén independiente, NO un respaldo confirmado
 
 - Salida de `find` del operador en `instabox-se`: `/home/Sakura/.local/share/base-matter/branches/alpha/whatsapp-test/session.db` (630784 bytes, modificado 2026-11-19 21:08 según timestamp de host), y `/home/Sakura/.local/share/base-matter/whatsapp-test/session.db` (475136 bytes, modificado 2026-11-20 03:30). El origen de las sesiones, dueño de socket y vigencia de la copia de alpha son DESCONOCIDOS.
