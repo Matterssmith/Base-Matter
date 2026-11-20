@@ -41,3 +41,27 @@ jobs:
         run: cargo clippy --manifest-path providers/whatsapp-rust/Cargo.toml --all-targets -- -D warnings
       - name: CLI help without live connection
         run: cargo run --manifest-path providers/whatsapp-rust/Cargo.toml -- --help
+
+      - name: Build verified alpha WhatsApp Rust provider
+        if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
+        run: cargo build --manifest-path providers/whatsapp-rust/Cargo.toml
+
+      - name: Package verified alpha provider (no sessions or secrets)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
+        shell: bash
+        run: |
+          mkdir -p dist-provider
+          install -m 0755 providers/whatsapp-rust/target/debug/whatsapp-matter-rust-provider dist-provider/whatsapp-matter-rust-provider
+          strip --strip-debug dist-provider/whatsapp-matter-rust-provider
+          (cd dist-provider && sha256sum whatsapp-matter-rust-provider > SHA256SUMS)
+          printf 'BASE_SHA=%s\n' "$GITHUB_SHA" > dist-provider/BUILD_INFO
+          printf 'TARGET=x86_64-unknown-linux-gnu\n' >> dist-provider/BUILD_INFO
+
+      - name: Publish verified provider artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
+        uses: actions/upload-artifact@v4
+        with:
+          name: base-alpha-provider-linux-x86_64-${{ github.sha }}
+          path: dist-provider/
+          if-no-files-found: error
+          retention-days: 7

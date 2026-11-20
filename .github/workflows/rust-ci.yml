@@ -100,3 +100,27 @@ jobs:
 
       - name: Verify strict Clippy on Windows
         run: cargo clippy --all-targets --locked -- -D warnings
+
+      - name: Build verified alpha controller binary
+        if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
+        run: cargo build --locked --bin whatsapp-matter-control
+
+      - name: Package verified alpha controller (no secrets)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
+        shell: bash
+        run: |
+          mkdir -p dist-controller
+          install -m 0755 target/debug/whatsapp-matter-control dist-controller/whatsapp-matter-control
+          strip --strip-debug dist-controller/whatsapp-matter-control
+          (cd dist-controller && sha256sum whatsapp-matter-control > SHA256SUMS)
+          printf 'BASE_SHA=%s\n' "$GITHUB_SHA" > dist-controller/BUILD_INFO
+          printf 'TARGET=x86_64-unknown-linux-gnu\n' >> dist-controller/BUILD_INFO
+
+      - name: Publish verified controller artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
+        uses: actions/upload-artifact@v4
+        with:
+          name: base-alpha-control-linux-x86_64-${{ github.sha }}
+          path: dist-controller/
+          if-no-files-found: error
+          retention-days: 7
