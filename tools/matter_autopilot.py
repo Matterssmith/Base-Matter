@@ -283,6 +283,7 @@ def run_cycle(settings: dict, st: dict) -> dict:
     # Persist budget BEFORE API request; crash never resets the spent-turn count.
     atomic_json(STATE_FILE, st)
     matter_ai.AUTOPILOT_MODE = True
+    matter_ai.AUTOPILOT_PROJECT = project
     matter_ai.AUTO_LOCAL_EDITS = True
     matter_ai.LOCAL_EDITS.clear()
     matter_ai.MAX_ACTIONS = settings["max_api_calls_per_cycle"]
@@ -313,6 +314,7 @@ def run_cycle(settings: dict, st: dict) -> dict:
     finally:
         matter_ai.AUTO_LOCAL_EDITS = False
         matter_ai.AUTOPILOT_MODE = False
+        matter_ai.AUTOPILOT_PROJECT = None
         matter_ai.LOCAL_EDITS.clear()
 
 
@@ -470,7 +472,7 @@ def status() -> int:
     return 0
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Matter AI — auto-reanudación bajo Sakura")
     subs = parser.add_subparsers(dest="command", required=True)
     opt = subs.add_parser("configure", help="Configure iteration budget and project scope")
@@ -484,7 +486,7 @@ def main() -> int:
     opt.set_defaults(push=None)
     for command in ("start", "stop", "status", "once", "preview", "run"):
         subs.add_parser(command)
-    arguments = parser.parse_args()
+    arguments = parser.parse_args(argv)
     try:
         if arguments.command == "configure":
             return configure(arguments)
