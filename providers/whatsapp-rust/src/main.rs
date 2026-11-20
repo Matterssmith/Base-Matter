@@ -24,6 +24,7 @@ use whatsapp_matter_rust_provider::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
     render_provider_control,
+    register_web::{registration_preview_card, trusted_preview_url},
     rich_transport::experimental_self_chat_rich_message,
     ui::{
         legacy_row_probe_message, menu_lab_card, native_menu_lab_card, native_navigation_message,
@@ -902,6 +903,30 @@ async fn main() -> Result<()> {
                                     }
                                 }
                             };
+                            // A registration preview is public content; only the
+                            // authenticated =/>register route may attach its URL.
+                            // This cannot create accounts, collect documents or
+                            // grant any role. The operator must explicitly
+                            // configure the exact allowlisted live HTTPS URL.
+                            let preview_url = if actual_command == "=/>register" && !data.is_group {
+                                std::env::var("MATTER_REGISTER_PUBLIC_URL")
+                                    .ok()
+                                    .and_then(|candidate| trusted_preview_url(&candidate).ok())
+                            } else {
+                                None
+                            };
+                            let response = if let Some(url) = preview_url {
+                                format!("{response}\n\n✦ Vista previa Matter Register: {url}\nEl registro real sigue bloqueado hasta validar Vault.")
+                            } else {
+                                response
+                            };
+                            if let Some(url) = preview_url {
+                                if let Ok(card) = registration_preview_card(url) {
+                                    if ctx.send_message(card).await.is_err() {
+                                        eprintln!("Base-Matter: register CTA card not accepted; sending URL text");
+                                    }
+                                }
+                            }
                             if actual_command == "=/>test ui"
                                 && native_buttons
                             {
