@@ -522,8 +522,34 @@ async fn main() -> Result<()> {
                 eprintln!("Provider returned an invalid pairing code");
             }
         })
-        .on_pair_code_error(|_error, _client| async move {
-            eprintln!("Pairing code request failed or was rate limited");
+        .on_pair_code_error(|failure, _client| async move {
+            // Never dump raw provider errors: they may contain account identifiers.
+            // A rejected code is NOT proof of throttling unless the server says so.
+            use whatsapp_rust::pair_code::PairCodeRejection;
+            match failure.rejection {
+                Some(PairCodeRejection::BadRequest | PairCodeRejection::RateOverlimit) => {
+                    if let Some(wait) = failure.backoff {
+                        eprintln!(
+                            "Pairing code rejected: possible rate limit; server backoff={}s. Stop retrying.",
+                            wait.as_secs()
+                        );
+                    } else {
+                        eprintln!("Pairing code rejected: possible rate limit. Stop retrying.");
+                    }
+                }
+                Some(PairCodeRejection::FeatureNotAvailable) => {
+                    eprintln!("Phone pairing is not available for this account.");
+                }
+                Some(PairCodeRejection::Forbidden) => {
+                    eprintln!("Pairing code forbidden by the server. Do not retry.");
+                }
+                Some(_) => {
+                    eprintln!("Pairing code rejected by the server; reason classified as other.");
+                }
+                None => {
+                    eprintln!("Pairing code failed without a classified server rejection; check connection and existing session before retrying.");
+                }
+            }
         })
         .on_pair_code_refresh(move |_manual, client| {
             let phone = refresh_phone.clone();

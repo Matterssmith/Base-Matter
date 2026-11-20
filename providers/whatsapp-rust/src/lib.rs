@@ -240,6 +240,7 @@ impl Config {
                     | "=/>role"
                     | "=/>roles"
                     | "=/>audit"
+                    | "=/>vault"
                     | "=/>matter"
                     | "=/>test"
                     | "=/>register"

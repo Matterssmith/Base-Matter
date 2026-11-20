@@ -267,6 +267,44 @@ fn verified_owner_group_controls_are_signed_for_exact_group_jid() {
 }
 
 #[test]
+fn vault_health_is_signed_only_in_verified_owner_self_chat() {
+    let (vars, root) = fixture();
+    let config = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
+    for command in ["=/>vault", "=/>vault status", "=/>vault test"] {
+        let signed = config
+            .signed_verified_control(&event(command), Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .expect("Vault health command must reach the authenticated controller");
+        assert_eq!(signed.text, command);
+        assert_eq!(signed.owner_jid, OWNER);
+        assert_eq!(signed.signature, sign_frame(&signed, &config.bridge_key).unwrap());
+
+        let mut group = event(command);
+        group.is_group = true;
+        group.chat_jid = "120363123456789@g.us";
+        assert!(config
+            .signed_verified_control(&group, Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .is_none());
+
+        let mut outsider = event(command);
+        outsider.from_me = false;
+        assert!(config
+            .signed_verified_control(&outsider, Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .is_none());
+
+        outsider.from_me = true;
+        outsider.chat_jid = "stranger@s.whatsapp.net";
+        assert!(config
+            .signed_verified_control(&outsider, Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .is_none());
+    }
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn verified_private_owner_chat_does_not_sign_group_only_commands() {
     let (vars, root) = fixture();
     let c = Config::from_reader(|name| vars.get(name).cloned()).unwrap();
