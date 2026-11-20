@@ -5,7 +5,13 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use anyhow::{bail, Result};
-use std::{collections::HashSet, sync::Arc};
+use std::{
+    collections::HashSet,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
@@ -519,6 +525,8 @@ async fn main() -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("Session database path is not Unicode"))?;
     let backend = SqliteStore::new(database).await?;
     let refresh_phone = config.phone.clone();
+    let connected_once = Arc::new(AtomicBool::new(false));
+    let connected_flag = Arc::clone(&connected_once);
     let mut builder = Bot::builder().with_backend(backend).skip_history_sync();
     // Resume-only never starts the pair-code request. The server may still
     // reject stale session credentials; do not replace the original store.
@@ -586,8 +594,15 @@ async fn main() -> Result<()> {
                 }
             }
         })
-        .on_connected(|_client| async move {
-            println!("WhatsApp session connected. Base-Matter owner control available.");
+        .on_connected(move |_client| {
+            let observed = Arc::clone(&connected_flag);
+            async move {
+                observed.store(true, Ordering::Relaxed);
+                println!("WhatsApp session connected. Base-Matter owner control available.");
+            }
+        })
+        .on_logged_out(|_info| async move {
+            eprintln!("WhatsApp-Matter: linked device was logged out. Check linked devices on the phone; do not delete the local database.");
         })
         .on_message(move |ctx| {
             let config = Arc::clone(&config);
@@ -912,6 +927,12 @@ async fn main() -> Result<()> {
         println!("WhatsApp-Matter Rust session starting. Pairing code only.");
     }
     bot.run().await;
+    if resume_only {
+        if connected_once.load(Ordering::Relaxed) {
+            bail!("Resume-only: WhatsApp disconnected after authentication. No pairing was requested.");
+        }
+        bail!("Resume-only: WhatsApp stopped before authentication. Inspect the device identity locally and check phone linked devices. No pairing was requested.");
+    }
     Ok(())
 }
 

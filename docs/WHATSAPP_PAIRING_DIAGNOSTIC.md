@@ -1,3 +1,12 @@
+## 2026-11-20 — Inspección corregida del esquema SQLite v0.7.0 y cierre de reconexión
+
+- **Evidencia final del servidor**: el operador verificó ambos binarios SHA `6fc993b7f335f62dae8c84d91109e929a502a332`; `scripts/whatsapp-vault-existing.sh` pasó checks, inició el controlador y ejecutó `--resume-only`; el proceso volvió inmediatamente al shell sin disparar `on_connected`. No hubo emparejamiento ni autenticación de WhatsApp.
+- La inspección anterior `DEVICE_ROW_EXISTS=yes` usaba preferentemente `devices` (plural); en `whatsapp-rust 0.7.0` el registro auténtico del `SqliteStore` está en `device` (singular) con `pn`, `lid`, `account` y material de claves. **La comprobación anterior NO prueba que el almacén tenga credenciales de una identidad vinculada**. Fuente: `oxidezap/whatsapp-rust` etiqueta `v0.7.0`, ruta `storages/sqlite-storage/migrations/2025-08-14-035031_initial/up.sql`.
+- El inspector ahora consulta exclusivamente `device` para comprobar existencia y devuelve solo banderas `DEVICE_HAS_PN`, `DEVICE_HAS_LID`, `DEVICE_HAS_ACCOUNT`, `DEVICE_HAS_KEY_MATERIAL` y `SESSION_AUTHENTICATED=not_determined_offline`. Ninguna consulta extrae valores sensibles.
+- El proveedor ahora comunica cuando `--resume-only` termina antes de autenticación, y distingue terminación tras autenticación; `on_logged_out` informa desconexión de dispositivo sin JID ni secretos. No agrega reintentos de pairing.
+- **Antes de otro arranque**, ejecutar únicamente `python3 scripts/whatsapp-session-inspect.py` y revisar WhatsApp → Dispositivos vinculados. Los valores `no` no autorizan borrar DB. Si `account=no` junto con `pn=no` y `lid=no`, no hay prueba de identidad emparejada en el dispositivo predeterminado. Si todas indican `yes`, puede existir credencial histórica revocada o error de red; el servidor sigue siendo la autoridad de vínculo.
+- No modificar `runtime.env`, `session.db*` ni datos de Vault. Sin CI verde de este commit no sustituir binarios instalados. No repetir emparejamiento a ciegas.
+
 ## 2026-11-20 — Recuperación de wa-test-1 con credenciales existentes (sin solicitar código)
 
 - El operador confirmó `sudo systemctl is-active matter-vault.service` -> `active` y `matter-vault-client self-test` -> `vault_roundtrip_verified revision=2`. Esta **prueba de escritura y lectura cifradas desde el host real** cierra el pendiente IPC; NO certifica conexión WhatsApp.

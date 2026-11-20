@@ -69,6 +69,9 @@ jobs:
       - name: Check WhatsApp operator setup script syntax
         run: bash -n scripts/whatsapp-test-setup.sh
 
+      - name: Test read-only WhatsApp session inspector
+        run: python3 -m unittest discover -s test -p "test_whatsapp_session_inspect.py" -v
+
       - name: Verify whitespace
         run: git diff --check HEAD^ HEAD
 

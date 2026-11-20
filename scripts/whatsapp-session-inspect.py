@@ -14,6 +14,46 @@ ROOT = Path.home() / ".local/share/base-matter/whatsapp-test"
 FILES = ("session.db", "session.db-wal", "session.db-shm",
          "activation.db", "replay.db", "runtime.env")
 
+def probe_device_identity(connection, tables):
+    """Return presence flags only. Never select or return secret values."""
+    if "device" not in tables:
+        return {"DEVICE_ROW_EXISTS": "unknown_schema"}
+    count = connection.execute('SELECT count(*) FROM "device"').fetchone()[0]
+    flags = {"DEVICE_ROW_EXISTS": "yes" if count > 0 else "no"}
+    if not count:
+        return flags
+    columns = {
+        row[1].lower()
+        for row in connection.execute('PRAGMA table_info("device")')
+    }
+    required = {"pn", "lid", "account", "noise_key", "identity_key", "adv_secret_key"}
+    if not required.issubset(columns):
+        flags["DEVICE_SCHEMA"] = "unknown_version"
+        return flags
+    # Boolean aggregation, not sensitive field retrieval. No phone number,
+    # JID, key or account blob is ever materialized in Python.
+    row = connection.execute(
+        """SELECT
+           max(CASE WHEN pn <> '' THEN 1 ELSE 0 END),
+           max(CASE WHEN lid <> '' THEN 1 ELSE 0 END),
+           max(CASE WHEN account IS NOT NULL AND length(account) > 0
+                    THEN 1 ELSE 0 END),
+           max(CASE WHEN length(noise_key) > 0
+                    AND length(identity_key) > 0
+                    AND length(adv_secret_key) > 0
+                    THEN 1 ELSE 0 END)
+           FROM device"""
+    ).fetchone()
+    for label, present in zip(
+        ("DEVICE_HAS_PN", "DEVICE_HAS_LID", "DEVICE_HAS_ACCOUNT",
+         "DEVICE_HAS_KEY_MATERIAL"),
+        row,
+    ):
+        flags[label] = "yes" if present else "no"
+    flags["SESSION_AUTHENTICATED"] = "not_determined_offline"
+    return flags
+
+
 def main():
     print("WhatsApp original state (metadata only; never prints credentials)")
     if ROOT.is_symlink() or not ROOT.is_dir():
@@ -56,17 +96,12 @@ def main():
                 )
             }
             print("SQLITE_TABLES=" + str(len(tables)))
-            # Known SQLite-store schemas use a dedicated device table.
-            # All identifiers here are fixed trusted literals, never SQL input.
-            for candidate in ("devices", "device"):
-                if candidate in tables:
-                    count = connection.execute(
-                        'SELECT count(*) FROM "' + candidate + '"'
-                    ).fetchone()[0]
-                    print("DEVICE_ROW_EXISTS=" + ("yes" if count > 0 else "no"))
-                    break
-            else:
-                print("DEVICE_ROW_EXISTS=unknown_schema")
+            # whatsapp-rust 0.7.0 persists the actual device identity in
+            # the singular table "device". A plural "devices" table must not
+            # be treated as proof that the linked identity is present.
+            flags = probe_device_identity(connection, tables)
+            for label, value in flags.items():
+                print(label + "=" + value)
         finally:
             connection.close()
     except (sqlite3.Error, OSError) as err:
