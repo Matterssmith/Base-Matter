@@ -1,3 +1,18 @@
+## Corrección de la creación manual de Sakura
+
+Para obtener el usuario Linux exacto `Sakura` (con mayúscula) y permisos de administrador:
+
+```bash
+getent passwd Sakura || sudo useradd -m -U -s /bin/bash Sakura
+sudo passwd Sakura
+sudo usermod -aG sudo Sakura
+id Sakura
+sudo loginctl enable-linger Sakura
+sudo -iu Sakura
+```
+
+Si ya existe, `useradd` no se ejecuta. `sudo passwd Sakura` pide contraseña sin mostrarla. Estos pasos deben ejecutarse desde una cuenta que ya tenga permisos sudo. No permite acceso remoto sin autenticación. Como alternativa de un solo comando desde el clon de desarrollo: `sudo bash tools/setup-sakura.sh --admin --password-prompt --linger`. [Guía de recuperación](MATTER_SAKURA_BRANCH_RECOVERY.md).
+
 # Matter-AI local: conversación y ciclos de trabajo sin facturación por mensaje
 
 **Fecha:** 2026-11-20. **Estado:** backend local Ollama implementado en `workstreams/02-base` y pruebas offline incluidas; **no instalado ni probado con un modelo real en la laptop del usuario**.
