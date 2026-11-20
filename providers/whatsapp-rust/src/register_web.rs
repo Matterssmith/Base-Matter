@@ -292,6 +292,6 @@ mod tests {
     #[test]
     fn native_card_never_contains_data_capture() {
         let message = registration_preview_card("https://matter.example/register/").unwrap();
-        assert!(message.interactive_message.is_some());
+        assert!(message.interactive_message.body.text.is_some());
     }
 }
