@@ -1,3 +1,12 @@
+## 2026-11-20 — Matter-Rust universal: WhatsApp, Telegram, Discord y Social-Matter
+
+- Rama `feat/matter-rust-multiplatform`: nuevo crate independiente `crates/matter-rust` como núcleo común Rust, sin alterar compilación ni sesiones de los binarios `alpha`.
+- Mantiene registro de adaptadores por `(plataforma, socket)`, observa eventos no autenticados con límites y deduplicación por sesión, y **deniega mutaciones/roles** hasta autoridad externa Base+Vault. WhatsApp/Telegram/Discord previstos; `Social-Matter` reservado y bloqueado.
+- Repos separados: `WhatsApp-Matter` proveerá su transporte Rust, `Telegram-Matter` usará Bot API Rust, `Discord-Matter` Discord API Rust; `Social-Matter` conserva su diseño privado futuro. Ningún conector de red nuevo ni token ha sido ejecutado.
+- Entregados docs `docs/MATTER_RUST_MULTIPLATFORM.md`, CI Linux/Windows para el crate y CLI offline. Pendientes: CI verde, conectores reales, autenticación de ingresos y Vault, E2E, distribución del crate, dominio e instalación. **No se cambian alpha/beta/stable ni WhatsApp conectado.**
+- Repo independiente `Matterssmith/Matter-Rust` aún no existe; alojado temporalmente en Base-Matter porque el conector GitHub no tiene acción para crear repositorios.
+- Verificados README y documentación de continuidad; Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.
