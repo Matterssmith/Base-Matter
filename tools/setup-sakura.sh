@@ -5,6 +5,7 @@
 set -euo pipefail
 umask 077
 
+main() {
 usage() {
     cat <<'HELP'
 Uso: sudo bash tools/setup-sakura.sh [--password-prompt] [--authorized-key-file /ruta/id_ed25519.pub]
@@ -34,8 +35,7 @@ while [ "$#" -gt 0 ]; do
             ;;
         --help|-h)
             usage
-            return_code=0
-            break
+            return 0
             ;;
         *)
             usage >&2
@@ -95,6 +95,10 @@ if [ -n "$public_key_file" ]; then
         printf '%s\n' 'ERROR: no se admiten claves privadas.' >&2
         false
     fi
+    if [ -L "$home_dir/.ssh" ] || [ -L "$home_dir/.ssh/authorized_keys" ]; then
+        printf '%s\n' 'ERROR: ruta SSH simbólica no autorizada.' >&2
+        false
+    fi
     install -d -m 0700 -o Sakura -g Sakura -- "$home_dir/.ssh"
     touch -- "$home_dir/.ssh/authorized_keys"
     chown Sakura:Sakura "$home_dir/.ssh/authorized_keys"
@@ -123,3 +127,6 @@ printf '%s\n' 'Para abrir sesión desde el administrador: sudo -iu Sakura'
 printf '%s\n' 'Para acceso remoto, configura y comprueba SSH con clave pública o elige --password-prompt.'
 printf '%s\n' 'Para instalar Matter-AI dentro de Sakura, clona Base-Matter desde esa sesión.'
 printf '%s\n' 'Ningún proyecto fue borrado, fusionado ni actualizado automáticamente.'
+
+}
+main "$@"
