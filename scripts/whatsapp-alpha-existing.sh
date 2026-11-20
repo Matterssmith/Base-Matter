@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Base-Matter alpha: resume ONLY the existing isolated alpha WhatsApp session.
-# Does not use wa-test-1, does not pair, does not initialize or use Vault.
+# Does not use wa-test-1 or pair. Optional separate Vault enrollment requires explicit --vault-env.
 # Créditos:
 # Hecho por Lournyx Matterssmith [Lou-Nyx].
 set -Eeuo pipefail
@@ -21,11 +21,15 @@ fail() {
 }
 
 main() {
-  if (( $# != 3 )); then
-    fail 'Usage: bash scripts/whatsapp-alpha-existing.sh --check|--resume-only /absolute/controller /absolute/provider'
+  if (( $# != 3 && $# != 5 )); then
+    fail 'Usage: bash scripts/whatsapp-alpha-existing.sh --check|--resume-only /absolute/controller /absolute/provider [--vault-env /etc/base-matter/vault-alpha.env]'
     return 1
   fi
   local mode="$1" controller="$2" provider="$3"
+  if (( $# == 5 )) && [[ "$4" != "--vault-env" || "$5" != "/etc/base-matter/vault-alpha.env" ]]; then
+    fail 'Only the separate, host-provisioned alpha Vault environment is accepted'
+    return 1
+  fi
   if [[ "$mode" != "--check" && "$mode" != "--resume-only" ]]; then
     fail 'Only --check and --resume-only are supported'
     return 1
@@ -84,10 +88,49 @@ main() {
     fi
   done
 
+  # All inherited Vault settings were removed above. Enable only by explicit
+  # host-local opt-in, and verify the new grant before starting either binary.
+  local vault_status='ALPHA_VAULT=ISOLATED_NOT_ENROLLED'
+  if (( $# == 5 )); then
+    local vault_env="/etc/base-matter/vault-alpha.env"
+    local alpha_client="/etc/base-matter/alpha-client.key"
+    local client_bin="/usr/local/bin/matter-vault-client"
+    if [[ ! -f "$vault_env" || -L "$vault_env" || ! -f "$alpha_client" ||
+          -L "$alpha_client" || ! -f "$client_bin" || -L "$client_bin" ||
+          ! -x "$client_bin" ]] ||
+       [[ "$(stat -c '%a:%u' "$vault_env")" != "600:$(id -u)" ||
+          "$(stat -c '%a:%u' "$alpha_client")" != "600:$(id -u)" ]]; then
+      fail 'Dedicated alpha Vault files unavailable or unsafe'
+      return 1
+    fi
+    if ! id -nG | tr ' ' '\n' | grep -Fxq 'matter-vault-ipc'; then
+      fail 'Alpha process has not inherited the Vault IPC group'
+      return 1
+    fi
+    set -a
+    source "$vault_env"
+    set +a
+    if [[ "$MATTER_WA_SOCKET_ID" != "wa-alpha" ||
+          "${MATTER_VAULT_SOCKET_ID:-}" != "$MATTER_WA_SOCKET_ID" ||
+          "${MATTER_VAULT_CLIENT_ID:-}" != "base-wa-alpha" ||
+          "${MATTER_VAULT_CLIENT_KEY_FILE:-}" != "$alpha_client" ||
+          "${MATTER_VAULT_IPC_SOCKET:-}" != "/run/matter-vault/vault.sock" ||
+          "${MATTER_VAULT_TENANT:-}" != "matterssmith" ||
+          "${MATTER_VAULT_BOT:-}" != "base-matter" ]]; then
+      fail 'Vault alpha identity or restricted scope mismatch'
+      return 1
+    fi
+    if ! "$client_bin" ping "$MATTER_VAULT_IPC_SOCKET" "$MATTER_VAULT_CLIENT_ID" "$MATTER_VAULT_CLIENT_KEY_FILE" "$MATTER_VAULT_TENANT" "$MATTER_VAULT_BOT" "$MATTER_VAULT_SOCKET_ID" >/dev/null 2>&1; then
+      fail 'Dedicated alpha Vault handshake denied'
+      return 1
+    fi
+    vault_status='ALPHA_VAULT=AUTHENTICATED_CONFIGURATION_ONLY'
+  fi
+
   # Provider and controller checks are non-mutating and do not connect.
   "$controller" --check
   "$provider" --check
-  printf '%s\n' 'ALPHA_PREFLIGHT=OK' 'ALPHA_VAULT=ISOLATED_NOT_ENROLLED' 'ALPHA_PAIRING=DISABLED'
+  printf '%s\n' 'ALPHA_PREFLIGHT=OK' "$vault_status" 'ALPHA_PAIRING=DISABLED'
 
   if [[ "$mode" == "--check" ]]; then
     return 0
