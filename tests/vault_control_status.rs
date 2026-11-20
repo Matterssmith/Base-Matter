@@ -46,7 +46,7 @@ fn vault_status_is_private_and_available_when_bot_off() {
             "owner",
             "self@s.whatsapp.net",
             None,
-            "=/>vault"
+            "=/>vault",
         )
         .unwrap();
     match status {

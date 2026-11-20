@@ -1053,8 +1053,7 @@ mod tests {
             .filter(|line| line.starts_with("│·♪·"))
             .collect();
         let canonical = [
-            "ia", "anti", "all", "config", "info", "main", "mode", "owner", "system",
-            "utils",
+            "ia", "anti", "all", "config", "info", "main", "mode", "owner", "system", "utils",
         ];
         assert_eq!(rows.len(), canonical.len());
         let configured: Vec<String> =
