@@ -1,3 +1,9 @@
+## Requisito previo: usuario administrador Sakura realmente creado
+
+Antes de usar `systemctl --user`, verifica `id Sakura`. Si ves `failed to look up user Sakura` la cuenta no existe; **no ejecutes** todavía `loginctl enable-linger Sakura` ni `sudo -iu Sakura`.
+
+Desde el clon `Base-Matter`, un administrador puede ejecutar `sudo bash tools/setup-sakura.sh --admin --password-prompt --linger`: crea o conserva el usuario, configura contraseña, agrega el grupo sudo sin borrar grupos y habilita linger después de verificar la cuenta. Para hacerlo manualmente sigue [la guía de recuperación](MATTER_SAKURA_BRANCH_RECOVERY.md). No se concede `NOPASSWD`, y la IA autónoma continúa con `NoNewPrivileges=yes` en el servicio de usuario.
+
 # Matter-Autopilot — ejecutar siempre «continúa el proyecto matter»
 
 ## Alternativa sin factura de OpenAI: modelo local Ollama
