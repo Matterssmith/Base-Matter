@@ -1,3 +1,12 @@
+## 2026-11-19 — Estado cruzado de integración con Vault-Matter privado
+
+- Cliente IPC real Base: `matter-vault-client` y `=/>vault` / `=/>vault test`, restringidos a identidad/socket autorizado. La conexión Vault/Base bajo UIDs Unix separados ya está verificada **en GitHub Actions**, pero **NO instalada en el Debian del propietario** ni probada mediante mensaje real de WhatsApp.
+- Vault-Matter rama `matter`, checkpoint `2e87ec545073c7772c2ebc4f3c5a28d75ddbad3e`: añadió exportación/restauración local de archivos cifrados, `verify-root` y nuevas pruebas de recuperación. Resultado final de CI de ese SHA pendiente en el momento del checkpoint.
+- La exportación local no es un backup remoto: está pendiente la réplica de ciphertext a GitHub privado y la custodia independiente de llave maestra. Base-Matter público **no recibe** la maestra ni GitHub token, y Bot-Matter permanece bloqueado.
+- Paso operativo: instalar el servicio y el cliente en Debian bajo cuentas separadas usando la guía privada Vault; comprobar `ping` y `self-test` desde UID Base, integrar las seis variables de entorno en el controlador WhatsApp y entonces probar `=/>vault` en chat propio. Si faltan privilegios o concesiones: denegado, sin fallback.
+- No se ha habilitado control privado, roles globales ni autoridad por actor WhatsApp. No promocionar `beta` / `stable` hasta las pruebas y políticas pendientes.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 # Base-Matter — conexión real a servicio Vault (confirmada en CI)
 
 **Alcance implementado:** `VaultClient`, binario `matter-vault-client`, `=/>vault` y `=/>vault test` (solo propietario y chat propio, aun con bot OFF). `=/>vault` sin argumentos sólo informa estado. `test` modifica exclusivamente el registro sintético reservado `connection-health-v1`.
