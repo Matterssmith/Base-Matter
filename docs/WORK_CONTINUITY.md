@@ -1,3 +1,9 @@
+## 2026-11-20 — Verificación host-local de owner global desde stdin
+
+- El cliente público `matter-vault-client owner-check` lee un JID canónico de stdin, verifica por AEAD contra el registro cifrado de Vault-Matter y devuelve solo `global_owner_authorized` o error genérico. No acepta el JID en argv, no imprime números, no consulta registros de roles.
+- Usado para E2E con dos identidades sintéticas. En producción las dos identidades reales se enrolan exclusivamente bajo el UID privado `matter-vault`; no introducirlas en Git ni en chat.
+- README revisados: 2/2 y cuatro documentos de continuidad actualizados en el mismo commit; créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Protección de replay en comandos Vault globales
 
 - El puente autentica al JID global con el servicio privado, reclama `message_id` durable contra replay, y **solo después** permite `=/>vault test` (escritura sintética). Repite autorización antes de ejecutar para negar si se revocó el principal entre ambos pasos. Replays y terceros no pueden provocar un nuevo write.
