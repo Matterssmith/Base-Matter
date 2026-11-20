@@ -1,3 +1,11 @@
+## 2026-11-20 — Se encontró un segundo almacén independiente, NO un respaldo confirmado
+
+- Salida de `find` del operador en `instabox-se`: `/home/Sakura/.local/share/base-matter/branches/alpha/whatsapp-test/session.db` (630784 bytes, modificado 2026-11-19 21:08 según timestamp de host), y `/home/Sakura/.local/share/base-matter/whatsapp-test/session.db` (475136 bytes, modificado 2026-11-20 03:30). El origen de las sesiones, dueño de socket y vigencia de la copia de alpha son DESCONOCIDOS.
+- La primera ruta corresponde al ámbito de ejecución `branches/alpha` y la segunda al socket original `wa-test-1`; no renombrar, copiar, mezclar `runtime.env`, ni sustituir SQLite por tamaño o fecha.
+- Comparador nuevo `scripts/whatsapp-stores-compare.py`: abre ambos almacenes `mode=ro`, ejecuta `PRAGMA query_only=ON`, valida integridad, existencia de `device.id=1` y sólo devuelve comparaciones booleanas de PN/LID y claves `noise_key/identity_key/adv_secret_key/signed_pre_key` y registro de cuenta. La igualdad se calcula internamente en SQLite, sin cargar números, JID ni claves en Python ni imprimir sus valores. CI tiene pruebas con datos simulados, incluyendo no mutación de archivos.
+- Ejecutar como Sakura, sin proveedor en marcha: `cd /home/Sakura/Base-Matter && python3 scripts/whatsapp-stores-compare.py`. **Una coincidencia de todas las claves NO prueba que el servidor acepte la sesión**; un resultado diferente tampoco autoriza sustituir bases.
+- El teléfono todavía mostraba el dispositivo vinculado, pero el único registro original `id=1` sufrió `WA_LOGOUT_CLASS=AUTH_REJECTED_LOGGED_OUT`. No repetir conexión o pairing hasta estudiar las comparaciones. Vault IPC permanece `vault_roundtrip_verified revision=2`.
+
 ## 2026-11-20 UTC — Confirmación: un solo dispositivo SQLite, id predeterminado 1
 
 - Auditoría offline de `/home/Sakura/.local/share/base-matter/whatsapp-test/session.db` en `instabox-se`: `DEVICE_TOTAL=1`; `DEFAULT_DEVICE_EXISTS=True`; `OTHER_DEVICES=0`; `DEFAULT_DEVICE_HAS_IDENTITY=True`. Comprobación SQL de sólo lectura, sin volcar PN, LID, claves ni JID.

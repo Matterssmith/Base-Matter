@@ -72,6 +72,9 @@ jobs:
       - name: Test read-only WhatsApp session inspector
         run: python3 -m unittest discover -s test -p "test_whatsapp_session_inspect.py" -v
 
+      - name: Test read-only WhatsApp store comparison
+        run: python3 -m unittest discover -s test -p "test_whatsapp_stores_compare.py" -v
+
       - name: Verify whitespace
         run: git diff --check HEAD^ HEAD
 
