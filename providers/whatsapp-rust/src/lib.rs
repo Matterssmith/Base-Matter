@@ -7,6 +7,7 @@
 pub mod help_reply;
 pub mod menu_sound;
 pub mod recovery;
+pub mod register_web;
 pub mod rich_preview;
 pub mod rich_transport;
 pub mod sticker_badge;
