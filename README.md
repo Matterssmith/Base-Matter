@@ -1,3 +1,14 @@
+## 2026-11-20 — Bot WhatsApp: registro público de demostración y publicación web
+
+- Se incorporó `providers/whatsapp-rust/src/register_web.rs`: tarjeta NativeFlow `cta_url` de solo lectura que acepta ÚNICAMENTE la URL pública exacta de GitHub Pages, sin tokens ni datos civiles. `=/>register` solo adjunta el botón y enlace de texto tras recibir ACK autorizado del controlador, en privado y cuando el operador haya definido `MATTER_REGISTER_PUBLIC_URL` con esa URL exacta. No se ejecuta para grupos ni cambia derechos.
+- El HTML conserva estructura mínima; `app.js` genera toda la página. Ni una visita ni un click conceden registro, rangos o consentimiento. El registro civil permanece bloqueado en Vault hasta que haya gateway, textos legales, verificación y auditabilidad.
+- Se intentó publicar una versión estática aislada por `.github/workflows/matter-register-pages.yml`. GitHub Pages todavía NO publicó el sitio: el propietario de la organización debe habilitar una sola vez GitHub Pages en Settings -> Pages -> Build and deployment -> GitHub Actions. No afirmar URL funcional antes de verla publicada. El flujo se corrigió para no intentar crear Pages con `GITHUB_TOKEN` sin permisos administrativos.
+- Se ajustó un test desactualizado de comandos públicos para distinguir marco HMAC firmado de autorización Vault real; no se concede privilegio a mensajes externos. CI del HEAD final debe resultar verde antes de desplegar.
+- Se mantienen `alpha`, `beta`, `stable` y el socket actual intactos. Ningún token/secret ni datos de menores o biometría en GitHub.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Matter Register: interfaz y NativeFlow alternativo (aislado)
 
 - Rama `feat/matter-register-web` contiene `web/matter-register/index.html` solo como cargador y `web/matter-register/app.js` como único creador de DOM, CSS, animaciones, sonido, botones y lógica. Regla obligatoria: el HTML permanecerá mínimo; la funcionalidad y la presentación se realizan desde JavaScript. Vista responsive con temática Matter Ideas, Bot Kids, Bot SFW, Testers y Kids Channel, flujo invitado/adulto/menor, sonido opcional y pantalla completa por interacción del usuario.
