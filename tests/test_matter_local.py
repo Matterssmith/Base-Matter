@@ -8,6 +8,7 @@ Hecho por Lournyx Matterssmith [Lou-Nyx].
 import json
 from pathlib import Path
 import sys
+import os
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -84,6 +85,7 @@ class MatterLocalTests(unittest.TestCase):
         self.assertTrue(report["installed"])
         self.assertEqual(report["installed_count"], 2)
 
+    @unittest.skipUnless(os.name == "posix", "POSIX file mode 0600 is Linux-specific")
     def test_chat_memory_is_local_private_and_filters_secrets(self):
         with tempfile.TemporaryDirectory() as td:
             history_file = Path(td) / "chat-history.json"
