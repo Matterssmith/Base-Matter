@@ -429,6 +429,10 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
             sign_frame(&signed, &config.bridge_key).unwrap()
         );
     }
+    // Forwarding a known control verb is NOT a grant of permission.
+    // External senders receive signed frames with their own identity;
+    // only the Base controller and authenticated Vault can authorize a
+    // privileged command. This is required for external global owners.
     for text in [
         "=/>status --debug",
         "=/>group on",
@@ -442,8 +446,17 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>test html",
         "=/>test run",
         "=/>test ack invalid",
-        "#ping",
     ] {
+        incoming.text = text;
+        let frame = config
+            .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .expect("known control verb must retain external identity");
+        assert_eq!(frame.actor_id, public_id);
+        assert!(!frame.from_me);
+        assert_eq!(frame.chat_jid, incoming.chat_jid);
+    }
+    for text in ["#ping", "=/>unknown admin", "=/>"] {
         incoming.text = text;
         assert!(config
             .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
