@@ -1,3 +1,12 @@
+## 2026-11-20 — Nuevo daemon Matter-Autopilot para Ubuntu Server
+
+- Rama de trabajo `workstreams/02-base`; servicio de usuario `Sakura`: `tools/matter_autopilot.py`, `tools/matter-autopilot.service`; instalador actualizado. Suite offline en `tests/test_matter_autopilot.py` y workflow Linux/Windows.
+- Lógica: ejecuta exactamente «continúa el proyecto matter», selecciona clones limpios y ramas verificadas, carga HANDOFF, limita ciclos diarios y pasos API, retiene estado por proyecto y reintenta push fallidos del workstream cuando auto-push está habilitado. No ejecuta shell arbitrario ni tests no aislados desatendidos.
+- Persistencia: commits locales por defecto; con permiso explícito `AUTORIZO_PUSH`, push exclusivamente a `workstreams/*`; ninguna promoción alpha/beta/stable ni Bot-Matter automática. Si el equipo apaga o suspende, el programa no sigue trabajando; `systemd` recupera al iniciar sesión o con `loginctl enable-linger Sakura`.
+- Guía `docs/MATTER_AUTOPILOT_UBUNTU.md`; configurar intervalos y crédito API en la cuenta OpenAI, porque los límites de rondas no equivalen a límites monetarios.
+- No instalado en laptop; falta verificación real de API/autenticación, acceso a privados y operación durante reinicios. Revisar CI Linux/Windows antes de afirmar estado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Usuario Sakura y continuidad Git alpha/beta/stable
 
 - Rama `workstreams/02-base`; nuevos `tools/setup-sakura.sh`, `tools/matter_branches.py`, `tests/test_matter_branches.py`, `docs/MATTER_SAKURA_BRANCH_RECOVERY.md`, cambios en instalador `tools/install-matter-ai.sh`, CLI, handoff, README/AGENTS/WORK_CONTINUITY y CI.
