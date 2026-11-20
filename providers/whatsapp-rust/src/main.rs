@@ -23,7 +23,7 @@ use whatsapp_matter_rust_provider::{
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
-    register_web::{registration_preview_card, start_with_controller_port, trusted_preview_url},
+    register_web::{preview_is_running, registration_preview_card, start_with_controller_port, trusted_preview_url},
     render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
     ui::{
@@ -928,6 +928,7 @@ async fn main() -> Result<()> {
                             // configure the exact allowlisted live HTTPS URL.
                             let preview_url = if matches!(actual_command, "=/>register" | "=/>register start")
                                 && !data.is_group
+                                && preview_is_running()
                             {
                                 std::env::var("MATTER_REGISTER_PUBLIC_URL")
                                     .ok()
