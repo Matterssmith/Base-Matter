@@ -76,6 +76,12 @@ Desde este punto, hablarás con el **modelo local**, no GPT-6. Para cambiar al p
 
 La API requiere clave privada y facturación independiente. Cambiar `backend` no toca WhatsApp, Vault ni las ramas de producción.
 
+## Conversaciones persistentes en el terminal
+
+Con el backend `local`, la conversación se recupera parcialmente al volver a abrir `matter-ai`. Guarda hasta 12 intercambios recientes en `~/.local/state/matter-ai/chat-history.json` con permisos `0600`. El historial y el modelo se quedan en Ubuntu; no comparten la memoria ni las conexiones de esta app de ChatGPT. La herramienta intenta descartar mensajes que contengan patrones de credenciales, pero **no es un gestor de secretos**; nunca pegues claves o sesiones en la conversación.
+
+Para planificación de largo plazo también se carga `MATTER_AI_HANDOFF.md` y se conserva el último resultado por workstream. Es una memoria operativa local, no memoria ilimitada: las conversaciones extensas se resumen o quedan fuera de la ventana de contexto.
+
 ## Automatizar el trabajo 24/7 sin cuota OpenAI
 
 Descarga primero los repositorios de trabajo necesarios:
