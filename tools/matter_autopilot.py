@@ -65,7 +65,7 @@ def config() -> dict:
     if (not isinstance(settings["interval_seconds"], int)
         or not 60 <= settings["interval_seconds"] <= 86400
         or not isinstance(settings["daily_cycles"], int)
-        or not 1 <= settings["daily_cycles"] <= 288
+        or not 1 <= settings["daily_cycles"] <= (1440 if matter_ai.backend_name() == "local" else 288)
         or not isinstance(settings["max_api_calls_per_cycle"], int)
         or not 1 <= settings["max_api_calls_per_cycle"] <= 12
         or type(settings["enabled"]) is not bool
@@ -348,8 +348,8 @@ def once(offline: bool = False) -> int:
                               "auto_push": settings["auto_push"]},
                              ensure_ascii=False, indent=2))
             return 0
-        if not matter_ai.api_key():
-            print("Falta API OpenAI: matter-ai setup")
+        if not matter_ai.backend_available():
+            print("Backend no disponible: comprueba Ollama local o clave OpenAI API")
             return 2
         retry_pushes(settings, st)
         atomic_json(STATE_FILE, st)
@@ -362,8 +362,8 @@ def loop() -> int:
     if not settings["enabled"]:
         print("Autopilot deshabilitado; usa matter-autopilot start.")
         return 1
-    if not matter_ai.api_key():
-        print("Falta API key: matter-ai setup")
+    if not matter_ai.backend_available():
+        print("Backend no disponible. Usa matter-ai backend local y descarga el modelo, o configura la API.")
         return 2
     with lock_runner():
         print("[Matter] autopilot iniciado; instrucción constante: " + INSTRUCTION, flush=True)
@@ -397,8 +397,9 @@ def configure(args: argparse.Namespace) -> int:
     if not projects or any(p not in ORDER for p in projects) or len(set(projects)) != len(projects):
         print("Proyectos inválidos; usa matter-ai projects.")
         return 2
-    if not (60 <= args.interval <= 86400 and 1 <= args.daily <= 288 and 1 <= args.calls <= 12):
-        print("Fuera de límites: intervalo 60–86400s, ciclos diarios 1–288, llamadas 1–12.")
+    max_daily = 1440 if matter_ai.backend_name() == "local" else 288
+    if not (60 <= args.interval <= 86400 and 1 <= args.daily <= max_daily and 1 <= args.calls <= 12):
+        print(f"Fuera de límites: intervalo 60–86400s, ciclos diarios 1–{max_daily}, pasos 1–12.")
         return 2
     push = old["auto_push"] if args.push is None else args.push
     if push and not old["auto_push"] and not confirm(
@@ -418,7 +419,10 @@ def configure(args: argparse.Namespace) -> int:
     atomic_json(CONFIG_FILE, document)
     print(f"Configurado: intervalo {args.interval}s, ciclos/día {args.daily}, "
           f"pasos API/ciclo {args.calls}, push: {'sí' if push else 'no'}")
-    print("Aviso: los límites de ciclos NO son un límite monetario en dólares.")
+    if matter_ai.backend_name() == "local":
+        print("Modelo local: sin factura por mensaje, sujeto a capacidad de CPU/RAM y energía.")
+    else:
+        print("OpenAI API: los límites de ciclos NO son un límite monetario en dólares.")
     return 0
 
 
@@ -426,8 +430,8 @@ def control(action: str) -> int:
     initialize_dirs()
     cfg = config()
     if action == "start":
-        if not matter_ai.api_key():
-            print("Falta API key. Usa matter-ai setup antes de iniciar.")
+        if not matter_ai.backend_available():
+            print("Backend no disponible. Verifica Ollama local o OpenAI API antes de iniciar.")
             return 2
         if not confirm(
             "El servicio llamará periódicamente a OpenAI API y podrá editar "
@@ -459,6 +463,7 @@ def status() -> int:
         "service": running.stdout.strip() if running.returncode == 0 else "inactive",
         "enabled": settings["enabled"],
         "auto_push": settings["auto_push"],
+        "backend": matter_ai.backend_name(),
         "interval_seconds": settings["interval_seconds"],
         "daily_cycles": settings["daily_cycles"],
         "daily_used": st["daily_used"],
@@ -489,10 +494,17 @@ def doctor() -> int:
 
     if os.geteuid() == 0:
         warnings.append("No ejecutes Matter-AI como root")
-    if matter_ai.api_key():
-        ready.append("Clave de OpenAI API configurada y privada (NO se comprobó saldo ni modelo)")
+    if matter_ai.backend_name() == "local":
+        import matter_local
+        info = matter_local.availability()
+        if info["running"] and info["installed"]:
+            ready.append("Modelo Ollama local disponible: " + info["model"])
+        else:
+            warnings.append("Ollama/modelo no disponible. Instala Ollama y ejecuta ollama pull " + info["model"])
+    elif matter_ai.api_key():
+        ready.append("Clave OpenAI API configurada (NO se verificó saldo ni acceso al modelo)")
     else:
-        warnings.append("Falta clave OpenAI: ~/.local/bin/matter-ai setup")
+        warnings.append("Falta clave OpenAI API: ~/.local/bin/matter-ai setup")
 
     for program in ("python3", "git", "gh", "systemctl", "journalctl"):
         if shutil.which(program):
