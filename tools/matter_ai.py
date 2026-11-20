@@ -34,6 +34,7 @@ API_URL = "https://api.openai.com/v1/responses"
 MODEL_DEFAULT = "gpt-6.2-sol"
 MAX_ACTIONS = 18
 AUTO_LOCAL_EDITS = False
+LOCAL_EDITS: dict[str, set[str]] = {}
 
 # Mapa público. Credenciales de GitHub y Vault NUNCA están en este archivo.
 WORKSTREAMS = {
@@ -312,7 +313,62 @@ def write_file(project: str, relative: str, contents: str) -> dict:
         return {"error": "no_autorizado_por_operador"}
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(contents, encoding="utf-8")
+    LOCAL_EDITS.setdefault(project, set()).add(relative)
     return {"ok": True, "path": relative, "bytes": len(contents.encode("utf-8"))}
+
+
+def publish_workstream(project: str, message: str) -> dict:
+    """Commit and push only files edited this session, on exact authorized workstream branch.
+
+    Never force, merge, delete branches, change protected refs or mutate Vault data.
+    """
+    if project == "bot":
+        return {"error": "bot_matter_bloqueado"}
+    if not isinstance(message, str) or not 5 <= len(message) <= 180 or "\n" in message:
+        return {"error": "mensaje_commit_invalido"}
+    cwd = project_path(project)
+    paths = sorted(LOCAL_EDITS.get(project, set()))
+    if not paths:
+        return {"error": "sin_archivos_editados_por_esta_sesion"}
+    repo, branch = WORKSTREAMS[project]
+    actual = run(["git", "remote", "get-url", "origin"], cwd, 15)
+    expected = {f"https://github.com/Matterssmith/{repo}.git".lower(),
+                f"https://github.com/Matterssmith/{repo}".lower(),
+                f"git@github.com:Matterssmith/{repo}.git".lower()}
+    if actual.get("returncode") != 0 or actual.get("output", "").strip().lower() not in expected:
+        return {"error": "origen_git_no_autorizado"}
+    staged = run(["git", "diff", "--cached", "--name-only"], cwd, 15)
+    if staged.get("returncode") != 0 or staged.get("output", "").strip():
+        return {"error": "ya_existen_cambios_staged; revisa_antes_de_publicar"}
+    status = run(["git", "status", "--short", "--", *paths], cwd, 15)
+    if status.get("returncode") != 0:
+        return {"error": "git_status_fallido"}
+    if not status.get("output", "").strip():
+        return {"error": "sin_cambios_locales_para_publicar"}
+    if not approve(
+        f"¿Publicar SOLO los siguientes {len(paths)} archivos en "
+        f"Matterssmith/{repo} rama {branch}?\n"
+        + "\n".join(f"  {p}" for p in paths[:30])
+    ):
+        return {"error": "publicacion_no_autorizada"}
+    add = run(["git", "add", "--", *paths], cwd, 30)
+    if add.get("returncode") != 0:
+        return {"error": "git_add_fallido"}
+    check = run(["git", "diff", "--cached", "--check"], cwd, 30)
+    if check.get("returncode") != 0:
+        return {"error": "git_diff_check_fallido", "details": check.get("output")}
+    commit = run(["git", "commit", "-m", message], cwd, 60)
+    if commit.get("returncode") != 0:
+        return {"error": "git_commit_fallido; revisa_identidad_git", "details": commit.get("output")}
+    pushed = run(["git", "push", "origin", f"HEAD:refs/heads/{branch}"], cwd, 100)
+    if pushed.get("returncode") != 0:
+        return {"error": "git_push_fallido; commit_local_preservado",
+                "details": pushed.get("output")}
+    LOCAL_EDITS[project].clear()
+    sha = run(["git", "rev-parse", "HEAD"], cwd, 15)
+    return {"ok": True, "repository": f"Matterssmith/{repo}",
+            "branch": branch, "commit": sha.get("output", "").strip()[:40],
+            "notice": "GitHub push realizado con autorización; CI y revisión aún pendientes."}
 
 
 def run_workstream(project: str, argv: list[str]) -> dict:
@@ -403,6 +459,16 @@ TOOLS = [
             }, "required": ["project", "argv"], "additionalProperties": False,
         }, "strict": True,
     },
+    {
+        "type": "function", "name": "publish_workstream",
+        "description": "Review, commit, and push ONLY this session's locally edited files to its exact workstreams/* branch; requires explicit operator approval.",
+        "parameters": {
+            "type": "object", "properties": {
+                "project": {"type": "string"},
+                "message": {"type": "string"}
+            }, "required": ["project", "message"], "additionalProperties": False,
+        }, "strict": True,
+    },
 ]
 
 SYSTEM = """Eres Matter-AI, un asistente para el ecosistema Matterssmith en Ubuntu Server.
@@ -414,6 +480,7 @@ Respeta AGENTS.md, README.md, docs/WORK_CONTINUITY.md de cada repo antes de edit
 Python/C++/Rust son principales; Go y JS son interoperabilidad. Respeta MSEL.
 Bot-Matter sigue bloqueado. No abrir ni publicar secretos de Vault.
 No modifiques live sessions, no migres ni reinicies sockets sin revisión manual.
+Puedes proponer publicar en GitHub SOLO mediante publish_workstream, que solicita aprobación humana y restringe a rama workstreams/*. No publiques sin solicitud clara.
 Trabaja en workstreams/*, nunca en main/matter/alpha/stable. No auto-push.
 Para editar primero lee fuentes; usa write_file con archivo completo.
 No afirmes que ejecutaste algo cuando la herramienta lo negó.
@@ -444,6 +511,8 @@ def dispatch(name: str, args: dict) -> dict:
             return write_file(args["project"], args["path"], args["content"])
         if name == "run_command":
             return run_workstream(args["project"], args["argv"])
+        if name == "publish_workstream":
+            return publish_workstream(args["project"], args["message"])
         return {"error": "herramienta_desconocida"}
     except (ValueError, OSError, UnicodeError) as err:
         return {"error": str(err)[:200]}
