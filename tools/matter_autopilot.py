@@ -472,6 +472,95 @@ def status() -> int:
     return 0
 
 
+def doctor() -> int:
+    """Offline readiness report. No API request, secrets, privileged actions or files modified."""
+    import shutil
+
+    settings = config()
+    st = state()
+    ready = []
+    warnings = []
+
+    current_user = os.environ.get("USER", "") or str(os.getuid())
+    if current_user != "Sakura":
+        warnings.append("Se recomienda ejecutar la cuenta Linux Sakura, no root ni otro usuario")
+    else:
+        ready.append("Usuario Sakura")
+
+    if os.geteuid() == 0:
+        warnings.append("No ejecutes Matter-AI como root")
+    if matter_ai.api_key():
+        ready.append("Clave de OpenAI API configurada y privada (NO se comprobó saldo ni modelo)")
+    else:
+        warnings.append("Falta clave OpenAI: ~/.local/bin/matter-ai setup")
+
+    for program in ("python3", "git", "gh", "systemctl", "journalctl"):
+        if shutil.which(program):
+            ready.append(program + " disponible")
+        else:
+            warnings.append(program + " no encontrado")
+
+    if shutil.which("gh"):
+        try:
+            probe = subprocess.run(
+                ["gh", "auth", "status"], capture_output=True, timeout=12, check=False,
+                env={key: value for key, value in os.environ.items()
+                     if key not in {"OPENAI_API_KEY", "GH_TOKEN", "GITHUB_TOKEN"}}
+            )
+            if probe.returncode == 0:
+                ready.append("GitHub CLI autorizado (sin confirmar permisos en privados)")
+            else:
+                warnings.append("GitHub CLI no autenticado: gh auth login")
+        except (OSError, subprocess.TimeoutExpired):
+            warnings.append("No se puede comprobar gh auth")
+
+    running = systemctl("is-active", UNIT_NAME)
+    if running.returncode == 0:
+        ready.append("Servicio de usuario activo")
+    else:
+        warnings.append("Servicio de usuario inactivo o systemd user inaccesible")
+
+    try:
+        loginctl = subprocess.run(
+            ["loginctl", "show-user", current_user, "-p", "Linger", "--value"],
+            capture_output=True, text=True, check=False, timeout=12
+        )
+        if loginctl.returncode == 0 and loginctl.stdout.strip() == "yes":
+            ready.append("Linger activo: el gestor de usuario puede iniciar sin sesión")
+        else:
+            warnings.append("Linger no confirmado: administrador -> sudo loginctl enable-linger Sakura")
+    except (OSError, subprocess.TimeoutExpired):
+        warnings.append("No fue posible comprobar linger")
+
+    try:
+        disk = os.statvfs(str(Path.home()))
+        available_gib = disk.f_bavail * disk.f_frsize / (1024 ** 3)
+        ready.append(f"Disco disponible en HOME: {available_gib:.1f} GiB")
+        if available_gib < 3:
+            warnings.append("Poco espacio libre: no clones todos los repositorios")
+    except OSError:
+        warnings.append("No se pudo leer espacio disponible")
+
+    available = eligible(settings, st)
+    if available:
+        ready.append(f"{len(available)} workstreams limpios listos")
+    else:
+        warnings.append("Sin workstreams limpios: ~/.local/bin/matter-ai sync matter-rust")
+
+    report = {
+        "modo": "solo diagnóstico offline", "prompt": INSTRUCTION,
+        "usuario": current_user, "habilitado": settings["enabled"],
+        "push_automatico": settings["auto_push"],
+        "ciclos_maximos_diarios": settings["daily_cycles"],
+        "ciclos_consumidos_hoy": st["daily_used"],
+        "estado_ultimo_ciclo": st["last_result"],
+        "correcto": ready, "atencion": warnings,
+        "importante": "ChatGPT Plus no incluye API. No se garantiza operación continua si laptop está apagada, red falla o saldo API se agota.",
+    }
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+    return 0 if not warnings else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Matter AI — auto-reanudación bajo Sakura")
     subs = parser.add_subparsers(dest="command", required=True)
@@ -484,7 +573,7 @@ def main(argv: list[str] | None = None) -> int:
     push.add_argument("--push-workstreams", dest="push", action="store_true")
     push.add_argument("--no-push", dest="push", action="store_false")
     opt.set_defaults(push=None)
-    for command in ("start", "stop", "status", "once", "preview", "run"):
+    for command in ("start", "stop", "status", "doctor", "once", "preview", "run"):
         subs.add_parser(command)
     arguments = parser.parse_args(argv)
     try:
@@ -494,6 +583,8 @@ def main(argv: list[str] | None = None) -> int:
             return control(arguments.command)
         if arguments.command == "status":
             return status()
+        if arguments.command == "doctor":
+            return doctor()
         if arguments.command == "preview":
             return once(offline=True)
         if arguments.command == "once":
