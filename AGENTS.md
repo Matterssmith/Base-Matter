@@ -1,3 +1,13 @@
+## 2026-11-20 — Matter-Autopilot continuo bajo Sakura
+
+- Objetivo: ejecutar periódicamente la orden `continúa el proyecto matter` mediante `systemd --user` con estado persistente y límite diario de llamadas OpenAI. Guía: `docs/MATTER_AUTOPILOT_UBUNTU.md`.
+- Implementación: `tools/matter_autopilot.py`, `tools/matter-autopilot.service`, `tools/install-matter-ai.sh`; tests `tests/test_matter_autopilot.py`.
+- Autonomía **acotada**: solo archivos fuente/doc compatibles en rama `workstreams/*` verificada, sin acceso privilegiado, comandos shell, scripts de producción, tokens, secretos Vault, sesiones, .github, herramientas del agente ni Bot-Matter. Nunca ejecutar tests/compilación que puedan cargar código no confiable sin revisión/sandbox.
+- El ciclo puede crear commit local; push remoto solo si Sakura autorizó `--push-workstreams` en consola; no merge directo a `alpha`, `beta`, `stable`. Conservar límites para evitar consumo ilimitado; el límite de rondas NO limita gastos monetarios por tokens.
+- Estado privado `~/.local/state/matter-ai/autopilot-state.json`, contador persistido **antes** de cada llamada y lock Linux anti duplicados; no incluir tokens ni respuestas sensibles en logs.
+- Cada avance debe actualizar continuidad en repositorio si procede. El supervisor no se ha desplegado a la laptop y requiere API key y GitHub credenciales propios.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Persistencia Matter y Sakura
 
 - Usuario `Sakura`: `tools/setup-sakura.sh`; contraseña bloqueada por defecto, `--password-prompt` opcional, SSH con clave pública si se instala. Nunca habilitar contraseñas vacías ni acceso root automático.
