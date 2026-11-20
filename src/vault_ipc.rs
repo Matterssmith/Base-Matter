@@ -157,6 +157,25 @@ impl VaultClient {
         }
         Ok(())
     }
+    /// Verify a real encrypted read/write roundtrip on a reserved synthetic
+    /// record. Does not grant roles or access to any other bot or socket.
+    pub fn verify_roundtrip(&self) -> Result<u64> {
+        const RECORD: &str = "connection-health-v1";
+        const MARKER: &[u8] = b"matter-vault-health-check-v1";
+        let previous = self.invoke("get", RECORD, None, None)?;
+        let written = self.invoke("put", RECORD, previous.revision, Some(MARKER))?;
+        let Some(revision) = written.revision else {
+            bail!("vault_self_test_no_revision");
+        };
+        let checked = self.invoke("get", RECORD, None, None)?;
+        if checked.revision != Some(revision)
+            || !matches!(checked.value.as_ref(), Some(bytes) if bytes.as_slice() == MARKER)
+        {
+            bail!("vault_self_test_mismatch");
+        }
+        Ok(revision)
+    }
+
     #[cfg(unix)]
     fn key(&self) -> Result<Zeroizing<Vec<u8>>> {
         let meta = fs::symlink_metadata(&self.client_key_file)?;

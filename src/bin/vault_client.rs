@@ -12,7 +12,7 @@ use zeroize::Zeroizing;
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
     if args.len() < 7 {
-        bail!("Usage: matter-vault-client ping|read|write SOCKET_PATH CLIENT_ID KEY_FILE TENANT BOT SOCKET [RECORD] [FILE] [EXPECTED_REVISION|new]");
+        bail!("Usage: matter-vault-client ping|self-test|read|write SOCKET_PATH CLIENT_ID KEY_FILE TENANT BOT SOCKET [RECORD] [FILE] [EXPECTED_REVISION|new]");
     }
     let client = VaultClient {
         socket_path: args[1].clone().into(),
@@ -26,6 +26,10 @@ fn main() -> Result<()> {
         "ping" if args.len() == 7 => {
             client.invoke("ping", "health", None, None)?;
             println!("vault_authenticated");
+        }
+        "self-test" if args.len() == 7 => {
+            let revision = client.verify_roundtrip()?;
+            println!("vault_roundtrip_verified revision={revision}");
         }
         "read" if args.len() == 9 => {
             let result = client.invoke("get", &args[7], None, None)?;

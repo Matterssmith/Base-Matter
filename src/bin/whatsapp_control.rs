@@ -323,14 +323,19 @@ fn main() -> Result<()> {
         if context.group_id.is_some() || context.source_id != vault_owner_chat {
             bail!("El estado de Vault sólo se consulta en el chat propio");
         }
-        if !(args.is_empty() || (args.len() == 1 && args[0] == "status")) {
-            bail!("Uso: =/>vault [status]");
+        let test = args.len() == 1 && args[0] == "test";
+        if !(args.is_empty() || (args.len() == 1 && args[0] == "status") || test) {
+            bail!("Uso: =/>vault [status|test]");
         }
         let output = match vault_client.as_ref() {
             None => "Vault-Matter: servicio no configurado para este socket.",
             Some(client) if client.socket != context.socket_id => {
                 "Vault-Matter: identidad de socket no coincide; acceso denegado."
             }
+            Some(client) if test && client.verify_roundtrip().is_ok() => {
+                "Vault-Matter: lectura y escritura cifradas verificadas con registro de prueba. Sólo configuración; roles y comandos privados siguen bloqueados."
+            }
+            Some(_) if test => "Vault-Matter: prueba de lectura/escritura denegada o fallida.",
             Some(client) if client.invoke("ping", "health", None, None).is_ok() => {
                 "Vault-Matter: servicio cifrado autenticado. Permiso limitado a configuración; roles y comandos privados siguen bloqueados."
             }
