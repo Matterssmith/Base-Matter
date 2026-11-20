@@ -1,3 +1,12 @@
+## 2026-11-20 — Usuario Sakura y continuidad Git alpha/beta/stable
+
+- Rama `workstreams/02-base`; nuevos `tools/setup-sakura.sh`, `tools/matter_branches.py`, `tests/test_matter_branches.py`, `docs/MATTER_SAKURA_BRANCH_RECOVERY.md`, cambios en instalador `tools/install-matter-ai.sh`, CLI, handoff, README/AGENTS/WORK_CONTINUITY y CI.
+- Usuario Ubuntu `Sakura` nuevo opcional: contraseña bloqueada de forma predeterminada, contraseña interactiva opcional, SSH pública verificada. No se ejecutó sobre Ubuntu de usuario.
+- Se añadieron: `matter-ai branches` (ramas reales), `workstatus`, `checkpoint` (metadatos privados), `save` (commit/push con dos aprobaciones) y `promote` (PR draft revisado a alpha/beta/stable/feat), con trabajo aislado por rama y sin fuerza.
+- Vault code/docs se pueden guardar tras validación; datos cifrados bajo vault/ siguen protegidos de guardado genérico. Bot-Matter bloqueado.
+- Pendiente: CI nueva batería Linux/Windows, instalación real, autenticación GitHub privada y API OpenAI, validación end-to-end con un repo de prueba. No afirmar respaldos remotos sin confirmación de push.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI green y publicación protegida de Matter-AI
 
 - Tests offline de Matter-AI completos en GitHub Actions Linux y Windows: [run 44823282443](https://github.com/Matterssmith/Base-Matter/actions/runs/44823282443), commit 9159b4d1c1f88443ecc8e77917bbc808855aaca3.
