@@ -161,7 +161,10 @@ async fn reply(mut stream: TcpStream) -> Result<()> {
                 return Ok(0);
             }
             used += n;
-            if request[..used].windows(4).any(|window| window == b"\r\n\r\n") {
+            if request[..used]
+                .windows(4)
+                .any(|window| window == b"\r\n\r\n")
+            {
                 return Ok(used);
             }
         }
