@@ -1,5 +1,9 @@
 # Matter-AI — ChatGPT en consola Ubuntu Server (sin Codex)
 
+## Alternativa sin factura de OpenAI: modelo local Ollama
+
+**Actualización 2026-11-20:** Matter-AI ahora ofrece `matter-ai backend local`, con el backend `tools/matter_local.py` y modelo Ollama instalado en tu Ubuntu. **No necesitas clave OpenAI API en ese modo.** Los pasos de configuración API de las secciones siguientes son solamente para `matter-ai backend openai`. No es el mismo GPT-6 del servicio ChatGPT, ni tiene su memoria o herramientas automáticamente. Si la laptop tiene RAM limitada, prueba primero `ollama pull qwen3:0.6b`. La guía principal para trabajar sin coste por mensaje está en [Matter-AI con Ollama local](MATTER_AI_OLLAMA_LOCAL.md). El modo continuo, guardado por rama y bloqueos de Vault/Bot siguen aplicando.
+
 **Estado:** agente CLI independiente implementado en `workstreams/02-base`, sin despliegue en la laptop, sin claves en GitHub y sin pruebas de API real. Usa OpenAI **Responses API** mediante la biblioteca estándar Python.
 
 **Uso previsto:** instalar en tu laptop Ubuntu con teclado una sola vez; después hablar desde terminal con `matter-ai` y ordenar trabajos sobre cada repositorio Matter. Se pueden ejecutar órdenes de lectura y editar archivos completos **en clones locales**, con confirmación del operador. No controla remotamente un servidor ni entra a la cuenta ChatGPT del navegador.
