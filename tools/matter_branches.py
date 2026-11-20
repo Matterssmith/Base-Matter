@@ -253,6 +253,25 @@ def execute(action: str, parameters: list[str]) -> int:
         print("Indica proyecto: matter-ai save matter-rust")
         return 2
     project = parameters[0]
+    if project == "all" and action in {"checkpoint", "save", "workstatus"}:
+        available = [
+            name for name in matter_ai.WORKSTREAMS if name != "bot"
+            and (matter_ai.ROOT / name).is_dir()
+            and not (matter_ai.ROOT / name).is_symlink()
+            and (matter_ai.ROOT / name / ".git").exists()
+        ]
+        print("Workstreams locales disponibles:", len(available))
+        if not available:
+            print("Nada que guardar. Primero ejecuta matter-ai sync ID o sync all.")
+            return 1
+        errors = 0
+        for name in available:
+            print("\n=== ", name, " ===")
+            code = execute(action, [name, *(p for p in parameters[1:] if p == "--local")])
+            if code:
+                errors += 1
+        print("Workstreams procesados:", len(available), "incidencias:", errors)
+        return 1 if errors else 0
     if project not in matter_ai.WORKSTREAMS:
         print("Proyecto desconocido. Ejecuta matter-ai projects.")
         return 2
