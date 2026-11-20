@@ -33,6 +33,7 @@ ROOT = HOME / "Matter" / "workspaces"
 API_URL = "https://api.openai.com/v1/responses"
 MODEL_DEFAULT = "gpt-6.2-sol"
 MAX_ACTIONS = 18
+AUTO_LOCAL_EDITS = False
 
 # Mapa público. Credenciales de GitHub y Vault NUNCA están en este archivo.
 WORKSTREAMS = {
@@ -162,6 +163,10 @@ def project_path(project: str) -> Path:
     root = path.resolve(strict=True)
     if not root.is_relative_to(ROOT.resolve()):
         raise ValueError("ruta_fuera_de_workspace")
+    expected = WORKSTREAMS[project][1]
+    active = run(["git", "branch", "--show-current"], root, 15)
+    if active.get("returncode") != 0 or active.get("output", "").strip() != expected:
+        raise ValueError("rama_local_incorrecta; se bloquean operaciones hasta revisar Git")
     return root
 
 
@@ -254,6 +259,8 @@ def sync(project: str) -> int:
 
 
 def approve(question: str) -> bool:
+    if AUTO_LOCAL_EDITS and question.startswith("¿Escribir archivo "):
+        return True
     try:
         answer = input(f"\n[CONFIRMAR] {question}\nEscribe SI para autorizar: ").strip()
     except (EOFError, KeyboardInterrupt):
@@ -273,14 +280,20 @@ def list_files(project: str, relative: str) -> dict:
     return {"entries": entries}
 
 
-def read_file(project: str, relative: str) -> dict:
+def read_file(project: str, relative: str, offset: int = 0) -> dict:
     path = file_path(project, relative)
-    if not path.is_file() or path.stat().st_size > 48000:
+    if not path.is_file() or path.stat().st_size > 2000000:
         return {"error": "fichero_ausente_o_demasiado_grande"}
-    contents = path.read_text(encoding="utf-8", errors="replace")
+    if not isinstance(offset, int) or offset < 0 or offset > 2000000:
+        return {"error": "offset_invalido"}
+    with path.open("r", encoding="utf-8", errors="replace") as file:
+        file.seek(offset)
+        contents = file.read(16000)
+        end_offset = file.tell()
+        next_part = file.read(1)
     if SECRET_FRAGMENT_RE.search(contents):
         return {"error": "posible_secreto_detectado"}
-    return {"content": contents, "path": relative}
+    return {"content": contents, "path": relative, "next_offset": end_offset if next_part else None}
 
 
 def write_file(project: str, relative: str, contents: str) -> dict:
@@ -362,11 +375,12 @@ TOOLS = [
     },
     {
         "type": "function", "name": "read_file",
-        "description": "Read public source code or documentation (never secrets), max 48 kB.",
+        "description": "Read a 16k character chunk from a source file or README; supply offset=next_offset to continue reading.",
         "parameters": {
             "type": "object", "properties": {
-                "project": {"type": "string"}, "path": {"type": "string"}
-            }, "required": ["project", "path"], "additionalProperties": False,
+                "project": {"type": "string"}, "path": {"type": "string"},
+                "offset": {"type": "integer", "minimum": 0}
+            }, "required": ["project", "path", "offset"], "additionalProperties": False,
         }, "strict": True,
     },
     {
@@ -425,7 +439,7 @@ def dispatch(name: str, args: dict) -> dict:
         if name == "list_files":
             return list_files(args["project"], args["path"])
         if name == "read_file":
-            return read_file(args["project"], args["path"])
+            return read_file(args["project"], args["path"], args.get("offset", 0))
         if name == "write_file":
             return write_file(args["project"], args["path"], args["content"])
         if name == "run_command":
@@ -507,6 +521,7 @@ def interactive() -> int:
     print("Matter-AI · terminal interactiva · /salir para terminar")
     print("Traspaso Matter:", "cargado" if HANDOFF_PATH.is_file() else "no disponible")
     print("Repositorios: matter-ai projects · Descargar: matter-ai sync matter-rust")
+    print("Modo opcional /auto on para no aprobar cada edición local; /auto off lo desactiva.")
     history: list[dict] = []
     while True:
         try:
@@ -516,6 +531,16 @@ def interactive() -> int:
             return 0
         if question in {"/salir", "salir", "/exit", "/quit"}:
             return 0
+        global AUTO_LOCAL_EDITS
+        if question == "/auto on":
+            if approve("¿Permitir cambios de archivos locales sin confirmar cada archivo?"):
+                AUTO_LOCAL_EDITS = True
+                print("Modo local automático ACTIVADO. Sin push ni comandos peligrosos.")
+            continue
+        if question == "/auto off":
+            AUTO_LOCAL_EDITS = False
+            print("Modo local automático desactivado.")
+            continue
         if not question:
             continue
         try:
