@@ -81,18 +81,21 @@ fn menu_has_exactly_one_categories_selector() {
         "../../../templates/menu-visible-categories.json"
     ))
     .unwrap();
-    assert_eq!(rows.len(), ids.len());
-    for (row, id) in rows.iter().zip(ids) {
+    // The first page contains nine categories plus one next-page row.
+    assert_eq!(ids.len(), 10);
+    assert_eq!(rows.len(), 10);
+    for (row, id) in rows.iter().take(9).zip(ids.iter().take(9)) {
         assert_eq!(row["id"], format!("matter.read.menu.{id}"));
         assert_eq!(row["title"], format!("=/>menu {id}"));
         assert!(row.get("description").is_none());
         assert_ne!(row["title"], "☾︎ Anti");
     }
+    assert_eq!(rows[9]["id"], "matter.read.menu.page.2");
+    assert_eq!(rows[9]["title"], "Más categorías");
     assert!(rows.iter().all(|row| ![
         "matter.read.menu.group",
         "matter.read.menu.gacha",
         "matter.read.menu.sockets",
-        "matter.read.menu.system",
         "matter.read.menu.downloads",
     ]
     .contains(&row["id"].as_str().unwrap())));
@@ -118,10 +121,23 @@ fn submenus_offer_only_active_categories_and_one_selector() {
         };
         assert_eq!(native.buttons.len(), 1);
         assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
-        assert_eq!(
-            native.buttons[0].button_params_json,
-            expected_nav.buttons[0].button_params_json
-        );
+        if request == "=/>menu antis" {
+            assert_eq!(
+                native.buttons[0].button_params_json,
+                expected_nav.buttons[0].button_params_json
+            );
+        } else {
+            let selector: serde_json::Value = serde_json::from_str(
+                native.buttons[0].button_params_json.as_deref().unwrap(),
+            )
+            .unwrap();
+            let rows = selector["sections"][0]["rows"].as_array().unwrap();
+            assert_eq!(rows.len(), 2);
+            assert_eq!(rows[0]["id"], "matter.read.menu.utils");
+            assert_eq!(rows[0]["title"], "=/>menu utils");
+            assert_eq!(rows[1]["id"], "matter.read.menu.page.1");
+            assert_eq!(rows[1]["title"], "Anterior");
+        }
     }
     assert!(native_navigation_message("Unsafe", "=/>set role owner").is_err());
 }
