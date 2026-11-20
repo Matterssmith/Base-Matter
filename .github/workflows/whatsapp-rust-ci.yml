@@ -1,4 +1,5 @@
 name: whatsapp-rust provider offline verification
+# Artifacts are published only from tested alpha push SHAs.
 
 on:
   push:
