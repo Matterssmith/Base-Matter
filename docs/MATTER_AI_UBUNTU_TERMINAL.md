@@ -23,6 +23,8 @@ Para conservar avances por proyecto:
 matter-ai branches base
 matter-ai checkpoint base
 matter-ai save base
+matter-ai checkpoint all
+matter-ai save all
 matter-ai promote base alpha
 matter-ai promote base beta
 matter-ai promote base stable
