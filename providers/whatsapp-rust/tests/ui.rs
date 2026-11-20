@@ -127,10 +127,9 @@ fn submenus_offer_only_active_categories_and_one_selector() {
                 expected_nav.buttons[0].button_params_json
             );
         } else {
-            let selector: serde_json::Value = serde_json::from_str(
-                native.buttons[0].button_params_json.as_deref().unwrap(),
-            )
-            .unwrap();
+            let selector: serde_json::Value =
+                serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap())
+                    .unwrap();
             let rows = selector["sections"][0]["rows"].as_array().unwrap();
             assert_eq!(rows.len(), 2);
             assert_eq!(rows[0]["id"], "matter.read.menu.utils");
