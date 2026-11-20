@@ -1,3 +1,9 @@
+### Enlace público y comando del bot
+
+El workflow `.github/workflows/matter-register-pages.yml` intenta publicar solo `index.html` y `app.js` en GitHub Pages. El administrador debe habilitar previamente **Settings → Pages → Build and deployment → Source: GitHub Actions**. Hasta que despliegue y prueba HTTP devuelvan éxito, NO publicar ni configurar la URL en bots.
+
+Cuando esté publicada y comprobada, el proveedor principal Rust lee `MATTER_REGISTER_PUBLIC_URL` únicamente del entorno confiable. Solo admite el valor exacto `https://matterssmith.github.io/Base-Matter/` — sin parámetros ni fragmentos. Después de un ACK firmado y autorizado para `=/>register` en chat privado, intenta enviar una tarjeta NativeFlow CTA URL y responde también con enlace legible. Sin variable, se mantiene el mensaje informativo original. No abre el navegador sin que el usuario pulse; no registra personas ni concede owner global. El servicio desplegado no se ha actualizado con estos commits.
+
 # Matter Register — Pantalla interactiva y transporte multiplataforma
 
 **Estado:** vista previa de interfaz en rama de funcionalidad. Registro real deshabilitado por defecto. NO desplegar como KYC operativo.
