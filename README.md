@@ -1,3 +1,11 @@
+## 2026-11-20 — Conexión Vault opcional, aislada y verificable para wa-alpha
+
+- Comandos WhatsApp `=/>status`, `=/>menu` y `=/>help` confirmados operativos por el propietario en la sesión alpha. La autenticación previa de la sesión es real.
+- `scripts/whatsapp-alpha-existing.sh` mantiene **Vault desconectado por defecto** y habilita sólo con argumento explícito `--vault-env /etc/base-matter/vault-alpha.env`. Verifica credencial distinta `base-wa-alpha`, socket `wa-alpha`, llave 0600 exclusiva, grupo IPC y handshake real antes de lanzar proveedor. Sin pairing, sin copiar `session.db` ni usar claves legacy.
+- El enrolamiento se hace exclusivamente por script privado de Vault `scripts/enroll-alpha-client-linux.sh`; instrucciones privadas `docs/ALPHA_VAULT_AND_GITHUB_SYNC.md` en Vault-Matter. Todavía **no se ha aplicado ese enrolamiento en el host ni probado `=/>vault`**. Los roles y registros permanecen bloqueados y Base no recibe clave maestra ni token GitHub.
+- La sincronización GitHub del ciphertext pertenece a Vault-Matter; no ejecutarla desde Base ni promover alpha a beta/stable sin CI y pruebas reales. Bot-Matter bloqueado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Sesión WhatsApp alpha recuperada y autenticada en host real
 
 - Evidencia enviada desde `instabox-se`: en `/home/Sakura/Base-Matter`, el script `scripts/whatsapp-alpha-existing.sh --check` pasó `Base-Matter control settings checked`, `whatsapp-rust pairing settings checked`, `ALPHA_PREFLIGHT=OK`, `ALPHA_VAULT=ISOLATED_NOT_ENROLLED`, `ALPHA_PAIRING=DISABLED`.
