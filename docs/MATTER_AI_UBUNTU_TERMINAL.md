@@ -40,12 +40,12 @@ El comando `matter-ai plan` imprime el traspaso persistido del ecosistema, que e
 En el prompt interactivo escribe, por ejemplo:
 `Revisa AGENTS y README de matter-rust, lista los pendientes y corrige el error de compilación.`
 
-La IA puede consultar workstreams, listar y leer archivos no secretos (incluidos README extensos por fragmentos), editar archivos completos con confirmación humana y correr ciertos comandos Git/Rust/Python. Los clones quedan bajo `~/Matter/workspaces/<workstream>`, uno por tarea, en la rama Git correspondiente. `matter-ai sync all` es opcional: puede consumir varios GB y necesita credenciales GitHub para repos privados.
+La IA puede consultar workstreams, listar y leer archivos no secretos (incluidos README extensos por fragmentos), editar archivos completos con confirmación humana y correr ciertos comandos Git/Rust/Python. Cuando el agente haya editado archivos y se lo pidas, puede usar `publish_workstream` para preparar commit y hacer push **solo a la rama workstreams correspondiente**, previa confirmación expresa que muestra los archivos a publicar. Los clones quedan bajo `~/Matter/workspaces/<workstream>`, uno por tarea, en la rama Git correspondiente. `matter-ai sync all` es opcional: puede consumir varios GB y necesita credenciales GitHub para repos privados.
 
 En el chat de terminal, `/auto on` permite aprobar **una vez** la edición de archivos de los workspaces locales; no concede push, borrado de ramas ni privilegios de servidor. `/auto off` lo revoca. Antes de ejecutar tests seguirá solicitando aprobación.
 
 **Limitaciones deliberadas:**
-- No auto-push, auto-merge, reseteos ni borrados masivos. Pide revisión y push manual para cambios GitHub.
+- No push automático: únicamente se admite `publish_workstream` después de que el usuario revise y escriba `SI`; se prohíben auto-merge, pushes forzados, reseteos y borrados masivos.
 - No acceder a datos cifrados de Vault, archivos de sesión, API keys, credenciales privadas, ni alterar sockets existentes.
 - No ejecutar comandos shell arbitrarios ni servicios del sistema como root.
 - `Bot-Matter` permanece bloqueado hasta pasar los gates.
