@@ -9,6 +9,8 @@ Base-Matter ingress and Vault authorization are separate, mandatory boundaries.
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
 */
+pub mod web;
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
 use std::sync::Arc;
