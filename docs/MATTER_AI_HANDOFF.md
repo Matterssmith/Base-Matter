@@ -1,3 +1,11 @@
+## Matter-AI local sin consumo de API comercial — 2026-11-20
+
+- `matter-ai backend local` selecciona Ollama en loopback (`http://127.0.0.1:11434`) y `matter-ai local-model qwen3:0.6b` selecciona el modelo de bajo consumo; `matter-ai backend openai` revierte a API OpenAI con facturación aparte.
+- `matter-autopilot doctor` valida disponibilidad local y claves. El ciclo «continúa el proyecto matter» utiliza el backend configurado y respeta los mismos permisos de ramas, Vault y Bot-Matter. Sin llave API en modo local, sin garantía de GPT-6 ni acceso al historial ChatGPT de teléfono.
+- Modelo de 0.6B o 1.7B no alcanza razonamiento/seguridad de modelos grandes; tareas de Rust/CI requieren revisión. No activar servicios ni publicar ramas protegidas automáticamente.
+- Documento: `docs/MATTER_AI_OLLAMA_LOCAL.md`. Ubuntu Sakura y Ollama todavía sin instalar o verificar.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## Operación autónoma local — Matter-Autopilot (2026-11-20)
 
 - Comando literal repetido: **«continúa el proyecto matter»**. Supervisor de workstreams: `matter-autopilot`, instalado desde Base-Matter `workstreams/02-base`.
