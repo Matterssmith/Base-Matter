@@ -1,3 +1,7 @@
+## 2026-11-20 — Matter-AI de consola, entorno aislado
+
+Nuevo asistente Python sin dependencias para Ubuntu Server en `tools/matter_ai.py`, instalado por usuario en `~/.local/share/matter-ai`. Guía: `docs/MATTER_AI_UBUNTU_TERMINAL.md`; traspaso: `docs/MATTER_AI_HANDOFF.md`. 27 workstreams GitHub trabajados por ramas `workstreams/*`. No cargar clave API en repos, Markdown, variables visibles del shell o archivos compartidos. Clave privada 0600. `/auto on` sólo autoriza escrituras locales dentro del checkout validado, nunca permisos globales. Mantener bloqueado Bot-Matter. No confundir disponibilidad CLI con conector OpenAI ya autenticado o bot desplegado. Antes de modificar runtime, revisar README completo, CI y continuidad. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.
