@@ -1,3 +1,7 @@
+## 2026-11-20 — Matter-AI, control por terminal Ubuntu sin Codex
+
+Se añadió en la rama de desarrollo `workstreams/02-base` un agente CLI Python estándar para trabajar con los 27 workstreams del ecosistema: [guía de instalación](docs/MATTER_AI_UBUNTU_TERMINAL.md), [documento de traspaso](docs/MATTER_AI_HANDOFF.md), código `tools/matter_ai.py` e instalador `tools/install-matter-ai.sh`. Trabaja con OpenAI API (facturación separada), no comparte sesiones con este ChatGPT, no se instaló en el servidor, no lee secretos de Vault y no se conecta a WhatsApp. Ejecuta lectura, escrituras locales autorizadas y pruebas aprobadas; **no realiza push/merge/reinicio de producción**. CI pendiente de verificación. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.
