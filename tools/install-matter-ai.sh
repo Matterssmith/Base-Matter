@@ -25,6 +25,13 @@ install -m 0700 -- "$source_agent" "$target_agent"
 if [ -f "$source_dir/matter_branches.py" ]; then
     install -m 0700 -- "$source_dir/matter_branches.py" "$target_dir/matter_branches.py"
 fi
+if [ -f "$source_dir/matter_autopilot.py" ]; then
+    install -m 0700 -- "$source_dir/matter_autopilot.py" "$target_dir/matter_autopilot.py"
+fi
+if [ -f "$source_dir/matter-autopilot.service" ]; then
+    install -d -m 0700 -- "$HOME/.config/systemd/user"
+    install -m 0600 -- "$source_dir/matter-autopilot.service" "$HOME/.config/systemd/user/matter-autopilot.service"
+fi
 if [ -f "$source_dir/../docs/MATTER_AI_HANDOFF.md" ]; then
     install -m 0600 -- "$source_dir/../docs/MATTER_AI_HANDOFF.md" "$target_dir/MATTER_AI_HANDOFF.md"
 fi
@@ -34,6 +41,12 @@ cat > "$target_bin" <<'LAUNCHER'
 exec python3 "$HOME/.local/share/matter-ai/matter_ai.py" "$@"
 LAUNCHER
 chmod 0755 -- "$target_bin"
+cat > "$binary_dir/matter-autopilot" <<'AUTOPILOT'
+#!/usr/bin/env sh
+# Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+exec python3 "$HOME/.local/share/matter-ai/matter_autopilot.py" "$@"
+AUTOPILOT
+chmod 0755 -- "$binary_dir/matter-autopilot"
 
 printf '\n%s\n' 'Matter-AI instalado para este usuario, sin sudo.'
 printf 'Ejecutable: %s\n' "$target_bin"
@@ -46,3 +59,9 @@ printf '%s\n' '  ~/.local/bin/matter-ai promote matter-rust beta (crea PR draft 
 printf '%s\n' '  ~/.local/bin/matter-ai'
 printf '\n%s\n' 'La clave API no se almacena en GitHub. Los repos privados requieren credenciales Git por separado.'
 printf '%s\n' 'Si tu PATH incluye ~/.local/bin podrás escribir simplemente: matter-ai'
+
+printf '%s\n' '  ~/.local/bin/matter-autopilot preview    # comprobación sin API'
+printf '%s\n' '  ~/.local/bin/matter-autopilot configure  # límites de API y proyectos'
+printf '%s\n' '  ~/.local/bin/matter-autopilot start      # solicita autorización para trabajar'
+printf '%s\n' '  ~/.local/bin/matter-autopilot status / stop'
+printf '%s\n' 'Servicio systemd de usuario instalado, pero NO activado automáticamente.'
