@@ -1,9 +1,9 @@
 ## 2026-11-20 — Matter Register: interfaz y NativeFlow alternativo (aislado)
 
-- Rama \`feat/matter-register-web\` contiene \`web/matter-register/index.html\`: vista responsive con temática Matter Ideas, Bot Kids, Bot SFW, Testers y Kids Channel, flujo invitado/adulto/menor, sonido opcional y pantalla completa por interacción del usuario.
-- Se agregó \`providers/baileys-compat/register-card.mjs\` como transporte opcional de botones \`cta_url\`, \`open_webview\` experimental y \`quick_reply\`, con allowlist de host HTTPS y alternativa textual. **No** reemplaza el proveedor principal \`whatsapp-rust\`, no inicia sesiones ni otorga identidad o rangos.
+- Rama `feat/matter-register-web` contiene `web/matter-register/index.html`: vista responsive con temática Matter Ideas, Bot Kids, Bot SFW, Testers y Kids Channel, flujo invitado/adulto/menor, sonido opcional y pantalla completa por interacción del usuario.
+- Se agregó `providers/baileys-compat/register-card.mjs` como transporte opcional de botones `cta_url`, `open_webview` experimental y `quick_reply`, con allowlist de host HTTPS y alternativa textual. **No** reemplaza el proveedor principal `whatsapp-rust`, no inicia sesiones ni otorga identidad o rangos.
 - El navegador solo habilitará intento de registro cuando un gateway privado declare capacidades; la autorización verdadera será del backend. No hay captura de fotos, biometría, CURP ni almacenamiento en GitHub.
-- Contrato privado correlativo: \`Vault-Matter\` rama \`feat/matter-register-gateway-contract\` con schema mínimo y requisitos de verificación legal y de menores. Gateway real, proveedor documental, prueba de vida, consentimiento tutelar, sitio HTTPS, despliegue y CI siguen pendientes; **no anunciar registro operativo**.
+- Contrato privado correlativo: `Vault-Matter` rama `feat/matter-register-gateway-contract` con schema mínimo y requisitos de verificación legal y de menores. Gateway real, proveedor documental, prueba de vida, consentimiento tutelar, sitio HTTPS, despliegue y CI siguen pendientes; **no anunciar registro operativo**.
 - Se revisaron los README existentes, se añadieron pruebas offline sin datos personales y un workflow independiente. Ramas alpha, beta, stable y runtime WhatsApp no se tocaron.
 
 Créditos:
