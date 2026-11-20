@@ -1,3 +1,39 @@
+## Reparación de "Sakura: No such process" — 2026-11-20
+
+Los errores `failed to look up user Sakura: No such process` y `sudo: unknown user Sakura` aparecen cuando `Sakura` todavía **no está creada**. Ejecutar `loginctl enable-linger` y `sudo -iu Sakura` **después** de crear la cuenta.
+
+### Reparación manual: Sakura con contraseña y permisos de administrador
+
+Desde un usuario Ubuntu **que ya tiene sudo** (no desde Sakura), ejecutar:
+
+```bash
+getent passwd Sakura || sudo useradd -m -U -s /bin/bash Sakura
+sudo passwd Sakura
+sudo usermod -aG sudo Sakura
+id Sakura
+getent passwd Sakura
+sudo -l -U Sakura
+sudo loginctl enable-linger Sakura
+sudo -iu Sakura
+whoami
+```
+
+`useradd` acepta la mayúscula de `Sakura` en las versiones actuales de Ubuntu; `adduser` puede aplicar restricciones de nombres adicionales. La orden `passwd` solicita contraseña oculta y confirma; no escribir claves en la terminal como argumentos. `usermod -aG sudo` añade el rol administrador sin eliminar los grupos anteriores. **No usar `usermod -G sudo` sin `-a`**.
+
+Si `getent passwd Sakura` o `id Sakura` falla, detener los pasos siguientes y revisar el error del comando `useradd`. Si **todos** los comandos `sudo` fallan, incluso `sudo id`, hay un problema general de sudo y requiere reparación desde root/consola administradora, no cambiar permisos de `/etc/sudoers` a ciegas. El mensaje secundario `sudoet_audit` puede ser provocado por el usuario desconocido; comprobar de nuevo después de crearlo.
+
+### Reparación guiada en un solo comando
+
+El script `tools/setup-sakura.sh` fue ampliado para reparar una cuenta ausente o existente sin borrar datos. Desde el clon de Base-Matter `workstreams/02-base`:
+
+```bash
+sudo bash tools/setup-sakura.sh --admin --password-prompt --linger
+```
+
+Solicita la contraseña de Sakura de forma segura, la agrega al grupo `sudo` y habilita linger **después** de verificar que existe. En otra ejecución conserva usuario, directorio, UID, contraseña (salvo `--password-prompt`) y grupos. Una alternativa con acceso por clave SSH es `--admin --authorized-key-file /ruta/clave.pub --linger`.
+
+No crea entradas `NOPASSWD` ni modifica `sshd_config`. **El usuario administrador actual se conserva** y el servicio Matter-Autopilot no se activa hasta que el usuario autorice su inicio.
+
 # Sakura + continuidad de ramas Matter
 
 ## Alternativa sin factura de OpenAI: modelo local Ollama
