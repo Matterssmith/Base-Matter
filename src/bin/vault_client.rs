@@ -42,7 +42,11 @@ fn main() -> Result<()> {
             let revision = if args[9] == "new" {
                 None
             } else {
-                Some(args[9].parse::<u64>().map_err(|_| anyhow!("invalid_revision"))?)
+                Some(
+                    args[9]
+                        .parse::<u64>()
+                        .map_err(|_| anyhow!("invalid_revision"))?,
+                )
             };
             let result = client.invoke("put", &args[7], revision, Some(&value))?;
             println!("record_written revision={}", result.revision.unwrap_or(0));

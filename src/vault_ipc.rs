@@ -3,15 +3,20 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
+#[cfg(unix)]
+use anyhow::anyhow;
+#[cfg(unix)]
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+#[cfg(unix)]
 use chacha20poly1305::{
     aead::{Aead, KeyInit, Payload},
     XChaCha20Poly1305, XNonce,
 };
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+#[cfg(unix)]
+use serde::Deserialize;
 use std::path::PathBuf;
-use zeroize::Zeroizing;
 #[cfg(unix)]
 use std::{
     fs,
@@ -20,9 +25,13 @@ use std::{
     os::unix::{fs::PermissionsExt, net::UnixStream},
     time::Duration,
 };
+use zeroize::Zeroizing;
+#[cfg(unix)]
 const VERSION: u16 = 1;
+#[cfg(unix)]
 const MAX_WIRE: u64 = 2 * 1024 * 1024 + 8192;
 const MAX_VALUE: usize = 1024 * 1024;
+#[cfg(unix)]
 const DOMAIN: &[u8] = b"matter-vault-ipc-aead-v1";
 
 #[derive(Clone, Debug, Serialize)]
@@ -34,6 +43,7 @@ pub struct RecordScope {
     pub kind: String,
     pub record: String,
 }
+#[cfg(unix)]
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Packet {
@@ -42,6 +52,7 @@ struct Packet {
     nonce: String,
     ciphertext: String,
 }
+#[cfg(unix)]
 #[derive(Serialize)]
 struct Request {
     version: u16,
@@ -51,6 +62,7 @@ struct Request {
     expected_revision: Option<u64>,
     value: Option<String>,
 }
+#[cfg(unix)]
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Response {
@@ -80,6 +92,7 @@ fn safe_id(value: &str) -> bool {
             .bytes()
             .all(|b| b.is_ascii_alphanumeric() || b"._:-".contains(&b))
 }
+#[cfg(unix)]
 fn aad(id: &str, direction: &str) -> Vec<u8> {
     let mut out = DOMAIN.to_vec();
     out.extend_from_slice(b":");
@@ -179,8 +192,8 @@ impl VaultClient {
         if payload.len() as u64 > MAX_WIRE {
             bail!("vault_request_too_large");
         }
-        let mut stream = UnixStream::connect(&self.socket_path)
-            .map_err(|_| anyhow!("vault_unavailable"))?;
+        let mut stream =
+            UnixStream::connect(&self.socket_path).map_err(|_| anyhow!("vault_unavailable"))?;
         stream.set_read_timeout(Some(Duration::from_secs(5)))?;
         stream.set_write_timeout(Some(Duration::from_secs(5)))?;
         stream.write_all(&payload)?;
@@ -210,8 +223,8 @@ impl VaultClient {
             )
             .map_err(|_| anyhow!("vault_response_unauthenticated"))?;
         let clear = Zeroizing::new(decrypted);
-        let response: Response = serde_json::from_slice(&clear)
-            .map_err(|_| anyhow!("vault_response_invalid"))?;
+        let response: Response =
+            serde_json::from_slice(&clear).map_err(|_| anyhow!("vault_response_invalid"))?;
         if response.version != VERSION || !response.ok || response.error.is_some() {
             bail!("vault_operation_denied");
         }
