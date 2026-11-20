@@ -1,3 +1,12 @@
+## 2026-11-20 — CI green y publicación protegida de Matter-AI
+
+- Tests offline de Matter-AI completos en GitHub Actions Linux y Windows: [run 44823282443](https://github.com/Matterssmith/Base-Matter/actions/runs/44823282443), commit 9159b4d1c1f88443ecc8e77917bbc808855aaca3.
+- El agente carga `docs/MATTER_AI_HANDOFF.md` en `~/.local/share/matter-ai` al instalar, consulta README largos por fragmentos y aísla 27 workstreams en clones con rama exacta.
+- `publish_workstream` sólo permite revisar, commitear y hacer push de archivos modificados por el agente en la sesión, a rama `workstreams/*` y remoto Matterssmith verificado, con consentimiento humano. No auto-merge ni force push. CI y PRs necesitan revisión posterior.
+- El instalador no se ha ejecutado sobre la laptop del usuario; NO se ha probado una API key real ni conexión a GitHub privado. La prueba offline no equivale a éxito de la API ni despliegue.
+- Se documentó traspaso inicial por SSH desde móvil para minimizar escritura en laptop, sin exponer contraseñas.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Matter-AI para consola Ubuntu
 
 - Rama: `workstreams/02-base` (no alpha ni stable). Objetivo: gestionar desarrollo Matter desde laptop sin Codex; escribir instrucciones cortas en terminal.
