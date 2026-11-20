@@ -1,3 +1,7 @@
+## 2026-11-20 — Sakura y recuperación de cambios por ramas
+
+Nuevo instalador controlado `tools/setup-sakura.sh` para usuario Ubuntu **Sakura**, predeterminadamente con contraseña bloqueada y acceso por sudo/SSH key; opcional `--password-prompt`. El guardado multi-repositorio está en `tools/matter_branches.py`: ramas reales, checkpoints privados, commits/push autorizados en `workstreams/*` y PR draft a `alpha`, `beta`, `stable` o rama especial existente. No se altera ninguna rama principal. [Instrucciones](docs/MATTER_SAKURA_BRANCH_RECOVERY.md). Equipo Ubuntu no modificado; CI requerido. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Matter-AI, control por terminal Ubuntu sin Codex
 
 Se añadió en la rama de desarrollo `workstreams/02-base` un agente CLI Python estándar para trabajar con los 27 workstreams del ecosistema: [guía de instalación](docs/MATTER_AI_UBUNTU_TERMINAL.md), [documento de traspaso](docs/MATTER_AI_HANDOFF.md), código `tools/matter_ai.py` e instalador `tools/install-matter-ai.sh`. Trabaja con OpenAI API (facturación separada), no comparte sesiones con este ChatGPT, no se instaló en el servidor, no lee secretos de Vault y no se conecta a WhatsApp. Ejecuta lectura, escrituras locales autorizadas y pruebas aprobadas; **solo puede publicar una rama workstreams con confirmación explícita; sin merge ni reinicio de producción**. CI pendiente de verificación. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
