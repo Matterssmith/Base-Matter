@@ -1,3 +1,11 @@
+## 2026-11-20 — Persistencia Matter y Sakura
+
+- Usuario `Sakura`: `tools/setup-sakura.sh`; contraseña bloqueada por defecto, `--password-prompt` opcional, SSH con clave pública si se instala. Nunca habilitar contraseñas vacías ni acceso root automático.
+- Workspace aislado `~/Matter/workspaces/ID`. Fuente de verdad GitHub; `matter-ai save ID` valida archivos, crea commit y tras confirmación push a `workstreams/*`. Prohibidos force push, reset y merge automático.
+- `matter-ai checkpoint ID` sólo registra metadatos locales. `matter-ai promote ID alpha|beta|stable|feat/RAMA` sólo propone PR draft a refs existentes, con revisión y CI manuales. No confundir commit local con respaldo remoto.
+- Documentación de uso: `docs/MATTER_SAKURA_BRANCH_RECOVERY.md`. Revisar READMEs y `docs/WORK_CONTINUITY.md` de cada proyecto antes de publicar. Mantener Vault privado y Bot-Matter bloqueado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Matter-AI de consola, entorno aislado
 
 Nuevo asistente Python sin dependencias para Ubuntu Server en `tools/matter_ai.py`, instalado por usuario en `~/.local/share/matter-ai`. Guía: `docs/MATTER_AI_UBUNTU_TERMINAL.md`; traspaso: `docs/MATTER_AI_HANDOFF.md`. 27 workstreams GitHub trabajados por ramas `workstreams/*`. No cargar clave API en repos, Markdown, variables visibles del shell o archivos compartidos. Clave privada 0600. `/auto on` sólo autoriza escrituras locales dentro del checkout validado, nunca permisos globales. Mantener bloqueado Bot-Matter. No confundir disponibilidad CLI con conector OpenAI ya autenticado o bot desplegado. Antes de modificar runtime, revisar README completo, CI y continuidad. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
