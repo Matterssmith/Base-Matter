@@ -403,9 +403,15 @@ def publish_workstream(project: str, message: str) -> dict:
 
 
 def run_workstream(project: str, argv: list[str]) -> dict:
-    if AUTOPILOT_MODE and (not argv or argv[0] != "git"
-                           or len(argv) < 2 or argv[1] not in {"status", "diff", "log", "rev-parse"}):
-        return {"error": "autopilot_solo_permite_git_lectura; pruebas_manuales"}
+    if AUTOPILOT_MODE:
+        permitted = (
+            ["git", "status"], ["git", "status", "--short"],
+            ["git", "diff"], ["git", "diff", "--stat"],
+            ["git", "log", "-3", "--oneline"],
+            ["git", "rev-parse", "HEAD"],
+        )
+        if argv not in permitted:
+            return {"error": "autopilot_git_lectura_restringida; pruebas_manuales"}
     if project == "bot":
         return {"error": "bot_matter_bloqueado"}
     cwd = project_path(project)
