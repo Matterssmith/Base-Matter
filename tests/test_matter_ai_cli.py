@@ -47,6 +47,8 @@ class MatterAITests(unittest.TestCase):
         self.assertEqual(result["error"], "bot_matter_bloqueado")
         result = matter.run_workstream("bot", ["git", "status"])
         self.assertEqual(result["error"], "bot_matter_bloqueado")
+        result = matter.publish_workstream("bot", "chore: blocked action")
+        self.assertEqual(result["error"], "bot_matter_bloqueado")
 
     def test_commands_non_shell(self):
         with tempfile.TemporaryDirectory() as td:
