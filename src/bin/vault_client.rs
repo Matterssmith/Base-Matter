@@ -12,7 +12,7 @@ use zeroize::Zeroizing;
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
     if args.len() < 7 {
-        bail!("Usage: matter-vault-client ping|self-test|owner-check|read|write SOCKET_PATH CLIENT_ID KEY_FILE TENANT BOT SOCKET [RECORD] [FILE] [EXPECTED_REVISION|new]");
+        bail!("Usage: matter-vault-client ping|self-test|owner-check|owner-check-platform|read|write SOCKET_PATH CLIENT_ID KEY_FILE TENANT BOT SOCKET [RECORD] [FILE] [EXPECTED_REVISION|new]");
     }
     let client = VaultClient {
         socket_path: args[1].clone().into(),
@@ -41,6 +41,18 @@ fn main() -> Result<()> {
                 bail!("global_owner_identity_invalid");
             }
             client.require_global_owner(input.trim())?;
+            println!("global_owner_authorized");
+        }
+        #[cfg(unix)]
+        "owner-check-platform" if args.len() == 8 => {
+            // The platform is a non-secret selection, while the canonical
+            // subject arrives only through stdin and is never echoed.
+            let mut input = Zeroizing::new(String::new());
+            std::io::stdin().take(128).read_to_string(&mut input)?;
+            if input.len() >= 128 || input.lines().count() != 1 {
+                bail!("global_owner_identity_invalid");
+            }
+            client.require_global_owner_for_platform(&args[7], input.trim())?;
             println!("global_owner_authorized");
         }
         "read" if args.len() == 9 => {

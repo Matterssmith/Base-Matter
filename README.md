@@ -1,3 +1,11 @@
+## 2026-11-20 — Cliente global de Vault con identidad inmutable por red
+
+- Base-Matter introduce `require_global_owner_for_platform(platform, subject_id)` para el contrato v2 de Vault, con `whatsapp` PN/LID real, `telegram` user.id y `discord` user.id. Username/nickname es solo un alias visual y no se convierte en principal por texto.
+- `require_global_owner` existente sigue soportando WhatsApp. Toda autorización usa paquete cifrado autenticado al servicio privado y compara la respuesta de forma estricta. Identidades erróneas o plataformas no autorizadas fallan sin filtrar nombres.
+- Nuevo diagnóstico CLI `matter-vault-client owner-check-platform SOCKET CLIENT KEY TENANT BOT SOCKET_ID PLATFORM` lee únicamente `subject_id` por stdin, no imprime números ni IDs. La cuenta pública del operador se introduce al registrar Vault local; no existe número fijo en código.
+- Contratos disponibles para Telegram/Discord sin afirmar integraciones en ejecución. En WhatsApp el proveedor usa los JID obtenidos de eventos autenticados. Nunca confiar en un @username escrito en un mensaje.
+- Requiere actualizar binarios de Vault y Base tras CI y enlazar cada bot adicional con su propio grant. README revisados: 2/2 y cuatro documentos de continuidad sincronizados. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Verificación host-local de owner global desde stdin
 
 - El cliente público `matter-vault-client owner-check` lee un JID canónico de stdin, verifica por AEAD contra el registro cifrado de Vault-Matter y devuelve solo `global_owner_authorized` o error genérico. No acepta el JID en argv, no imprime números, no consulta registros de roles.

@@ -138,24 +138,47 @@ impl VaultClient {
         Ok(Some(client))
     }
 
-    /// Vault alone decides whether a platform identity is an enrolled global
-    /// owner. The registry is encrypted and inaccessible to public Base.
-    /// Caller MUST supply a signed, verified WhatsApp sender identity.
+    /// WhatsApp adapter passes the sender JID proven by its HMAC callback.
+    /// A display name, typed username or mention never proves this identity.
     pub fn require_global_owner(&self, identity: &str) -> Result<()> {
-        let valid = identity
-            .strip_suffix("@s.whatsapp.net")
-            .or_else(|| identity.strip_suffix("@lid"))
-            .is_some_and(|digits| {
-                (8..=20).contains(&digits.len()) && digits.bytes().all(|b| b.is_ascii_digit())
-            });
+        self.require_global_owner_for_platform("whatsapp", identity)
+    }
+
+    /// Common capability for future verified Telegram and Discord adapters.
+    /// Platform and immutable subject ID must come from authenticated provider
+    /// metadata. Never pass a username string as a verified subject.
+    pub fn require_global_owner_for_platform(
+        &self,
+        platform: &str,
+        subject_id: &str,
+    ) -> Result<()> {
+        let numeric = |value: &str, min: usize, max: usize| {
+            (min..=max).contains(&value.len())
+                && value.bytes().all(|byte| byte.is_ascii_digit())
+                && value.bytes().any(|byte| byte != b'0')
+        };
+        let valid = match platform {
+            "whatsapp" => subject_id
+                .strip_suffix("@s.whatsapp.net")
+                .or_else(|| subject_id.strip_suffix("@lid"))
+                .is_some_and(|value| numeric(value, 8, 20)),
+            "telegram" => numeric(subject_id, 1, 20),
+            "discord" => numeric(subject_id, 15, 20),
+            _ => false,
+        };
         if !valid {
-            bail!("invalid_global_owner_identity");
+            bail!("invalid_global_owner_principal");
         }
+        let principal = serde_json::json!({
+            "platform": platform,
+            "subject_id": subject_id,
+        });
+        let encoded = serde_json::to_vec(&principal)?;
         let result = self.invoke(
             "owner_check",
-            "global-owner-check-v1",
+            "global-owner-check-v2",
             None,
-            Some(identity.as_bytes()),
+            Some(&encoded),
         )?;
         if !result
             .value
@@ -260,9 +283,11 @@ impl VaultClient {
             && (expected_revision.is_some() || value.is_some()))
             || (operation == "put" && value.is_none())
             || (operation == "owner_check"
-                && (record != "global-owner-check-v1"
-                    || expected_revision.is_some()
-                    || value.is_none_or(|identity| identity.len() > 64)))
+                && (!matches!(
+                    record,
+                    "global-owner-check-v1" | "global-owner-check-v2"
+                ) || expected_revision.is_some()
+                    || value.is_none_or(|identity| identity.len() > 256)))
         {
             bail!("invalid_vault_operation_arguments");
         }
