@@ -35,6 +35,7 @@ MODEL_DEFAULT = "gpt-6.2-sol"
 MAX_ACTIONS = 18
 AUTO_LOCAL_EDITS = False
 AUTOPILOT_MODE = False
+AUTOPILOT_PROJECT: str | None = None
 LOCAL_EDITS: dict[str, set[str]] = {}
 AUTOPILOT_EDIT_SUFFIXES = {".rs", ".py", ".md", ".go", ".c", ".h", ".cpp", ".hpp", ".ts", ".js", ".html", ".css", ".json", ".yaml", ".yml", ".toml"}
 AUTOPILOT_PROTECTED_FILES = {"Cargo.lock", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "AGENTS.md"}
@@ -572,6 +573,8 @@ def dispatch(name: str, args: dict) -> dict:
         if AUTOPILOT_MODE and name not in {"list_workstreams", "list_files", "read_file",
                                             "write_file", "run_command"}:
             return {"error": "accion_reservada_para_sesion_interactiva"}
+        if AUTOPILOT_MODE and name != "list_workstreams" and args.get("project") != AUTOPILOT_PROJECT:
+            return {"error": "autopilot_solo_proyecto_asignado"}
         if name == "list_workstreams":
             return {"workstreams": project_status()}
         if name == "list_files":
@@ -705,11 +708,14 @@ def interactive() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Matter-AI terminal multi-repositorios, sin Codex")
     parser.add_argument("action", nargs="?", default="chat",
-                        help="chat, setup, plan, projects, sync, branches, workstatus, checkpoint, save, promote, model")
+                        help="chat, setup, plan, projects, sync, branches, workstatus, checkpoint, save, promote, autopilot, model")
     parser.add_argument("rest", nargs="*")
     args = parser.parse_args()
     if args.action == "setup":
         return setup()
+    if args.action == "autopilot":
+        import matter_autopilot
+        return matter_autopilot.main(args.rest)
     if args.action in {"branches", "workstatus", "checkpoint", "save", "promote"}:
         import matter_branches
         return matter_branches.execute(args.action, args.rest)
