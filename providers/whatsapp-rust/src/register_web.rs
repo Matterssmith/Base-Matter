@@ -148,8 +148,27 @@ fn resolve(method: &str, path: &str) -> Response {
 
 async fn reply(mut stream: TcpStream) -> Result<()> {
     let mut request = [0u8; MAX_REQUEST_BYTES];
-    let count = match timeout(Duration::from_secs(3), stream.read(&mut request)).await {
-        Ok(Ok(n)) if n > 0 && n < MAX_REQUEST_BYTES => n,
+    // Read a complete HTTP/1.1 header, even when TCP splits it into frames.
+    // Both total time and total bytes are bounded to prevent exhaustion.
+    let count = match timeout(Duration::from_secs(3), async {
+        let mut used = 0;
+        loop {
+            if used == request.len() {
+                return Ok::<usize, std::io::Error>(0);
+            }
+            let n = stream.read(&mut request[used..]).await?;
+            if n == 0 {
+                return Ok(0);
+            }
+            used += n;
+            if request[..used].windows(4).any(|window| window == b"\r\n\r\n") {
+                return Ok(used);
+            }
+        }
+    })
+    .await
+    {
+        Ok(Ok(n)) if n > 0 => n,
         _ => return Ok(()),
     };
     let input = std::str::from_utf8(&request[..count]).unwrap_or_default();
