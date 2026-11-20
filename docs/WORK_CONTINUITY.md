@@ -1,3 +1,12 @@
+## 2026-11-20 UTC — Confirmación: un solo dispositivo SQLite, id predeterminado 1
+
+- Auditoría offline de `/home/Sakura/.local/share/base-matter/whatsapp-test/session.db` en `instabox-se`: `DEVICE_TOTAL=1`; `DEFAULT_DEVICE_EXISTS=True`; `OTHER_DEVICES=0`; `DEFAULT_DEVICE_HAS_IDENTITY=True`. Comprobación SQL de sólo lectura, sin volcar PN, LID, claves ni JID.
+- Fuente de implementación `whatsapp-rust 0.7.0` en `storages/sqlite-storage/src/sqlite_store.rs`: `SqliteStore::new(database_url)` llama `Self::build(database_url, 1, ...)`. Por tanto **la selección del registro equivocado queda descartada**: `device.id=1` es el único registro y tiene identidad.
+- Pruebas anteriores: PN/LID/account/keys presentes, SQLite íntegra, DNS/TLS a web.whatsapp.com correctos; `--resume-only` emite `WA_LOGOUT_CLASS=AUTH_REJECTED_LOGGED_OUT` antes de autenticación, sin solicitar código. En el teléfono del operador la sesión todavía aparecía en Dispositivos vinculados, con última actividad aproximadamente a las 20:00 hora México (19/11). La UI móvil puede no reflejar de inmediato el estado servidor; ni presencia ni fecha confirman vigencia de credenciales.
+- Pendiente: revisar copias anteriores auténticas del almacén *sin abrir ni imprimir secretos* y verificar el estado de vinculación; no repetir conexiones de prueba ni forzar nuevo pairing. Si se decide relink, sólo mediante base de sesión nueva y aislada, respaldo privado autenticado y autorización del propietario. La sesión anterior no debe eliminarse, sobreescribirse ni subirse al repositorio público.
+- Vault independiente sigue validado con `vault_roundtrip_verified revision=2`; no confundir rechazo de WhatsApp con fallo de Vault. Bot-Matter continúa bloqueado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Cierre de sesión WhatsApp observado con identidad y TLS válidos
 
 - Evidencia directa: inspección de SQLite `device` con `DEVICE_HAS_PN=yes`, `DEVICE_HAS_LID=yes`, `DEVICE_HAS_ACCOUNT=yes`, `DEVICE_HAS_KEY_MATERIAL=yes`, integridad OK. `DNS_WHATSAPP=OK`, `TLS_WHATSAPP=OK` (`TLSv1.3`). El CI `0259d9f0c722dc01abfa3aa6529cdafde5eb196d` publicó binarios firmados por SHA-256 y operador los verificó.
