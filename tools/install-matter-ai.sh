@@ -22,6 +22,9 @@ fi
 
 install -d -m 0700 -- "$target_dir" "$binary_dir"
 install -m 0700 -- "$source_agent" "$target_agent"
+if [ -f "$source_dir/../docs/MATTER_AI_HANDOFF.md" ]; then
+    install -m 0600 -- "$source_dir/../docs/MATTER_AI_HANDOFF.md" "$target_dir/MATTER_AI_HANDOFF.md"
+fi
 cat > "$target_bin" <<'LAUNCHER'
 #!/usr/bin/env sh
 # Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
