@@ -1,0 +1,37 @@
+name: Matter Register web preview checks
+on:
+  push:
+    branches: [feat/matter-register-web]
+    paths:
+      - 'web/matter-register/**'
+      - 'providers/baileys-compat/**'
+      - 'test/test_register_web.py'
+      - '.github/workflows/register-preview-ci.yml'
+  pull_request:
+    paths:
+      - 'web/matter-register/**'
+      - 'providers/baileys-compat/**'
+      - 'test/test_register_web.py'
+      - '.github/workflows/register-preview-ci.yml'
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static HTML/contract regression
+        run: python3 -m unittest discover -s test -p 'test_register_web.py' -v
+      - name: Baileys transport unit tests (offline)
+        run: node --test providers/baileys-compat/register-card.test.mjs
+      - name: No sensitive data should be committed
+        run: |
+          if grep -R -n -E 'gh[pousr]_[A-Za-z0-9]{25,}|-----BEGIN (PRIVATE|OPENSSH) KEY-----' web/matter-register providers/baileys-compat; then
+            echo 'Potential credential found'
+            false
+          fi
