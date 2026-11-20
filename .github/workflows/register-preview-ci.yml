@@ -12,6 +12,7 @@ on:
     paths:
       - 'web/matter-register/**'
       - 'providers/baileys-compat/**'
+      - 'providers/whatsapp-go-compat/**'
       - 'test/test_register_web.py'
       - '.github/workflows/register-preview-ci.yml'
 permissions:
@@ -29,6 +30,8 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23'
+      - name: JavaScript syntax verification
+        run: node --check web/matter-register/app.js
       - name: Static HTML/contract regression
         run: python3 -m unittest discover -s test -p 'test_register_web.py' -v
       - name: Baileys transport unit tests (offline)
