@@ -1,0 +1,48 @@
+name: Matter Register public preview (GitHub Pages)
+on:
+  push:
+    branches: [feat/matter-register-web]
+    paths:
+      - 'web/matter-register/**'
+      - '.github/workflows/matter-register-pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: matter-register-pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    name: Publish static UI only
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify minimal HTML and JavaScript
+        run: |
+          node --check web/matter-register/app.js
+          python3 -m unittest discover -s test -p test_register_web.py -v
+      - name: Prepare isolated public artifact
+        run: |
+          mkdir -p public
+          cp web/matter-register/index.html public/
+          cp web/matter-register/app.js public/
+          touch public/.nojekyll
+          test "$(find public -type f | wc -l)" -eq 3
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload static artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - name: Deploy Matter Register
+        id: deployment
+        uses: actions/deploy-pages@v4
