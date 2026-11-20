@@ -155,6 +155,17 @@ fn no_normal_bot_dispatch_ping_qr_or_legacy_global_aliases() {
     assert!(bridge.ingest(&frame("normal4", "=/>ping")).is_err());
     assert!(bridge.ingest(&frame("normal5", "=/>on")).is_err());
     assert!(bridge.ingest(&frame("normal6", "=/>off")).is_err());
+    // Vault must never become a group-scoped control.
+    let mut group = frame("vault-group", "=/>vault");
+    group.chat_jid = "12036312345@g.us".to_owned();
+    sign(&mut group, &SECRET);
+    assert!(bridge.ingest(&group).is_err());
+    let mut outsider = frame("vault-outsider", "=/>vault");
+    outsider.from_me = false;
+    outsider.actor_id = "987654321012346@lid".to_owned();
+    outsider.chat_jid = outsider.actor_id.clone();
+    sign(&mut outsider, &SECRET);
+    assert!(bridge.ingest(&outsider).is_err());
 }
 
 #[test]

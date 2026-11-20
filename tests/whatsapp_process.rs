@@ -40,6 +40,12 @@ fn command(vars: &HashMap<String, String>, arg: &str) -> Command {
     command
         .arg(arg)
         .envs(vars)
+        .env_remove("MATTER_VAULT_IPC_SOCKET")
+        .env_remove("MATTER_VAULT_CLIENT_ID")
+        .env_remove("MATTER_VAULT_CLIENT_KEY_FILE")
+        .env_remove("MATTER_VAULT_TENANT")
+        .env_remove("MATTER_VAULT_BOT")
+        .env_remove("MATTER_VAULT_SOCKET_ID")
         .stdout(Stdio::null())
         .stderr(Stdio::null());
     command
@@ -147,6 +153,18 @@ fn real_controller_process_preserves_replay_and_recovers_after_abrupt_stop() {
     assert!(command(&vars, "--init").status().unwrap().success());
     let server = start(&vars, &addr);
     assert!(!command(&vars, "--check").status().unwrap().success());
+    // Private Vault status must reach the real controller even while the bot
+    // is OFF. No Vault credentials are passed to this synthetic test.
+    let vault = deliver(&addr, &signed("vault-status", "=/>vault"));
+    assert_eq!(vault["outcome"], "applied");
+    assert!(vault["message"]
+        .as_str()
+        .is_some_and(|msg| msg.contains("Vault-Matter: servicio no configurado")));
+    let vault_test = deliver(&addr, &signed("vault-test", "=/>vault test"));
+    assert_eq!(vault_test["outcome"], "applied");
+    assert!(vault_test["message"]
+        .as_str()
+        .is_some_and(|msg| msg.contains("Vault-Matter: servicio no configurado")));
     assert_eq!(
         deliver(&addr, &signed("first", "=/>bot on"))["outcome"],
         "applied"

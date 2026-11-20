@@ -1,3 +1,13 @@
+## 2026-11-20 — Corrección real de =/>vault en WhatsApp: allowlist del puente
+
+- Diagnóstico confirmado con usuario: `wa-alpha` está autenticada a WhatsApp, nuevo cliente Vault `base-wa-alpha` pasó `vault_roundtrip_verified revision=1`, y el preflight imprime `ALPHA_VAULT=AUTHENTICATED_CONFIGURATION_ONLY`. Sin embargo, `=/>vault` y `=/>vault test` devolvían rechazo genérico.
+- **Causa raíz identificada:** `providers/whatsapp-rust/src/lib.rs` ya autorizaba `=/>vault` en el chat propio, y `src/bin/whatsapp_control.rs` lo registraba; sin embargo, **`src/whatsapp_bridge.rs` omitía `=/>vault` de su allowlist de controles privados**, rechazándolo antes de ejecutar el handler o cualquier IPC. El cambio de timeout en el proveedor no podía solucionarlo.
+- Solución: admitir exactamente el verbo `=/>vault` en el allowlist de mensajes privados ya autenticados por HMAC y dueño del socket. No admitirlo en grupos, invitados, bots externos ni prefijos alternativos. `=/>vault` y `=/>vault test` siguen en estado de configuración únicamente; roles, registro y comandos privados bloqueados.
+- Regresión: `tests/whatsapp_process.rs` verifica **proceso controlador Rust real** y respuesta `applied` + texto sin configurar en ambos comandos aun con bot OFF; elimina toda variable Vault heredada para no utilizar secretos del runner. `tests/whatsapp_bridge.rs` prueba rechazo a grupo y remitente no dueño.
+- **Despliegue pendiente:** reconstruir/descargar desde GitHub Actions el controlador `whatsapp-matter-control` del nuevo SHA, validar hash y `BUILD_INFO`; detener único proveedor, sustituir únicamente el controlador y reanudar `wa-alpha` con `--vault-env`. No re-enrolar, no tocar SQLite ni claves. Confirmar respuesta en chat propio tras CI.
+- README revisados: 2/2 (`README.md` y `providers/whatsapp-rust/README.md`); AGENTS/DECISION_LOG/WORK_CONTINUITY/DEVELOPMENT_STATUS actualizados conjuntamente en este commit.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Formato CI del diagnóstico Vault
 
 - El CI del commit anterior rechazó únicamente el formato de una línea de la prueba de aislamiento en `providers/whatsapp-rust/src/main.rs`; se aplicó el diff exacto de rustfmt.

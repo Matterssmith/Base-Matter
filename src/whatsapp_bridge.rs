@@ -255,6 +255,7 @@ impl WhatsAppControlBridge {
                 | "=/>role"
                 | "=/>roles"
                 | "=/>audit"
+                | "=/>vault"
                 | "=/>matter"
                 | "=/>test"
                 | "=/>register"
