@@ -1,6 +1,6 @@
 ## 2026-11-20 — Matter Register: interfaz y NativeFlow alternativo (aislado)
 
-- Rama `feat/matter-register-web` contiene `web/matter-register/index.html`: vista responsive con temática Matter Ideas, Bot Kids, Bot SFW, Testers y Kids Channel, flujo invitado/adulto/menor, sonido opcional y pantalla completa por interacción del usuario.
+- Rama `feat/matter-register-web` contiene `web/matter-register/index.html` solo como cargador y `web/matter-register/app.js` como único creador de DOM, CSS, animaciones, sonido, botones y lógica. Regla obligatoria: el HTML permanecerá mínimo; la funcionalidad y la presentación se realizan desde JavaScript. Vista responsive con temática Matter Ideas, Bot Kids, Bot SFW, Testers y Kids Channel, flujo invitado/adulto/menor, sonido opcional y pantalla completa por interacción del usuario.
 - Se agregó `providers/baileys-compat/register-card.mjs` como transporte opcional JS/TS de botones `cta_url`, `open_webview` experimental y `quick_reply`, con allowlist de host HTTPS y alternativa textual. **No** reemplaza el proveedor principal `whatsapp-rust`, no inicia sesiones ni otorga identidad o rangos.
 - Existe además un constructor de tarjeta Go aislado (`providers/whatsapp-go-compat`) y declaraciones de tipos TypeScript; ninguno se conecta al socket de producción sin una integración específica y validación del cliente.
 - El navegador solo habilitará intento de registro cuando un gateway privado declare capacidades; la autorización verdadera será del backend. No hay captura de fotos, biometría, CURP ni almacenamiento en GitHub.
