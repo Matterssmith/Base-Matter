@@ -43,6 +43,25 @@ jobs:
       - name: CLI help without live connection
         run: cargo run --manifest-path providers/whatsapp-rust/Cargo.toml -- --help
 
+      - name: Matter Register local HTTP smoke test (no WhatsApp login)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cargo build --manifest-path providers/whatsapp-rust/Cargo.toml
+          providers/whatsapp-rust/target/debug/whatsapp-matter-rust-provider --serve-register-preview >/tmp/matter-register-preview-test.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true; wait "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS --max-time 2 http://127.0.0.1:39831/healthz | grep -Fq matter-register-preview-ok; then
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS --max-time 3 http://127.0.0.1:39831/ | grep -Fq './app.js'
+          curl -fsS --max-time 3 http://127.0.0.1:39831/app.js | grep -Fq 'document.body.innerHTML'
+          curl -fsS --max-time 3 http://127.0.0.1:39831/api/register/capabilities | grep -Fq '"ready":false'
+          test "$(curl -sS --max-time 3 -X POST -o /dev/null -w '%{http_code}' http://127.0.0.1:39831/api/register/sessions)" = 405
+
       - name: Build verified alpha WhatsApp Rust provider
         if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
         run: cargo build --manifest-path providers/whatsapp-rust/Cargo.toml
