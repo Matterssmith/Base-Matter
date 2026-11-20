@@ -8,7 +8,10 @@ use matter_rust_core::{MatterRust, Platform, ENGINE_NAME};
 
 fn main() {
     let engine = MatterRust::new();
-    println!("{ENGINE_NAME} | registered transport sessions: {}", engine.registered_sessions());
+    println!(
+        "{ENGINE_NAME} | registered transport sessions: {}",
+        engine.registered_sessions()
+    );
     for platform in [
         Platform::WhatsApp,
         Platform::Telegram,
