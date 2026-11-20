@@ -7,6 +7,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 function validatedRegistrationUrl(input, allowedHosts = []) {
+  if (!Array.isArray(allowedHosts) || allowedHosts.length === 0) throw new TypeError("required_host_allowlist");
   if (typeof input !== "string" || input.length > 2048) throw new TypeError("invalid_url");
   const url = new URL(input);
   if (url.protocol !== "https:" || !url.hostname || url.username || url.password || url.hash || url.search) {
