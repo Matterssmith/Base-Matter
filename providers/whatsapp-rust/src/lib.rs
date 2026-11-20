@@ -437,16 +437,39 @@ impl Config {
             // Forward supported control verbs for any signed sender; only
             // Vault-verified global owners can execute non-readonly actions.
             // Unknown verbs still fail in the dispatcher, not in WhatsApp.
-            [verb, _rest @ ..] if matches!(
-                *verb,
-                "=/>group" | "=/>grupo" | "=/>bot" | "=/>status" | "=/>estado"
-                    | "=/>set" | "=/>unset" | "=/>role" | "=/>roles"
-                    | "=/>audit" | "=/>matter" | "=/>start"
-                    | "=/>add" | "=/>add++" | "=/>anti" | "=/>register"
-                    | "=/>test" | "=/>menu" | "=/>menú"
-                    | "=/>help" | "=/>h" | "=/>ayuda"
-                    | "=/>vault" | "=/>credits" | "=/>creditos" | "=/>créditos"
-            ) => true,
+            [verb, _rest @ ..]
+                if matches!(
+                    *verb,
+                    "=/>group"
+                        | "=/>grupo"
+                        | "=/>bot"
+                        | "=/>status"
+                        | "=/>estado"
+                        | "=/>set"
+                        | "=/>unset"
+                        | "=/>role"
+                        | "=/>roles"
+                        | "=/>audit"
+                        | "=/>matter"
+                        | "=/>start"
+                        | "=/>add"
+                        | "=/>add++"
+                        | "=/>anti"
+                        | "=/>register"
+                        | "=/>test"
+                        | "=/>menu"
+                        | "=/>menú"
+                        | "=/>help"
+                        | "=/>h"
+                        | "=/>ayuda"
+                        | "=/>vault"
+                        | "=/>credits"
+                        | "=/>creditos"
+                        | "=/>créditos"
+                ) =>
+            {
+                true
+            }
             _ => false,
         };
         if !allowed {

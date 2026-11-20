@@ -1,3 +1,9 @@
+## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
+
+- Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.
+- Los owners 1 y 2 poseen igual autoridad una vez autenticados mediante JID firmado y cliente Vault. Los remitentes no autorizados permanecen read-only.
+- README revisados: 2/2. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Igualdad real de privilegios de ambos owners globales
 
 - La autoridad de global owner 1 y 2 es idéntica. No existe rango subordinado: ambos pueden ejecutar los controles de Base en cualquier socket Matter cuyo proveedor valide el JID y cuyo cliente privado Vault verifique la membresía global del remitente.
