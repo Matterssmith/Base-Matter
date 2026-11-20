@@ -9,7 +9,7 @@
 - Transporte JS/TS Baileys alternativo: `providers/baileys-compat/register-card.mjs`. No se carga en el runtime Rust; mantiene a Rust como proveedor principal y deja Baileys como adaptador opt-in.
 - En WhatsApp el botón `cta_url` puede abrir el portal web; `open_webview` es un modo experimental opt-in (`preferInAppWebview: true`) cuando el SDK y el cliente realmente lo permiten; `quick_reply` devuelve el comando público de invitado si existe en el dispatcher autorizado. Ni `cta_url` ni `open_webview` significan que WhatsApp ejecute libremente HTML, CSS, audio y JS dentro del mensaje. Verificar comportamiento real en dispositivo Android, iPhone y Web.
 - Los ejemplos previos TS18/TS19 y de RichResponse siguen siendo solo ensayos de transporte. No falsificar `botForwardedMessage`, `0@bot` ni procedencia Meta AI.
-- Para Go, JS/TS o futuros proveedores se define el mismo evento abstracto `registration.open` con URL HTTPS aprobada. Los SDK deben mapearlo a su mecanismo de botones; nunca admitir un enlace definido por el remitente.
+- El contrato de transporte opcional Go está en `providers/whatsapp-go-compat/register_card.go` y su prueba sin SDK de red en `register_card_test.go`; TypeScript dispone de `providers/baileys-compat/register-card.d.ts`. Ambos construyen tarjetas, pero NO se conectan automáticamente al socket WhatsApp. Para Go, JS/TS o futuros proveedores se define el mismo evento abstracto `registration.open` con URL HTTPS aprobada. Los SDK deben mapearlo a su mecanismo de botones; nunca admitir un enlace definido por el remitente.
 
 ## Contrato seguro
 
@@ -34,6 +34,7 @@
 ```bash
 python3 -m unittest discover -s test -p 'test_register_web.py'
 node --test providers/baileys-compat/register-card.test.mjs
+GO111MODULE=off go test ./providers/whatsapp-go-compat
 ```
 
 La página puede abrirse localmente para probar animaciones, pero no debe procesar datos personales hasta contar con backend habilitado y auditoría.
