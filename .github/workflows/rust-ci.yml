@@ -75,6 +75,11 @@ jobs:
       - name: Test read-only WhatsApp store comparison
         run: python3 -m unittest discover -s test -p "test_whatsapp_stores_compare.py" -v
 
+      - name: Verify isolated alpha resume launcher and regression tests
+        run: |
+          bash -n scripts/whatsapp-alpha-existing.sh
+          python3 -m unittest discover -s test -p "test_whatsapp_alpha_resume.py" -v
+
       - name: Verify whitespace
         run: git diff --check HEAD^ HEAD
 
