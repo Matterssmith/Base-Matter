@@ -8,7 +8,10 @@
  */
 use anyhow::{bail, Result};
 use buffa::MessageField;
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::{
+    net::{Ipv4Addr, SocketAddrV4},
+    sync::atomic::{AtomicBool, Ordering},
+};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
@@ -21,6 +24,11 @@ const HTML: &str = include_str!("../../../web/matter-register/index.html");
 const APP: &str = include_str!("../../../web/matter-register/app.js");
 const CAPABILITIES: &str = r#"{"ready":false,"verification_provider_ready":false,"authenticated_session":false,"legal_documents_published":false}"#;
 const MAX_REQUEST_BYTES: usize = 8192;
+static PREVIEW_READY: AtomicBool = AtomicBool::new(false);
+
+pub fn preview_is_running() -> bool {
+    PREVIEW_READY.load(Ordering::Acquire)
+}
 
 /// The publication URL is a host-configured public HTTPS location. Never
 /// permit user-selected hosts, tokens, credentials, query strings or fragments.
@@ -230,6 +238,7 @@ pub async fn start_loopback(port: u16) -> Result<JoinHandle<()>> {
         bail!("register_port_invalid");
     }
     let listener = TcpListener::bind(SocketAddrV4::new(Ipv4Addr::LOCALHOST, port)).await?;
+    PREVIEW_READY.store(true, Ordering::Release);
     println!("MATTER_REGISTER_LOCAL=http://127.0.0.1:{port}/");
     Ok(tokio::spawn(async move {
         loop {
@@ -242,6 +251,7 @@ pub async fn start_loopback(port: u16) -> Result<JoinHandle<()>> {
                 eprintln!("Matter Register: preview response failed");
             }
         }
+        PREVIEW_READY.store(false, Ordering::Release);
     }))
 }
 
