@@ -23,8 +23,8 @@ use whatsapp_matter_rust_provider::{
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
-    render_provider_control,
     register_web::{registration_preview_card, trusted_preview_url},
+    render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
     ui::{
         legacy_row_probe_message, menu_lab_card, native_menu_lab_card, native_navigation_message,
