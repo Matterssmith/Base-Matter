@@ -64,6 +64,8 @@ matter-ai workstatus matter-rust
 matter-ai branches matter-rust
 matter-ai checkpoint matter-rust
 matter-ai save matter-rust
+matter-ai checkpoint all
+matter-ai save all
 matter-ai promote matter-rust alpha
 matter-ai promote matter-rust beta
 matter-ai promote matter-rust stable
