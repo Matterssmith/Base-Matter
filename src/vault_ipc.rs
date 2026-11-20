@@ -102,6 +102,42 @@ fn aad(id: &str, direction: &str) -> Vec<u8> {
     out
 }
 impl VaultClient {
+    /// Optional host-provisioned service identity; no secrets in env values.
+    pub fn from_environment() -> Result<Option<Self>> {
+        let names = [
+            "MATTER_VAULT_IPC_SOCKET",
+            "MATTER_VAULT_CLIENT_ID",
+            "MATTER_VAULT_CLIENT_KEY_FILE",
+            "MATTER_VAULT_TENANT",
+            "MATTER_VAULT_BOT",
+            "MATTER_VAULT_SOCKET_ID",
+        ];
+        let values = names
+            .iter()
+            .map(|name| std::env::var(name).ok())
+            .collect::<Vec<_>>();
+        if values.iter().all(Option::is_none) {
+            return Ok(None);
+        }
+        if values.iter().any(Option::is_none) {
+            bail!("incomplete_vault_client_configuration");
+        }
+        let values = values
+            .into_iter()
+            .map(|value| value.expect("checked before"))
+            .collect::<Vec<_>>();
+        let client = Self {
+            socket_path: PathBuf::from(&values[0]),
+            client_id: values[1].clone(),
+            client_key_file: PathBuf::from(&values[2]),
+            tenant: values[3].clone(),
+            bot: values[4].clone(),
+            socket: values[5].clone(),
+        };
+        client.validate("ping", "health", None)?;
+        Ok(Some(client))
+    }
+
     fn validate(&self, operation: &str, record: &str, value: Option<&[u8]>) -> Result<()> {
         if !self.socket_path.is_absolute()
             || !self.client_key_file.is_absolute()

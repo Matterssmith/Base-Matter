@@ -317,6 +317,27 @@ fn main() -> Result<()> {
         };
         menu_theme.render(context.group_id, &section)
     })?;
+    let vault_owner_chat = jid.clone();
+    let vault_client = matter_base::vault_ipc::VaultClient::from_environment()?;
+    extensions.register("vault", &[], move |context, args| {
+        if context.group_id.is_some() || context.source_id != vault_owner_chat {
+            bail!("El estado de Vault sólo se consulta en el chat propio");
+        }
+        if !(args.is_empty() || (args.len() == 1 && args[0] == "status")) {
+            bail!("Uso: =/>vault [status]");
+        }
+        let output = match vault_client.as_ref() {
+            None => "Vault-Matter: servicio no configurado para este socket.",
+            Some(client) if client.socket != context.socket_id => {
+                "Vault-Matter: identidad de socket no coincide; acceso denegado."
+            }
+            Some(client) if client.invoke("ping", "health", None, None).is_ok() => {
+                "Vault-Matter: servicio cifrado autenticado. Permiso limitado a configuración; roles y comandos privados siguen bloqueados."
+            }
+            Some(_) => "Vault-Matter: servicio no disponible o permiso denegado.",
+        };
+        Ok(output.to_owned())
+    })?;
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
             .with_control_extensions(extensions)

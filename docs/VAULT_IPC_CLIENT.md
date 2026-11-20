@@ -1,3 +1,10 @@
+## 2026-11-19 — Comando de estado Vault protegido en WhatsApp-Rust
+
+- El controlador =/> integra exclusivamente lectura de salud del canal Vault mediante =/>vault y =/>vault status, en el self-chat verificado y por actor dueño del socket. Opera incluso con bot apagado; NO concede roles, configura secretos ni ejecuta comandos privados.
+- La configuración del cliente toma seis variables de entorno con rutas/identificadores, NUNCA la llave maestra ni contenido de la clave. Configuración incompleta bloquea startup. Errores y salida son mínimos, sin identidad ni rutas.
+- Enlaces relativos README del proveedor corregidos. README revisados: 2/2. Cambios sólo alpha, con tests y CI por verificar; Bot-Matter sigue bloqueado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 # Base-Matter — real encrypted Vault IPC client
 
 Base now includes module vault_ipc::VaultClient and binary

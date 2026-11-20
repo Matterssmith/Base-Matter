@@ -5,6 +5,7 @@ pub mod main_command;
 pub mod reload;
 pub mod restart;
 pub mod update;
+pub mod vault;
 
 pub const CATEGORY: Category = Category {
     id: "system",
@@ -16,5 +17,6 @@ pub const CATEGORY: Category = Category {
         update::COMMAND,
         restart::COMMAND,
         reload::COMMAND,
+        vault::COMMAND,
     ],
 };

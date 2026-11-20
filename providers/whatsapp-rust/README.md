@@ -1,3 +1,10 @@
+## 2026-11-19 — Comando de estado Vault protegido en WhatsApp-Rust
+
+- El controlador =/> integra exclusivamente lectura de salud del canal Vault mediante =/>vault y =/>vault status, en el self-chat verificado y por actor dueño del socket. Opera incluso con bot apagado; NO concede roles, configura secretos ni ejecuta comandos privados.
+- La configuración del cliente toma seis variables de entorno con rutas/identificadores, NUNCA la llave maestra ni contenido de la clave. Configuración incompleta bloquea startup. Errores y salida son mínimos, sin identidad ni rutas.
+- Enlaces relativos README del proveedor corregidos. README revisados: 2/2. Cambios sólo alpha, con tests y CI por verificar; Bot-Matter sigue bloqueado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-19 — Ajuste exacto de formato rustfmt en CLI Vault
 
 - El CI Rust de Base detectó un único orden de imports en src/bin/vault_client.rs; se aplicó corrección exacta sin cambios de funcionalidad. Windows ya compila el cliente limitado; CI nuevo por verificar.
@@ -60,7 +67,7 @@
 
 - **Decisión actual:** los tres operadores de activación son exclusivamente `on|off|inherit`, tanto por filtro como por modo. El guion `-` queda DESCARTADO como operador; no implementarlo, mostrarlo ni usarlo como alias.
 - `inherit` elimina únicamente el override del ámbito autorizado y hereda el valor superior. `set` permanece reservado a configuración; `anti` a consulta y activación. Se conserva `--include` / `--except` para selección dentro de modos.
-- Especificación rectoría: [docs/ANTI_COMMAND_CONVENTIONS.md](docs/ANTI_COMMAND_CONVENTIONS.md). Corrección documental, **no** parser Rust, ni cambios de permisos, ni pruebas WhatsApp. Migrar runtime, help y menú antes de declarar el comando funcional. Beta/stable intactas. Bot-Matter sigue bloqueado.
+- Especificación rectoría: [docs/ANTI_COMMAND_CONVENTIONS.md](../../docs/ANTI_COMMAND_CONVENTIONS.md). Corrección documental, **no** parser Rust, ni cambios de permisos, ni pruebas WhatsApp. Migrar runtime, help y menú antes de declarar el comando funcional. Beta/stable intactas. Bot-Matter sigue bloqueado.
 - Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
 
 ## 2026-11-19 — Reglas definitivas propuestas: Set configura; Anti activa y hereda
@@ -68,7 +75,7 @@
 - **Diseño pendiente, sin cambio Rust:** `set` se reserva para configuración. `anti [regla] on|off|-` controla activación o retiro de override para heredar el valor superior; `set anti link on` queda descartado de la gramática objetivo.
 - `anti --<mode> on|off|-` opera sobre un modo completo, opcionalmente limitado por `--include` y `--except` a filtros registrados (no archivos del servidor). Modos previstos: `--security` como subconjunto Anti y `--multimedia`, sin confundir Matter Security con filtros Anti.
 - `--mod` conserva ámbito del socket; `--global` es predeterminado general y no puede editarse en modo vivo sin Vault. `-` nunca borra la política global. Actuaciones masivas requieren autorización y transacción/auditoría; en fallo se deniegan.
-- Documento rector de continuidad: [docs/ANTI_COMMAND_CONVENTIONS.md](docs/ANTI_COMMAND_CONVENTIONS.md). Hay que actualizar router, ayuda, menú y pruebas en tarea posterior. No declarar implementado ni probado; `alpha` documentación solamente, sin modificar `beta`/`stable` y Bot-Matter bloqueado.
+- Documento rector de continuidad: [docs/ANTI_COMMAND_CONVENTIONS.md](../../docs/ANTI_COMMAND_CONVENTIONS.md). Hay que actualizar router, ayuda, menú y pruebas en tarea posterior. No declarar implementado ni probado; `alpha` documentación solamente, sin modificar `beta`/`stable` y Bot-Matter bloqueado.
 - Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
 
 ## 2026-11-19 — Puente público para capacidades protegidas (alpha, no desplegado)

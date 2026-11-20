@@ -746,6 +746,9 @@ impl ControlDispatcher {
                 }
             }
             match tokens.as_slice() {
+                ["vault", ..] if !canonical_global_prefix => {
+                    bail!("Usa el prefijo completo =/>vault");
+                }
                 ["register"] | ["register", "start"] => {
                     return Ok(DispatchResult::Extension {
                         command: "register".to_owned(),
@@ -1365,7 +1368,7 @@ impl ControlDispatcher {
                     // nonessential operations. Status remains available.
                     if self.silent_when_disabled
                         && !admission.decision.enabled
-                        && !matches!(*command, "roles" | "audit")
+                        && !matches!(*command, "roles" | "audit" | "vault")
                     {
                         return Ok(DispatchResult::Inactive);
                     }
