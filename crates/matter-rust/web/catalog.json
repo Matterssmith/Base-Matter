@@ -1,0 +1,3309 @@
+{
+  "schema_version": 1,
+  "edition": "2026-11-20",
+  "brand": "Matter-Rust",
+  "credits": "Hecho por Lournyx Matterssmith [Lou-Nyx].",
+  "about": "Catálogo de capacidades y referencias públicas. reference significa disponible en el proyecto de origen, no portado a Matter-Rust. unverified = pendiente de prueba real en WhatsApp. offline = contrato/UI local probada o implementada, no prueba de envío. planned = pendiente.",
+  "state_definitions": {
+    "reference": "Referencia oficial externa. No implementado ni verificado en Matter-Rust.",
+    "unverified": "Formato o característica referenciada que requiere prueba real y compatibilidad por cliente.",
+    "offline": "Implementación de contrato / interfaz offline. No demuestra transporte real.",
+    "planned": "Requisito Matter pendiente de implementación."
+  },
+  "families": [
+    {
+      "id": "whatsmeow",
+      "repository": "tulir/whatsmeow",
+      "language": "Go",
+      "license": "MPL-2.0",
+      "type": "oficial"
+    },
+    {
+      "id": "baileys",
+      "repository": "WhiskeySockets/Baileys",
+      "language": "TypeScript",
+      "license": "MIT",
+      "type": "oficial"
+    },
+    {
+      "id": "matter",
+      "repository": "Matterssmith/Base-Matter",
+      "language": "Rust",
+      "type": "personalización Matter",
+      "license": "MIT"
+    }
+  ],
+  "modified_forks_note": "No se han recibido URLs ni versiones verificadas de los forks modificados específicos que usa el equipo. No atribuimos sus capacidades al oficial. Se registrarán como fuentes separadas cuando se validen.",
+  "total": 126,
+  "capabilities": [
+    {
+      "id": "connection.connect",
+      "name": "Conexión y reconexión",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.pair-code",
+      "name": "Emparejamiento por código",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.pair-passkey",
+      "name": "Passkey y vinculación alternativa",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.device-sessions",
+      "name": "Multidispositivo y sesiones",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.logout",
+      "name": "Cerrar sesión y revocar",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.signal-e2ee",
+      "name": "Cifrado Signal de mensajes",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.noise",
+      "name": "Canal Noise/WebSocket",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.pn-lid",
+      "name": "Resolución PN / LID",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.history-sync",
+      "name": "Sincronización histórica",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.appstate",
+      "name": "Sincronización app-state",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.retries",
+      "name": "Reintentos de descifrado",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.events",
+      "name": "Suscripción a eventos",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.connection-isolation",
+      "name": "Aislamiento por plataforma y socket",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "offline",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.explicit-auth",
+      "name": "Autenticación de ingreso verificada",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "connection.audit-reconnect",
+      "name": "Auditoría de reconexión y recuperación",
+      "category": "Conexión e identidad",
+      "group": "connection",
+      "origin": "official-reference",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "client.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/client.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/socket.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/socket.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.text",
+      "name": "Texto y enlaces",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.quote",
+      "name": "Responder y citar",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.mentions",
+      "name": "Menciones y todos",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.reactions",
+      "name": "Reacciones",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.edit",
+      "name": "Edición de mensajes",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.revoke",
+      "name": "Revocación/eliminación",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.forward",
+      "name": "Reenvío",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.ephemeral",
+      "name": "Mensajes temporales",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.read",
+      "name": "Leído y recibos",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.retry-receipt",
+      "name": "Recibos de reintento",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.pin",
+      "name": "Fijar mensajes",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.star",
+      "name": "Destacar mensajes",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.poll",
+      "name": "Encuestas y votos",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.location",
+      "name": "Ubicaciones y contactos",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.interactive-reply",
+      "name": "Respuestas interactivas",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.anti-edit-evasion",
+      "name": "Detección de edición y camuflaje",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "messages.scope-filter",
+      "name": "Control de alcance por socket",
+      "category": "Mensajería",
+      "group": "messages",
+      "origin": "official-reference",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.image",
+      "name": "Imágenes",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.video",
+      "name": "Vídeos",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.audio",
+      "name": "Audio",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.voice",
+      "name": "Notas de voz",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.document",
+      "name": "Archivos/documentos",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.sticker",
+      "name": "Stickers",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.animated-sticker",
+      "name": "Stickers animados",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.gif",
+      "name": "GIF",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.album",
+      "name": "Álbum multimedia",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.download",
+      "name": "Descarga cifrada",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.upload",
+      "name": "Carga cifrada",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.media-retry",
+      "name": "Recuperación de medios",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.profile-photo",
+      "name": "Fotos de perfil y grupos",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.streaming",
+      "name": "Flujos multimedia",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "media.media-limits",
+      "name": "Cotas y seguridad de medios",
+      "category": "Multimedia",
+      "group": "media",
+      "origin": "official-reference",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "upload.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/upload.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "download.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/download.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-create",
+      "name": "Crear grupos",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-join",
+      "name": "Entrar por invitación",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-leave",
+      "name": "Salir de grupos",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-metadata",
+      "name": "Metadatos de grupo",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-members",
+      "name": "Administración de participantes",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-promote",
+      "name": "Promover/degradar administradores",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-name",
+      "name": "Nombre de grupo",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-description",
+      "name": "Descripción y tema",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-announce",
+      "name": "Solo administradores",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-locked",
+      "name": "Restricción de edición",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-photo",
+      "name": "Foto del grupo",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-approval",
+      "name": "Aprobación de solicitudes",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-invite",
+      "name": "Enlace y rotación de invitación",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.community-create",
+      "name": "Comunidades",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.community-link",
+      "name": "Enlazar subgrupos",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.community-unlink",
+      "name": "Desenlazar subgrupos",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "groups.group-anti",
+      "name": "Antis configurables por grupo",
+      "category": "Grupos y comunidades",
+      "group": "groups",
+      "origin": "official-reference",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "group.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/group.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/groups.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/groups.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/communities.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/communities.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "channels.newsletter-info",
+      "name": "Metadatos de canales",
+      "category": "Canales y newsletters",
+      "group": "channels",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "newsletter.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/newsletter.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/newsletter.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/newsletter.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "channels.newsletter-create",
+      "name": "Crear canales",
+      "category": "Canales y newsletters",
+      "group": "channels",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "newsletter.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/newsletter.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/newsletter.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/newsletter.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "channels.newsletter-follow",
+      "name": "Seguir canales",
+      "category": "Canales y newsletters",
+      "group": "channels",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "newsletter.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/newsletter.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/newsletter.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/newsletter.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "channels.newsletter-unfollow",
+      "name": "Dejar de seguir",
+      "category": "Canales y newsletters",
+      "group": "channels",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "newsletter.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/newsletter.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/newsletter.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/newsletter.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "channels.newsletter-mute",
+      "name": "Silenciar canales",
+      "category": "Canales y newsletters",
+      "group": "channels",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "newsletter.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/newsletter.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/newsletter.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/newsletter.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "channels.newsletter-messages",
+      "name": "Consultar publicaciones",
+      "category": "Canales y newsletters",
+      "group": "channels",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "newsletter.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/newsletter.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/newsletter.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/newsletter.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "channels.newsletter-updates",
+      "name": "Actualizaciones en directo",
+      "category": "Canales y newsletters",
+      "group": "channels",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "newsletter.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/newsletter.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/newsletter.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/newsletter.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "channels.newsletter-reactions",
+      "name": "Reacciones a publicaciones",
+      "category": "Canales y newsletters",
+      "group": "channels",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "newsletter.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/newsletter.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/newsletter.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/newsletter.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "channels.newsletter-read",
+      "name": "Marcar leído",
+      "category": "Canales y newsletters",
+      "group": "channels",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "newsletter.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/newsletter.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/newsletter.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/newsletter.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "channels.newsletter-admin",
+      "name": "Administración avanzada",
+      "category": "Canales y newsletters",
+      "group": "channels",
+      "origin": "official-reference",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "newsletter.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/newsletter.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/newsletter.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/newsletter.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "privacy.online",
+      "name": "Presencia en línea",
+      "category": "Presencia y privacidad",
+      "group": "privacy",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "presence.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/presence.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "privacysettings.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/privacysettings.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/chats.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/chats.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "privacy.typing",
+      "name": "Escribiendo/grabando",
+      "category": "Presencia y privacidad",
+      "group": "privacy",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "presence.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/presence.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "privacysettings.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/privacysettings.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/chats.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/chats.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "privacy.privacy-fetch",
+      "name": "Consultar privacidad",
+      "category": "Presencia y privacidad",
+      "group": "privacy",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "presence.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/presence.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "privacysettings.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/privacysettings.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/chats.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/chats.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "privacy.privacy-update",
+      "name": "Actualizar privacidad",
+      "category": "Presencia y privacidad",
+      "group": "privacy",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "presence.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/presence.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "privacysettings.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/privacysettings.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/chats.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/chats.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "privacy.blocklist",
+      "name": "Bloqueo de contactos",
+      "category": "Presencia y privacidad",
+      "group": "privacy",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "presence.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/presence.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "privacysettings.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/privacysettings.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/chats.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/chats.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "privacy.profile-edit",
+      "name": "Nombre y estado de perfil",
+      "category": "Presencia y privacidad",
+      "group": "privacy",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "presence.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/presence.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "privacysettings.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/privacysettings.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/chats.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/chats.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "privacy.disappear-default",
+      "name": "Temporales por defecto",
+      "category": "Presencia y privacidad",
+      "group": "privacy",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "presence.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/presence.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "privacysettings.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/privacysettings.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/chats.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/chats.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "privacy.read-receipts",
+      "name": "Recibos de lectura",
+      "category": "Presencia y privacidad",
+      "group": "privacy",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "presence.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/presence.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "privacysettings.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/privacysettings.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/chats.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/chats.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "privacy.contact-sync",
+      "name": "Sincronización de contactos",
+      "category": "Presencia y privacidad",
+      "group": "privacy",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "presence.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/presence.go",
+          "language": "Go"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "privacysettings.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/privacysettings.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/chats.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/chats.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "business.business-profile",
+      "name": "Perfil comercial",
+      "category": "Negocios",
+      "group": "business",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "business.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/business.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/business.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/business.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "business.catalog",
+      "name": "Catálogo de productos",
+      "category": "Negocios",
+      "group": "business",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "business.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/business.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/business.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/business.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "business.collections",
+      "name": "Colecciones",
+      "category": "Negocios",
+      "group": "business",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "business.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/business.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/business.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/business.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "business.product-create",
+      "name": "Crear producto",
+      "category": "Negocios",
+      "group": "business",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "business.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/business.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/business.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/business.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "business.product-update",
+      "name": "Editar producto",
+      "category": "Negocios",
+      "group": "business",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "business.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/business.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/business.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/business.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "business.product-delete",
+      "name": "Eliminar producto",
+      "category": "Negocios",
+      "group": "business",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "business.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/business.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/business.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/business.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "business.order-details",
+      "name": "Detalle de pedidos",
+      "category": "Negocios",
+      "group": "business",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "business.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/business.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/business.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/business.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "business.business-cover",
+      "name": "Portada de negocio",
+      "category": "Negocios",
+      "group": "business",
+      "origin": "official-reference",
+      "status": "reference",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "business.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/business.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/business.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/business.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "business.matter-commerce",
+      "name": "Puente futuro con Social-Matter",
+      "category": "Negocios",
+      "group": "business",
+      "origin": "official-reference",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "whatsmeow",
+          "path": "business.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/business.go",
+          "language": "Go"
+        },
+        {
+          "project": "baileys",
+          "path": "src/Socket/business.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/business.ts",
+          "language": "TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "interactive.nativeflow",
+      "name": "NativeFlow y botones",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "unverified",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "interactive.cta-url",
+      "name": "Botones CTA URL",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "unverified",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "interactive.quick-reply",
+      "name": "Quick Reply",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "unverified",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "interactive.cta-copy",
+      "name": "CTA copiar",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "unverified",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "interactive.list-message",
+      "name": "Listas y menús",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "unverified",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "interactive.carousel",
+      "name": "Carruseles",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "unverified",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "interactive.multi-card",
+      "name": "Tarjetas múltiples",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "unverified",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "interactive.flow-webview",
+      "name": "Abrir webview",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "unverified",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "interactive.poll-rich",
+      "name": "Encuestas enriquecidas",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "unverified",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "interactive.html-preview",
+      "name": "Vista previa HTML/JS en servidor Matter",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "interactive.sound-ui",
+      "name": "Audio de interfaz original",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "offline",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "interactive.fullscreen-ui",
+      "name": "Pantalla completa del navegador",
+      "category": "Interactividad avanzada",
+      "group": "interactive",
+      "origin": "official-reference",
+      "status": "offline",
+      "sources": [
+        {
+          "project": "baileys",
+          "path": "src/Socket/messages-send.ts",
+          "repository": "WhiskeySockets/Baileys",
+          "url": "https://github.com/WhiskeySockets/Baileys/blob/master/src/Socket/messages-send.ts",
+          "language": "TypeScript"
+        },
+        {
+          "project": "whatsmeow",
+          "path": "send.go",
+          "repository": "tulir/whatsmeow",
+          "url": "https://github.com/tulir/whatsmeow/blob/main/send.go",
+          "language": "Go"
+        }
+      ]
+    },
+    {
+      "id": "matter.owner-global",
+      "name": "Owner global multired",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.set-role",
+      "name": "Asignación de roles y rangos",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.guest-access",
+      "name": "Acceso invitado a servicios públicos",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.vault-permissions",
+      "name": "Control autenticado Vault",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.vault-encryption",
+      "name": "Cifrado de datos administrados",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.anti-link",
+      "name": "Anti enlaces",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.anti-spam",
+      "name": "Anti spam/flood",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.anti-edit",
+      "name": "Anti edición evasiva",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.anti-call",
+      "name": "Anti llamadas no deseadas",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.anti-media",
+      "name": "Reglas multimedia",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.sandbox",
+      "name": "Sandbox de comandos y plugins",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.i18n",
+      "name": "Internacionalización",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.multi-bot",
+      "name": "Registro y control multi-bot",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.auth-alias",
+      "name": "Vincular usuarios verificados por plataforma",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.registration",
+      "name": "Matter Register e identidad",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "matter.replay-filter",
+      "name": "Deduplicación de ingreso por socket",
+      "category": "Seguridad Matter",
+      "group": "matter",
+      "origin": "matter-extension",
+      "status": "offline",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        },
+        {
+          "project": "matter",
+          "path": "Vault-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Vault-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "cross-platform.telegram",
+      "name": "Conector Telegram Bot API",
+      "category": "Otras plataformas",
+      "group": "cross-platform",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "cross-platform.discord",
+      "name": "Conector Discord Gateway",
+      "category": "Otras plataformas",
+      "group": "cross-platform",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "cross-platform.social",
+      "name": "Conector futuro Social-Matter",
+      "category": "Otras plataformas",
+      "group": "cross-platform",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "cross-platform.unified-events",
+      "name": "Contrato universal de eventos",
+      "category": "Otras plataformas",
+      "group": "cross-platform",
+      "origin": "matter-extension",
+      "status": "offline",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "cross-platform.platform-isolation",
+      "name": "Aislamiento por plataforma",
+      "category": "Otras plataformas",
+      "group": "cross-platform",
+      "origin": "matter-extension",
+      "status": "offline",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        }
+      ]
+    },
+    {
+      "id": "cross-platform.cross-network-capabilities",
+      "name": "Negociación de capacidades por red",
+      "category": "Otras plataformas",
+      "group": "cross-platform",
+      "origin": "matter-extension",
+      "status": "planned",
+      "sources": [
+        {
+          "project": "matter",
+          "path": "Base-Matter",
+          "repository": "Matterssmith/Base-Matter",
+          "url": "https://github.com/Matterssmith/Base-Matter/blob/feat/matter-rust-multiplatform/Base-Matter",
+          "language": "Rust"
+        }
+      ]
+    }
+  ]
+}
