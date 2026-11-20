@@ -7,6 +7,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+import subprocess
 
 SPEC = importlib.util.spec_from_file_location("matter_ai", Path(__file__).resolve().parents[1] / "tools" / "matter_ai.py")
 matter = importlib.util.module_from_spec(SPEC)
@@ -28,7 +29,7 @@ class MatterAITests(unittest.TestCase):
             try:
                 matter.ROOT = Path(td)
                 project = matter.ROOT / "matter-rust"
-                (project / ".git").mkdir(parents=True)
+                subprocess.run(["git", "init", "-q", "-b", "workstreams/07-matter-rust", str(project)], check=True)
                 (project / "docs").mkdir()
                 self.assertEqual(matter.file_path("matter-rust", "docs/file.md"), project / "docs/file.md")
                 for candidate in ("../private.txt", "/etc/passwd", ".env", ".git/config",
@@ -53,7 +54,7 @@ class MatterAITests(unittest.TestCase):
             try:
                 matter.ROOT = Path(td)
                 project = matter.ROOT / "matter-rust"
-                (project / ".git").mkdir(parents=True)
+                subprocess.run(["git", "init", "-q", "-b", "workstreams/07-matter-rust", str(project)], check=True)
                 for argv in (["sh", "-c", "rm -rf /"], ["bash", "x.sh"],
                              ["git", "reset", "--hard"], ["git", "push"],
                              ["python3", "-c", "print(1)"], ["curl", "https://x.test"]):
