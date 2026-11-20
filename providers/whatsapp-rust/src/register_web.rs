@@ -121,18 +121,22 @@ fn resolve(method: &str, path: &str) -> Response {
     }
     let (status, mime, body) = match path {
         "/" | "/index.html" => ("200 OK", "text/html; charset=utf-8", HTML.as_bytes()),
-        "/app.js" => (
-            "200 OK",
-            "text/javascript; charset=utf-8",
-            APP.as_bytes(),
-        ),
+        "/app.js" => ("200 OK", "text/javascript; charset=utf-8", APP.as_bytes()),
         "/api/register/capabilities" => (
             "200 OK",
             "application/json; charset=utf-8",
             CAPABILITIES.as_bytes(),
         ),
-        "/healthz" => ("200 OK", "text/plain; charset=utf-8", b"matter-register-preview-ok".as_slice()),
-        _ => ("404 Not Found", "text/plain; charset=utf-8", b"not_found".as_slice()),
+        "/healthz" => (
+            "200 OK",
+            "text/plain; charset=utf-8",
+            b"matter-register-preview-ok".as_slice(),
+        ),
+        _ => (
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            b"not_found".as_slice(),
+        ),
     };
     Response {
         status,
@@ -250,12 +254,17 @@ mod tests {
         assert_eq!(resolve("GET", "/").status, "200 OK");
         assert_eq!(resolve("GET", "/app.js").status, "200 OK");
         assert_eq!(resolve("HEAD", "/healthz").status, "200 OK");
-        assert_eq!(resolve("POST", "/api/register/sessions").status, "405 Method Not Allowed");
+        assert_eq!(
+            resolve("POST", "/api/register/sessions").status,
+            "405 Method Not Allowed"
+        );
         assert_eq!(resolve("GET", "/.git/config").status, "404 Not Found");
         assert_eq!(resolve("GET", "/app.js?token=1").status, "404 Not Found");
-        assert!(std::str::from_utf8(resolve("GET", "/api/register/capabilities").body)
-            .unwrap()
-            .contains(r#""ready":false"#));
+        assert!(
+            std::str::from_utf8(resolve("GET", "/api/register/capabilities").body)
+                .unwrap()
+                .contains(r#""ready":false"#)
+        );
     }
 
     #[test]
