@@ -1,3 +1,10 @@
+## 2026-11-20 — Contrato obligatorio de Matter Register: JavaScript controla todo
+
+- El usuario exige HTML mínimo exclusivamente para invocar JavaScript. Se refactorizó `web/matter-register/index.html` a un bootstrap de 557 bytes, con `script src="./app.js" defer` y CSP sin scripts inline.
+- `web/matter-register/app.js` construye DOM, CSS, tema, animaciones, sonido opt-in, fullscreen, botones, flujo guest/adult/minor, política visual por país y conexión controlada al gateway. No introducir elementos visuales ni formularios de regreso al HTML. No requerir framework adicional de JS.
+- Tests Python de arquitectura y CI Node `--check`. Sin alterar sockets WhatsApp, provider Rust predeterminado, Vault ni ramas principales.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Mater Register interfaz, transportes y puerta privada
 
 - Trabajo nuevo aislado en `feat/matter-register-web` desde `alpha`, sin desplegar ni modificar binarios/sockets existentes.
