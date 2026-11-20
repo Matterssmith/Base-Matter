@@ -7,12 +7,14 @@ on:
       - 'tools/matter_ai.py'
       - 'tools/matter_branches.py'
       - 'tools/matter_autopilot.py'
+      - 'tools/matter_local.py'
       - 'tools/matter-autopilot.service'
       - 'tools/setup-sakura.sh'
       - 'tools/install-matter-ai.sh'
       - 'tests/test_matter_ai_cli.py'
       - 'tests/test_matter_branches.py'
       - 'tests/test_matter_autopilot.py'
+      - 'tests/test_matter_local.py'
       - '.github/workflows/matter-ai-terminal-ci.yml'
   pull_request:
     paths:
@@ -38,7 +40,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Validate Python syntax
-        run: python -m py_compile tools/matter_ai.py tools/matter_branches.py tools/matter_autopilot.py tests/test_matter_ai_cli.py tests/test_matter_branches.py tests/test_matter_autopilot.py
+        run: python -m py_compile tools/matter_ai.py tools/matter_branches.py tools/matter_autopilot.py tools/matter_local.py tests/test_matter_ai_cli.py tests/test_matter_branches.py tests/test_matter_autopilot.py tests/test_matter_local.py
       - name: Offline agent permissions and repository graph tests
         run: python -m unittest discover -s tests -p 'test_matter_*.py' -v
       - name: Offline projects command
