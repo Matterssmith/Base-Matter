@@ -1,3 +1,12 @@
+## 2026-11-20 — Matter-AI local con Ollama, sin API comercial por defecto
+
+- Nuevo `tools/matter_local.py` (API chat oficial de Ollama, herramientas tipadas por localhost), `tests/test_matter_local.py` (offline) e integración `tools/matter_ai.py`: `backend local|openai`, `local-model`, chat sin clave comercial.
+- Integración `tools/matter_autopilot.py`: backend local también para ciclos 24/7; `doctor` verificación offline, hasta 1440 rondas/día según configuración y hardware. `tools/install-matter-ai.sh` copia backend local; CI Python Linux/Windows actualizado.
+- Guía y pasos manuales Sakura: `docs/MATTER_AI_OLLAMA_LOCAL.md`. Con 3-4GB RAM comenzar por qwen3:0.6b y no prometer rendimiento ni pruebas de seguridad equivalentes al GPT-6 comercial.
+- No se instaló ni probó localmente en la laptop; ningún cambio a producción, sesiones, secretos, Vault cifrado, alpha/beta/stable. Pendiente E2E con Ollama real y acceso a repositorios privados desde Sakura.
+- Se verificaron tests offline Linux/Windows del flujo local en [run 44830720682](https://github.com/Matterssmith/Base-Matter/actions/runs/44830720682) (commit f0d3ed9b14); futuras revisiones deben volver a comprobar CI en el último SHA.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Validación CI de Matter-Autopilot
 
 - GitHub Actions [run 44829007299](https://github.com/Matterssmith/Base-Matter/actions/runs/44829007299), commit `d1d7092aae5ca63dd41fa39f2953ef92f38cf307`: **Linux y Windows correctos** para pruebas offline Matter-AI, pruebas de autonomía, instaladores y systemd unit (Linux).
