@@ -1,3 +1,7 @@
+## 2026-11-20 — Orden de arranque Ubuntu y reparación Sakura
+
+No asumir que Sakura existe. Antes de habilitar linger o cambiar de usuario, `id Sakura` y `getent passwd Sakura` deben funcionar. Script opcional `tools/setup-sakura.sh --admin --password-prompt --linger` invocado por un administrador; `--admin` hace `usermod -aG sudo Sakura` (nunca borra grupos), `--password-prompt` invoca `passwd` con prompt oculto, `--linger` solo después de la verificación. No dar sudo sin contraseña ni modificar sesiones o repos protegidos. Conservar usuario admin previo. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Matter-AI local con Ollama
 
 - `tools/matter_local.py` conecta exclusivamente al `127.0.0.1:11434` de Ollama por `/api/chat`, usando tools tipadas del agente y `matter-ai backend local`. No precisa OpenAI API key ni comparte ChatGPT Plus con el proceso local.
