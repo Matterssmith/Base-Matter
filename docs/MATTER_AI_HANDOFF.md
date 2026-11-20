@@ -1,3 +1,11 @@
+## Operación autónoma local — Matter-Autopilot (2026-11-20)
+
+- Comando literal repetido: **«continúa el proyecto matter»**. Supervisor de workstreams: `matter-autopilot`, instalado desde Base-Matter `workstreams/02-base`.
+- Autopilot sólo edita archivos fuente/docs seleccionados y crea commits locales después de cada ronda exitosa; no ejecuta tests ni hace push por defecto. Aprobación `--push-workstreams` permite publicar únicamente en esa misma rama de trabajo, nunca en `alpha`/`beta`/`stable`. Bot-Matter bloqueado.
+- Estado local persistente y diario `~/.local/state/matter-ai/autopilot-state.json`. El monitor salta checkouts sucios y muestra pendientes. Guía `docs/MATTER_AUTOPILOT_UBUNTU.md`.
+- No hay ejecución de este servicio en la laptop sin instalación, key API, clones y un `systemd --user` activo. No se promete trabajo ilimitado por consumo, red, batería ni API.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## Cuenta Sakura y persistencia entre sesiones — 2026-11-20
 
 - Usuario Linux `Sakura` creado por `tools/setup-sakura.sh` al ejecutarlo como administrador en Ubuntu; NO se ha ejecutado aún. Por defecto contraseña bloqueada, no vacía; se permite opción `--password-prompt` o clave SSH pública.
