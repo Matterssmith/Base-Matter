@@ -1,3 +1,10 @@
+## 2026-11-20 — Política owner global principal en todas las redes
+
+- Ancla privada: el teléfono público del propietario es el principal global 1 en Vault, sin colocarlo en el repositorio público. Cada bot y plataforma deben comprobar la identidad real del evento y consultar `owner_check` cifrado antes de responder `=/>vault`.
+- WhatsApp prueba su JID; Telegram y Discord requieren vincular sus identificadores estables una vez, no conceder privilegios por un número o nombre que alguien escriba. El owner 2 mantiene identidades diferentes, seleccionables por plataforma.
+- Se aplican dos ajustes rustfmt detectados por CI para el cliente v2 de plataforma. La compatibilidad de cliente v1 sigue limitada a WhatsApp y Vault se mantiene privado. El servidor no se ha actualizado.
+- README revisados: 2/2. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Cliente global de Vault con identidad inmutable por red
 
 - Base-Matter introduce `require_global_owner_for_platform(platform, subject_id)` para el contrato v2 de Vault, con `whatsapp` PN/LID real, `telegram` user.id y `discord` user.id. Username/nickname es solo un alias visual y no se convierte en principal por texto.

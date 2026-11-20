@@ -174,12 +174,7 @@ impl VaultClient {
             "subject_id": subject_id,
         });
         let encoded = serde_json::to_vec(&principal)?;
-        let result = self.invoke(
-            "owner_check",
-            "global-owner-check-v2",
-            None,
-            Some(&encoded),
-        )?;
+        let result = self.invoke("owner_check", "global-owner-check-v2", None, Some(&encoded))?;
         if !result
             .value
             .as_ref()
@@ -283,10 +278,8 @@ impl VaultClient {
             && (expected_revision.is_some() || value.is_some()))
             || (operation == "put" && value.is_none())
             || (operation == "owner_check"
-                && (!matches!(
-                    record,
-                    "global-owner-check-v1" | "global-owner-check-v2"
-                ) || expected_revision.is_some()
+                && (!matches!(record, "global-owner-check-v1" | "global-owner-check-v2")
+                    || expected_revision.is_some()
                     || value.is_none_or(|identity| identity.len() > 256)))
         {
             bail!("invalid_vault_operation_arguments");
