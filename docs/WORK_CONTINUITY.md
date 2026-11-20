@@ -1,3 +1,11 @@
+## 2026-11-20 — Corrección de cuenta Sakura inexistente
+
+- Reporte de instalación Ubuntu: `failed to look up user Sakura: No such process`, `sudo: unknown user Sakura` y plugin audit al intentar usar un usuario no creado.
+- Actualizado `tools/setup-sakura.sh`: altas idempotentes con useradd, `--admin`, `--password-prompt`, `--authorized-key-file` y `--linger` (orden correcto). Se mantienen servicios, Home, usuarios previos y sin permisos NOPASSWD.
+- Reparación manual y script descritos en `docs/MATTER_SAKURA_BRANCH_RECOVERY.md` y `docs/MATTER_AI_OLLAMA_LOCAL.md`.
+- Próximo: confirmar `id Sakura`, `id -nG Sakura`, `sudo -l -U Sakura`, `loginctl show-user Sakura -p Linger` en Ubuntu real, instalar Matter-AI dentro del Home de Sakura y probar el servicio.
+- No hay acceso remoto al host del usuario; aún no se ha reparado su Ubuntu. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Matter-AI local con Ollama, sin API comercial por defecto
 
 - Nuevo `tools/matter_local.py` (API chat oficial de Ollama, herramientas tipadas por localhost), `tests/test_matter_local.py` (offline) e integración `tools/matter_ai.py`: `backend local|openai`, `local-model`, chat sin clave comercial.
