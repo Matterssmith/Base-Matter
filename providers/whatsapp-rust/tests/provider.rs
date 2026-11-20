@@ -438,11 +438,6 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>group on",
         "=/>bot on",
         "=/>set role 12345678901 admin",
-        "=/>menu unknown",
-        "=/>menu antis 999",
-        "=/>menu unset",
-        "=/>menu config extra",
-        "=/>help run(unknown)",
         "=/>test html",
         "=/>test run",
         "=/>test ack invalid",
@@ -455,6 +450,24 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         assert_eq!(frame.actor_id, public_id);
         assert!(!frame.from_me);
         assert_eq!(frame.chat_jid, incoming.chat_jid);
+    }
+    // Explicit menu/help shape checks intentionally reject malformed
+    // read-only requests instead of forwarding them to the controller.
+    for text in [
+        "=/>menu unknown",
+        "=/>menu antis 999",
+        "=/>menu unset",
+        "=/>menu config extra",
+        "=/>help run(unknown)",
+    ] {
+        incoming.text = text;
+        assert!(
+            config
+                .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+                .unwrap()
+                .is_none(),
+            "malformed read-only request must be rejected: {text}"
+        );
     }
     for text in ["#ping", "=/>unknown admin", "=/>"] {
         incoming.text = text;
