@@ -1,3 +1,9 @@
+## Regla superior de continuación — 2026-11-21
+
+Si el propietario escribe **«continúa el proyecto Matter, lee las instrucciones»**, se debe **abrir primero el repositorio privado [Matterssmith/MSEL](https://github.com/Matterssmith/MSEL/tree/alpha)** y leer `AGENTS.md`, `docs/CHANGE_PLAN.md`, `docs/DEVELOPMENT_STATUS.md`, `docs/OFFICIAL_LANGUAGE_STANDARD.md` y `docs/ROADMAP.md`. El trabajo principal será perfeccionar **MSEL, lenguaje propio P0** (lexing, parser, tipos, IR, intérprete/compilador Rust, CLI, conformidad). **A continuación**, mejorar **Matter-MSEL**, motor/integración para bots y sistemas escritos en `.msel` (WhatsApp/Telegram/Discord y otros proveedores). **Después** revisar Base-Matter y demás tecnologías, excepto orden diferente del propietario o corrección crítica de seguridad/producción. Nunca confundir MSEL y Matter-MSEL.
+
+**Documento de control para cambios del lenguaje:** `Matterssmith/MSEL/docs/CHANGE_PLAN.md`: plan en GitHub ANTES de editar código, resultados y pendientes en CHANGELOG/DEVELOPMENT_STATUS DESPUÉS; no tocar `stable` por defecto. Evitar duplicar el lenguaje dentro de Base-Matter.
+
 ## 2026-11-21 — Rectificación de prioridades: MSEL es el lenguaje oficial (P0)
 
 - **MSEL (Matter Script Extension Language)** es el **lenguaje de programación propio de Matter**, no un sinónimo de Matter-MSEL. **Prioridad P0 actual: diseñar, implementar y probar MSEL como lenguaje autónomo hasta que ejecute programas reales.**
