@@ -1,3 +1,85 @@
+## 2026-11-21 — Matter-Autopilot habilitado por defecto tras instalación local
+
+**Solicitud:** «La automatización activada por defecto ya» y «continúa el proyecto matter lee las instrucciones que están en el .md».
+
+**Implementado en** `workstreams/02-base`:
+- Nuevo `docs/MATTER_AUTOPILOT_INSTRUCTIONS.md`: orden principal, prioridades, límites, continuidad, políticas para Rust/WhatsApp/Vault, checklist de reporte y seguridad.
+- `tools/matter_autopilot.py`: `DEFAULT.enabled=true`, `projects=[matter-rust]`, `interval_seconds=900`, `daily_cycles=96`, `auto_push=false`; lee el Markdown instalado cada ciclo y falla cerrado si falta, está vacío, demasiado grande, es symlink o contiene indicios de secretos. `matter-autopilot activate` habilita/reinicia sin confirmación y sólo con backend Ollama local. `stop` sigue disponible.
+- `tools/install-matter-ai.sh`: copia el documento; configura Ollama local si no existe config, crea config inicial activa, intenta sincronizar el único workstream público y habilita `systemd --user` sin diálogo. Respeta `enabled=false` previamente guardado en una reinstalación. No inicia automáticamente OpenAI API de pago.
+- `tests/test_matter_autopilot.py`: pruebas de instrucciones y de instalación automática bajo HOME simulado, incluidos backend, no push y persistencia de stop. CI Linux/Windows pendiente de la comprobación final del último SHA.
+- Límite **real**: no se puede encender el proceso remotamente desde GitHub. Bajo la cuenta Sakura hay que actualizar el clon de instalación y ejecutar el instalador y `matter-autopilot activate`; si systemd user o Ollama falla, diagnosticar. Ningún runtime, sesión WhatsApp o rama estable fue modificada.
+- Próximo: aplicar instrucción de una línea en Ubuntu, verificar `status`/journal, revisar primer ciclo con modelo real y no confundir commits automáticos con pruebas de código.
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Revisión externa: Aura-Reed-Rust handler/context
+
+- Fuente exacta leída: `LuferOS/Aura-Reed-Rust` `main`; árbol Git `f72e6b6de83dec3badf59517891f7a73b19ac02d`, `src/handler.rs`, `src/context.rs`, `src/main.rs`, `src/cmd/mod.rs`, `src/cmd/socket.rs`, `src/db.rs`, `src/config.rs`, `src/lang.rs`, README, Cargo.toml.
+- Nuevo documento `docs/AURA_REED_RUST_HANDLER_REVIEW.md`: flujo y módulos reales, matriz de adaptación a Base/WhatsApp/Vault/System/Bot, riesgos de acoplamiento/propietarios/secretos, estructura propuesta, fases futuras y criterios de aceptación. Fuente ajena atribuida a LuferOS; no se copió código.
+- Propuesta: handler central de admisión + `CommandContext` neutral a plataforma + comandos registrables mediante `CommandRouter` ya existente; no sustituir el motor Rust WhatsApp actual, no prometer soporte Telegram/Discord ni mover sesiones.
+- Integración solo documental: **ninguna implementación de comandos, handlers, conexiones o tests en ejecución en este cambio**. `Bot-Matter` bloqueado. No se requiere Ollama para estudiar/refactorizar handlers Rust; su instalación en laptop puede aplazarse.
+- Próxima acción si se autoriza: comparar inventario de comandos de Matter contra los 15 módulos Aura, priorizar interfaz neutral y tests offline antes de proponer PR a alpha.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Corrección de cuenta Sakura inexistente
+
+- Reporte de instalación Ubuntu: `failed to look up user Sakura: No such process`, `sudo: unknown user Sakura` y plugin audit al intentar usar un usuario no creado.
+- Actualizado `tools/setup-sakura.sh`: altas idempotentes con useradd, `--admin`, `--password-prompt`, `--authorized-key-file` y `--linger` (orden correcto). Se mantienen servicios, Home, usuarios previos y sin permisos NOPASSWD.
+- Reparación manual y script descritos en `docs/MATTER_SAKURA_BRANCH_RECOVERY.md` y `docs/MATTER_AI_OLLAMA_LOCAL.md`.
+- Próximo: confirmar `id Sakura`, `id -nG Sakura`, `sudo -l -U Sakura`, `loginctl show-user Sakura -p Linger` en Ubuntu real, instalar Matter-AI dentro del Home de Sakura y probar el servicio.
+- No hay acceso remoto al host del usuario; aún no se ha reparado su Ubuntu. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Matter-AI local con Ollama, sin API comercial por defecto
+
+- Nuevo `tools/matter_local.py` (API chat oficial de Ollama, herramientas tipadas por localhost), `tests/test_matter_local.py` (offline) e integración `tools/matter_ai.py`: `backend local|openai`, `local-model`, chat sin clave comercial.
+- Integración `tools/matter_autopilot.py`: backend local también para ciclos 24/7; `doctor` verificación offline, hasta 1440 rondas/día según configuración y hardware. `tools/install-matter-ai.sh` copia backend local; CI Python Linux/Windows actualizado.
+- Guía y pasos manuales Sakura: `docs/MATTER_AI_OLLAMA_LOCAL.md`. Con 3-4GB RAM comenzar por qwen3:0.6b y no prometer rendimiento ni pruebas de seguridad equivalentes al GPT-6 comercial.
+- No se instaló ni probó localmente en la laptop; ningún cambio a producción, sesiones, secretos, Vault cifrado, alpha/beta/stable. Pendiente E2E con Ollama real y acceso a repositorios privados desde Sakura.
+- Se verificaron tests offline Linux/Windows del flujo local en [run 44830720682](https://github.com/Matterssmith/Base-Matter/actions/runs/44830720682) (commit f0d3ed9b14); futuras revisiones deben volver a comprobar CI en el último SHA.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Validación CI de Matter-Autopilot
+
+- GitHub Actions [run 44829007299](https://github.com/Matterssmith/Base-Matter/actions/runs/44829007299), commit `d1d7092aae5ca63dd41fa39f2953ef92f38cf307`: **Linux y Windows correctos** para pruebas offline Matter-AI, pruebas de autonomía, instaladores y systemd unit (Linux).
+- Corregido bloqueo de archivos protegidos antes de su resolución de ruta y preparado el ejecutable en CI antes de validar el servicio systemd.
+- Pendiente: instalación Ubuntu real y autenticación OpenAI/GitHub del usuario Sakura; comprobar persistencia tras reboot, backoff API y éxito real de push. No se tocó Bot-Matter ni ramas protegidas.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Nuevo daemon Matter-Autopilot para Ubuntu Server
+
+- Rama de trabajo `workstreams/02-base`; servicio de usuario `Sakura`: `tools/matter_autopilot.py`, `tools/matter-autopilot.service`; instalador actualizado. Suite offline en `tests/test_matter_autopilot.py` y workflow Linux/Windows.
+- Lógica: ejecuta exactamente «continúa el proyecto matter», selecciona clones limpios y ramas verificadas, carga HANDOFF, limita ciclos diarios y pasos API, retiene estado por proyecto y reintenta push fallidos del workstream cuando auto-push está habilitado. No ejecuta shell arbitrario ni tests no aislados desatendidos.
+- Persistencia: commits locales por defecto; con permiso explícito `AUTORIZO_PUSH`, push exclusivamente a `workstreams/*`; ninguna promoción alpha/beta/stable ni Bot-Matter automática. Si el equipo apaga o suspende, el programa no sigue trabajando; `systemd` recupera al iniciar sesión o con `loginctl enable-linger Sakura`.
+- Guía `docs/MATTER_AUTOPILOT_UBUNTU.md`; configurar intervalos y crédito API en la cuenta OpenAI, porque los límites de rondas no equivalen a límites monetarios.
+- No instalado en laptop; falta verificación real de API/autenticación, acceso a privados y operación durante reinicios. Revisar CI Linux/Windows antes de afirmar estado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Usuario Sakura y continuidad Git alpha/beta/stable
+
+- Rama `workstreams/02-base`; nuevos `tools/setup-sakura.sh`, `tools/matter_branches.py`, `tests/test_matter_branches.py`, `docs/MATTER_SAKURA_BRANCH_RECOVERY.md`, cambios en instalador `tools/install-matter-ai.sh`, CLI, handoff, README/AGENTS/WORK_CONTINUITY y CI.
+- Usuario Ubuntu `Sakura` nuevo opcional: contraseña bloqueada de forma predeterminada, contraseña interactiva opcional, SSH pública verificada. No se ejecutó sobre Ubuntu de usuario.
+- Se añadieron: `matter-ai branches` (ramas reales), `workstatus`, `checkpoint` (metadatos privados), `save` (commit/push con dos aprobaciones) y `promote` (PR draft revisado a alpha/beta/stable/feat), con trabajo aislado por rama y sin fuerza.
+- Vault code/docs se pueden guardar tras validación; datos cifrados bajo vault/ siguen protegidos de guardado genérico. Bot-Matter bloqueado.
+- Pendiente: CI nueva batería Linux/Windows, instalación real, autenticación GitHub privada y API OpenAI, validación end-to-end con un repo de prueba. No afirmar respaldos remotos sin confirmación de push.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — CI green y publicación protegida de Matter-AI
+
+- Tests offline de Matter-AI completos en GitHub Actions Linux y Windows: [run 44823282443](https://github.com/Matterssmith/Base-Matter/actions/runs/44823282443), commit 9159b4d1c1f88443ecc8e77917bbc808855aaca3.
+- El agente carga `docs/MATTER_AI_HANDOFF.md` en `~/.local/share/matter-ai` al instalar, consulta README largos por fragmentos y aísla 27 workstreams en clones con rama exacta.
+- `publish_workstream` sólo permite revisar, commitear y hacer push de archivos modificados por el agente en la sesión, a rama `workstreams/*` y remoto Matterssmith verificado, con consentimiento humano. No auto-merge ni force push. CI y PRs necesitan revisión posterior.
+- El instalador no se ha ejecutado sobre la laptop del usuario; NO se ha probado una API key real ni conexión a GitHub privado. La prueba offline no equivale a éxito de la API ni despliegue.
+- Se documentó traspaso inicial por SSH desde móvil para minimizar escritura en laptop, sin exponer contraseñas.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Matter-AI para consola Ubuntu
+
+- Rama: `workstreams/02-base` (no alpha ni stable). Objetivo: gestionar desarrollo Matter desde laptop sin Codex; escribir instrucciones cortas en terminal.
+- Código: `tools/matter_ai.py`, `tools/install-matter-ai.sh`, `tests/test_matter_ai_cli.py`, `.github/workflows/matter-ai-terminal-ci.yml`, `docs/MATTER_AI_UBUNTU_TERMINAL.md`, `docs/MATTER_AI_HANDOFF.md`.
+- Funciones locales: CLI `matter-ai`, `setup`, `plan`, `projects`, `sync ID`, `model`; 27 clones separados bajo `~/Matter/workspaces`, exacta verificación de rama, lectura paginada de documentos, escritura con autorización y pruebas permitidas; lotes /auto sólo para archivos locales.
+- No instalado en laptop; sin prueba de acceso a API ni conexión a GitHub privado; no se realizó servicio de sistema, push, merge o cambio WhatsApp. CI Linux/Windows agregado, resultado pendiente de verificación.
+- Próximo: confirmar tests offline, configurar API key privadamente en la máquina, clonar sólo los proyectos necesarios y comenzar tareas con instrucciones de traspaso. Bot-Matter sigue bloqueado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.

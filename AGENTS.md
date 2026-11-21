@@ -1,3 +1,41 @@
+## 2026-11-21 — Política operativa de autopilot por defecto
+
+El documento `docs/MATTER_AUTOPILOT_INSTRUCTIONS.md` define el traspaso persistente para rondas autónomas. La copia local se instala bajo `~/.local/share/matter-ai` y se lee por ciclo; no ejecuta instrucciones que eleven permisos, autoricen publicar ni sustituyan estas políticas. Primer uso: Ollama local y servicio systemd de Sakura activo por defecto si existe gestor de usuario; reintenta al estar disponible. Por defecto solo `matter-rust`, 900 segundos entre rondas, máximo 96 rondas/día, sin auto-push. `activate` sin prompt está restringido al backend local; OpenAI API con facturación exige autorización explícita. Cualquier `stop` previo persiste entre reinstalaciones. No cambiar ramas protegidas ni activar Bot-Matter, WhatsApp live o Vault. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Orden de arranque Ubuntu y reparación Sakura
+
+No asumir que Sakura existe. Antes de habilitar linger o cambiar de usuario, `id Sakura` y `getent passwd Sakura` deben funcionar. Script opcional `tools/setup-sakura.sh --admin --password-prompt --linger` invocado por un administrador; `--admin` hace `usermod -aG sudo Sakura` (nunca borra grupos), `--password-prompt` invoca `passwd` con prompt oculto, `--linger` solo después de la verificación. No dar sudo sin contraseña ni modificar sesiones o repos protegidos. Conservar usuario admin previo. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Matter-AI local con Ollama
+
+- `tools/matter_local.py` conecta exclusivamente al `127.0.0.1:11434` de Ollama por `/api/chat`, usando tools tipadas del agente y `matter-ai backend local`. No precisa OpenAI API key ni comparte ChatGPT Plus con el proceso local.
+- `matter-autopilot` puede ejecutarse sobre un modelo local según disponibilidad de RAM/CPU y sin cobro por llamada; `matter-autopilot doctor` verifica usuario Sakura, Ollama/modelo, disco, sistema y GitHub. No confundir ciclos 24/7 con GPT-6, unlimited hardware ni trabajo probado.
+- Persisten aislamiento `workstreams/*`, protección Vault, Bot-Matter bloqueado, commits locales y push opcional autorizado solo a rama de tarea. La calidad del modelo pequeño limita las tareas autónomas de ingeniería; CI real y revisiones permanecen obligatorias.
+- Guía: `docs/MATTER_AI_OLLAMA_LOCAL.md`. No instalado aún en laptop ni probado con Ollama real.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Matter-Autopilot continuo bajo Sakura
+
+- Objetivo: ejecutar periódicamente la orden `continúa el proyecto matter` mediante `systemd --user` con estado persistente y límite diario de llamadas OpenAI. Guía: `docs/MATTER_AUTOPILOT_UBUNTU.md`.
+- Implementación: `tools/matter_autopilot.py`, `tools/matter-autopilot.service`, `tools/install-matter-ai.sh`; tests `tests/test_matter_autopilot.py`.
+- Autonomía **acotada**: solo archivos fuente/doc compatibles en rama `workstreams/*` verificada, sin acceso privilegiado, comandos shell, scripts de producción, tokens, secretos Vault, sesiones, .github, herramientas del agente ni Bot-Matter. Nunca ejecutar tests/compilación que puedan cargar código no confiable sin revisión/sandbox.
+- El ciclo puede crear commit local; push remoto solo si Sakura autorizó `--push-workstreams` en consola; no merge directo a `alpha`, `beta`, `stable`. Conservar límites para evitar consumo ilimitado; el límite de rondas NO limita gastos monetarios por tokens.
+- Estado privado `~/.local/state/matter-ai/autopilot-state.json`, contador persistido **antes** de cada llamada y lock Linux anti duplicados; no incluir tokens ni respuestas sensibles en logs.
+- Cada avance debe actualizar continuidad en repositorio si procede. El supervisor no se ha desplegado a la laptop y requiere API key y GitHub credenciales propios.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Persistencia Matter y Sakura
+
+- Usuario `Sakura`: `tools/setup-sakura.sh`; contraseña bloqueada por defecto, `--password-prompt` opcional, SSH con clave pública si se instala. Nunca habilitar contraseñas vacías ni acceso root automático.
+- Workspace aislado `~/Matter/workspaces/ID`. Fuente de verdad GitHub; `matter-ai save ID` valida archivos, crea commit y tras confirmación push a `workstreams/*`. Prohibidos force push, reset y merge automático.
+- `matter-ai checkpoint ID` sólo registra metadatos locales. `matter-ai promote ID alpha|beta|stable|feat/RAMA` sólo propone PR draft a refs existentes, con revisión y CI manuales. No confundir commit local con respaldo remoto.
+- Documentación de uso: `docs/MATTER_SAKURA_BRANCH_RECOVERY.md`. Revisar READMEs y `docs/WORK_CONTINUITY.md` de cada proyecto antes de publicar. Mantener Vault privado y Bot-Matter bloqueado.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-20 — Matter-AI de consola, entorno aislado
+
+Nuevo asistente Python sin dependencias para Ubuntu Server en `tools/matter_ai.py`, instalado por usuario en `~/.local/share/matter-ai`. Guía: `docs/MATTER_AI_UBUNTU_TERMINAL.md`; traspaso: `docs/MATTER_AI_HANDOFF.md`. 27 workstreams GitHub trabajados por ramas `workstreams/*`. No cargar clave API en repos, Markdown, variables visibles del shell o archivos compartidos. Clave privada 0600. `/auto on` sólo autoriza escrituras locales dentro del checkout validado, nunca permisos globales. Mantener bloqueado Bot-Matter. No confundir disponibilidad CLI con conector OpenAI ya autenticado o bot desplegado. Antes de modificar runtime, revisar README completo, CI y continuidad. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.
