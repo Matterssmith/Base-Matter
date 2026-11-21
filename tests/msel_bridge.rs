@@ -33,7 +33,10 @@ fn subprocess_streams_normalized_event_without_any_credentials() {
     use std::fs;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-    let id = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+    let id = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
     let folder = std::env::temp_dir().join(format!("matter-msel-test-{}-{id}", std::process::id()));
     let module = folder.join("msel");
     fs::create_dir_all(&module).unwrap();
@@ -48,12 +51,7 @@ fn subprocess_streams_normalized_event_without_any_credentials() {
     fs::write(&script, "fn main(){}").unwrap();
     fs::write(&native, "").unwrap();
 
-    let runner = MselCommandRunner::new(
-        PathBuf::from("python3"),
-        folder.clone(),
-        script,
-        native,
-    );
+    let runner = MselCommandRunner::new(PathBuf::from("python3"), folder.clone(), script, native);
     let event = MselMessageEvent {
         provider: "whatsapp",
         chat: "group@g.us",
@@ -63,7 +61,11 @@ fn subprocess_streams_normalized_event_without_any_credentials() {
     };
     let read_only = runner.execute(&event).unwrap();
     assert!(read_only.is_empty());
-    let write_enabled = runner.clone().allow_message_reply().execute(&event).unwrap();
+    let write_enabled = runner
+        .clone()
+        .allow_message_reply()
+        .execute(&event)
+        .unwrap();
     assert_eq!(write_enabled, vec!["pong"]);
 
     let invalid_timeout = MselCommandRunner {
