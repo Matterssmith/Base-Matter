@@ -1,3 +1,15 @@
+## Auditoría LuferOS/Baileys-Rust (2026-11-21)
+
+Se realizó la lectura de [`src/Utils/experiments.rs`](https://github.com/LuferOS/Baileys-Rust/blob/main/src/Utils/experiments.rs), commit fijado `d8e1d41d1b2bb2301385aaa28e196c0fb6855367`. Se conservó la copia exacta en [`third_party/luferos-baileys-rust/experiments.rs`](../third_party/luferos-baileys-rust/experiments.rs), con LICENSE y NOTICE Apache-2.0 y la atribución de **Luis Fernando Guzmán Niño (LuferOS)**. Los tres blobs Git coinciden con los originales.
+
+**Hallazgo:** los builders `NativeButtonInput`, `InteractiveMessage`, `CarouselMessage`, `AiRichResponseMessage` y `extract_experimental_nodes` ofrecen botones y metadatos protobuf experimentales; `WebView` produce `open_webview` con una **URL**, no renderiza directamente HTML arbitrario. Los tipos RichResponse incluyen texto, código, tablas y LaTeX; en este archivo **no hay motor de HTML/CSS/JS**. Los dos unit tests del upstream comprueban la construcción de nodos `biz`/`bot`, no un envío ni una captura del cliente.
+
+**Incompatibilidad:** el provider actual usa `whatsapp-rust =0.7.0` y `buffa`; la muestra usa `baileys-rs` con protobuf `prost`. No se debe hacer `use` directo en el proveedor actual. `Custom` recibe JSON opaco, `WebView` no valida HTTPS por sí solo y no hay límites generales de entrada; antes de portar se requieren validadores de esquema/longitud, URLs HTTPS, permisos, trazabilidad y fallback.
+
+**Estado:** copia externa aislada, no compilada ni desplegada; laboratorio HTML/NativeFlow previo sin cambios. La visualización Android/iOS/Web sigue **sin confirmar**. En implementación futura: adaptación explícita al protobuf del provider elegido, envío en self-chat autorizado y captura de pantalla con versión del cliente; nunca fingir origen Meta AI ni otorgar privilegios por payload.
+
+[Provenance, licencia y límites](../third_party/luferos-baileys-rust/PROVENANCE.md) · [Plan y selector universal](BAILEYS_RUST_EXPERIMENTS_BOT_FACTORY_PLAN.md)
+
 ## 2026-11-19 — Burbuja de selección y tarjetas compatibles
 
 - Reporte visual Android: al pulsar «Categorías», el cliente publicaba «☾︎ Anti / Abrir menú» en vez del comando elegido. El selector ahora usa `title: "=/>menu anti"` y elimina `description`. El ID opaco y su enrutamiento HMAC siguen intactos; la burbuja depende de cómo WhatsApp represente esa fila.
