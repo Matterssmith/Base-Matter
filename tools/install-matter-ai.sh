@@ -105,7 +105,7 @@ fi
 
 # Arrancar sin requerir otro terminal ni confirmación, como fue solicitado.
 # Sólo si el archivo de configuración marca enabled=true; el STOP persiste.
-if python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); sys.exit(0 if c.get("enabled") is True else 1)' "$HOME/.config/matter-ai/autopilot.json"; then
+if python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); b=json.load(open(sys.argv[2])); sys.exit(0 if c.get("enabled") is True and b.get("backend") == "local" else 1)' "$HOME/.config/matter-ai/autopilot.json" "$HOME/.config/matter-ai/config.json"; then
     if command -v systemctl >/dev/null 2>&1; then
         if systemctl --user daemon-reload && systemctl --user enable --now matter-autopilot.service; then
             printf '%s\n' 'AUTOPILOT habilitado en systemd --user (verifica status).'
@@ -116,6 +116,6 @@ if python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); sys.exit(0 if c.
         printf '%s\n' 'AVISO: systemctl no disponible; no se ha iniciado el servicio.'
     fi
 else
-    printf '%s\n' 'Matter-Autopilot permanece DETENIDO por configuración previa.'
+    printf '%s\n' 'Inicio automático omitido: STOP previo u OpenAI API comercial. Sólo Ollama local se inicia sin confirmación.'
 fi
 
