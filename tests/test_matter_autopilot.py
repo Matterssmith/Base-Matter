@@ -159,7 +159,7 @@ class AutopilotOfflineTests(unittest.TestCase):
         with patch.object(matter_ai, "backend_name", return_value="local"), \
              patch.object(autopilot, "systemctl", return_value=GoodResult()) as ctl:
             self.assertEqual(autopilot.activate_local(), 0)
-            self.assertEqual(ctl.call_count, 2)
+            self.assertEqual(ctl.call_count, 3)
         self.assertTrue(autopilot.config()["enabled"])
         self.assertFalse(autopilot.config()["auto_push"])
 
