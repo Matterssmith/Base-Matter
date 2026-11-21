@@ -1,3 +1,13 @@
+# Prioridad de arquitectura Matter: Matter-MSEL (P0)
+
+**Matter-MSEL es el lenguaje nativo y motor principal de bots y sistemas de Matter Ecosystem.** Su frontend multilingüe, IR, compilador e intérprete tienen prioridad de arquitectura y desarrollo sobre nuevas funciones de Base-Matter. Los componentes operativos y controles de seguridad de Base/Vault siguen manteniéndose; esto no declara compilador o integraciones implementadas.
+
+**Especificación principal:** [Matter-MSEL — prioridad P0, 32 tecnologías y roadmap](docs/MATTER_MSEL_MASTER_SPEC.md).
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+---
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.
