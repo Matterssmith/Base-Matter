@@ -68,10 +68,8 @@ fn subprocess_streams_normalized_event_without_any_credentials() {
         .unwrap();
     assert_eq!(write_enabled, vec!["pong"]);
 
-    let invalid_timeout = MselCommandRunner {
-        timeout: Duration::ZERO,
-        ..runner
-    };
+    let mut invalid_timeout = runner;
+    invalid_timeout.timeout = Duration::ZERO;
     assert!(invalid_timeout.execute(&event).is_err());
     fs::remove_dir_all(folder).unwrap();
 }

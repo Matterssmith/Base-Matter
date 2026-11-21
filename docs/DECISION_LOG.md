@@ -1,3 +1,10 @@
+## 2026-11-21 — Reparación de compilación del puente MSEL
+
+GitHub Actions detectó error Rust E0451 en `tests/msel_bridge.rs`: el test intentaba usar sintaxis de actualización de struct que accede al campo privado `allow_reply`. Corregido asignando `timeout = Duration::ZERO` a una instancia creada mediante el constructor público y conservando `allow_reply` privado para evitar concesión de permisos por campos. Es corrección de compilación/test, no modifica sesión ni comandos de WhatsApp. Pruebas del nuevo SHA y CI pendientes de confirmar. README revisados: 2/2. Se preservan todas las instrucciones previas y créditos.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — MAT-MSEL-HOST-001
 
 Decisión: MSEL es el lenguaje original y privado; Matter-MSEL es su integración, no un compilador nuevo. `Base-Matter` consume un contrato JSON de `msel_bot_message_v1` mediante proceso local explicitamente configurado y por defecto sin `message.reply`; `WhatsApp-Matter` nunca se apropia de autenticación/roles por serializar eventos. La instancia WhatsApp activa conserva sesión y pairing. No permitir scripts de terceros hasta existir sandbox y política de autorizaciones. No activar nueva ruta en producción por este commit. Evidencia: archivos y tests añadidos; CI aún por confirmar. [Manual](MSEL_WHATSAPP_INTEGRATION.md).
