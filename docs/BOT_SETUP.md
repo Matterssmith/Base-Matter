@@ -1,3 +1,33 @@
+## Contrato v2 — Bot Factory universal (2026-11-21)
+
+El **nuevo** creador `matter-bot-init` devuelve un descriptor **v2**, no un bot ejecutable. Sus valores por defecto son: **lenguaje `msel`**, **motor `matter-msel`**, **plataforma `social-matter`**, **biblioteca `default`** y **sistema `host`**. La aplicación Social-Matter, la lógica `.msel` y el compilador privado no se incorporan al repositorio público.
+
+**Elecciones independientes y combinables**: 
+- Lenguaje de código: `msel` (Matter-MSEL), `rust` (Matter-Rust), o `python`, `cpp`, `c`, `go`, `typescript`, `javascript`, `lua`, `kotlin`, `swift` como destinos declarativos que requieren motor instalado.
+- Plataforma: `social-matter` (predeterminada), `whatsapp`, `telegram`, `discord`; otras plataformas pueden declararse mediante ID seguro, pero el host puede rechazarlas si no están instaladas.
+- Biblioteca/proveedor: `--provider` (un destino) o `--provider-for plataforma=biblioteca` para asociaciones distintas. Ejemplo de nombre propio `XYZBailyes`: ID normalizado a `xyzbaileys`; **no** se ejecuta directamente el texto recibido ni una URL arbitraria.
+- Sistema objetivo: `host`, `linux`, `windows`, `macos`, `android`, `ios`, `web` o `embedded`, **sin presumir builds existentes**.
+
+```bash
+# Bot nuevo: MSEL + Social-Matter (solo descriptor)
+cargo run --locked --bin matter-bot-init
+
+# Bot en Matter-Rust usando biblioteca WhatsApp elegida
+cargo run --locked --bin matter-bot-init -- --language rust --platform whatsapp --provider baileys-rust
+
+# Bot MSEL para cuatro plataformas, con bibliotecas independientes
+cargo run --locked --bin matter-bot-init -- --language msel --platform social-matter --platform whatsapp --platform telegram --platform discord --provider-for whatsapp=xyzbaileys --provider-for telegram=telegram-api
+
+# Contrato antiguo, desactivado en el nuevo CLI salvo elección explícita
+cargo run --locked --bin matter-bot-init -- --legacy-selector
+```
+
+**Invariante de seguridad**: el selector `BotProjectRequest` valida identificadores opacos, destinos únicos, adaptadores dentro de las plataformas solicitadas y prohibición de asignar una biblioteca global no predeterminada a varios transportes. `UnavailableBotFactoryCatalog` impide resolver nada sin Host autorizado. El catálogo instalado valida proveedor, versión, permisos y capacidades; **ningún selector concede credenciales, enlaces de repositorio privado, sockets ni roles**.
+
+**Compatibilidad:** `BotSetupRequest` v1 y su predeterminado histórico `rust` siguen intactos para consumidores antiguos. El nuevo flujo v2 y el CLI por defecto sí usan MSEL. El argumento `--legacy-selector` reproduce la selección v1 sin campos de plataformas. Es deliberado para no romper servicios previamente desplegados.
+
+**Estado:** módulo Rust `src/bot_factory.rs` y CLI v2 publicados en `alpha`; están escritos **8 tests unitarios de Rust**, pero **compilación y ejecución Cargo no confirmadas** en esta iteración. No hay launcher real, pairing, conexión WhatsApp/Telegram/Discord ni integración MSEL alojada confirmada. Ver [plan/auditoría](BAILEYS_RUST_EXPERIMENTS_BOT_FACTORY_PLAN.md).
+
 ## 2026-11-19 — Política obligatoria Vault-D019: protección equivalente a credenciales
 
 - **Regla permanente del ecosistema:** TODOS los activos administrados por Vault — roles, permisos, decisiones, credenciales, políticas, metadatos, evidencia, auditoría, caché, respaldos y estados — deben cifrarse/autenticarse en reposo y transmitirse por canales cifrados y autenticados. Descifrado temporal sólo en memoria confiable; claves fuera de Git, nunca textos sensibles en logs, respuestas públicas ni archivos temporales.
