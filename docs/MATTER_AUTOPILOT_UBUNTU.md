@@ -1,3 +1,15 @@
+## 2026-11-21 — Instalación con arranque automático solicitado por el propietario
+
+**Nueva política:** el instalador bajo Sakura habilita Matter-Autopilot por defecto, usando Ollama local y `docs/MATTER_AUTOPILOT_INSTRUCTIONS.md` como archivo de instrucciones. Este apartado sustituye cualquier instrucción antigua que diga que el instalador nunca activa el servicio. Por defecto: `matter-rust`, cada 900 s, 96 ciclos/día, hasta cinco herramientas/ciclo, sin auto-push ni trabajo en Bot-Matter o ramas protegidas. No se requiere API OpenAI.
+
+**Una línea bajo Sakura**, si el clon de instalación todavía no existe o ya está en la rama correcta:
+
+```bash
+if [ -d "$HOME/Matter-AI-install/.git" ]; then git -C "$HOME/Matter-AI-install" pull --ff-only origin workstreams/02-base; else git clone --depth 1 --branch workstreams/02-base https://github.com/Matterssmith/Base-Matter.git "$HOME/Matter-AI-install"; fi && bash "$HOME/Matter-AI-install/tools/install-matter-ai.sh" && "$HOME/.local/bin/matter-ai" backend local && "$HOME/.local/bin/matter-autopilot" activate && "$HOME/.local/bin/matter-autopilot" status
+```
+
+`activate` es el paso explícito no interactivo que confirma que el servidor emplea el código actualizado y habilita el arranque. Los errores de systemd o la falta del backend se diagnostican con `journalctl --user -u matter-autopilot.service -n 50 --no-pager` y `matter-autopilot doctor`. Si el usuario hizo `stop`, futuras reinstalaciones preservan esa decisión salvo que invoque de nuevo `activate`. Requiere `loginctl enable-linger Sakura` para inicio sin login, laptop encendida y servidor de Ollama local con `qwen3:0.6b`. El modelo pequeño no garantiza calidad equivalente a GPT-6.
+
 ## Requisito previo: usuario administrador Sakura realmente creado
 
 Antes de usar `systemctl --user`, verifica `id Sakura`. Si ves `failed to look up user Sakura` la cuenta no existe; **no ejecutes** todavía `loginctl enable-linger Sakura` ni `sudo -iu Sakura`.
