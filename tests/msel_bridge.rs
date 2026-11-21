@@ -74,4 +74,29 @@ fn subprocess_streams_normalized_event_without_any_credentials() {
     fs::remove_dir_all(folder).unwrap();
 }
 
+#[cfg(target_os = "linux")]
+#[test]
+#[ignore = "Requires authenticated access to private MSEL and its compiled C++ runtime"]
+fn original_msel_checkout_e2e() {
+    let checkout = PathBuf::from(
+        std::env::var_os("MATTER_MSEL_CHECKOUT")
+            .expect("Set MATTER_MSEL_CHECKOUT to authorized private MSEL clone"),
+    );
+    let runner = MselCommandRunner::new(
+        PathBuf::from("python3"),
+        checkout.clone(),
+        checkout.join("examples/bots/multiplatform.msel"),
+        checkout.join("build/libmsel_embed.so"),
+    )
+    .allow_message_reply();
+    let event = MselMessageEvent {
+        provider: "whatsapp",
+        chat: "test@g.us",
+        sender: "test@s.whatsapp.net",
+        message_id: "offline-e2e-1",
+        text: "#ping",
+    };
+    assert_eq!(runner.execute(&event).unwrap(), vec!["pong"]);
+}
+
 // Fin: Hecho por Lournyx Matterssmith [Lou-Nyx].

@@ -1,3 +1,10 @@
+## 2026-11-21 — Test real opt-in Base → lenguaje MSEL
+
+El pipeline Base-Matter Rust en Linux finalizó **SUCCESS** para el commit `1cb11f4b2f36fe963e3d00a6e324c7f6af2c1e0c` ([ejecución 44954149724](https://github.com/Matterssmith/Base-Matter/actions/runs/44954149724), job Linux). Se añade test explícitamente ignorado por defecto `original_msel_checkout_e2e` para conectar **el host Rust de Base** con la **biblioteca nativa C++ real de MSEL privado** en el servidor del dueño, sin copiar ni exponer su código. Requiere `MATTER_MSEL_CHECKOUT` y compilación de `build/libmsel_embed.so`. El nuevo test no afirma ejecución verificada hasta que se ejecute. Ninguna sesión, llave ni transporte WhatsApp se abre o cambia. README revisados: 2/2. Bot-Matter bloqueado.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Ejecución de bots MSEL con motor original
 
 Base-Matter `alpha` incorpora `MselCommandRunner` y `InboundGateway.ingest_msel`: entrada autenticada, autorización, replay y ejecución de un `.msel` por el **motor nativo original del repositorio MSEL** mediante `msel_bot_message_v1`. `WhatsApp-Matter/matter` aporta la forma neutral del evento sin heredar permisos. Por defecto el puente no envía respuestas; no se cambian sesiones ni se inicia otro proveedor. Pruebas Rust añadidas, CI/e2e aún pendientes. [Manual de integración](docs/MSEL_WHATSAPP_INTEGRATION.md).

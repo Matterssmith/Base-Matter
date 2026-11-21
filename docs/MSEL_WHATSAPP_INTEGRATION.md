@@ -1,3 +1,17 @@
+## Test opcional extremo a extremo entre repositorios (offline, sin transporte)
+
+Tras compilar la biblioteca MSEL original según el ejemplo anterior, en `Base-Matter/alpha`:
+
+```bash
+cd /home/Sakura/Base-Matter
+git fetch origin alpha
+git switch alpha
+git pull --ff-only origin alpha
+MATTER_MSEL_CHECKOUT=/home/Sakura/MSEL cargo test --test msel_bridge original_msel_checkout_e2e -- --ignored --nocapture
+```
+
+Este test carga el script real `examples/bots/multiplatform.msel` del repo privado, lanza el proceso de Base-Matter y valida la salida `["pong"]` del motor nativo C++ de MSEL. Por defecto está **ignorado en CI público** por requerir el clone privado; su éxito no se presume. Sólo usa identidades inventadas y no abre ninguna sesión, red o proveedor de WhatsApp. CI Linux de la revisión previa `1cb11f4` aprobó rustfmt/check/tests/Clippy; ver [ejecución](https://github.com/Matterssmith/Base-Matter/actions/runs/44954149724).
+
 # Base-Matter + WhatsApp-Matter → MSEL original
 
 **Estado 2026-11-21:** puente de mensajes añadido a `alpha`, sin despliegue WhatsApp ni prueba extremo a extremo en vivo. El proveedor existente permanece en el mismo socket y sesión; la ruta de bot MSEL no se activa automáticamente.

@@ -1,3 +1,10 @@
+## 2026-11-21 — Test real opt-in Base → lenguaje MSEL
+
+El pipeline Base-Matter Rust en Linux finalizó **SUCCESS** para el commit `1cb11f4b2f36fe963e3d00a6e324c7f6af2c1e0c` ([ejecución 44954149724](https://github.com/Matterssmith/Base-Matter/actions/runs/44954149724), job Linux). Se añade test explícitamente ignorado por defecto `original_msel_checkout_e2e` para conectar **el host Rust de Base** con la **biblioteca nativa C++ real de MSEL privado** en el servidor del dueño, sin copiar ni exponer su código. Requiere `MATTER_MSEL_CHECKOUT` y compilación de `build/libmsel_embed.so`. El nuevo test no afirma ejecución verificada hasta que se ejecute. Ninguna sesión, llave ni transporte WhatsApp se abre o cambia. README revisados: 2/2. Bot-Matter bloqueado.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Reparación de compilación del puente MSEL
 
 GitHub Actions detectó error Rust E0451 en `tests/msel_bridge.rs`: el test intentaba usar sintaxis de actualización de struct que accede al campo privado `allow_reply`. Corregido asignando `timeout = Duration::ZERO` a una instancia creada mediante el constructor público y conservando `allow_reply` privado para evitar concesión de permisos por campos. Es corrección de compilación/test, no modifica sesión ni comandos de WhatsApp. Pruebas del nuevo SHA y CI pendientes de confirmar. README revisados: 2/2. Se preservan todas las instrucciones previas y créditos.
