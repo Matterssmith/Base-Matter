@@ -1,3 +1,7 @@
+## 2026-11-21 — Política operativa de autopilot por defecto
+
+El documento `docs/MATTER_AUTOPILOT_INSTRUCTIONS.md` define el traspaso persistente para rondas autónomas. La copia local se instala bajo `~/.local/share/matter-ai` y se lee por ciclo; no ejecuta instrucciones que eleven permisos, autoricen publicar ni sustituyan estas políticas. Primer uso: Ollama local y servicio systemd de Sakura activo por defecto si existe gestor de usuario; reintenta al estar disponible. Por defecto solo `matter-rust`, 900 segundos entre rondas, máximo 96 rondas/día, sin auto-push. `activate` sin prompt está restringido al backend local; OpenAI API con facturación exige autorización explícita. Cualquier `stop` previo persiste entre reinstalaciones. No cambiar ramas protegidas ni activar Bot-Matter, WhatsApp live o Vault. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Orden de arranque Ubuntu y reparación Sakura
 
 No asumir que Sakura existe. Antes de habilitar linger o cambiar de usuario, `id Sakura` y `getent passwd Sakura` deben funcionar. Script opcional `tools/setup-sakura.sh --admin --password-prompt --linger` invocado por un administrador; `--admin` hace `usermod -aG sudo Sakura` (nunca borra grupos), `--password-prompt` invoca `passwd` con prompt oculto, `--linger` solo después de la verificación. No dar sudo sin contraseña ni modificar sesiones o repos protegidos. Conservar usuario admin previo. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
