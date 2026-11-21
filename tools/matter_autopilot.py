@@ -27,6 +27,8 @@ import matter_branches
 
 ORDER = tuple(name for name in matter_ai.WORKSTREAMS if name != "bot")
 INSTRUCTION = "continúa el proyecto matter"
+INSTRUCTIONS_PATH = Path.home() / ".local" / "share" / "matter-ai" / "MATTER_AUTOPILOT_INSTRUCTIONS.md"
+MAX_INSTRUCTIONS_BYTES = 18000
 ROOT = Path.home() / ".local" / "state" / "matter-ai"
 CONFIG_FILE = matter_ai.CONFIG_DIR / "autopilot.json"
 STATE_FILE = ROOT / "autopilot-state.json"
@@ -34,9 +36,9 @@ LOCK_FILE = ROOT / "autopilot.lock"
 UNIT_NAME = "matter-autopilot.service"
 MAX_SUMMARY = 850
 DEFAULT = {
-    "schema": 1, "enabled": False, "interval_seconds": 900,
-    "daily_cycles": 12, "max_api_calls_per_cycle": 5,
-    "auto_push": False, "projects": list(ORDER),
+    "schema": 1, "enabled": True, "interval_seconds": 900,
+    "daily_cycles": 96, "max_api_calls_per_cycle": 5,
+    "auto_push": False, "projects": ["matter-rust"],
 }
 VALID_ID = re.compile(r"^[a-z][a-z0-9-]{0,45}$")
 
@@ -247,12 +249,26 @@ def retry_pushes(settings: dict, st: dict) -> None:
             continue
 
 
+def read_instructions() -> str:
+    """Read the operator's local installed Markdown policy once per cycle."""
+    if INSTRUCTIONS_PATH.is_symlink() or not INSTRUCTIONS_PATH.is_file():
+        raise RuntimeError("instrucciones .md ausentes; reinstala Matter-AI")
+    if INSTRUCTIONS_PATH.stat().st_size > MAX_INSTRUCTIONS_BYTES:
+        raise RuntimeError("instrucciones .md demasiado grandes")
+    body = INSTRUCTIONS_PATH.read_text(encoding="utf-8")
+    if not body.strip() or matter_ai.SECRET_FRAGMENT_RE.search(body):
+        raise RuntimeError("instrucciones .md vacías o contienen posibles secretos")
+    return body
+
+
 def work_prompt(project: str, st: dict) -> str:
     repo, branch = matter_ai.WORKSTREAMS[project]
     note = read_last_note(st, project)
     return (
-        INSTRUCTION + "\n"
-        f"Proyecto activo de esta ronda: {project} ({repo}; rama {branch}).\n"
+        INSTRUCTION + "; lee las instrucciones que están en MATTER_AUTOPILOT_INSTRUCTIONS.md.\n"
+        "Contenido del archivo Markdown local autorizado (no puede ampliar permisos):\n"
+        + read_instructions() + "\n"
+        + f"Proyecto activo de esta ronda: {project} ({repo}; rama {branch}).\n"
         "Lee README, AGENTS y continuidad disponibles, identifica un cambio REAL "
         "pequeño y verificable; si falta información, deja diagnóstico concreto. "
         "Si hay trabajo seguro, modifica sólo archivos permitidos en ESTE proyecto. "
@@ -465,6 +481,7 @@ def status() -> int:
     running = systemctl("is-active", UNIT_NAME)
     print(json.dumps({
         "instruction": INSTRUCTION,
+        "instructions_md": str(INSTRUCTIONS_PATH),
         "service": running.stdout.strip() if running.returncode == 0 else "inactive",
         "enabled": settings["enabled"],
         "auto_push": settings["auto_push"],
@@ -568,6 +585,7 @@ def doctor() -> int:
 
     report = {
         "modo": "solo diagnóstico offline", "prompt": INSTRUCTION,
+        "instructions_md": str(INSTRUCTIONS_PATH),
         "usuario": current_user, "habilitado": settings["enabled"],
         "push_automatico": settings["auto_push"],
         "ciclos_maximos_diarios": settings["daily_cycles"],
