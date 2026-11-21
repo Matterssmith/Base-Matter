@@ -31,7 +31,7 @@ Se observan: `NativeButtonInput` (quick_reply, cta_url, cta_copy, cta_call, open
 - Ninguna referencia a `0@bot`, suplantación Meta AI o forwards falsos en pruebas reales.
 
 **Contrato creador**:
-- `src/bot_setup.rs`: lenguaje por defecto `msel`, aceptación explícita `rust`; esquema v2 de creador de proyectos, `platforms: Vec`, selección de adaptadores por plataforma, rechazo de duplicados/IDs inseguros y ningún grant implícito. Mantener el esquema legacy v1 con su forma de JSON original.
+- `src/bot_setup.rs`: lenguaje por defecto `msel` en esquema v2, aceptación explícita `rust`; mantener default `rust` únicamente en selector legacy v1 para no romper integraciones previas; esquema v2 de creador de proyectos, `platforms: Vec`, selección de adaptadores por plataforma, rechazo de duplicados/IDs inseguros y ningún grant implícito. Mantener el esquema legacy v1 con su forma de JSON original.
 - `src/bin/bot_init.rs`: selector CLI con `--platform` repetible, `--provider-for plataforma=ID`, `--language`, `--system` y `--provider` genérico. Valor por defecto `social-matter`.
 - `docs/BOT_SETUP.md` y `docs/PLATFORM_CONTRACT.md`: rutas de creación y estados de proveedores, sin prometer conexiones. `docs/WHATSAPP_RICH_HTML_COMPAT.md`: resultado de auditoría y fallback.
 - `README.md`, `docs/DEVELOPMENT_STATUS.md` y `docs/DECISION_LOG.md`: estado, pruebas y diferencias con stable.
