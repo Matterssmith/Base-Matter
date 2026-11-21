@@ -1,3 +1,13 @@
+## Selección de múltiples plataformas para crear bots (contrato v2)
+
+`src/bot_factory.rs` añade una **declaración de proyecto** con `platforms: Vec<String>` y `adapters` por plataforma. Su plataforma predeterminada es **`social-matter`**, sistema `host` y lenguaje `msel`. Permite combinar Social-Matter, WhatsApp, Telegram y Discord en un bot, cada uno con su proveedor y sesión independientes.
+
+Esto **no modifica** el enum `MatterPlatform` ni el enrutamiento existente: el enum de runtime actual sólo reconoce WhatsApp/Telegram/Discord, y registrar IDs adicionales requiere drivers reales. `social-matter` es por ahora un destino de creación **declarativo**, sin driver instalado ni privilegios. Los IDs custom también son opacos hasta aprobación del catálogo protegido.
+
+**Separación**: plataforma = red/servicio del usuario; adaptador = implementación elegida (por ejemplo `baileys-rust`, `whatsmeow`, `xyzbaileys`); lenguaje = MSEL/Rust/otros; motor = Matter-MSEL/Matter-Rust/host externo. Ningún cambio de proveedor implícito ni copias de sesiones. Los adaptadores multi-plataforma se asignan por destino, no se heredan de uno a otro.
+
+Ver [BOT_SETUP](BOT_SETUP.md) y [plan de prueba del proveedor](BAILEYS_RUST_EXPERIMENTS_BOT_FACTORY_PLAN.md).
+
 # Base-Matter — contrato común de plataformas
 
 El núcleo Rust controla las decisiones de autenticación, permisos, roles,
