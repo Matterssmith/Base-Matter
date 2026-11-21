@@ -1,3 +1,11 @@
+## 2026-11-21 — Creación universal de bots y procedencia de Baileys-Rust
+
+**Decisión de producto:** Bot Factory v2 declara por defecto `MSEL/Matter-MSEL` y `Social-Matter`; alternativa `Rust/Matter-Rust` y lenguajes de terceros. Plataforma elegible: Social-Matter, WhatsApp, Telegram, Discord, o combinación multi; cada plataforma tiene un adaptador/biblioteca propio y registrado, incluido fork o biblioteca del usuario como `XYZBailyes` (ID `xyzbaileys`). Bibliotecas externas no obtienen permisos implícitos. El selector original v1 conserva compatibilidad y su default Rust.
+
+**Auditoría y copia:** archivo `LuferOS/Baileys-Rust/src/Utils/experiments.rs` en snapshot fijado, Apache-2.0 con NOTICE del autor LuferOS, preservado sin cambios en `third_party/luferos-baileys-rust`. No existe prueba de ejecutar HTML libre dentro de mensajes WhatsApp. WebView abre URLs; los builders protobuf y pruebas de nodo `biz`/`bot` no demuestran renderizado. No modificar provider WhatsApp activo hasta adaptación y prueba en dispositivo.
+
+**Regla permanente:** toda instrucción del propietario se registra primero en .md, luego código, pruebas y estado verificable en GitHub; al terminar esta auditoría continuar MSEL P0 y Matter-MSEL P1. [Plan](BAILEYS_RUST_EXPERIMENTS_BOT_FACTORY_PLAN.md), [creador](BOT_SETUP.md) y [HTML](WHATSAPP_RICH_HTML_COMPAT.md).
+
 ## 2026-11-21 — Rectificación de prioridades: MSEL es el lenguaje oficial (P0)
 
 - **MSEL (Matter Script Extension Language)** es el **lenguaje de programación propio de Matter**, no un sinónimo de Matter-MSEL. **Prioridad P0 actual: diseñar, implementar y probar MSEL como lenguaje autónomo hasta que ejecute programas reales.**
