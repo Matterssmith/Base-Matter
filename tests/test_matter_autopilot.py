@@ -55,7 +55,7 @@ class AutopilotOfflineTests(unittest.TestCase):
         subprocess.run(["git", "-C", str(self.repo), "add", "README.md"], check=True)
         subprocess.run(["git", "-C", str(self.repo), "commit", "-qm", "initial"], check=True)
         autopilot.INSTRUCTIONS_PATH.write_text(
-            "# Instrucciones Matter\\nLeer AGENTS.md y priorizar Rust.\\n",
+            "# Instrucciones Matter\nLeer AGENTS.md y priorizar Rust.\n",
             encoding="utf-8"
         )
         self.settings = {
@@ -200,7 +200,7 @@ class InstallerAutostartTests(unittest.TestCase):
             bin_folder.mkdir()
             fake_systemctl = bin_folder / "systemctl"
             fake_systemctl.write_text(
-                '#!/bin/sh\\nprintf "%s\\n" "$*" >> "$HOME/systemctl-calls"\\n',
+                '#!/bin/sh\nprintf "%s\n" "$*" >> "$HOME/systemctl-calls"\n',
                 encoding="utf-8"
             )
             fake_systemctl.chmod(0o755)
