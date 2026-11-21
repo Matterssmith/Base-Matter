@@ -1,3 +1,7 @@
+## 2026-11-20 — Estudio de Aura-Reed-Rust (sólo documentación)
+
+Revisión directamente basada en `LuferOS/Aura-Reed-Rust` `main` (`src/handler.rs`, `src/context.rs`, `src/main.rs`, `src/cmd/*`, `src/db.rs`, `Cargo.toml`). Se identifica un flujo útil de ingreso → moderación → contexto → categoría de comando, adaptable sin copiar el despacho lineal ni las identidades/credenciales fijadas en código. Matter debe conservar su `InboundGateway`, `CommandRouter`, permisos globales de Vault y separación de proveedores; `Bot-Matter` permanece bloqueado. **Sin cambios de Rust, WhatsApp o dependencias**. [Diagnóstico y plan](docs/AURA_REED_RUST_HANDLER_REVIEW.md). Ollama no es requerido para este diseño. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Reparación de usuario administrador Sakura
 
 Ante `failed to look up user Sakura: No such process`, crear primero el usuario (con S mayúscula) y verificar `id Sakura`. Se amplió `tools/setup-sakura.sh` con `--admin`, `--password-prompt` y `--linger` opcionales; `sudo bash tools/setup-sakura.sh --admin --password-prompt --linger` crea/repara Sakura, establece contraseña oculta y permisos sudo, luego habilita linger. No altera el administrador original, las sesiones WhatsApp o `/etc/sudoers`; no se concede NOPASSWD. [Guía](docs/MATTER_SAKURA_BRANCH_RECOVERY.md). Credenciales, acceso root y servicio Ubuntu reales pendientes de verificar. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
