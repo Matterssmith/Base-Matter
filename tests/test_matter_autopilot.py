@@ -36,6 +36,7 @@ class AutopilotOfflineTests(unittest.TestCase):
             patch.object(autopilot, "STATE_FILE", self.folder / "state" / "autopilot-state.json"),
             patch.object(autopilot, "LOCK_FILE", self.folder / "state" / "autopilot.lock"),
             patch.object(autopilot, "CONFIG_FILE", self.folder / "config" / "autopilot.json"),
+            patch.object(autopilot, "INSTRUCTIONS_PATH", self.folder / "MATTER_AUTOPILOT_INSTRUCTIONS.md"),
             patch.object(matter_ai, "CONFIG_DIR", self.folder / "config"),
         ]
         for p in patches:
@@ -52,6 +53,10 @@ class AutopilotOfflineTests(unittest.TestCase):
         (self.repo / "README.md").write_text("Matter test\n", encoding="utf-8")
         subprocess.run(["git", "-C", str(self.repo), "add", "README.md"], check=True)
         subprocess.run(["git", "-C", str(self.repo), "commit", "-qm", "initial"], check=True)
+        autopilot.INSTRUCTIONS_PATH.write_text(
+            "# Instrucciones Matter\\nLeer AGENTS.md y priorizar Rust.\\n",
+            encoding="utf-8"
+        )
         self.settings = {
             **autopilot.DEFAULT,
             "projects": ["matter-rust"],
@@ -68,6 +73,29 @@ class AutopilotOfflineTests(unittest.TestCase):
         self.assertEqual(autopilot.eligible(self.settings, st), ["matter-rust"])
         self.assertIn("continúa el proyecto matter", autopilot.work_prompt("matter-rust", st))
         self.assertIn("workstreams/07-matter-rust", autopilot.work_prompt("matter-rust", st))
+
+    def test_enabled_by_default_with_no_auto_push_and_md(self):
+        self.assertTrue(autopilot.DEFAULT["enabled"])
+        self.assertFalse(autopilot.DEFAULT["auto_push"])
+        self.assertEqual(autopilot.DEFAULT["projects"], ["matter-rust"])
+        doc = autopilot.read_instructions()
+        self.assertIn("priorizar Rust", doc)
+        prompt = autopilot.work_prompt("matter-rust", autopilot.state())
+        self.assertIn("lee las instrucciones que están en", prompt)
+        self.assertIn("priorizar Rust", prompt)
+
+    def test_missing_or_secret_md_prevents_model_call(self):
+        st = autopilot.state()
+        autopilot.INSTRUCTIONS_PATH.unlink()
+        with patch.object(matter_ai, "ask", side_effect=lambda prompt, history: (
+            autopilot.work_prompt("matter-rust", st)
+        )):
+            result = autopilot.run_cycle(self.settings, st)
+        self.assertEqual(result["status"], "error")
+        self.assertIn("failed_RuntimeError", st["last_result"])
+        autopilot.INSTRUCTIONS_PATH.write_text("OPENAI_API_KEY=sk-do-not-copy", encoding="utf-8")
+        with self.assertRaises(RuntimeError):
+            autopilot.read_instructions()
 
     def test_autonomous_edit_and_local_commit(self):
         st = autopilot.state()
