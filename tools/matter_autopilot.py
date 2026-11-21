@@ -461,6 +461,12 @@ def activate_local() -> int:
     if result.returncode:
         print("No se pudo iniciar el servicio. Verifica loginctl enable-linger Sakura y systemctl --user.")
         return 1
+    # Releer scripts e instrucciones tras reinstalar; enable --now no reinicia
+    # una unidad ya activa.
+    restarted = systemctl("restart", UNIT_NAME)
+    if restarted.returncode:
+        print("Servicio habilitado, pero no se pudo reiniciar con el código nuevo.")
+        return 1
     print("Matter-Autopilot ACTIVO por defecto con Ollama local. Instrucciones:", INSTRUCTIONS_PATH)
     return 0
 
