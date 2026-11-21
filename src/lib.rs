@@ -17,6 +17,7 @@ pub mod add_commands;
 pub mod anti;
 pub mod anti_guard;
 pub mod authorization;
+pub mod bot_factory;
 pub mod bot_setup;
 pub mod bots;
 pub mod capabilities;
