@@ -5,6 +5,7 @@ Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
 """
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -149,6 +150,19 @@ class AutopilotOfflineTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             autopilot.state()
 
+    def test_activate_noninteractive_is_local_only(self):
+        with patch.object(matter_ai, "backend_name", return_value="openai"):
+            self.assertEqual(autopilot.activate_local(), 2)
+            self.assertFalse(autopilot.CONFIG_FILE.exists())
+        class GoodResult:
+            returncode = 0
+        with patch.object(matter_ai, "backend_name", return_value="local"), \
+             patch.object(autopilot, "systemctl", return_value=GoodResult()) as ctl:
+            self.assertEqual(autopilot.activate_local(), 0)
+            self.assertEqual(ctl.call_count, 2)
+        self.assertTrue(autopilot.config()["enabled"])
+        self.assertFalse(autopilot.config()["auto_push"])
+
     def test_unattended_publish_requires_explicit_configuration(self):
         parser_args = type("Settings", (), {})()
         parser_args.interval = 900
@@ -172,6 +186,52 @@ class AutopilotOfflineTests(unittest.TestCase):
         self.assertEqual(matter_ai.dispatch(
             "publish_workstream", {"project": "matter-rust", "message": "no"}
         )["error"], "accion_reservada_para_sesion_interactiva")
+
+
+@unittest.skipUnless(sys.platform.startswith("linux"), "Bash/systemd installer test requires Linux")
+class InstallerAutostartTests(unittest.TestCase):
+    def test_installer_enables_local_by_default_and_respects_stop(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            home = root / "Sakura"
+            home.mkdir()
+            (home / "Matter/workspaces/matter-rust").mkdir(parents=True)
+            bin_folder = root / "bin"
+            bin_folder.mkdir()
+            fake_systemctl = bin_folder / "systemctl"
+            fake_systemctl.write_text(
+                '#!/bin/sh\\nprintf "%s\\n" "$*" >> "$HOME/systemctl-calls"\\n',
+                encoding="utf-8"
+            )
+            fake_systemctl.chmod(0o755)
+            env = dict(os.environ)
+            env["HOME"] = str(home)
+            env["PATH"] = str(bin_folder) + os.pathsep + env.get("PATH", "")
+            installer = TOOL_DIR / "install-matter-ai.sh"
+            first = subprocess.run(
+                ["bash", str(installer)], env=env, text=True,
+                capture_output=True, timeout=30, check=False
+            )
+            self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+            cfg = json.loads((home / ".config/matter-ai/config.json").read_text())
+            self.assertEqual(cfg["backend"], "local")
+            autopilot_cfg = home / ".config/matter-ai/autopilot.json"
+            first_settings = json.loads(autopilot_cfg.read_text())
+            self.assertTrue(first_settings["enabled"])
+            self.assertFalse(first_settings["auto_push"])
+            self.assertEqual(first_settings["projects"], ["matter-rust"])
+            self.assertIn("enable --now matter-autopilot.service", (home / "systemctl-calls").read_text())
+            self.assertTrue((home / ".local/share/matter-ai/MATTER_AUTOPILOT_INSTRUCTIONS.md").is_file())
+            first_settings["enabled"] = False
+            autopilot_cfg.write_text(json.dumps(first_settings), encoding="utf-8")
+            previous_log = (home / "systemctl-calls").read_text()
+            second = subprocess.run(
+                ["bash", str(installer)], env=env, text=True,
+                capture_output=True, timeout=30, check=False
+            )
+            self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+            self.assertEqual((home / "systemctl-calls").read_text(), previous_log)
+            self.assertFalse(json.loads(autopilot_cfg.read_text())["enabled"])
 
 
 if __name__ == "__main__":
