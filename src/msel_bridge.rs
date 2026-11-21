@@ -86,17 +86,27 @@ impl MselCommandRunner {
         if self.timeout.is_zero() || self.timeout > Duration::from_secs(30) {
             bail!("Invalid MSEL execution timeout");
         }
-        let checkout = self.msel_checkout.canonicalize().context("MSEL checkout unavailable")?;
+        let checkout = self
+            .msel_checkout
+            .canonicalize()
+            .context("MSEL checkout unavailable")?;
         if !checkout.is_dir() {
             bail!("MSEL checkout is not a directory");
         }
-        let script = self.bot_source.canonicalize().context("MSEL bot unavailable")?;
-        if !script.is_file() || !script.to_string_lossy().ends_with(".msel")
+        let script = self
+            .bot_source
+            .canonicalize()
+            .context("MSEL bot unavailable")?;
+        if !script.is_file()
+            || !script.to_string_lossy().ends_with(".msel")
             || script.metadata()?.len() > MAX_SOURCE_BYTES
         {
             bail!("Invalid trusted MSEL source");
         }
-        let native = self.native_library.canonicalize().context("Native MSEL library unavailable")?;
+        let native = self
+            .native_library
+            .canonicalize()
+            .context("Native MSEL library unavailable")?;
         if !native.is_file() {
             bail!("Native MSEL library is not a file");
         }
@@ -106,8 +116,12 @@ impl MselCommandRunner {
         }
 
         let mut cmd = Command::new(&self.python);
-        cmd.arg("-m").arg("msel").arg("bot-event").arg(&script)
-            .arg("--native-lib").arg(&native)
+        cmd.arg("-m")
+            .arg("msel")
+            .arg("bot-event")
+            .arg(&script)
+            .arg("--native-lib")
+            .arg(&native)
             .current_dir(&checkout)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -148,8 +162,12 @@ impl MselCommandRunner {
             }
             thread::sleep(Duration::from_millis(10));
         };
-        writer.join().map_err(|_| anyhow::anyhow!("MSEL stdin thread failed"))??;
-        let bytes = reader.join().map_err(|_| anyhow::anyhow!("MSEL stdout thread failed"))??;
+        writer
+            .join()
+            .map_err(|_| anyhow::anyhow!("MSEL stdin thread failed"))??;
+        let bytes = reader
+            .join()
+            .map_err(|_| anyhow::anyhow!("MSEL stdout thread failed"))??;
         if !status.success() || bytes.len() as u64 > MAX_OUTPUT_WIRE {
             bail!("MSEL native execution rejected");
         }
@@ -205,12 +223,21 @@ mod tests {
         };
         assert!(invalid.validate().is_err());
         assert!(validate_replies(br#"["hello"]"#, false).is_err());
-        assert_eq!(validate_replies(br#"["hello"]"#, true).unwrap(), vec!["hello"]);
+        assert_eq!(
+            validate_replies(br#"["hello"]"#, true).unwrap(),
+            vec!["hello"]
+        );
         assert!(validate_replies(br#"["1","2","3","4","5"]"#, true).is_err());
         assert!(validate_replies(br#"{"error":"bad"}"#, true).is_err());
         assert!(validate_replies(b"not-json", true).is_err());
         assert!(validate_replies(br#"["\u0000"]"#, true).is_err());
-        assert!(validate_replies(serde_json::to_string(&vec!["x".repeat(4097)]).unwrap().as_bytes(), true).is_err());
+        assert!(validate_replies(
+            serde_json::to_string(&vec!["x".repeat(4097)])
+                .unwrap()
+                .as_bytes(),
+            true
+        )
+        .is_err());
     }
 }
 
