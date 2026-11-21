@@ -45,7 +45,10 @@ impl BotProjectRequest {
         };
         let system = system_id(self.system.as_deref().unwrap_or("host"))
             .ok_or(FactoryError::UnsupportedSystem)?;
-        let inputs = self.platforms.clone().unwrap_or_else(|| vec![DEFAULT_PLATFORM.into()]);
+        let inputs = self
+            .platforms
+            .clone()
+            .unwrap_or_else(|| vec![DEFAULT_PLATFORM.into()]);
         if inputs.is_empty() || inputs.len() > 12 {
             return Err(FactoryError::InvalidPlatforms);
         }
@@ -76,10 +79,15 @@ impl BotProjectRequest {
         }
         let adapters = platforms
             .iter()
-            .map(|platform| (
-                platform.clone(),
-                overrides.get(platform).cloned().unwrap_or_else(|| provider.clone()),
-            ))
+            .map(|platform| {
+                (
+                    platform.clone(),
+                    overrides
+                        .get(platform)
+                        .cloned()
+                        .unwrap_or_else(|| provider.clone()),
+                )
+            })
             .collect();
         Ok(BotProjectSelection {
             version: FACTORY_SCHEMA_VERSION,
@@ -95,8 +103,13 @@ impl BotProjectRequest {
 
 fn safe_id(value: &str) -> Option<String> {
     let v = value.to_ascii_lowercase();
-    if v.is_empty() || v.len() > 64 || v.starts_with('-') || v.ends_with('-')
-        || !v.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+    if v.is_empty()
+        || v.len() > 64
+        || v.starts_with('-')
+        || v.ends_with('-')
+        || !v
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
     {
         None
     } else {
@@ -106,7 +119,11 @@ fn safe_id(value: &str) -> Option<String> {
 
 fn platform_id(value: &str) -> Option<String> {
     let v = safe_id(value)?;
-    Some(if v == "social" { DEFAULT_PLATFORM.into() } else { v })
+    Some(if v == "social" {
+        DEFAULT_PLATFORM.into()
+    } else {
+        v
+    })
 }
 
 fn language_id(value: &str) -> Option<&'static str> {
@@ -141,10 +158,11 @@ fn system_id(value: &str) -> Option<&'static str> {
 }
 
 fn safe_capability(value: &str) -> bool {
-    !value.is_empty() && value.len() <= 96
-        && value.bytes().all(|b| {
-            b.is_ascii_lowercase() || b.is_ascii_digit() || b"._-".contains(&b)
-        })
+    !value.is_empty()
+        && value.len() <= 96
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"._-".contains(&b))
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -155,7 +173,10 @@ pub struct BotProjectResolution {
 
 /// A trusted host, not input JSON, decides which providers and privileges exist.
 pub trait ProtectedBotFactoryCatalog: Send + Sync {
-    fn resolve(&self, selection: &BotProjectSelection) -> Result<BotProjectResolution, FactoryError>;
+    fn resolve(
+        &self,
+        selection: &BotProjectSelection,
+    ) -> Result<BotProjectResolution, FactoryError>;
 }
 
 pub struct UnavailableBotFactoryCatalog;
@@ -172,8 +193,12 @@ pub fn resolve_bot_project(
 ) -> Result<BotProjectResolution, FactoryError> {
     let selected = request.select()?;
     let result = catalog.resolve(&selected)?;
-    if result.selection != selected || result.capability_names.len() > 64
-        || result.capability_names.iter().any(|value| !safe_capability(value))
+    if result.selection != selected
+        || result.capability_names.len() > 64
+        || result
+            .capability_names
+            .iter()
+            .any(|value| !safe_capability(value))
     {
         return Err(FactoryError::InvalidResolution);
     }
@@ -219,7 +244,10 @@ mod tests {
 
     struct Approved;
     impl ProtectedBotFactoryCatalog for Approved {
-        fn resolve(&self, selected: &BotProjectSelection) -> Result<BotProjectResolution, FactoryError> {
+        fn resolve(
+            &self,
+            selected: &BotProjectSelection,
+        ) -> Result<BotProjectResolution, FactoryError> {
             Ok(BotProjectResolution {
                 selection: selected.clone(),
                 capability_names: vec!["messaging.receive".into()],
@@ -248,7 +276,9 @@ mod tests {
             platforms: Some(vec!["whatsapp".into()]),
             provider: Some("Baileys-Rust".into()),
             ..Default::default()
-        }.select().unwrap();
+        }
+        .select()
+        .unwrap();
         assert_eq!(project.engine, "matter-rust");
         assert_eq!(project.adapters["whatsapp"], "baileys-rust");
     }
@@ -259,7 +289,12 @@ mod tests {
         adapters.insert("whatsapp".into(), "XYZBailyes".into());
         adapters.insert("telegram".into(), "telegram-api".into());
         let request = BotProjectRequest {
-            platforms: Some(vec!["whatsapp".into(), "telegram".into(), "discord".into(), "social".into()]),
+            platforms: Some(vec![
+                "whatsapp".into(),
+                "telegram".into(),
+                "discord".into(),
+                "social".into(),
+            ]),
             adapters,
             ..Default::default()
         };
@@ -269,63 +304,116 @@ mod tests {
         assert_eq!(project.adapters["telegram"], "telegram-api");
         assert_eq!(project.adapters["discord"], "default");
         assert_eq!(project.adapters["social-matter"], "default");
-        assert_eq!(resolve_bot_project(&Approved, &request).unwrap().capability_names.len(), 1);
+        assert_eq!(
+            resolve_bot_project(&Approved, &request)
+                .unwrap()
+                .capability_names
+                .len(),
+            1
+        );
     }
 
     #[test]
     fn unsafe_adapter_names_are_rejected() {
-        for bad in ["../secret", "https://host/repo", "a b", "foo_bar", "--exec", ""] {
-            assert_eq!(BotProjectRequest {
-                provider: Some(bad.into()), ..Default::default()
-            }.select(), Err(FactoryError::InvalidProvider));
+        for bad in [
+            "../secret",
+            "https://host/repo",
+            "a b",
+            "foo_bar",
+            "--exec",
+            "",
+        ] {
+            assert_eq!(
+                BotProjectRequest {
+                    provider: Some(bad.into()),
+                    ..Default::default()
+                }
+                .select(),
+                Err(FactoryError::InvalidProvider)
+            );
         }
     }
 
     #[test]
     fn duplicate_and_invalid_platforms_are_rejected() {
-        assert_eq!(BotProjectRequest {
-            platforms: Some(vec!["social".into(), "social-matter".into()]), ..Default::default()
-        }.select(), Err(FactoryError::DuplicatePlatform));
-        assert_eq!(BotProjectRequest {
-            platforms: Some(vec![]), ..Default::default()
-        }.select(), Err(FactoryError::InvalidPlatforms));
-        assert_eq!(BotProjectRequest {
-            platforms: Some(vec!["../wa".into()]), ..Default::default()
-        }.select(), Err(FactoryError::InvalidPlatform));
+        assert_eq!(
+            BotProjectRequest {
+                platforms: Some(vec!["social".into(), "social-matter".into()]),
+                ..Default::default()
+            }
+            .select(),
+            Err(FactoryError::DuplicatePlatform)
+        );
+        assert_eq!(
+            BotProjectRequest {
+                platforms: Some(vec![]),
+                ..Default::default()
+            }
+            .select(),
+            Err(FactoryError::InvalidPlatforms)
+        );
+        assert_eq!(
+            BotProjectRequest {
+                platforms: Some(vec!["../wa".into()]),
+                ..Default::default()
+            }
+            .select(),
+            Err(FactoryError::InvalidPlatform)
+        );
     }
 
     #[test]
     fn wrong_adapter_bindings_are_rejected() {
         let mut adapters = BTreeMap::new();
         adapters.insert("discord".into(), "unknown".into());
-        assert_eq!(BotProjectRequest {
-            platforms: Some(vec!["whatsapp".into()]), adapters, ..Default::default()
-        }.select(), Err(FactoryError::AdapterOutsideSelection));
-        assert_eq!(BotProjectRequest {
-            platforms: Some(vec!["whatsapp".into(), "telegram".into()]),
-            provider: Some("baileys".into()), ..Default::default()
-        }.select(), Err(FactoryError::AmbiguousMultiProvider));
+        assert_eq!(
+            BotProjectRequest {
+                platforms: Some(vec!["whatsapp".into()]),
+                adapters,
+                ..Default::default()
+            }
+            .select(),
+            Err(FactoryError::AdapterOutsideSelection)
+        );
+        assert_eq!(
+            BotProjectRequest {
+                platforms: Some(vec!["whatsapp".into(), "telegram".into()]),
+                provider: Some("baileys".into()),
+                ..Default::default()
+            }
+            .select(),
+            Err(FactoryError::AmbiguousMultiProvider)
+        );
     }
 
     #[test]
     fn protected_catalog_cannot_swap_selection() {
         struct Wrong;
         impl ProtectedBotFactoryCatalog for Wrong {
-            fn resolve(&self, selection: &BotProjectSelection) -> Result<BotProjectResolution, FactoryError> {
+            fn resolve(
+                &self,
+                selection: &BotProjectSelection,
+            ) -> Result<BotProjectResolution, FactoryError> {
                 let mut changed = selection.clone();
                 changed.language = "rust".into();
-                Ok(BotProjectResolution { selection: changed, capability_names: vec![] })
+                Ok(BotProjectResolution {
+                    selection: changed,
+                    capability_names: vec![],
+                })
             }
         }
-        assert_eq!(resolve_bot_project(&Wrong, &BotProjectRequest::default()),
-            Err(FactoryError::InvalidResolution));
+        assert_eq!(
+            resolve_bot_project(&Wrong, &BotProjectRequest::default()),
+            Err(FactoryError::InvalidResolution)
+        );
     }
 
     #[test]
     fn schema_rejects_unknown_fields() {
-        assert!(serde_json::from_str::<BotProjectRequest>(
-            r#"{"language":"msel","root":true}"#
-        ).is_err());
+        assert!(
+            serde_json::from_str::<BotProjectRequest>(r#"{"language":"msel","root":true}"#)
+                .is_err()
+        );
     }
 }
 
