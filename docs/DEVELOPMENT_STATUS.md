@@ -1,3 +1,15 @@
+## 2026-11-21 — Snapshot Baileys-Rust y Bot Factory v2 (alpha)
+
+**Plan publicado antes del código:** `docs/BAILEYS_RUST_EXPERIMENTS_BOT_FACTORY_PLAN.md` (commit `4cd255340f9d2c43bbeb48cb1d926796d9eddc6f` y actualización `f719c6a6ffcf15f28c0fe2f83bf17c15c69d9e73`). **MSEL plan:** `MSEL/docs/CHANGE_PLAN.md` registrado (commit `a65fc3f51d6bf920f151132c171778aff2153e8b`).
+
+**Copia íntegra auditada:** `third_party/luferos-baileys-rust/experiments.rs`, `LICENSE`, `NOTICE`, `PROVENANCE.md`. Los tres archivos de origen son idénticos a LuferOS según blobs `d9ce040e2c7f0d5b06950860bca9eae594f49651`, `02812256e26503deda3a26ac2b9b9b66b65a9cc0`, `58728f9c315cb54ddac1cf1f8dbdbeff3c5cf977`. Código externo NO compilado en Base; licencia Apache-2.0 y aviso de autor preservados.
+
+**Código de selector v2:** `src/bot_factory.rs` (commit `f141750ea34127395515afc44436740cef42c774`), exportado por `src/lib.rs` (commit `aa80a907a24d8e9a1b269a3831c66872f019ddd4`) y `src/bin/bot_init.rs` (commit `6face1d569e6f4c4b54f343938f3956ceab7b4db`). Valores por defecto v2 MSEL, Matter-MSEL, Social-Matter; opciones para Rust/Matter-Rust, bibliotecas propias, WhatsApp/Telegram/Discord y destinos múltiples. El selector legacy v1 conserva sus reglas anteriores.
+
+**Pruebas efectuadas hasta ahora:** 3/3 blobs externos verificados por Git SHA. **8 tests unitarios Rust escritos, no ejecutados localmente** porque Cargo y Rustc no están instalados en el entorno de auditoría. `cargo fmt`, `cargo check`, `cargo test`, `clippy`, CI Linux/Windows y test real del renderer WhatsApp todavía **pendientes**. No interpretar los blobs verificados como pruebas de compilación ni permiso para habilitar HTML/experimentos.
+
+**No se modificaron** las sesiones activas, proveedor `whatsapp-rust`, privilegios, roles, antis ni ramas beta/stable. No hay integración real de Social-Matter con el runtime protegido todavía. Próximo bloque: resultados CI y tests de selección, luego mapa protobuf del experimento LuferOS con pruebas self-chat autorizadas; retomar MSEL/Matter-MSEL P0/P1 después.
+
 ## 2026-11-21 — Rectificación de prioridades: MSEL es el lenguaje oficial (P0)
 
 - **MSEL (Matter Script Extension Language)** es el **lenguaje de programación propio de Matter**, no un sinónimo de Matter-MSEL. **Prioridad P0 actual: diseñar, implementar y probar MSEL como lenguaje autónomo hasta que ejecute programas reales.**
