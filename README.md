@@ -1,8 +1,12 @@
-# Prioridad de arquitectura Matter: Matter-MSEL (P0)
+# MSEL — lenguaje oficial Matter | Prioridad de desarrollo P0
 
-**Matter-MSEL es el lenguaje nativo y motor principal de bots y sistemas de Matter Ecosystem.** Su frontend multilingüe, IR, compilador e intérprete tienen prioridad de arquitectura y desarrollo sobre nuevas funciones de Base-Matter. Los componentes operativos y controles de seguridad de Base/Vault siguen manteniéndose; esto no declara compilador o integraciones implementadas.
+**MSEL (Matter Script Extension Language)** es el **lenguaje de programación oficial y propio de Matter Ecosystem**. La prioridad máxima actual es **diseñar, especificar, implementar y probar MSEL hasta que funcione de forma autónoma**: gramática, lexer, parser, análisis semántico, tipos, MSEL IR, intérprete/compilador, CLI, pruebas y compatibilidad multilingüe.
 
-**Especificación principal:** [Matter-MSEL — prioridad P0, 32 tecnologías y roadmap](docs/MATTER_MSEL_MASTER_SPEC.md).
+**Matter-MSEL no es el lenguaje ni la prioridad P0.** Es el nombre de la **integración/soporte de MSEL dentro del ecosistema Matter**, comparable a Matter-Rust: contratos, SDK, host y adaptadores que consumirán MSEL cuando el núcleo ya sea funcional.
+
+**Orden obligatorio:** MSEL funcional (P0) → Matter-MSEL e integración con bots/sistemas (P1) → ampliación de capacidades y plataformas (P2). Las tareas críticas de mantenimiento y seguridad existentes de Base-Matter/Vault-Matter no se abandonan. No se declara compilador o integración implementada sin pruebas.
+
+**Documentación de referencia:** [Especificación de MSEL y matriz tecnológica](docs/MATTER_MSEL_MASTER_SPEC.md) · [Plan de lenguaje funcional v0](docs/MSEL_LANGUAGE_V0_DESIGN.md).
 
 Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
 
