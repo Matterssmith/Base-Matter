@@ -1,3 +1,10 @@
+## 2026-11-21 — MSEL-HOST-001: WhatsApp-Matter → Base-Matter → MSEL original
+
+Implementado en `alpha`: `src/msel_bridge.rs` con `MselCommandRunner`, JSON de 5 campos, límite de 4 respuestas, fallo cerrado ante permisos, salida inválida y timeout; `src/ingress.rs` con `ingest_msel` que exige verificación de conexión, admisión y antirreplay antes del ejecutor. Unit tests y `tests/msel_bridge.rs` usan eventos ficticios y un subproceso simulado (sólo para contrato host); la prueba del lenguaje nativo C++ original está en MSEL. WhatsApp-Matter exporta `UntrustedMselMessage` de solo datos. Sin nuevas dependencias Cargo. Se corrigió el formato de los archivos tocados y de `src/bot_factory.rs`/`src/bin/bot_init.rs` según CI. Estado de pruebas al registrar: **nuevo resultado final por CI sin confirmar**. No hay conexión efectiva de la ruta MSEL al proveedor de producción ni envío autorizado implementado; no se declara WhatsApp MSEL live. P0 MSEL/32 continúa. Siguiente: CI, hook protegido al live transport, idempotencia de respuestas y e2e en socket de prueba.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Snapshot Baileys-Rust y Bot Factory v2 (alpha)
 
 **Plan publicado antes del código:** `docs/BAILEYS_RUST_EXPERIMENTS_BOT_FACTORY_PLAN.md` (commit `4cd255340f9d2c43bbeb48cb1d926796d9eddc6f` y actualización `f719c6a6ffcf15f28c0fe2f83bf17c15c69d9e73`). **MSEL plan:** `MSEL/docs/CHANGE_PLAN.md` registrado (commit `a65fc3f51d6bf920f151132c171778aff2153e8b`).

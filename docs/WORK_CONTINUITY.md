@@ -1,3 +1,10 @@
+## 2026-11-21 — Integración Base/WhatsApp con lenguaje original MSEL
+
+Prioridad solicitada tras respaldo de Base. Fuente de verdad MSEL/alpha privado con `msel_bot_message_v1` y nuevo CLI `bot-event` JSON; Base-Matter/alpha añade `src/msel_bridge.rs`, `InboundGateway.ingest_msel` y pruebas; WhatsApp-Matter/matter agrega conversión de evento normalizado al contrato ABI. No se copia un intérprete ni se tocan sesiones reales; no se habilita respuesta live. Revisión de README revisados: 2/2 (raíz y proveedor whatsapp-rust). Scripts, entrada y límites en `docs/MSEL_WHATSAPP_INTEGRATION.md`. Los commit intermedios de código deberán considerarse de desarrollo; la verificación de continuidad final queda en este commit atómico. Problemas originales de formato Rust corregidos siguiendo logs de CI. Pendientes: CI Linux/Windows real, cablear adaptador autenticado y transporte autorizado, prueba aislada con bot ON/OFF, inspección de logs sin datos privados. Bot-Matter sigue bloqueado.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Rectificación de prioridades: MSEL es el lenguaje oficial (P0)
 
 - **MSEL (Matter Script Extension Language)** es el **lenguaje de programación propio de Matter**, no un sinónimo de Matter-MSEL. **Prioridad P0 actual: diseñar, implementar y probar MSEL como lenguaje autónomo hasta que ejecute programas reales.**

@@ -1,3 +1,10 @@
+## 2026-11-21 — Matter-MSEL (separación de transportes)
+
+El proveedor activo `whatsapp-rust` se mantiene sin cambios en esta etapa. `Base-Matter/alpha` contiene un bridge opcional de mensajes autenticados hacia scripts del **lenguaje original MSEL**; `WhatsApp-Matter/matter` aporta el contrato neutral. Aún no hay una ruta de envío live conectada por MSEL, ni activación automática de bots en grupos. Sesiones, SQLite, pairing, llaves y Vault **no se migran**. [Manual](../../docs/MSEL_WHATSAPP_INTEGRATION.md). README revisados: 2/2. CI pendiente.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — LuferOS/Baileys-Rust: referencia externa sin cambio de provider
 
 La implementación `experiments.rs` de LuferOS se revisó y copió íntegra en `Base-Matter/third_party/luferos-baileys-rust/` con Apache-2.0 y NOTICE de autoría. **No** se vinculó a esta biblioteca `whatsapp-rust` 0.7.0: usa `baileys-rs` y protobuf `prost` diferentes del provider actual (`wa`/`buffa`). La referencia expone botones NativeFlow, `open_webview` con URL, carruseles y RichResponse, no un motor que procese HTML/CSS/JS inline.

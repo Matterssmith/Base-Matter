@@ -1,3 +1,10 @@
+## 2026-11-21 — Contrato implementado de integración (no sintaxis)
+
+En la implementación actual, Matter-MSEL recibe mensajes exclusivamente por contrato del lenguaje **MSEL nativo original**. La biblioteca `msel_bot_message_v1` reside en `Matterssmith/MSEL` privado; `Base-Matter` llama `python3 -m msel bot-event` para despachar el evento a dicha ABI, sin copiar parser/intérprete. El puente público es opt-in, no inicia sesión ni envía WhatsApp. `WhatsApp-Matter` aporta campos normalizados, pero la autorización necesita el autenticador, admisión y antirreplay de Base. Documentado en `docs/MSEL_WHATSAPP_INTEGRATION.md`. MSEL continúa siendo P0; completar 32 entradas de ADN tecnológico sigue pendiente. No se afirma ejecución e2e real.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 # MSEL — lenguaje oficial de Matter Ecosystem
 ## Matter-MSEL — integración del lenguaje MSEL con Matter
 

@@ -1,3 +1,10 @@
+## 2026-11-21 — Integración original de MSEL sin duplicación de lenguaje
+
+Solicitud tras respaldo del usuario: conectar `MSEL/alpha`, `Base-Matter/alpha` y `WhatsApp-Matter/matter`. Código MSEL original permanece exclusivamente en repositorio privado MSEL. Base añade módulo `msel_bridge` con ejecución por CLI/ABI nativa y `InboundGateway.ingest_msel` separado de controles, tras autenticador, autorización y antirreplay. WhatsApp-Matter exporta exclusivamente datos sin autoridad. Sin permisos de sesión/clave en proceso, sin conexión live de envío MSEL. Referencia [docs/MSEL_WHATSAPP_INTEGRATION.md](docs/MSEL_WHATSAPP_INTEGRATION.md). Revisar y mantener ambos README en cada commit; Bot-Matter sigue bloqueado. Pruebas pendientes de confirmación CI.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## Regla superior de continuación — 2026-11-21
 
 Si el propietario escribe **«continúa el proyecto Matter, lee las instrucciones»**, se debe **abrir primero el repositorio privado [Matterssmith/MSEL](https://github.com/Matterssmith/MSEL/tree/alpha)** y leer `AGENTS.md`, `docs/CHANGE_PLAN.md`, `docs/DEVELOPMENT_STATUS.md`, `docs/OFFICIAL_LANGUAGE_STANDARD.md` y `docs/ROADMAP.md`. El trabajo principal será perfeccionar **MSEL, lenguaje propio P0** (lexing, parser, tipos, IR, intérprete/compilador Rust, CLI, conformidad). **A continuación**, mejorar **Matter-MSEL**, motor/integración para bots y sistemas escritos en `.msel` (WhatsApp/Telegram/Discord y otros proveedores). **Después** revisar Base-Matter y demás tecnologías, excepto orden diferente del propietario o corrección crítica de seguridad/producción. Nunca confundir MSEL y Matter-MSEL.

@@ -1,3 +1,10 @@
+## 2026-11-21 — MAT-MSEL-HOST-001
+
+Decisión: MSEL es el lenguaje original y privado; Matter-MSEL es su integración, no un compilador nuevo. `Base-Matter` consume un contrato JSON de `msel_bot_message_v1` mediante proceso local explicitamente configurado y por defecto sin `message.reply`; `WhatsApp-Matter` nunca se apropia de autenticación/roles por serializar eventos. La instancia WhatsApp activa conserva sesión y pairing. No permitir scripts de terceros hasta existir sandbox y política de autorizaciones. No activar nueva ruta en producción por este commit. Evidencia: archivos y tests añadidos; CI aún por confirmar. [Manual](MSEL_WHATSAPP_INTEGRATION.md).
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Creación universal de bots y procedencia de Baileys-Rust
 
 **Decisión de producto:** Bot Factory v2 declara por defecto `MSEL/Matter-MSEL` y `Social-Matter`; alternativa `Rust/Matter-Rust` y lenguajes de terceros. Plataforma elegible: Social-Matter, WhatsApp, Telegram, Discord, o combinación multi; cada plataforma tiene un adaptador/biblioteca propio y registrado, incluido fork o biblioteca del usuario como `XYZBailyes` (ID `xyzbaileys`). Bibliotecas externas no obtienen permisos implícitos. El selector original v1 conserva compatibilidad y su default Rust.

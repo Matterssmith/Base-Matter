@@ -1,3 +1,10 @@
+## 2026-11-21 — Ejecución de bots MSEL con motor original
+
+Base-Matter `alpha` incorpora `MselCommandRunner` y `InboundGateway.ingest_msel`: entrada autenticada, autorización, replay y ejecución de un `.msel` por el **motor nativo original del repositorio MSEL** mediante `msel_bot_message_v1`. `WhatsApp-Matter/matter` aporta la forma neutral del evento sin heredar permisos. Por defecto el puente no envía respuestas; no se cambian sesiones ni se inicia otro proveedor. Pruebas Rust añadidas, CI/e2e aún pendientes. [Manual de integración](docs/MSEL_WHATSAPP_INTEGRATION.md).
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Bot Factory v2: MSEL/Social-Matter por defecto + auditoría Baileys-Rust
 
 - **Nueva creación de bots (declarativa, no despliega):** `matter-bot-init` usa lenguaje `msel` / motor `matter-msel`, destino `social-matter`, sistema `host` y proveedor `default`. Permite `--language rust` (`matter-rust`), `--platform` repetido para WhatsApp/Telegram/Discord/Social-Matter y `--provider-for plataforma=biblioteca` para proveedores como `baileys-rust`, `whatsmeow` o bibliotecas propias `xyzbaileys`. El selector v1 antiguo permanece en `--legacy-selector` con su default histórico Rust.
