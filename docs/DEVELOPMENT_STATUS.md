@@ -1,3 +1,12 @@
+## 2026-11-21 — Rectificación de prioridades: MSEL es el lenguaje oficial (P0)
+
+- **MSEL (Matter Script Extension Language)** es el **lenguaje de programación propio de Matter**, no un sinónimo de Matter-MSEL. **Prioridad P0 actual: diseñar, implementar y probar MSEL como lenguaje autónomo hasta que ejecute programas reales.**
+- **Matter-MSEL** es el componente posterior de **integración/soporte de MSEL con Matter Ecosystem**, comparable a Matter-Rust; no sustituye el núcleo del lenguaje ni recibe la etiqueta P0.
+- **Orden obligatorio de trabajo nuevo:** L0 especificación y gramática → L1 lexer/parser localizado → L2 AST, tipos e IR → L3 intérprete/compilador y CLI → L4 ejecución independiente verificada → I0 Matter-MSEL y SDK → I1 bots con Base-Matter → I2/I3 interoperabilidad con 32 entradas tecnológicas.
+- Mantener la matriz de 32 entradas y las extensiones .msel y .<idioma>.msel; Rust se repite en la lista original. No declarar ninguna integración terminada sin tests. Los servicios y correcciones de seguridad existentes de Base-Matter/Vault-Matter siguen siendo atendidos.
+- **Documentación normativa:** [README.md](../README.md), [MATTER_MSEL_MASTER_SPEC.md](MATTER_MSEL_MASTER_SPEC.md), [MSEL_LANGUAGE_V0_DESIGN.md](MSEL_LANGUAGE_V0_DESIGN.md). En AGENTS.md de raíz los enlaces de esta línea son informativos; las rutas canónicas son README.md y docs/*.md.
+- **Estado:** documentos corregidos en rama alpha; no se ha escrito, compilado o probado un intérprete de MSEL en este cambio. README revisados: raíz y proveedor WhatsApp. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.
