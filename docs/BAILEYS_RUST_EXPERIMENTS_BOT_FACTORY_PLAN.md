@@ -1,6 +1,6 @@
 # Base-Matter — Plan y auditoría: Baileys-Rust experimental + creador universal de bots
 
-Fecha: 2026-11-21. Estado: **plan previo a implementación**. Rama `alpha` únicamente.
+Fecha: 2026-11-21. Estado: **plan previo publicado y primera implementación descrita abajo**. Rama `alpha` únicamente.
 
 ## Solicitud y decisiones permanentes
 
@@ -41,6 +41,19 @@ Se observan: `NativeButtonInput` (quick_reply, cta_url, cta_copy, cta_call, open
 ## Pendientes tras esta fase
 
 Adaptar realmente estructuras de mensajes de LuferOS al provider actual con mapping protobuf/ABI, pruebas de envío y **renderizado verificado** en Android/iOS/Web; decidir si se requiere biblioteca externa bajo licencia y condiciones oficiales. Los plugins Social-Matter, Matter-MSEL, Matter-Rust y custom libraries requerirán Host autorizado. Priorizar después el lenguaje **MSEL P0**, su motor Matter-MSEL y su contrato de aplicaciones sin duplicar el código privado del lenguaje en Base público.
+
+## Resultado tras implementación — revisión 2026-11-21
+
+**Código de referencia copiado y VERIFICADO:** `third_party/luferos-baileys-rust/experiments.rs`, `LICENSE` y `NOTICE`. Los blobs coinciden exactamente con los de LuferOS en el commit fijado; sin editar y fuera de Cargo. Referencia guardada en commits `5675d6a3c612b4b55a049ed798e35b9d86b8b889`, `4de3982ccb2c11cd32d077575c6f389a1c8e9d66`, `e2c3c31f04a5ffdc3c5c38ffc61476643b98ce2f`. Procedencia en `PROVENANCE.md`.
+
+**Selector v2 publicado en alpha:** `src/bot_factory.rs` (commit `f141750ea34127395515afc44436740cef42c774`), exportación `src/lib.rs` (`aa80a907a24d8e9a1b269a3831c66872f019ddd4`), CLI `src/bin/bot_init.rs` (`6face1d569e6f4c4b54f343938f3956ceab7b4db`). MSEL/Social-Matter por defecto, Matter-Rust/Rust explícito, proveedores opacos y lista de múltiples plataformas con adaptadores individuales. El selector v1 se preserva sin cambio de default (Rust) y se invoca con `--legacy-selector`.
+
+**Pruebas actuales:** 8 pruebas unitarias Rust nuevas añadidas en `src/bot_factory.rs`, **no ejecutadas con Cargo todavía** en esta sesión: Cargo/Rustc no están disponibles en el runtime de herramientas. No confundir inspección estática ni SHA exacto de los archivos externos con compilación Rust, envío real WhatsApp, UI renderizada ni conexión Social-Matter.
+
+**Próximo requisito verificable:** ejecutar `cargo fmt --check`, `cargo check --all-targets --locked`, `cargo test --all-targets --locked`, CI de Linux y Windows; probar CLI `matter-bot-init` con combinaciones; documentar fallos y no promover `stable`. Para experimentos HTML, primero adapter protobuf desacoplado y test real en self-chat del propietario con fallback legible; no alterar el proveedor activo automáticamente.
+
+**Decisión final:** el código de LuferOS se conserva como referencia externa licenciada, no como capa del lenguaje MSEL. La siguiente gran prioridad vuelve a MSEL (lenguaje P0) y Matter-MSEL (motor P1).
+
 
 Créditos:
 Hecho por Lournyx Matterssmith [Lou-Nyx].
