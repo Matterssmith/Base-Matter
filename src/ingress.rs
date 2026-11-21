@@ -6,6 +6,7 @@
  */
 
 use crate::control::{ControlDispatcher, DispatchResult};
+use crate::msel_bridge::{MselCommandRunner, MselMessageEvent};
 use anyhow::{anyhow, bail, Result};
 use hmac::{Hmac, Mac};
 use rusqlite::{params, Connection, TransactionBehavior};
@@ -190,6 +191,14 @@ pub enum InboundOutcome {
     Dispatched(DispatchResult),
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum MselInboundOutcome {
+    Duplicate,
+    /// Authorized reply data only; the caller must independently authorize
+    /// any actual WhatsApp send through its trusted transport.
+    Replies(Vec<String>),
+}
+
 /// Trusted callback gateway. No provider authenticator or admission policy
 /// is bundled. The replay claim precedes command effects; a crash after
 /// claiming may need manual reconciliation, not automatic re-execution.
@@ -213,6 +222,46 @@ impl InboundGateway {
             replay,
             control,
         }
+    }
+
+    /// Separate bot route. Never call ingest() and ingest_msel() for the same
+    /// message: both claim the same durable replay fingerprint.
+    ///
+    /// The installed InboundAuthenticator MUST attest the provider, and
+    /// InboundAdmission MUST check consent, socket, bot-on state, group policy
+    /// and message.read/reply permissions before the MSEL interpreter runs.
+    /// This method does not transmit any output or handle =/> control input.
+    pub fn ingest_msel(
+        &self,
+        event: &InboundEvent,
+        runner: &MselCommandRunner,
+    ) -> Result<MselInboundOutcome> {
+        event.validate()?;
+        if event.text.starts_with("=/>") {
+            bail!("MSEL cannot handle global control commands");
+        }
+        let trusted = catch_unwind(AssertUnwindSafe(|| self.authenticate.authenticate(event)))
+            .map_err(|_| anyhow!("Inbound authentication denied"))?
+            .map_err(|_| anyhow!("Inbound authentication denied"))?;
+        trusted.validate()?;
+        if trusted.platform != event.platform {
+            bail!("Inbound provider identity mismatch");
+        }
+        catch_unwind(AssertUnwindSafe(|| self.admission.authorize(event, &trusted)))
+            .map_err(|_| anyhow!("Inbound admission denied"))?
+            .map_err(|_| anyhow!("Inbound admission denied"))?;
+        if !self.replay.claim(&trusted.platform, &trusted.socket_id, &event.event_id)? {
+            return Ok(MselInboundOutcome::Duplicate);
+        }
+        let data = MselMessageEvent {
+            provider: &trusted.platform,
+            chat: trusted.group_id.as_deref().unwrap_or(&trusted.source_id),
+            sender: &trusted.source_id,
+            message_id: &event.event_id,
+            text: &event.text,
+        };
+        let replies = runner.execute(&data)?;
+        Ok(MselInboundOutcome::Replies(replies))
     }
 
     pub fn ingest(&self, event: &InboundEvent) -> Result<InboundOutcome> {
