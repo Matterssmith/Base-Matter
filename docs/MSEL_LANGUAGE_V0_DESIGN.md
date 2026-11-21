@@ -37,6 +37,10 @@ Un **concepto semántico** tiene identificador estable independiente del idioma.
 | verdadero | `verdadero` | `true` |
 | falso | `falso` | `false` |
 | importación | `importar` | `import` |
+| texto (tipo) | `Texto` | `Text` |
+| sin retorno (tipo) | `Nada` | `Void` |
+| entrada de programa | `principal` | `main` |
+| salida en consola | `mostrar` | `print` |
 
 **Decisión provisional:** usar delimitadores estructurales comunes (llaves, paréntesis, punto y coma opcional sólo si la gramática lo define de forma inequívoca). Las palabras reservadas pueden traducirse; la semántica y los operadores no. Se aceptará Unicode para identificadores, con normalización, diagnóstico de colisiones y política de caracteres confusables.
 
@@ -49,7 +53,7 @@ funcion saludar(nombre: Texto) -> Texto {
 
 funcion principal() -> Nada {
     sea mensaje = saludar("Matter");
-    consola.mostrar(mensaje);
+    mostrar(mensaje);
 }
 ```
 
@@ -62,11 +66,11 @@ function greet(name: Text) -> Text {
 
 function main() -> Void {
     let message = greet("Matter");
-    console.print(message);
+    print(message);
 }
 ```
 
-**Importante:** el ejemplo muestra **comportamiento equivalente** y no una IR idéntica byte por byte: los identificadores elegidos por el autor y las posiciones de origen son diferentes. La comparación de IR debe normalizar nombres locales y metadatos no semánticos. Los nombres exportados requieren una política explícita de enlace entre módulos. Las APIs de la biblioteca estándar podrán tener alias lingüísticos que enlacen al mismo identificador canónico.
+**Importante:** el ejemplo muestra **comportamiento equivalente** y no una IR idéntica byte por byte: los identificadores elegidos por el autor y las posiciones de origen son diferentes. La comparación de IR debe normalizar nombres locales y metadatos no semánticos. El punto de entrada `principal`/`main` enlaza al mismo símbolo canónico; los nombres exportados restantes requieren una política explícita de enlace entre módulos. Las APIs de la biblioteca estándar podrán tener alias lingüísticos que enlacen al mismo identificador canónico.
 
 ## 3. Gramática inicial propuesta (resumen EBNF)
 
