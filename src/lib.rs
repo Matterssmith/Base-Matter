@@ -41,6 +41,7 @@ pub mod matter_ai;
 pub mod menu;
 pub mod message_typography;
 pub mod modules;
+pub mod msel_bridge;
 pub mod pairing;
 pub mod platforms;
 pub mod plugins;
@@ -77,7 +78,7 @@ pub use events::EventBus;
 pub use i18n::Translator;
 pub use ingress::{
     InboundAdmission, InboundAuthenticator, InboundEvent, InboundGateway, InboundOutcome,
-    InboundReplayStore, VerifiedIngress,
+    InboundReplayStore, MselInboundOutcome, VerifiedIngress,
 };
 
 pub use legal::{
@@ -86,6 +87,7 @@ pub use legal::{
 };
 
 pub use modules::{CoreModule, ModuleManager};
+pub use msel_bridge::{MselCommandRunner, MselMessageEvent};
 pub use pairing::{PairingCode, PairingCodeProvider, PairingCodeService};
 pub use platforms::{MatterPlatform, PlatformConnectionDrivers, PlatformTransports};
 pub use security::encryption;
