@@ -1,3 +1,12 @@
+## 2026-11-20 — Revisión externa: Aura-Reed-Rust handler/context
+
+- Fuente exacta leída: `LuferOS/Aura-Reed-Rust` `main`; árbol Git `f72e6b6de83dec3badf59517891f7a73b19ac02d`, `src/handler.rs`, `src/context.rs`, `src/main.rs`, `src/cmd/mod.rs`, `src/cmd/socket.rs`, `src/db.rs`, `src/config.rs`, `src/lang.rs`, README, Cargo.toml.
+- Nuevo documento `docs/AURA_REED_RUST_HANDLER_REVIEW.md`: flujo y módulos reales, matriz de adaptación a Base/WhatsApp/Vault/System/Bot, riesgos de acoplamiento/propietarios/secretos, estructura propuesta, fases futuras y criterios de aceptación. Fuente ajena atribuida a LuferOS; no se copió código.
+- Propuesta: handler central de admisión + `CommandContext` neutral a plataforma + comandos registrables mediante `CommandRouter` ya existente; no sustituir el motor Rust WhatsApp actual, no prometer soporte Telegram/Discord ni mover sesiones.
+- Integración solo documental: **ninguna implementación de comandos, handlers, conexiones o tests en ejecución en este cambio**. `Bot-Matter` bloqueado. No se requiere Ollama para estudiar/refactorizar handlers Rust; su instalación en laptop puede aplazarse.
+- Próxima acción si se autoriza: comparar inventario de comandos de Matter contra los 15 módulos Aura, priorizar interfaz neutral y tests offline antes de proponer PR a alpha.
+- Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Corrección de cuenta Sakura inexistente
 
 - Reporte de instalación Ubuntu: `failed to look up user Sakura: No such process`, `sudo: unknown user Sakura` y plugin audit al intentar usar un usuario no creado.
