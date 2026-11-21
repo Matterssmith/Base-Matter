@@ -433,10 +433,15 @@ def control(action: str) -> int:
         if not matter_ai.backend_available():
             print("Backend no disponible. Verifica Ollama local o OpenAI API antes de iniciar.")
             return 2
-        if not confirm(
+        warning = (
+            "El servicio trabajará periódicamente con Ollama LOCAL; puede editar "
+            "archivos en workstreams limpios. No hay coste de OpenAI API, "
+            "pero utiliza RAM/CPU y requiere revisar el código."
+            if matter_ai.backend_name() == "local" else
             "El servicio llamará periódicamente a OpenAI API y podrá editar "
             "archivos en workstreams limpios. Puede generar costes de API."
-        ):
+        )
+        if not confirm(warning):
             print("Inicio cancelado.")
             return 1
         cfg["enabled"] = True
@@ -472,7 +477,9 @@ def status() -> int:
         "last_run_utc": st["last_run_utc"],
         "pending_push": sorted(st["pending_push"]),
         "workspaces_ready": eligible(settings, st),
-        "budget_notice": "API billing must be capped separately on your OpenAI account",
+        "budget_notice": ("Ollama local: sin facturación por mensaje, con límites físicos y de ciclos."
+                          if matter_ai.backend_name() == "local"
+                          else "API billing must be capped separately on your OpenAI account"),
     }, indent=2, ensure_ascii=False))
     return 0
 
