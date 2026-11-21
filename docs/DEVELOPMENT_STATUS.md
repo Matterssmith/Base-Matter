@@ -1,3 +1,10 @@
+## 2026-11-21 — Rustfmt CI import ordering
+
+La verificación Linux del SHA `aaea9f45205c` detectó únicamente el orden rustfmt de imports condicionados a Linux en `tests/msel_bridge.rs`. Aplicada la corrección exacta de GitHub Actions `44954393053`. Se conservan importaciones condicionales en Windows, pruebas de host MSEL real opt-in, permisos y scripts originales. README revisados: 2/2. Nuevo SHA pendiente de confirmación CI.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Windows Clippy MSEL test imports
 
 En CI de Base-Matter Windows, `cargo check` y todas las pruebas Rust terminaron correctamente para el SHA `1cb11f4`, pero Clippy `-D warnings` detectó dos imports sin uso (`MselCommandRunner` y `PathBuf`) en `tests/msel_bridge.rs`, ya que el test que los usa es solo Linux. Se limitan los imports a `#[cfg(target_os = "linux")]`, conservando las pruebas multiplataforma y el test original opcional. No cambia el motor MSEL, sesiones WhatsApp ni Vault. README revisados: 2/2. [CI de diagnóstico](https://github.com/Matterssmith/Base-Matter/actions/runs/44954149724). Nuevo CI pendiente.
