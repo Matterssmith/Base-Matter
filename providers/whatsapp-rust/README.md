@@ -1,3 +1,9 @@
+## 2026-11-21 — LuferOS/Baileys-Rust: referencia externa sin cambio de provider
+
+La implementación `experiments.rs` de LuferOS se revisó y copió íntegra en `Base-Matter/third_party/luferos-baileys-rust/` con Apache-2.0 y NOTICE de autoría. **No** se vinculó a esta biblioteca `whatsapp-rust` 0.7.0: usa `baileys-rs` y protobuf `prost` diferentes del provider actual (`wa`/`buffa`). La referencia expone botones NativeFlow, `open_webview` con URL, carruseles y RichResponse, no un motor que procese HTML/CSS/JS inline.
+
+**Estado:** ensayo de HTML existente permanece desactivado por defecto y limitado a self-chat autorizado; ningún test de dispositivo confirmó renderizado. No se cambió emparejamiento, sesión, roles, antis ni control de socket. La selección futura de bibliotecas `baileys-rust`, `whatsmeow` o `xyzbaileys` es un descriptor offline de Bot Factory v2, **no una instalación de este provider**. [Plan y límites](../../docs/BAILEYS_RUST_EXPERIMENTS_BOT_FACTORY_PLAN.md).
+
 ## 2026-11-20 — CI: enlace de permisos globales con WhatsApp
 
 - Se aplicaron las diferencias exactas `rustfmt` al filtro de comandos del proveedor. El controlador Linux ya superó formato, pruebas y Clippy.
