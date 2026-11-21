@@ -20,7 +20,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("  [--provider-for PLATFORM=LIBRARY_ID]... [--system host|linux|windows|macos|android|ios|web|embedded]");
             println!("  [--legacy-selector]");
             println!("Defaults: language=msel (Matter-MSEL), platform=social-matter, provider=default, system=host.");
-            println!("Provider aliases and custom libraries require approval by an authenticated host.");
+            println!(
+                "Provider aliases and custom libraries require approval by an authenticated host."
+            );
             println!("Output is a descriptor only. No session, Vault access, provider installation or privilege is granted.");
             return Ok(());
         }
@@ -31,9 +33,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             legacy = true;
             continue;
         }
-        let value = args
-            .next()
-            .ok_or("Missing argument for bot setup option")?;
+        let value = args.next().ok_or("Missing argument for bot setup option")?;
         match flag.as_str() {
             "--language" => {
                 if request.language.replace(value).is_some() {
@@ -60,7 +60,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 if platform.is_empty() || adapter.is_empty() {
                     return Err("Expected non-empty platform and library ID".into());
                 }
-                if request.adapters.insert(platform.to_owned(), adapter.to_owned()).is_some() {
+                if request
+                    .adapters
+                    .insert(platform.to_owned(), adapter.to_owned())
+                    .is_some()
+                {
                     return Err("Duplicate --provider-for option".into());
                 }
             }
@@ -77,7 +81,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             provider: request.provider,
             system: request.system,
         };
-        println!("{}", serde_json::to_string_pretty(&legacy_request.select()?)?);
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&legacy_request.select()?)?
+        );
         return Ok(());
     }
     println!("{}", serde_json::to_string_pretty(&request.select()?)?);
