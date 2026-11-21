@@ -1,3 +1,10 @@
+## 2026-11-21 — Bot Factory v2: MSEL/Social-Matter por defecto + auditoría Baileys-Rust
+
+- **Nueva creación de bots (declarativa, no despliega):** `matter-bot-init` usa lenguaje `msel` / motor `matter-msel`, destino `social-matter`, sistema `host` y proveedor `default`. Permite `--language rust` (`matter-rust`), `--platform` repetido para WhatsApp/Telegram/Discord/Social-Matter y `--provider-for plataforma=biblioteca` para proveedores como `baileys-rust`, `whatsmeow` o bibliotecas propias `xyzbaileys`. El selector v1 antiguo permanece en `--legacy-selector` con su default histórico Rust.
+- **Seguridad:** el catálogo privado y autorizado decide qué adaptadores/lenguajes existen; el selector no instala servicios, concede roles, usa Vault, migra sesiones ni abre conexiones. Social-Matter y Matter-MSEL siguen sin integración ejecutora certificada desde Base.
+- **Auditoría WhatsApp:** `LuferOS/Baileys-Rust/src/Utils/experiments.rs` copiado **sin cambios**, con licencia Apache-2.0 y NOTICE, en `third_party/luferos-baileys-rust/`. No se importó al provider activo (`whatsapp-rust` 0.7.0); `open_webview` abre una URL, no ejecuta HTML arbitrario inline. Renderizado real en WhatsApp sin confirmar.
+- **Pruebas:** 8 nuevos tests Rust de contrato creados, pero Cargo/CI aún no verificados en esta revisión. Plan y límites: [BOT_SETUP](docs/BOT_SETUP.md) · [Auditoría/plan](docs/BAILEYS_RUST_EXPERIMENTS_BOT_FACTORY_PLAN.md) · [HTML experimental](docs/WHATSAPP_RICH_HTML_COMPAT.md). La prioridad principal del ecosistema continúa siendo **MSEL P0 → Matter-MSEL P1**.
+
 # MSEL — lenguaje oficial Matter | Prioridad de desarrollo P0
 
 **MSEL (Matter Script Extension Language)** es el **lenguaje de programación oficial y propio de Matter Ecosystem**. La prioridad máxima actual es **diseñar, especificar, implementar y probar MSEL hasta que funcione de forma autónoma**: gramática, lexer, parser, análisis semántico, tipos, MSEL IR, intérprete/compilador, CLI, pruebas y compatibilidad multilingüe.
