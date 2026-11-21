@@ -442,6 +442,29 @@ def configure(args: argparse.Namespace) -> int:
     return 0
 
 
+def activate_local() -> int:
+    """Explicit, noninteractive opt-in to the already requested local daemon."""
+    if matter_ai.backend_name() != "local":
+        print("Activación automática sin confirmación solo disponible para Ollama local; evita cargos de API.")
+        return 2
+    cfg = config()
+    if cfg["auto_push"]:
+        print("AVISO: auto-push ya estaba autorizado previamente; desactívalo con configure --no-push si no lo deseas.")
+    initialize_dirs()
+    cfg["enabled"] = True
+    atomic_json(CONFIG_FILE, cfg)
+    reloaded = systemctl("daemon-reload")
+    if reloaded.returncode:
+        print("Servicio marcado para activación, pero systemd --user no está disponible.")
+        return 1
+    result = systemctl("enable", "--now", UNIT_NAME)
+    if result.returncode:
+        print("No se pudo iniciar el servicio. Verifica loginctl enable-linger Sakura y systemctl --user.")
+        return 1
+    print("Matter-Autopilot ACTIVO por defecto con Ollama local. Instrucciones:", INSTRUCTIONS_PATH)
+    return 0
+
+
 def control(action: str) -> int:
     initialize_dirs()
     cfg = config()
@@ -610,12 +633,14 @@ def main(argv: list[str] | None = None) -> int:
     push.add_argument("--push-workstreams", dest="push", action="store_true")
     push.add_argument("--no-push", dest="push", action="store_false")
     opt.set_defaults(push=None)
-    for command in ("start", "stop", "status", "doctor", "once", "preview", "run"):
+    for command in ("start", "activate", "stop", "status", "doctor", "once", "preview", "run"):
         subs.add_parser(command)
     arguments = parser.parse_args(argv)
     try:
         if arguments.command == "configure":
             return configure(arguments)
+        if arguments.command == "activate":
+            return activate_local()
         if arguments.command in ("start", "stop"):
             return control(arguments.command)
         if arguments.command == "status":
