@@ -247,10 +247,15 @@ impl InboundGateway {
         if trusted.platform != event.platform {
             bail!("Inbound provider identity mismatch");
         }
-        catch_unwind(AssertUnwindSafe(|| self.admission.authorize(event, &trusted)))
-            .map_err(|_| anyhow!("Inbound admission denied"))?
-            .map_err(|_| anyhow!("Inbound admission denied"))?;
-        if !self.replay.claim(&trusted.platform, &trusted.socket_id, &event.event_id)? {
+        catch_unwind(AssertUnwindSafe(|| {
+            self.admission.authorize(event, &trusted)
+        }))
+        .map_err(|_| anyhow!("Inbound admission denied"))?
+        .map_err(|_| anyhow!("Inbound admission denied"))?;
+        if !self
+            .replay
+            .claim(&trusted.platform, &trusted.socket_id, &event.event_id)?
+        {
             return Ok(MselInboundOutcome::Duplicate);
         }
         let data = MselMessageEvent {
