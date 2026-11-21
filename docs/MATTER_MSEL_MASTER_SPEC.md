@@ -1,15 +1,15 @@
-# Matter-MSEL
-## Lenguaje Matter — Matter Script Extension Language
+# MSEL — lenguaje oficial de Matter Ecosystem
+## Matter-MSEL — integración del lenguaje MSEL con Matter
 
-> **Prioridad P0 del Matter Ecosystem.** Matter-MSEL es el lenguaje nativo y motor de desarrollo principal para bots y sistemas. Su definición, frontend, MSEL IR, runtime y contratos básicos se planifican **antes de nuevas ampliaciones arquitectónicas de Base-Matter**. Los servicios existentes de Base-Matter y Vault-Matter continúan bajo sus reglas de seguridad; esta prioridad no deshabilita controles existentes ni afirma que MSEL ya se ejecute.
+> **Prioridad P0: hacer MSEL funcional.** El nombre del lenguaje es **MSEL**, no «Matter-MSEL». Su sintaxis, tipos, lexer, parser, semántica, IR, intérprete/compilador, CLI y pruebas se desarrollan primero, sin depender de Base-Matter. **Matter-MSEL** es la capa posterior de integración con el ecosistema, análoga al soporte Matter-Rust: contratos, host, SDK y adaptadores para que los bots y sistemas Matter ejecuten programas escritos en MSEL. La estabilidad y seguridad de Base-Matter y Vault-Matter se siguen manteniendo.
 
-**Estado:** especificación y hoja de ruta; **no** se declara implementado el compilador, el intérprete, las 32 integraciones ni las APIs sin pruebas.  
+**Estado:** especificación y hoja de ruta de MSEL; **no** se declara implementado el compilador, el intérprete, las 32 integraciones ni las APIs sin pruebas.  
 **Origen:** definiciones de Matter-MSEL y matriz de 32 entradas tecnológicas del propietario, 2026-11-21.  
 **Propiedad intelectual / créditos:** Hecho por Lournyx Matterssmith [Lou-Nyx].
 
 ## 1. Principio y objetivo
 
-**MSEL es el lenguaje Matter.** Matter-MSEL designa su implementación en el ecosistema. Un programa en MSEL puede expresarse en distintos idiomas humanos; el núcleo semántico, los tipos, el enlace de módulos y la representación intermedia son comunes. La prioridad inicial de producto es poder crear **bots y sistemas** con MSEL; posteriormente CLI, TUI, GUI, Web, escritorio, móvil, servicios, APIs, distribuidos y embedded.
+**MSEL es el lenguaje oficial Matter.** **Matter-MSEL** designa únicamente la integración de MSEL en Matter Ecosystem, comparable a Matter-Rust; no es un idioma alternativo, otro compilador ni el nombre del núcleo del lenguaje. Un programa en MSEL puede expresarse en distintos idiomas humanos; el núcleo semántico, los tipos, el enlace de módulos y la representación intermedia son comunes. La prioridad inicial de producto es poder crear **bots y sistemas** con MSEL; posteriormente CLI, TUI, GUI, Web, escritorio, móvil, servicios, APIs, distribuidos y embedded.
 
 No se crearán lenguajes diferentes para español, inglés o japonés: todos son MSEL con paquetes léxicos/lingüísticos. MSEL tampoco pretende reimplementar literalmente todos los lenguajes externos: integra sus capacidades mediante backends, FFI, bindings, bibliotecas, serialización y adaptadores específicos.
 
@@ -32,7 +32,9 @@ Intérprete/VM MSEL    Backends / FFI / adaptadores
  │                       │
  └────────┬───────────────┘
           ↓
-Matter Runtime + SDK / Host independiente
+Runtime MSEL autónomo / SDK propio
+          ↓
+Matter-MSEL (adaptador opcional al ecosistema)
           ↓
 Base-Matter (host de bots) · System-Matter · APIs de plataforma
           ↓
@@ -114,9 +116,9 @@ La lista original contiene **32 posiciones**, con **Rust repetido** en principal
 - Cada backend tendrá matriz: soportado, parcial, experimental o no soportado, con pruebas.
 - CLI propuesta: `msel init`, `msel check`, `msel run`, `msel build`, `msel test`, `msel fmt`, `msel translate`, `msel doctor`. Son comandos **planeados**, no existentes.
 
-## 5. Bots Matter: primer objetivo funcional
+## 5. Bots Matter: primera integración después de MSEL funcional
 
-**El primer caso de uso real debe ser un bot escrito en MSEL** y ejecutado por un host Matter. MSEL deberá expresar:
+**La primera meta P0 es ejecutar programas MSEL autónomos y pasar su suite de conformidad, sin host Matter.** El primer consumidor posterior será un bot escrito en MSEL, ejecutado mediante Matter-MSEL por un host Matter. Para esa fase MSEL deberá expresar:
 
 1. Eventos de mensaje, edición, eliminación, reacción, grupo, usuario y sistema.
 2. Registro, descubrimiento y ejecución de comandos con argumentos y ayuda.
@@ -138,28 +140,39 @@ La lista original contiene **32 posiciones**, con **Rust repetido** en principal
 - Paquetes lingüísticos externos descargables sólo con manifiesto, integridad, firma/confianza configurada, versión compatible y ejecución aislada; no adquieren estatus oficial por descargar.
 - Ningún backend puede eludir controles de permisos de la IR/runtime o las políticas del sistema operativo.
 
-## 7. Orden de ejecución de desarrollo
+## 7. Prioridad real y orden de ejecución
 
-| Etapa | Prioridad | Entregable verificable |
+**No confundir prioridad de lenguaje con prioridad de integración.** Los entregables P0 deben funcionar localmente sin WhatsApp, sin sockets, sin Vault y sin Base-Matter. Matter-MSEL empieza **después** de que el lenguaje esté operativo y sus tests principales estén en verde.
+
+| Fase | Prioridad | Resultado verificable |
 | --- | --- | --- |
-| M0 | P0 | Especificación de gramática, tipos, IR y permisos; decisiones de lenguaje versionadas |
-| M1 | P0 | Workspace Rust `msel-lexer`, `msel-parser`, `msel-ir`; tests unitarios |
-| M2 | P0 | Frontends es/en; idéntica IR para dos programas equivalentes y archivos multilingües |
-| M3 | P0 | Intérprete mínimo/VM, biblioteca estándar de I/O restringida, CLI `run/check/test` |
-| M4 | P0 | SDK/host de bots: eventos, comandos, sandbox, permisos, proveedor WhatsApp |
-| M5 | P1 | Integración estable Base-Matter con MSEL sin ruptura de identidades ni Vault |
-| M6 | P1 | Backends e interop prioritarios Rust/C/C++/Python/Go/JS, según compatibilidad |
-| M7 | P2 | Adaptadores SQL/configuración/multimedia/GUI/móvil/GPU y otras plataformas |
-| M8 | P2 | Ecosistema oficial de paquetes lingüísticos y SDKs; conformidad y documentación |
+| L0 — Diseño formal | **P0 · MSEL** | Gramática versionada, tokens, reglas de idioma, tipos, semántica, errores y especificación de IR v0 |
+| L1 — Frontend | **P0 · MSEL** | Lexer y parser en Rust; AST, localización es/en, tests válidos e inválidos |
+| L2 — Núcleo | **P0 · MSEL** | Resolución de módulos, símbolos, verificación de tipos y MSEL IR con posiciones de origen |
+| L3 — Ejecución | **P0 · MSEL** | Intérprete/VM o compilador mínimo, biblioteca estándar segura, CLI msel check/run/test |
+| L4 — Lenguaje funcional | **P0 · MSEL** | Programa real en .msel, .es.msel y .en.msel; funciones, control de flujo, módulos, errores, E/S permitida y CI verde |
+| I0 — Integración Matter | P1 · Matter-MSEL | SDK/adaptador con contratos versionados para consumir el lenguaje MSEL desde hosts Matter |
+| I1 — Bots Matter | P1 · Matter-MSEL + Base-Matter | Bot MSEL con eventos y comandos probados en proveedor real, preservando autorización del host/Vault |
+| I2 — Interoperabilidad principal | P1 · Adaptadores | FFI y contratos con Python, C++, Rust, C, Go y Node.js/JavaScript con tests por tecnología |
+| I3 — Matriz extendida | P2 · Adaptadores | Shell, multimedia, datos, JVM/.NET, Apple, gráficos, UI y demás tecnologías de la matriz de 32 entradas |
+| I4 — Ecosistema | P2 · SDK | Paquetes de idioma adicionales, herramientas y conformidad multiplataforma |
 
-**Puerta de salida mínima para M4:** dos versiones lingüísticas de un bot compilan a IR equivalente; un bot responde en WhatsApp mediante eventos reales; se prueban permisos denegados, errores de idioma, aislamiento de sockets, CI en Linux y Windows y persistencia del estado si aplica. Ninguna etapa se da por terminada sin evidencias.
+**Criterios obligatorios para declarar MSEL funcional (cierre L4):**
 
-**Dependencias ya desplegadas:** las correcciones operativas y de seguridad actuales de Base-Matter y Vault-Matter se conservan. “MSEL antes de Base-Matter” significa **prioridad de arquitectura y nueva implementación**, no eliminar o dejar sin mantenimiento servicios activos.
+1. Ejecutar un programa MSEL **sin** depender de Base-Matter ni de Matter-MSEL.
+2. El comando msel run produce resultados observables; msel check informa errores con archivo, línea y columna.
+3. Programas equivalentes en español e inglés generan el mismo comportamiento y una IR normalizada semánticamente equivalente.
+4. Control de flujo, funciones, variables, tipos, módulos e importaciones tienen pruebas unitarias e integración.
+5. Resolver idiomas .msel y .<idioma>.msel de forma determinista y diagnosticar ambigüedades/conflictos.
+6. Respetar permisos y capacidades del proceso anfitrión; no ofrecer acceso arbitrario a secretos, red o procesos por defecto.
+7. Ejecutar tests reproducibles en Linux y Windows cuando exista soporte CI, registrando cobertura, limitaciones y SHA.
+
+**Dependencias existentes:** mantener correcciones de seguridad y operación de Base-Matter/Vault-Matter es compatible con priorizar MSEL. Ni la integración de bots ni las 32 tecnologías se declaran terminadas hasta probarlas.
 
 ## 8. Reglas permanentes de continuidad
 
 - Todos los cambios nuevos de arquitectura Matter deben comprobar primero si corresponden al lenguaje MSEL, al runtime, al SDK, a Base-Matter o a un proveedor.
-- Primero lenguaje/contrato MSEL; después API del host; finalmente implementación por plataformas.
+- Primero **MSEL como lenguaje autónomo funcional** (P0); después **Matter-MSEL como integración** (P1); luego bots, plataformas y adaptadores. No utilizar «Matter-MSEL» como sinónimo de MSEL.
 - Registrar por cambio: (1) resumen, (2) archivos, (3) pruebas, (4) pendientes, (5) siguiente etapa, con SHA remoto cuando exista.
 - Revisar los README afectados antes de cada commit. No afirmar código funcional sin pruebas y CI.
 - Preservar la autoría y créditos de forma discreta, sin línea duplicada de “Autor”.
