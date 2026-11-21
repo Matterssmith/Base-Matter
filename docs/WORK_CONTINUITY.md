@@ -1,3 +1,16 @@
+## 2026-11-21 — Matter-Autopilot habilitado por defecto tras instalación local
+
+**Solicitud:** «La automatización activada por defecto ya» y «continúa el proyecto matter lee las instrucciones que están en el .md».
+
+**Implementado en** `workstreams/02-base`:
+- Nuevo `docs/MATTER_AUTOPILOT_INSTRUCTIONS.md`: orden principal, prioridades, límites, continuidad, políticas para Rust/WhatsApp/Vault, checklist de reporte y seguridad.
+- `tools/matter_autopilot.py`: `DEFAULT.enabled=true`, `projects=[matter-rust]`, `interval_seconds=900`, `daily_cycles=96`, `auto_push=false`; lee el Markdown instalado cada ciclo y falla cerrado si falta, está vacío, demasiado grande, es symlink o contiene indicios de secretos. `matter-autopilot activate` habilita/reinicia sin confirmación y sólo con backend Ollama local. `stop` sigue disponible.
+- `tools/install-matter-ai.sh`: copia el documento; configura Ollama local si no existe config, crea config inicial activa, intenta sincronizar el único workstream público y habilita `systemd --user` sin diálogo. Respeta `enabled=false` previamente guardado en una reinstalación. No inicia automáticamente OpenAI API de pago.
+- `tests/test_matter_autopilot.py`: pruebas de instrucciones y de instalación automática bajo HOME simulado, incluidos backend, no push y persistencia de stop. CI Linux/Windows pendiente de la comprobación final del último SHA.
+- Límite **real**: no se puede encender el proceso remotamente desde GitHub. Bajo la cuenta Sakura hay que actualizar el clon de instalación y ejecutar el instalador y `matter-autopilot activate`; si systemd user o Ollama falla, diagnosticar. Ningún runtime, sesión WhatsApp o rama estable fue modificada.
+- Próximo: aplicar instrucción de una línea en Ubuntu, verificar `status`/journal, revisar primer ciclo con modelo real y no confundir commits automáticos con pruebas de código.
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-20 — Revisión externa: Aura-Reed-Rust handler/context
 
 - Fuente exacta leída: `LuferOS/Aura-Reed-Rust` `main`; árbol Git `f72e6b6de83dec3badf59517891f7a73b19ac02d`, `src/handler.rs`, `src/context.rs`, `src/main.rs`, `src/cmd/mod.rs`, `src/cmd/socket.rs`, `src/db.rs`, `src/config.rs`, `src/lang.rs`, README, Cargo.toml.
