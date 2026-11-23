@@ -458,20 +458,18 @@ pub fn render_category(category: &Category, page: usize, options: Preferences) -
     v.insert("CommandRows", command_rows(&theme, options, &usages, &v)?);
     v.insert("Page", page.to_string());
     v.insert("Pages", pages.to_string());
-    v.insert(
-        "Pagination",
-        if pages > 1 {
-            v.insert(
-                "NextPage",
-                (if page == pages { 1 } else { page + 1 }).to_string(),
-            );
-            fill(Theme::layout(options.style, "pagination")?, &v)?
-                .trim_end()
-                .to_owned()
-        } else {
-            String::new()
-        },
-    );
+    let pagination = if pages > 1 {
+        v.insert(
+            "NextPage",
+            (if page == pages { 1 } else { page + 1 }).to_string(),
+        );
+        fill(Theme::layout(options.style, "pagination")?, &v)?
+            .trim_end()
+            .to_owned()
+    } else {
+        String::new()
+    };
+    v.insert("Pagination", pagination);
     validated(fill(Theme::layout(options.style, "category")?, &v)?, 3450)
 }
 

@@ -1,3 +1,7 @@
+## 2026-11-23 — Compilación del motor de menú: corrección de préstamo mutable
+
+GitHub Actions para 8bd87f verificó cargo fmt, pero cargo check identificó E0499 en src/menu/theme.rs: el argumento de v.insert("Pagination", if...) intentaba modificar v dentro de otro préstamo mutable. Se calcula pagination primero y se inserta después, sin cambiar estilos, comandos ni permisos. CI del nuevo SHA pendiente; no se instaló en WhatsApp. README revisados: 2/2, continuidad sincronizada por commit. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Ajuste exacto de rustfmt al motor de plantillas
 
 El CI Linux del SHA 7606e5a mostró únicamente diferencias de formato en src/menu.rs, src/menu/theme.rs y src/menu/telemetry.rs; este commit incorpora los 28 cambios exactos de rustfmt de GitHub Actions. Se conserva la separación de diseño en templates/menu/, datos dinámicos y seguridad; no hay cambios en sesiones WhatsApp, Vault o permisos. No declarar aprobación hasta verificar CI del SHA actualizado. README revisados: 2/2. Continúa MSEL P0. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
