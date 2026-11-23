@@ -1,0 +1,25 @@
+*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*
+
+💬 @Title
+
+╭─💠 @CategoriesTitle
+@CategoryRows
+╰─╮╭────────⟨🌀
+       ││
+@OwnerBlock
+✧☽︎╦[ @LabelUser: *@User* 🌀 ]═☾︎✧
+     ╠[ ◈ @LabelBot: *@Bot*
+     ╠[ ✦ @LabelPrefix: *[ @Prefix ]*
+     ╠[ ☷ @LabelCommands: *@Commands*
+     ╠[ ⴵ @LabelCategoriesActive: *@CategoriesActive*
+     ╠[ ♛ @LabelRole: *@Role*
+     ╠[ ◉ @LabelStatus: *@Status*
+✧☽︎╩[ ♧ @LabelSocket: *@Socket*
+
+@Information
+@SystemBlock
+╭─💠 @InstructionsTitle
+@Instructions
+╰───────────⟨ 🌀
+
+*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*

@@ -1,0 +1,4 @@
+╭─💠 Control del socket
+│ Propietario del socket autenticado
+│ Permisos: solo los verificados por el transporte y Vault
+╰───────────⟨ 🌀

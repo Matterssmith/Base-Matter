@@ -1,0 +1,4 @@
+@RootTitle
+@CategoryName · @LabelCommands: @CategoryCommands · @Page/@Pages
+@CommandRows
+@Pagination

@@ -29,64 +29,7 @@ impl MenuTelemetry {
         }
     }
 
-    /// Returns public, non-sensitive metadata. Host-specific fields are
-    /// displayed only to the authenticated socket owner by the menu renderer.
-    pub fn public_classic(&self) -> Vec<String> {
-        vec![
-            "╭─💠 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝗰𝗶ó𝗻 𝗠𝗮𝘁𝘁𝗲𝗿".to_owned(),
-            "│ Bot: Principal".to_owned(),
-            format!("│ Versión Base: {}", self.version),
-            "│ Proyecto: Matterssmith".to_owned(),
-            "│ Propietario del proyecto: Lou-Nyx".to_owned(),
-            "│ Prefijo: [ =/> ]".to_owned(),
-            format!("│ Fecha: {}", self.date),
-            format!("│ Comandos de catálogo: {}", super::command_count()),
-            "│ Sub-bots: sin registro verificado".to_owned(),
-            "│ Bots premium: sin registro verificado".to_owned(),
-            "│ URL: sin configurar".to_owned(),
-            "╰───────────⟨ 🌀".to_owned(),
-        ]
-    }
 
-    pub fn private_classic(&self) -> Vec<String> {
-        vec![
-            "╭─💠 𝗦𝗶𝘀𝘁𝗲𝗺𝗮 · 𝗛𝗼𝘀𝘁".to_owned(),
-            format!("│ Servidor: {}", self.host),
-            format!("│ SO: {}", self.operating_system),
-            format!("│ Proceso de control activo: {}", self.process_uptime),
-            format!("│ RAM del servidor: {}", self.server_memory),
-            format!("│ RAM del controlador: {}", self.control_memory),
-            "│ RAM y uptime del proveedor: pendiente de métricas firmadas".to_owned(),
-            "╰───────────⟨ 🌀".to_owned(),
-        ]
-    }
-
-    pub fn public_plain(&self) -> Vec<String> {
-        vec![
-            "Información Matter".to_owned(),
-            "Bot: Principal".to_owned(),
-            format!("Versión Base: {}", self.version),
-            "Proyecto: Matterssmith".to_owned(),
-            "Propietario del proyecto: Lou-Nyx".to_owned(),
-            "Prefijo: =/>".to_owned(),
-            format!("Fecha: {}", self.date),
-            format!("Comandos de catálogo: {}", super::command_count()),
-            "Sub-bots: sin registro verificado".to_owned(),
-            "Bots premium: sin registro verificado".to_owned(),
-            "URL: sin configurar".to_owned(),
-        ]
-    }
-
-    pub fn private_plain(&self) -> Vec<String> {
-        vec![
-            format!("Servidor: {}", self.host),
-            format!("SO: {}", self.operating_system),
-            format!("Proceso de control activo: {}", self.process_uptime),
-            format!("RAM del servidor: {}", self.server_memory),
-            format!("RAM del controlador: {}", self.control_memory),
-            "RAM y uptime del proveedor: pendiente de métricas firmadas".to_owned(),
-        ]
-    }
 }
 
 fn local_date() -> String {
@@ -214,22 +157,11 @@ mod tests {
     }
 
     #[test]
-    fn public_info_excludes_host_specific_fields() {
-        let snap = MenuTelemetry {
-            date: "23/11/2026".into(),
-            host: "private-host".into(),
-            operating_system: "linux (x86_64)".into(),
-            process_uptime: "1h".into(),
-            server_memory: "1 GiB".into(),
-            control_memory: "20 MiB".into(),
-            version: "0.1.0",
-        };
-        let public = snap.public_classic().join("\n");
-        let private = snap.private_classic().join("\n");
-        assert!(public.contains("Fecha: 23/11/2026"));
-        assert!(!public.contains("private-host"));
-        assert!(!public.contains("1 GiB"));
-        assert!(private.contains("private-host"));
-        assert!(private.contains("RAM del controlador"));
+    fn snapshot_supplies_real_build_version_without_rendering_design() {
+        let snap = MenuTelemetry::capture();
+        assert_eq!(snap.version, env!("CARGO_PKG_VERSION"));
+        assert!(!snap.date.is_empty());
+        assert!(!snap.operating_system.is_empty());
     }
+
 }

@@ -1,0 +1,7 @@
+*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*
+💬 @Title
+╭─💠 @CategoryIcon @CategoryName
+│ @LabelCommands: @CategoryCommands · @Page/@Pages
+@CommandRows
+@Pagination
+╰─╮╭────────⟨🌀

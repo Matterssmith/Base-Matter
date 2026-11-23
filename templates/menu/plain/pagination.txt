@@ -1,0 +1,1 @@
+@MenuCommand @CategoryId @NextPage (@Page/@Pages)

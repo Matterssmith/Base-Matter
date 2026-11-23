@@ -1,3 +1,7 @@
+## 2026-11-23 — Diseño anterior sustituido por motor de plantillas
+
+La disposición visual anterior de información de bot y sistema fue retirada del código Rust por solicitud del propietario. Su contrato operativo/privacidad se conserva, pero los campos se representan exclusivamente mediante tokens de templates/menu/*.txt y configuración templates/menu/theme.json. Los valores se obtienen en src/menu/theme.rs; src/menu/telemetry.rs no debe contener diseño. Ver docs/MENU_TEMPLATE_ENGINE.md como fuente de verdad para el renderizado. Datos que carecen de fuentes siguen sin verificación. No se ha actualizado el proveedor real ni sus sesiones.
+
 # Menú Matter — información dinámica del bot y del host
 
 Estado: implementación parcial en `Base-Matter/alpha`; despliegue WhatsApp pendiente de pruebas en dispositivo. Fecha: 2026-11-23. Idea de diseño suministrada por el propietario a partir de un ejemplo externo «Aura Reed Bot». Solo se aprovechan los **campos de información**, no su identidad ni sus cifras.

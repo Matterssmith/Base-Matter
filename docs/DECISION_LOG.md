@@ -1,3 +1,10 @@
+## 2026-11-23 — Decisión: tema de menú configurable fuera de Rust
+
+El propietario rechaza imitar el estilo gráfico del ejemplo externo. El menú de Matter separa plantilla visual, metadatos de categorías/comandos y valores dinámicos en runtime. El diseño completo (encabezado, fuentes, borde izquierdo, filas, títulos, bloque de métricas y páginas) reside exclusivamente en templates/menu. Rust no fabrica líneas estéticas; llena tokens @Variable con datos del catálogo, telemetría autorizada y configuración. Nombres de categorías: registros Category.es/en vinculados al catálogo, nunca directorios. Evitar listas fijas de categorías visibles. Los valores ausentes no se inventan. Mantener fallback legado aislado hasta migración segura. Contrato docs/MENU_TEMPLATE_ENGINE.md. Revisar README de raíz y proveedor, no tocar usuarios ni sockets activos.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Decisión: métricas reales en menú Matter, nunca cifras de terceros
 
 Adoptar estructura informativa general del ejemplo aportado por el propietario, no la marca, propietario, host, URL, cifras ni conteo de bots ajenos. El menú en alpha muestra fecha, versión de Base, comandos de catálogo y los campos disponibles; el propietario del socket autenticado ve métricas del proceso de control y del host. Sub-bots/premium, URL por instancia y RSS/uptime del proveedor WhatsApp quedan expresamente sin fuente verificada y pendientes de integración. La muestra no concede autoridad ni incorpora secretos. Continuidad obligatoria en todos los commits, revisando ambos README. No realizar despliegue sobre idkbot ni otros servidores compartidos sin pruebas, coordinación y autorización.

@@ -1,0 +1,2 @@
+╞═╦═ @CategoryIcon *@CategoryName*
+@CommandRows

@@ -1,3 +1,10 @@
+## 2026-11-23 — Continuidad obligatoria: menú estructurado con tokens
+
+Se reemplazó el diseño añadido en el paso previo, rechazado por el propietario, por motor de plantillas. Leer docs/MENU_TEMPLATE_ENGINE.md ANTES de tocar estilos. Archivos clave: templates/menu/theme.json, templates/menu/classic/*.txt, templates/menu/plain/*.txt, src/menu/theme.rs. Menú raíz/submenús/lista all se componen de @Variables y Category.es/en; no asumir categoría por carpeta ni codificar cantidad de comandos. Se conservó el contrato de permisos, apagado por defecto, categorías vacías ocultas. tests/menu_catalog.rs y pruebas del módulo actualizadas. Datos sin fuente quedan no verificados. README revisados: 2/2 (raíz y provider). Próximo: comprobar CI exacto de alpha; si falla, reparar código/formato y mantener simultáneamente los cuatro documentos AGENTS.md, DECISION_LOG.md, DEVELOPMENT_STATUS.md, WORK_CONTINUITY.md en cada commit. Prohibido actualizar procesos idkbot live antes de validar y coordinar. MSEL sigue siendo P0.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Reanudación del menú y cierre de continuidad per-commit
 
 Fuente original: idea del usuario inspirada en estructura informativa externa. Implementados campos con valores del proceso controlador y host, privacidad de propietario socket, fecha, versión, prefijo, comandos de catálogo; sub-bots/premium/URL/provider RSS y uptime siguen sin fuente real. Código src/menu/telemetry.rs, src/menu.rs; prueba tests/menu_catalog.rs; especificación docs/MENU_TELEMETRY_AUTOMATION.md. A 73311eba CI Linux fmt/check/tests/Clippy correctos, pero verificador de cuatro documentos falló; ahora se publican en commit conjunto AGENTS.md, docs/DECISION_LOG.md, docs/DEVELOPMENT_STATUS.md y docs/WORK_CONTINUITY.md. README revisados: 2/2 (README.md y providers/whatsapp-rust/README.md). Próximo: CI completo del SHA, en especial Windows/proveedor y control de continuidad, después sincronizar clon alpha en idkbot. Sin desplegar binarios ni tocar servicios existentes. Conservar Matter-MSEL y MSEL P0 según sus normas.

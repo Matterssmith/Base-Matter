@@ -1,0 +1,7 @@
+@SystemTitle
+@LabelHost: @Host
+@LabelOS: @OS
+@LabelUptime: @Uptime
+@LabelServerRAM: @ServerRAM
+@LabelControllerRAM: @ControllerRAM
+@LabelProviderRAM: @ProviderRAM

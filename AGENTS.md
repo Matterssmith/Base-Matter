@@ -1,3 +1,10 @@
+## 2026-11-23 — Menú por plantillas y variables, sin estilo de bot externo
+
+La rectificación prioritaria del propietario prohíbe copiar el estilo visual mostrado por otro bot. En Base-Matter/alpha, toda la estética del menú dinámico debe estar en templates/menu/theme.json y templates/menu/{classic,plain}/*.txt; el código src/menu/theme.rs sólo interpola variables @Commands, @CategoriesActive, @CategoryName, @Usage y otras, alimentadas por el catálogo y el host. No duplicar nombres de categorías por nombres de carpetas ni hardcodear números: Category.es/en pertenece a metadatos registrados de los comandos. El tema controla encabezados, fuentes, rama izquierda de comandos, separación, etiquetas y páginas; los valores llegan de runtime. El menu legado está separado y NO es la vista dinámica de producción. Seguridad: los indicadores host/RAM/uptime solo para propietario de socket verificado; nunca confundir autoridad de socket con rango Vault. Ver docs/MENU_TEMPLATE_ENGINE.md; conservar alpha, MSEL P0, no desplegar binarios o cambiar sesiones sin CI. README revisados: 2/2.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Continuidad validada del menú Matter
 
 Para toda nueva modificación de Base-Matter, guardar en el mismo commit AGENTS.md, docs/DECISION_LOG.md, docs/DEVELOPMENT_STATUS.md y docs/WORK_CONTINUITY.md; revisar ambos README (2/2). En el menú el usuario solicitó datos inspirados en un ejemplo de Aura Reed, pero se implementan con fuentes reales, sin copiar identidad ni estadísticas. Solo mostrar host, memoria y uptime del controlador a un socket owner autenticado; no confundir con el proveedor WhatsApp. Estado del SHA 73311eba: fmt, cargo check, tests y Clippy Linux pasaron; fallo la regla per-commit de continuidad. Este commit sincroniza el registro. Mantener alpha, no desplegar a procesos en producción.

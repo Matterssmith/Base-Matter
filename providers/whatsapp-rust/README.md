@@ -1,3 +1,10 @@
+## 2026-11-23 — Menú dinámico con plantillas independientes
+
+Base-Matter/alpha sustituye la presentación incrustada en Rust por templates/menu/theme.json y fragmentos classic/plain. El proveedor continúa enviando los controles de menú autenticados al controlador; no se ha cambiado su sesión ni activado HTML externo. Valores @Commands y @CategoriesActive se derivan del catálogo registrado, mientras que @CategoryName utiliza datos de categoría, no directorios. No confundir @ControllerRAM ni @Uptime con RAM/tiempo del proceso WhatsApp-Rust: falta telemetría auténtica de proveedor. El fallback de menú autónomo anterior permanece separado para compatibilidad hasta migrar con pruebas. Pendiente CI Linux/Windows/proveedor y teléfono antes de instalar. Véase docs/MENU_TEMPLATE_ENGINE.md. No tocar sockets existentes.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Revisión de integración de información automática
 
 Base-Matter/alpha añadió datos de solo lectura del controlador al menú, sin cambios a la sesión WhatsApp-Rust. No declarar memoria RSS/uptime del proveedor, sub-bots, premium o enlace de la instancia como métricas reales hasta incorporar un registro y un contrato de telemetría firmado. Los datos de host solo aparecen para el owner del socket autenticado. CI de integración y prueba en dispositivo pendientes. No reiniciar ni migrar proveedores activos del servidor compartido idkbot. Contrato: docs/MENU_TELEMETRY_AUTOMATION.md en Base-Matter.

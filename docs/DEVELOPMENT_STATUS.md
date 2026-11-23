@@ -1,3 +1,10 @@
+## 2026-11-23 — Motor de plantillas visuales del menú alpha
+
+Se incorpora src/menu/theme.rs, templates/menu/theme.json y plantillas parciales classic/plain; src/menu.rs delega la representación del menú raíz, categorías y agregado a theme.rs. src/menu/telemetry.rs conserva SOLO captura de datos: elimina diseño e información fija en Rust. tests/menu_catalog.rs adapta verificaciones de layout; tests propios del motor validan sustitución de variables, fuentes/nombres de categorías desacoplados de carpetas y conteos del catálogo. Fase: publicada en el commit correspondiente, pero el éxito CI Linux/Windows/proveedor y render real en teléfono aún requieren verificación. El proveedor activo y Vault no se modifican. La vista fallback antigua sigue separada. Pendientes: registro de instancias/sub-bots/premium, RSS proveedor, prefijo y bot por instancia, hot reload seguro. Contrato docs/MENU_TEMPLATE_ENGINE.md. README revisados: 2/2.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Validación CI del menú dinámico de Matter
 
 Cambio implementado en alpha: src/menu/telemetry.rs, src/menu.rs y tests/menu_catalog.rs; contrato en docs/MENU_TELEMETRY_AUTOMATION.md. En el SHA 73311eba5dbdc839c4c931db06fa3527ba2ec1b0, GitHub Actions Linux ejecutó rustfmt, cargo check, pruebas predeterminadas y Clippy -D warnings correctamente. El chequeo final scripts/check_continuity.py falló porque ese commit individual no había modificado los cuatro documentos obligatorios; corregido en este commit documental conjunto, pendiente de CI completo de este SHA. Windows y proveedor deben verificarse aparte. El menú todavía no se ha instalado ni probado en WhatsApp real. No equiparar memoria del controlador con el bot WhatsApp.

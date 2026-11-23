@@ -1,0 +1,96 @@
+{
+  "identity": {
+    "project": "Matter Ecosystem",
+    "owner": "Lou-Nyx",
+    "bot": "Principal",
+    "prefix": "=/>"
+  },
+  "fonts": {
+    "header": "sans_bold",
+    "category": "monospace",
+    "command": "normal"
+  },
+  "decoration": {
+    "branch": "╠",
+    "last_branch": "╚",
+    "all_icon": "✦"
+  },
+  "es": {
+    "title": "Sistema de Control Global",
+    "categories": "Categorías",
+    "information": "Información Matter",
+    "system": "Sistema · Host",
+    "instructions": "Instrucciones",
+    "all": "Todo",
+    "unavailable": "No verificado",
+    "labels": {
+      "user": "Usuario",
+      "bot": "Bot",
+      "project": "Proyecto",
+      "owner": "Propietario",
+      "prefix": "Prefijo",
+      "commands": "Comandos",
+      "categories_active": "Categorías disponibles",
+      "version": "Versión Base",
+      "date": "Fecha",
+      "role": "Rango",
+      "status": "Estado",
+      "socket": "Socket",
+      "sub_bots": "Sub-bots",
+      "premium_bots": "Bots premium",
+      "url": "URL",
+      "host": "Servidor",
+      "os": "Sistema operativo",
+      "uptime": "Uptime del controlador",
+      "server_ram": "RAM del servidor",
+      "controller_ram": "RAM del controlador",
+      "provider_ram": "RAM del proveedor"
+    },
+    "notes": [
+      "◉ `status` incluso con bot OFF.",
+      "♛ Admin: identidad verificada.",
+      "♧ Externos: OFF por defecto.",
+      "◈ Sockets aislados · cambios auditados."
+    ],
+    "root_title": "Menú de control global"
+  },
+  "en": {
+    "title": "Global control system",
+    "categories": "Categories",
+    "information": "Matter information",
+    "system": "System · Host",
+    "instructions": "Instructions",
+    "all": "All",
+    "unavailable": "Not verified",
+    "labels": {
+      "user": "User",
+      "bot": "Bot",
+      "project": "Project",
+      "owner": "Owner",
+      "prefix": "Prefix",
+      "commands": "Commands",
+      "categories_active": "Available categories",
+      "version": "Base version",
+      "date": "Date",
+      "role": "Role",
+      "status": "Status",
+      "socket": "Socket",
+      "sub_bots": "Sub-bots",
+      "premium_bots": "Premium bots",
+      "url": "URL",
+      "host": "Server",
+      "os": "Operating system",
+      "uptime": "Controller uptime",
+      "server_ram": "Server RAM",
+      "controller_ram": "Controller RAM",
+      "provider_ram": "Provider RAM"
+    },
+    "notes": [
+      "◉ `status` works even with bot OFF.",
+      "♛ Admin: verified identity.",
+      "♧ External users: OFF by default.",
+      "◈ Isolated sockets · audited changes."
+    ],
+    "root_title": "Global control menu"
+  }
+}

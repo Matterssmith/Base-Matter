@@ -14,6 +14,7 @@ pub mod set;
 pub mod status;
 pub mod system;
 pub mod telemetry;
+pub mod theme;
 
 #[derive(Clone, Copy, Debug)]
 pub struct CommandSpec {
@@ -401,47 +402,6 @@ fn description(command: &CommandSpec, language: Language) -> &'static str {
         Language::En => command.en,
     }
 }
-fn header(options: Preferences) -> Vec<String> {
-    match (options.style, options.language) {
-        (Style::Classic, _) => vec![
-            "꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦".to_owned(),
-            "💬 𝗦𝗶𝘀𝘁𝗲𝗺𝗮 𝗱𝗲 𝗖𝗼𝗻𝘁𝗿𝗼𝗹 𝗚𝗹𝗼𝗯𝗮𝗹 ۞₪»̶⟩".to_owned(),
-            "╭─💠 𝗠𝗲𝗻𝘂́ 𝗣𝗿𝗶𝗻𝗰𝗶𝗽𝗮𝗹".to_owned(),
-            "│  Bot: Principal · Sistema: Global".to_owned(),
-            format!(
-                "│  Prefijo: [ =/> ] · Comandos: {} · Pendientes: {}",
-                command_count(),
-                pending_count()
-            ),
-            "│".to_owned(),
-        ],
-        (Style::None, Language::Es) => vec![
-            "Menú de control global".to_owned(),
-            "Bot: Principal".to_owned(),
-            "Sistema: Global".to_owned(),
-            "Prefijo: =/>".to_owned(),
-            format!(
-                "Comandos: {} · Pendientes: {}",
-                command_count(),
-                pending_count()
-            ),
-            String::new(),
-        ],
-        (Style::None, Language::En) => vec![
-            "Global control menu".to_owned(),
-            "Bot: Principal".to_owned(),
-            "System: Global".to_owned(),
-            "Prefix: =/>".to_owned(),
-            format!(
-                "Commands: {} · Pending: {}",
-                command_count(),
-                pending_count()
-            ),
-            String::new(),
-        ],
-    }
-}
-
 fn canonical_category(id: &str) -> &str {
     match id {
         "ai" => "ia",
@@ -484,210 +444,11 @@ fn concise_menu(options: Preferences) -> Result<String> {
 }
 
 pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> Result<String> {
-    // Owner-provided visual layout. Never invent unregistered categories.
-    const ENTRIES: [(&str, &str, &str); 21] = [
-        ("ia", "ⴵ ·· 𝙸𝙰", "ⴵ ·· IA"),
-        ("anti", "☾︎ ··· 𝙰𝚗𝚝𝚒", "☾︎ ··· Anti"),
-        ("all", "✦ · 𝚃𝚘𝚍𝚘", "✦ · All"),
-        ("config", "⚙︎ · 𝙲𝚘𝚗𝚏𝚒𝚐𝚞𝚛𝚊𝚌𝚒ó𝚗", "⚙︎ · Config"),
-        ("downloads", "⇩ · 𝙳𝚎𝚜𝚌𝚊𝚛𝚐𝚊𝚜", "⇩ · Downloads"),
-        ("economy", "◈ · 𝙴𝚌𝚘𝚗𝚘𝚖í𝚊", "◈ · Economy"),
-        ("fun", "♫ · 𝙳𝚒𝚟𝚎𝚛𝚜𝚒ó𝚗", "♫ · Fun"),
-        ("gacha", "✰ · 𝙶𝚊𝚌𝚑𝚊", "✰ · Gacha"),
-        ("games", "🎮 𝙹𝚞𝚎𝚐𝚘𝚜", "🎮 · Games"),
-        ("group", "♧ 𝙶𝚛𝚞𝚙𝚘", "♧ · Group"),
-        ("info", "ⓘ 𝙸𝚗𝚏𝚘𝚛𝚖𝚊𝚌𝚒ó𝚗", "ⓘ · Information"),
-        ("links", "🔗 𝙴𝚗𝚕𝚊𝚌𝚎𝚜", "🔗 · Links"),
-        ("main", "✪ ·· 𝙿𝚛𝚒𝚗𝚌𝚒𝚙𝚊𝚕", "✪ ·· Main"),
-        ("mode", "◉ · 𝙼𝚘𝚍𝚘", "◉ · Mode"),
-        ("owner", "♛ · 𝙿𝚛𝚘𝚙𝚒𝚎𝚝𝚊𝚛𝚒𝚘", "♛ · Owner"),
-        ("profile", "♙ · 𝙿𝚎𝚛𝚏𝚒𝚕", "♙ · Profile"),
-        ("reactions", "♡ 𝚁𝚎𝚊𝚌𝚌𝚒𝚘𝚗𝚎𝚜", "♡ · Reactions"),
-        ("search", "⌕ · 𝙱ú𝚜𝚚𝚞𝚎𝚍𝚊", "⌕ · Search"),
-        ("sockets", "ⴵ · 𝙲𝚘𝚗𝚎𝚡𝚒𝚘𝚗𝚎𝚜", "ⴵ · Sockets"),
-        ("system", "⚙︎ 𝚂𝚒𝚜𝚝𝚎𝚖𝚊", "⚙︎ System"),
-        ("utils", "✧ 𝚄𝚝𝚒𝚕𝚒𝚍𝚊𝚍𝚎𝚜", "✧ · Utilities"),
-    ];
-    if ENTRIES
-        .iter()
-        .any(|(id, _, _)| *id != "all" && !CATEGORIES.iter().any(|category| category.id == *id))
-    {
-        bail!("Menu presentation contains unregistered categories");
-    }
-    let spanish = options.language == Language::Es;
-    let classic = options.style == Style::Classic;
-    let mut lines = if classic {
-        vec![
-            "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*".to_owned(),
-            String::new(),
-            "💬 𝗦𝗶𝘀𝘁𝗲𝗺𝗮 𝗱𝗲 𝗖𝗼𝗻𝘁𝗿𝗼𝗹 𝗚𝗹𝗼𝗯𝗮𝗹 ۞₪»̶⟩".to_owned(),
-            String::new(),
-            if spanish {
-                "╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀".to_owned()
-            } else {
-                "╭─💠 Categories".to_owned()
-            },
-        ]
-    } else {
-        vec![if spanish {
-            "Menú de control global".to_owned()
-        } else {
-            "Global control menu".to_owned()
-        }]
-    };
-    let telemetry = telemetry::MenuTelemetry::capture();
-    let visible_ids = visible_category_ids();
-    let visible_entries: Vec<_> = ENTRIES
-        .iter()
-        .filter(|(id, _, _)| visible_ids.contains(id))
-        .collect();
-    for (index, (id, es, en)) in visible_entries.iter().enumerate() {
-        let decorated_label = if spanish { es } else { en };
-        if classic {
-            let branch = if index + 1 == visible_entries.len() {
-                "╚"
-            } else {
-                "╠"
-            };
-            lines.push(format!("│·♪·{branch}[ *{decorated_label}* `[menu {id}]`"));
-        } else {
-            let plain_label = if *id == "all" {
-                if spanish {
-                    "Todo"
-                } else {
-                    "All"
-                }
-            } else {
-                CATEGORIES
-                    .iter()
-                    .find(|category| category.id == *id)
-                    .map(|category| label(category, options.language))
-                    .ok_or_else(|| anyhow!("Unknown canonical category"))?
-            };
-            lines.push(format!("{plain_label}: menu {id}"));
-        }
-    }
-    if classic {
-        lines.extend(["╰─╮╭────────⟨🌀".to_owned(), "       ││".to_owned()]);
-        if viewer.socket_owner {
-            // Role description only. The viewer's actual verified rank
-            // is printed separately; global ownership requires Vault proof.
-            lines.extend([
-                "╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹".to_owned(),
-                "│".to_owned(),
-                "│ ♛ Owner Global".to_owned(),
-                "│    Prioridad máxima.".to_owned(),
-                "│".to_owned(),
-                "│ ◈ Jerarquía: Superior".to_owned(),
-                "│ ⚙︎ Alcance: Ecosistema Matter".to_owned(),
-                "│ ✦ Bot principal: Administración global".to_owned(),
-                "│ ⴵ Cambios: Control y auditoría".to_owned(),
-                "│ ♧ Seguridad: Identidad verificada".to_owned(),
-                "│".to_owned(),
-                "│ ♛ 𝗣𝗲𝗿𝗺𝗶𝘀𝗼𝘀".to_owned(),
-                "│".to_owned(),
-                "│ · Controlar el bot principal.".to_owned(),
-                "│ · Consultar configuración global.".to_owned(),
-                "│ · Administrar políticas autorizadas.".to_owned(),
-                "│ · Supervisar sockets y servicios.".to_owned(),
-                "│ · Gestionar jerarquías y permisos.".to_owned(),
-                "│ · Prioridad sobre rangos inferiores.".to_owned(),
-                "│ · Auditar cambios y operaciones.".to_owned(),
-                "│".to_owned(),
-                "╰───────────⟨ 🌀".to_owned(),
-                String::new(),
-            ]);
-        }
-        lines.extend([
-            format!("✧☽︎╦[ 𝐔𝐬𝐮𝐚𝐫𝐢𝐨: *{}* 🌀 ]═☾︎✧", viewer.user),
-            "     ╠[ ◈ 𝐁𝐨𝐭: *Principal*".to_owned(),
-            "     ╠[ ⚙︎ 𝐒𝐢𝐬𝐭𝐞𝐦𝐚: *Global*".to_owned(),
-            "     ╠[ ✦ 𝐏𝐫𝐞𝐟𝐢𝐣𝐨: *[ =/> ]*".to_owned(),
-            format!("     ╠[ ☷ 𝐂𝐨𝐦𝐚𝐧𝐝𝐨𝐬: *{}*", command_count()),
-            format!("     ╠[ ♛ 𝐑𝐚𝐧𝐠𝐨: *{}*", viewer.role),
-            format!("     ╠[ ◉ 𝐄𝐬𝐭𝐚𝐝𝐨: *{}*", viewer.status),
-            format!("✧☽︎╩[ ♧ 𝐒𝐨𝐜𝐤𝐞𝐭: *{}*", viewer.socket),
-            String::new(),
-        ]);
-        lines.extend(telemetry.public_classic());
-        if viewer.socket_owner {
-            lines.extend(telemetry.private_classic());
-        }
-        lines.push(String::new());
-        lines.push("╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀".to_owned());
-        // WhatsApp quotes distinguish operational notes from ornamental lines.
-        // Keep every line short for narrow Android screens.
-        for instruction in [
-            "◉ `status` incluso con bot OFF.",
-            "♛ Admin: identidad verificada.",
-            "♧ Externos: OFF por defecto.",
-            "◈ Sockets aislados · cambios auditados.",
-        ] {
-            lines.push(crate::message_typography::format_segment(
-                instruction,
-                crate::message_typography::TextFormat::Quote,
-            )?);
-        }
-        lines.extend([
-            "╰───────────⟨ 🌀".to_owned(),
-            String::new(),
-            "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*".to_owned(),
-        ]);
-    } else {
-        lines.push(String::new());
-        lines.push(format!("Usuario: {}", viewer.user));
-        lines.push("Bot: Principal".to_owned());
-        lines.push("Sistema: Global".to_owned());
-        lines.push("Prefijo: =/>".to_owned());
-        lines.push(format!("Comandos: {}", command_count()));
-        lines.push(format!("Rango: {}", viewer.role));
-        lines.push(format!("Estado: {}", viewer.status));
-        lines.push(format!("Socket: {}", viewer.socket));
-        lines.push(String::new());
-        lines.extend(telemetry.public_plain());
-        if viewer.socket_owner {
-            lines.extend(telemetry.private_plain());
-        }
-        lines.push(String::new());
-        lines.push("Instrucciones:".to_owned());
-        lines.push("status incluso con bot OFF.".to_owned());
-        lines.push("Admin: identidad verificada.".to_owned());
-        lines.push("Externos: OFF por defecto.".to_owned());
-        lines.push("Sockets aislados; cambios auditados.".to_owned());
-    }
-    let result = lines.join("\n");
-    if result.len() > 3800 || result.chars().any(|ch| ch.is_control() && ch != '\n') {
-        bail!("Global menu exceeds safe WhatsApp bounds");
-    }
-    Ok(result)
+    theme::render_root(options, viewer)
 }
 
 fn verbose_menu(options: Preferences) -> Result<String> {
-    let mut lines = vec![if options.language == Language::Es {
-        "💠 Todo"
-    } else {
-        "💠 All commands"
-    }
-    .to_owned()];
-    for category in CATEGORIES {
-        let commands: Vec<_> = category
-            .commands
-            .iter()
-            .filter(|command| command.implemented)
-            .collect();
-        if commands.is_empty() {
-            continue;
-        }
-        lines.push(format!("*{}*:", label(category, options.language)));
-        for command in commands {
-            lines.push(format!("  `=/>{}`", command.name));
-        }
-    }
-    let output = lines.join("\n");
-    if output.len() > 3450 {
-        bail!("Full command index exceeds safe message size");
-    }
-    Ok(output)
+    theme::render_all(options)
 }
 
 fn resolve_quoted_help(message: &str) -> Result<&'static str> {
@@ -927,93 +688,17 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
         "menu page 1" | "menu page 2" | "menu page 3" => return concise_menu(options),
         _ => {}
     }
-
-    let words: Vec<&str> = section.split_whitespace().collect();
-    let (category_id, page) = match words.as_slice() {
-        [] | ["menu" | "menú"] => (None, 1_usize),
-        ["menu" | "menú", name] | [name] => (Some(*name), 1_usize),
-        ["menu" | "menú", name, number] => (
-            Some(*name),
-            number
-                .parse::<usize>()
-                .map_err(|_| anyhow!("Invalid menu page"))?,
-        ),
+    let parts: Vec<_> = section.split_whitespace().collect();
+    let (category, page) = match parts.as_slice() {
+        ["menu" | "menú", name] | [name] => (*name, 1),
+        ["menu" | "menú", name, page] => (*name, page.parse::<usize>()?),
         _ => bail!("Usage: menu [category] [page]"),
     };
-    if page == 0 {
-        bail!("Menu page must be positive");
-    }
-    let category_id = category_id.map(canonical_category);
-    let root = category_id.is_none();
-    let shown: Vec<&Category> = if let Some(id) = category_id {
-        vec![CATEGORIES
-            .iter()
-            .find(|category| category.id == id)
-            .ok_or_else(|| anyhow!("Unknown menu category"))?]
-    } else {
-        CATEGORIES.iter().collect()
-    };
-    let mut out = header(options);
-    for category in shown {
-        let visible: Vec<_> = category
-            .commands
-            .iter()
-            .filter(|command| command.implemented)
-            .collect();
-        if visible.is_empty() {
-            continue;
-        }
-        if options.style == Style::Classic {
-            out.push(format!(
-                "╞═╦═ {} *{}*",
-                category.icon,
-                label(category, options.language)
-            ));
-        } else {
-            out.push(label(category, options.language).to_owned());
-        }
-        if root {
-            out.push(format!("menu {}", category.id));
-            continue;
-        }
-        const PAGE_SIZE: usize = 7;
-        let pages = visible.len().div_ceil(PAGE_SIZE);
-        if page > pages {
-            bail!("Menu page does not exist");
-        }
-        let start = (page - 1) * PAGE_SIZE;
-        let current = &visible[start..visible.len().min(start + PAGE_SIZE)];
-        let usages: Vec<_> = current
-            .iter()
-            .flat_map(|command| command.usages.iter().copied())
-            .collect();
-        for (index, usage) in usages.iter().enumerate() {
-            if options.style == Style::Classic {
-                let branch = if index + 1 == usages.len() {
-                    "╚"
-                } else {
-                    "╠"
-                };
-                out.push(format!("│♪{branch}[ `=/>{usage}`"));
-            } else {
-                out.push(format!("=/>{usage}"));
-            }
-        }
-        if pages > 1 {
-            let next = if page < pages { page + 1 } else { 1 };
-            out.push(format!("menu {} {next} ({page}/{pages})", category.id));
-        }
-        out.push(String::new());
-    }
-    if options.style == Style::Classic {
-        out.push("╰─╮╭────────⟨🌀".to_owned());
-        out.push("       ││".to_owned());
-    }
-    let output = out.join("\n");
-    if output.len() > 3450 || output.chars().any(|ch| ch.is_control() && ch != '\n') {
-        bail!("Menu exceeds safe message size");
-    }
-    Ok(output)
+    if page == 0 { bail!("Menu page must be positive"); }
+    let id = canonical_category(category);
+    let category = CATEGORIES.iter().find(|item| item.id == id)
+        .ok_or_else(|| anyhow!("Unknown menu category"))?;
+    theme::render_category(category, page, options)
 }
 
 #[cfg(test)]
@@ -1104,13 +789,13 @@ mod tests {
         let menu = render("menu", Preferences::default()).unwrap();
         assert!(menu.starts_with("*꒦꒷✰꒷꒦︶"));
         assert!(menu.contains("│·♪·╠[ *ⴵ ·· 𝙸𝙰* `[menu ia]`"));
-        assert!(menu.contains("│·♪·╚[ *✧ 𝚄𝚝𝚒𝚕𝚒𝚍𝚊𝚍𝚎𝚜* `[menu utils]`"));
+        assert!(menu.contains("│·♪·╚[ *✧ ·· 𝚄𝚝𝚒𝚕𝚒𝚍𝚊𝚍𝚎𝚜* `[menu utils]`"));
         assert!(menu.contains("╰─╮╭────────⟨🌀"));
         assert!(menu.contains("menu all"));
         assert!(menu.contains("menu anti"));
         assert!(menu.contains("menu mode"));
         assert!(menu.matches("=/>").count() >= 1);
-        assert!(menu.contains("Proyecto: Matterssmith"));
+        assert!(menu.contains("Proyecto: Matter Ecosystem"));
         assert!(!menu.contains("Aura Reed"));
         assert!(!menu.contains("Créditos:"));
     }

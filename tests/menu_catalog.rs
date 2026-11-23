@@ -14,7 +14,7 @@ fn live_menu_registry_builds_categories_with_project_info_without_footer_credits
     assert!(root.contains("menu config"));
     assert!(root.contains("menu anti"));
     assert!(root.contains("menu mode"));
-    assert!(root.contains("Proyecto: Matterssmith"));
+    assert!(root.contains("Proyecto: Matter Ecosystem"));
     assert!(!root.contains("Aura Reed"));
     assert!(!root.contains("Créditos:"));
     assert!(root.matches("=/>").count() >= 1);
@@ -172,16 +172,16 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     let classic = menu::render_root_with_viewer(Preferences::default(), context).unwrap();
     assert!(classic.starts_with("*꒦꒷✰꒷꒦︶"));
     assert!(classic.contains("💬 𝗦𝗶𝘀𝘁𝗲𝗺𝗮 𝗱𝗲 𝗖𝗼𝗻𝘁𝗿𝗼𝗹 𝗚𝗹𝗼𝗯𝗮𝗹"));
-    assert!(classic.contains("╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹"));
+    assert!(classic.contains("╭─💠 Control del socket"));
     assert!(classic.contains("╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀"));
     assert!(classic.contains("𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝗰𝗶ó𝗻 𝗠𝗮𝘁𝘁𝗲𝗿"));
     assert!(classic.contains(&format!("Versión Base: {}", env!("CARGO_PKG_VERSION"))));
-    assert!(classic.contains("Prefijo: [ =/> ]"));
+    assert!(classic.contains("Prefijo: =/>"));
     assert!(classic.contains("𝗦𝗶𝘀𝘁𝗲𝗺𝗮 · 𝗛𝗼𝘀𝘁"));
     assert!(classic.contains("RAM del controlador:"));
-    assert!(classic.contains("Sub-bots: sin registro verificado"));
-    assert!(classic.contains("Propietario del proyecto: Lou-Nyx"));
-    assert!(classic.contains("URL: sin configurar"));
+    assert!(classic.contains("Sub-bots: No verificado"));
+    assert!(classic.contains("Propietario: Lou-Nyx"));
+    assert!(classic.contains("URL: No verificado"));
     let quoted_instructions = classic
         .split_once("╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀")
         .unwrap()
@@ -246,7 +246,7 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
         },
     )
     .unwrap();
-    assert!(!public.contains("╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹"));
+    assert!(!public.contains("╭─💠 Control del socket"));
     assert!(!public.contains("test-socket"));
     assert!(public.contains("Fecha:"));
     assert!(public.contains("Comandos de catálogo:"));

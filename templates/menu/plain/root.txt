@@ -1,0 +1,16 @@
+@RootTitle
+@CategoryRows
+
+@LabelUser: @User
+@LabelBot: @Bot
+@LabelPrefix: @Prefix
+@LabelCommands: @Commands
+@LabelCategoriesActive: @CategoriesActive
+@LabelRole: @Role
+@LabelStatus: @Status
+@LabelSocket: @Socket
+
+@Information
+@SystemBlock
+@InstructionsTitle:
+@Instructions

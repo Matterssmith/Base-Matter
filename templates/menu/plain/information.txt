@@ -1,0 +1,12 @@
+@InformationTitle
+@LabelBot: @Bot
+@LabelVersion: @Version
+@LabelProject: @Project
+@LabelOwner: @Owner
+@LabelPrefix: @Prefix
+@LabelDate: @Date
+@LabelCommands: @Commands
+@LabelCategoriesActive: @CategoriesActive
+@LabelSubBots: @SubBots
+@LabelPremiumBots: @PremiumBots
+@LabelURL: @URL
