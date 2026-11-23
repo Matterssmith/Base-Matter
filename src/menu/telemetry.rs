@@ -184,9 +184,7 @@ fn process_uptime() -> String {
             .filter(|result| result.status.success())
             .and_then(|result| String::from_utf8(result.stdout).ok())
             .and_then(|value| value.trim().parse::<u64>().ok());
-        if let (Some(ticks), Some(boot), Some(hz)) =
-            (start_ticks, boot_uptime, ticks_per_second)
-        {
+        if let (Some(ticks), Some(boot), Some(hz)) = (start_ticks, boot_uptime, ticks_per_second) {
             if hz > 0 && boot.is_finite() && boot >= ticks as f64 / hz as f64 {
                 let seconds = (boot - ticks as f64 / hz as f64) as u64;
                 return format!(
@@ -208,7 +206,10 @@ mod tests {
 
     #[test]
     fn parses_memory_fields_without_guessing() {
-        assert_eq!(memory_kb("MemTotal", "MemTotal: 4096 kB\nMemAvailable: 2048 kB"), Some(4096));
+        assert_eq!(
+            memory_kb("MemTotal", "MemTotal: 4096 kB\nMemAvailable: 2048 kB"),
+            Some(4096)
+        );
         assert_eq!(memory_kb("MemFree", "MemTotal: 4096 kB"), None);
     }
 
