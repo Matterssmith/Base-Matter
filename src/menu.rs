@@ -1100,7 +1100,7 @@ mod tests {
     }
 
     #[test]
-    fn classic_menu_has_single_prefix_without_brand_or_credits() {
+    fn classic_menu_has_single_prefix_project_info_without_credits() {
         let menu = render("menu", Preferences::default()).unwrap();
         assert!(menu.starts_with("*꒦꒷✰꒷꒦︶"));
         assert!(menu.contains("│·♪·╠[ *ⴵ ·· 𝙸𝙰* `[menu ia]`"));
@@ -1110,7 +1110,8 @@ mod tests {
         assert!(menu.contains("menu anti"));
         assert!(menu.contains("menu mode"));
         assert!(menu.matches("=/>").count() >= 1);
-        assert!(!menu.contains("Matterssmith"));
+        assert!(menu.contains("Proyecto: Matterssmith"));
+        assert!(!menu.contains("Aura Reed"));
         assert!(!menu.contains("Créditos:"));
     }
 
