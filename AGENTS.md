@@ -1,3 +1,9 @@
+## 2026-11-23 — Menú de información Matter con telemetría bajo permisos
+
+Se añade en Base-Matter/alpha una sección dinámica de información inspirada únicamente en campos de un ejemplo externo, conservando el diseño y la identidad Matterssmith. `src/menu/telemetry.rs` recoge fecha, OS, hostname, memoria del servidor, RSS y uptime del **proceso de control**, no del proveedor WhatsApp; `src/menu.rs` muestra datos públicos y limita los datos del host al propietario del socket autenticado. No se copian cifras de Aura Reed. Ver `docs/MENU_TELEMETRY_AUTOMATION.md`: quedan pendientes los conteos reales sub-bot/premium, URL por instancia, uptime/RAM del proceso proveedor e integraciones Telegram/Discord. No requiere nuevas sesiones ni cambia permisos. Validación Rust/CI y prueba WhatsApp siguen pendientes. No desplegar en producción automáticamente. Revisar README de raíz y proveedor.
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Rustfmt CI import ordering
 
 La verificación Linux del SHA `aaea9f45205c` detectó únicamente el orden rustfmt de imports condicionados a Linux en `tests/msel_bridge.rs`. Aplicada la corrección exacta de GitHub Actions `44954393053`. Se conservan importaciones condicionales en Windows, pruebas de host MSEL real opt-in, permisos y scripts originales. README revisados: 2/2. Nuevo SHA pendiente de confirmación CI.
