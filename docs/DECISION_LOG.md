@@ -1,3 +1,7 @@
+## 2026-11-23 — Ajuste exacto de rustfmt al motor de plantillas
+
+El CI Linux del SHA 7606e5a mostró únicamente diferencias de formato en src/menu.rs, src/menu/theme.rs y src/menu/telemetry.rs; este commit incorpora los 28 cambios exactos de rustfmt de GitHub Actions. Se conserva la separación de diseño en templates/menu/, datos dinámicos y seguridad; no hay cambios en sesiones WhatsApp, Vault o permisos. No declarar aprobación hasta verificar CI del SHA actualizado. README revisados: 2/2. Continúa MSEL P0. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Decisión: tema de menú configurable fuera de Rust
 
 El propietario rechaza imitar el estilo gráfico del ejemplo externo. El menú de Matter separa plantilla visual, metadatos de categorías/comandos y valores dinámicos en runtime. El diseño completo (encabezado, fuentes, borde izquierdo, filas, títulos, bloque de métricas y páginas) reside exclusivamente en templates/menu. Rust no fabrica líneas estéticas; llena tokens @Variable con datos del catálogo, telemetría autorizada y configuración. Nombres de categorías: registros Category.es/en vinculados al catálogo, nunca directorios. Evitar listas fijas de categorías visibles. Los valores ausentes no se inventan. Mantener fallback legado aislado hasta migración segura. Contrato docs/MENU_TEMPLATE_ENGINE.md. Revisar README de raíz y proveedor, no tocar usuarios ni sockets activos.

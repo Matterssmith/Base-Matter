@@ -1,3 +1,7 @@
+## 2026-11-23 — Ajuste exacto de rustfmt al motor de plantillas
+
+El CI Linux del SHA 7606e5a mostró únicamente diferencias de formato en src/menu.rs, src/menu/theme.rs y src/menu/telemetry.rs; este commit incorpora los 28 cambios exactos de rustfmt de GitHub Actions. Se conserva la separación de diseño en templates/menu/, datos dinámicos y seguridad; no hay cambios en sesiones WhatsApp, Vault o permisos. No declarar aprobación hasta verificar CI del SHA actualizado. README revisados: 2/2. Continúa MSEL P0. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Menú dinámico con plantillas independientes
 
 Base-Matter/alpha sustituye la presentación incrustada en Rust por templates/menu/theme.json y fragmentos classic/plain. El proveedor continúa enviando los controles de menú autenticados al controlador; no se ha cambiado su sesión ni activado HTML externo. Valores @Commands y @CategoriesActive se derivan del catálogo registrado, mientras que @CategoryName utiliza datos de categoría, no directorios. No confundir @ControllerRAM ni @Uptime con RAM/tiempo del proceso WhatsApp-Rust: falta telemetría auténtica de proveedor. El fallback de menú autónomo anterior permanece separado para compatibilidad hasta migrar con pruebas. Pendiente CI Linux/Windows/proveedor y teléfono antes de instalar. Véase docs/MENU_TEMPLATE_ENGINE.md. No tocar sockets existentes.

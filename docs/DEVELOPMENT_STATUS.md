@@ -1,3 +1,7 @@
+## 2026-11-23 — Ajuste exacto de rustfmt al motor de plantillas
+
+El CI Linux del SHA 7606e5a mostró únicamente diferencias de formato en src/menu.rs, src/menu/theme.rs y src/menu/telemetry.rs; este commit incorpora los 28 cambios exactos de rustfmt de GitHub Actions. Se conserva la separación de diseño en templates/menu/, datos dinámicos y seguridad; no hay cambios en sesiones WhatsApp, Vault o permisos. No declarar aprobación hasta verificar CI del SHA actualizado. README revisados: 2/2. Continúa MSEL P0. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Motor de plantillas visuales del menú alpha
 
 Se incorpora src/menu/theme.rs, templates/menu/theme.json y plantillas parciales classic/plain; src/menu.rs delega la representación del menú raíz, categorías y agregado a theme.rs. src/menu/telemetry.rs conserva SOLO captura de datos: elimina diseño e información fija en Rust. tests/menu_catalog.rs adapta verificaciones de layout; tests propios del motor validan sustitución de variables, fuentes/nombres de categorías desacoplados de carpetas y conteos del catálogo. Fase: publicada en el commit correspondiente, pero el éxito CI Linux/Windows/proveedor y render real en teléfono aún requieren verificación. El proveedor activo y Vault no se modifican. La vista fallback antigua sigue separada. Pendientes: registro de instancias/sub-bots/premium, RSS proveedor, prefijo y bot por instancia, hot reload seguro. Contrato docs/MENU_TEMPLATE_ENGINE.md. README revisados: 2/2.

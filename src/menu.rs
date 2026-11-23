@@ -694,9 +694,13 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
         ["menu" | "menú", name, page] => (*name, page.parse::<usize>()?),
         _ => bail!("Usage: menu [category] [page]"),
     };
-    if page == 0 { bail!("Menu page must be positive"); }
+    if page == 0 {
+        bail!("Menu page must be positive");
+    }
     let id = canonical_category(category);
-    let category = CATEGORIES.iter().find(|item| item.id == id)
+    let category = CATEGORIES
+        .iter()
+        .find(|item| item.id == id)
         .ok_or_else(|| anyhow!("Unknown menu category"))?;
     theme::render_category(category, page, options)
 }

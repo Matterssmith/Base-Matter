@@ -28,8 +28,6 @@ impl MenuTelemetry {
             version: env!("CARGO_PKG_VERSION"),
         }
     }
-
-
 }
 
 fn local_date() -> String {
@@ -163,5 +161,4 @@ mod tests {
         assert!(!snap.date.is_empty());
         assert!(!snap.operating_system.is_empty());
     }
-
 }
