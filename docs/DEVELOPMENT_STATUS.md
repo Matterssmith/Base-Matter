@@ -1,3 +1,10 @@
+## 2026-11-23 — Corrección del test de cierre visual del menú tras CI
+
+El commit 4b1a307 cambió correctamente el espacio de «╰─╮╭────────⟨ 🌀», pero la prueba unitaria src/menu.rs continuaba buscando el texto anterior sin el espacio. Los tests predeterminados de Linux y Windows fallaron por esa aserción obsoleta; formato y compilación pasaron. Se actualiza únicamente la expectativa del test para igualarla al diseño aprobado, sin modificar renderizador, sesiones, Vault, proveedores ni procesos en ejecución. CI del SHA resultante pendiente. README revisados: 2/2; documentación de desarrollo y continuidad sincronizada.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Orden y espacios del menú clásico de control global
 
 - Orden aprobado de la vista clásica pública: Categorías → Información Matter → ficha de Usuario → Instrucciones, conservando el marco ornamental y la identidad Matter.
