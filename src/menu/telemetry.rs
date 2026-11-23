@@ -37,11 +37,13 @@ impl MenuTelemetry {
             "│ Bot: Principal".to_owned(),
             format!("│ Versión Base: {}", self.version),
             "│ Proyecto: Matterssmith".to_owned(),
+            "│ Propietario del proyecto: Lou-Nyx".to_owned(),
             "│ Prefijo: [ =/> ]".to_owned(),
             format!("│ Fecha: {}", self.date),
             format!("│ Comandos de catálogo: {}", super::command_count()),
             "│ Sub-bots: sin registro verificado".to_owned(),
             "│ Bots premium: sin registro verificado".to_owned(),
+            "│ URL: sin configurar".to_owned(),
             "╰───────────⟨ 🌀".to_owned(),
         ]
     }
@@ -65,11 +67,13 @@ impl MenuTelemetry {
             "Bot: Principal".to_owned(),
             format!("Versión Base: {}", self.version),
             "Proyecto: Matterssmith".to_owned(),
+            "Propietario del proyecto: Lou-Nyx".to_owned(),
             "Prefijo: =/>".to_owned(),
             format!("Fecha: {}", self.date),
             format!("Comandos de catálogo: {}", super::command_count()),
             "Sub-bots: sin registro verificado".to_owned(),
             "Bots premium: sin registro verificado".to_owned(),
+            "URL: sin configurar".to_owned(),
         ]
     }
 
