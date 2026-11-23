@@ -1,3 +1,10 @@
+## 2026-11-23 — Menú Matter con telemetría del controlador (alpha, no desplegado)
+
+Implementación en `src/menu/telemetry.rs` y `src/menu.rs`; pruebas de catálogo añadidas en `tests/menu_catalog.rs`. Captura fecha local, hostname, SO/arquitectura, MemTotal−MemAvailable, RSS y uptime del proceso controlador. Solo el propietario del socket autenticado ve host/recursos; usuarios externos ven versión Base, fecha, prefijo y conteo del catálogo. `Sub-bots` y `Bots premium` quedan como «sin registro verificado». No usar 130, 3, 238 ni otros valores del bot de ejemplo. Contrato y próximos pasos: `docs/MENU_TELEMETRY_AUTOMATION.md`. Pendientes pruebas Rustfmt/Cargo/CI y dispositivo WhatsApp, contadores por instancia y métricas reales del proveedor. No se actualizan procesos en servidor compartido. No afirmar despliegue.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Rustfmt CI import ordering
 
 La verificación Linux del SHA `aaea9f45205c` detectó únicamente el orden rustfmt de imports condicionados a Linux en `tests/msel_bridge.rs`. Aplicada la corrección exacta de GitHub Actions `44954393053`. Se conservan importaciones condicionales en Windows, pruebas de host MSEL real opt-in, permisos y scripts originales. README revisados: 2/2. Nuevo SHA pendiente de confirmación CI.
