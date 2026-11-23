@@ -174,11 +174,13 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     assert!(classic.contains("╭─💠 𝗔𝘂𝘁𝗼𝗿𝗶𝗱𝗮𝗱 𝗚𝗹𝗼𝗯𝗮𝗹"));
     assert!(classic.contains("╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀"));
     assert!(classic.contains("𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝗰𝗶ó𝗻 𝗠𝗮𝘁𝘁𝗲𝗿"));
-    assert!(classic.contains("Versión Base: 0.1.0"));
+    assert!(classic.contains(&format!("Versión Base: {}", env!("CARGO_PKG_VERSION"))));
     assert!(classic.contains("Prefijo: [ =/> ]"));
     assert!(classic.contains("𝗦𝗶𝘀𝘁𝗲𝗺𝗮 · 𝗛𝗼𝘀𝘁"));
     assert!(classic.contains("RAM del controlador:"));
     assert!(classic.contains("Sub-bots: sin registro verificado"));
+    assert!(classic.contains("Propietario del proyecto: Lou-Nyx"));
+    assert!(classic.contains("URL: sin configurar"));
     let quoted_instructions = classic
         .split_once("╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀")
         .unwrap()
