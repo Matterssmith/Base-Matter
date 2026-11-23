@@ -1,3 +1,10 @@
+## 2026-11-23 — Activación segura de Vault alpha documentada para idkbot
+
+Nueva guía `docs/ACTIVAR_VAULT_ALPHA.md`: diagnosticar el servicio y `base-wa-alpha`, probar ping y self-test sintético, verificar el lanzador `--check --vault-env`, y reiniciar de manera controlada el único proveedor alpha existente con `--resume-only --vault-env`. Preserva `wa-alpha`, evita reenrolar, mezclar `wa-test-1`, generar pairing o tocar las claves. Hace explícita la validación CI de binarios, revisión de credenciales y limitación del grant de configuración. La activación no desbloquea `=/>register start`, roles ni registro civil. Documentación reflejada en Vault-Matter alpha; no hay despliegue realizado desde esta conversación. README raíz y README proveedor revisados (2/2); sólo documentación alpha.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Corrección del test de cierre visual del menú tras CI
 
 El commit 4b1a307 cambió correctamente el espacio de «╰─╮╭────────⟨ 🌀», pero la prueba unitaria src/menu.rs continuaba buscando el texto anterior sin el espacio. Los tests predeterminados de Linux y Windows fallaron por esa aserción obsoleta; formato y compilación pasaron. Se actualiza únicamente la expectativa del test para igualarla al diseño aprobado, sin modificar renderizador, sesiones, Vault, proveedores ni procesos en ejecución. CI del SHA resultante pendiente. README revisados: 2/2; documentación de desarrollo y continuidad sincronizada.
