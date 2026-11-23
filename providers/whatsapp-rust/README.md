@@ -1,3 +1,12 @@
+## 2026-11-23 — Arquitectura aprobada: Engine-Matter y Extension-Matter
+
+El propietario dispone que WhatsApp-Matter se renombre a **Engine-Matter** (núcleo de sistemas Matter sin soporte directo WhatsApp/Telegram/Discord) y Telegram-Matter se renombre a **Extension-Matter** (conectores externos WhatsApp/Telegram/Discord y futuras redes). Discord-Matter será retirado de forma controlada con respaldo. **Matter-MSEL/** tendrá su ubicación en Engine-Matter como integración del lenguaje oficial independiente MSEL. Social-Matter es sistema propio del motor; Bot-Matter sigue bloqueado. **Extensions-Matter** (plural) no es el nuevo Extension-Matter y continúa separado. Se conserva Base-Matter como biblioteca y contratos sin dependencias cíclicas.
+
+La preparación actual modifica solo documentación de `alpha`: no mover el runtime/proveedor WhatsApp, no tocar sesiones, cifrado, comandos ni generar nuevos sockets. Plan completo en [docs/ENGINE_EXTENSION_REFACTOR_PLAN.md](docs/ENGINE_EXTENSION_REFACTOR_PLAN.md). Revisados README de raíz y de proveedor; ningún despliegue realizado.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Activación segura de Vault alpha documentada para idkbot
 
 Nueva guía `docs/ACTIVAR_VAULT_ALPHA.md`: diagnosticar el servicio y `base-wa-alpha`, probar ping y self-test sintético, verificar el lanzador `--check --vault-env`, y reiniciar de manera controlada el único proveedor alpha existente con `--resume-only --vault-env`. Preserva `wa-alpha`, evita reenrolar, mezclar `wa-test-1`, generar pairing o tocar las claves. Hace explícita la validación CI de binarios, revisión de credenciales y limitación del grant de configuración. La activación no desbloquea `=/>register start`, roles ni registro civil. Documentación reflejada en Vault-Matter alpha; no hay despliegue realizado desde esta conversación. README raíz y README proveedor revisados (2/2); sólo documentación alpha.

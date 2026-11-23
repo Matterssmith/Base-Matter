@@ -1,3 +1,12 @@
+## 2026-11-23 — Arquitectura aprobada: Engine-Matter y Extension-Matter
+
+El propietario dispone que WhatsApp-Matter se renombre a **Engine-Matter** (núcleo de sistemas Matter sin soporte directo WhatsApp/Telegram/Discord) y Telegram-Matter se renombre a **Extension-Matter** (conectores externos WhatsApp/Telegram/Discord y futuras redes). Discord-Matter será retirado de forma controlada con respaldo. **Matter-MSEL/** tendrá su ubicación en Engine-Matter como integración del lenguaje oficial independiente MSEL. Social-Matter es sistema propio del motor; Bot-Matter sigue bloqueado. **Extensions-Matter** (plural) no es el nuevo Extension-Matter y continúa separado. Se conserva Base-Matter como biblioteca y contratos sin dependencias cíclicas.
+
+La preparación actual modifica solo documentación de `alpha`: no mover el runtime/proveedor WhatsApp, no tocar sesiones, cifrado, comandos ni generar nuevos sockets. Plan completo en [docs/ENGINE_EXTENSION_REFACTOR_PLAN.md](docs/ENGINE_EXTENSION_REFACTOR_PLAN.md). Revisados README de raíz y de proveedor; ningún despliegue realizado.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Control del ingreso WhatsApp: rechazo estricto de variantes de lectura
 
 El CI del SHA cec5997 reportó 17/18 pruebas del proveedor correctas y fallo en incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority. Causa: el fallback genérico de signed_public_readonly admitía variantes rechazadas por el catálogo (por ejemplo =/>menu unset, =/>status --debug, =/>test run). Se limita ese fallback a verbos con potencial de mutación que el controlador y Vault autentican; todas las rutas de menú, estado, ayuda, prueba visual, Vault y crédito usan patrones explícitos de admisión. Se conserva verificación de remitente, HMAC, alcance de socket y ausencia de privilegios automáticos para terceros. Prueba real de vinculación no realizada, nuevo CI pendiente. No tocar sesiones, bases SQLite ni servicios idkbot. README revisados (2/2).
