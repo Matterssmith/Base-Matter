@@ -113,7 +113,7 @@ fn read_hostname() -> String {
                         .bytes()
                         .all(|byte| byte.is_ascii_alphanumeric() || b"-._".contains(&byte))
             })
-            .unwrap_or_else(|| "No disponible".to_owned());
+            .unwrap_or_else(|| "No disponible".to_owned())
     }
     #[cfg(not(target_os = "linux"))]
     {
