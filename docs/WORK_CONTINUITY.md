@@ -1,3 +1,10 @@
+## 2026-11-23 — Punto de reanudación: menú con información dinámica
+
+Base-Matter/alpha agregó `src/menu/telemetry.rs`, integró telemetría en `src/menu.rs`, amplió `tests/menu_catalog.rs` y definió el contrato en `docs/MENU_TELEMETRY_AUTOMATION.md`. Campos reales implementados: fecha local, versión Base, comando de catálogo, host, sistema, RAM host, RAM y uptime **del controlador**. Host/recursos solo en menú de propietario autenticado. Sub-bots/premium y RAM/uptime reales del proveedor siguen pendientes de un registro firmado. Ver CI y ejecutar `cargo test --test menu_catalog` antes de desplegar. El servidor `idkbot` solo tiene el clon en `alpha`; no se ha iniciado ni actualizado ningún proveedor real. Conservar MSEL como P0 y la rama estable intacta. Revisar ambos README por commit, conservar créditos.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Rustfmt CI import ordering
 
 La verificación Linux del SHA `aaea9f45205c` detectó únicamente el orden rustfmt de imports condicionados a Linux en `tests/msel_bridge.rs`. Aplicada la corrección exacta de GitHub Actions `44954393053`. Se conservan importaciones condicionales en Windows, pruebas de host MSEL real opt-in, permisos y scripts originales. README revisados: 2/2. Nuevo SHA pendiente de confirmación CI.
