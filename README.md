@@ -1,3 +1,7 @@
+## 2026-11-23 — Datos automáticos en el menú de Matter
+
+El menú `=/>menu` ahora incorpora en `alpha` un bloque informativo propio con fecha y versión real de Base-Matter, comando de control y número de comandos del catálogo; el propietario del socket verificado puede consultar hostname, SO, RAM del host, RSS y uptime del proceso controlador. Los contadores de sub-bots/premium y las métricas del proveedor WhatsApp **no están conectados todavía** y no se muestran números inventados. Es diseño derivado de campos sugeridos por el propietario, nunca copia de identidad o datos de Aura Reed. Contrato, límites, privacidad, pendientes y pruebas en [docs/MENU_TELEMETRY_AUTOMATION.md](docs/MENU_TELEMETRY_AUTOMATION.md). CI y verificación WhatsApp en dispositivo pendientes; Bot-Matter sigue bloqueado. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Windows Clippy MSEL test imports
 
 En CI de Base-Matter Windows, `cargo check` y todas las pruebas Rust terminaron correctamente para el SHA `1cb11f4`, pero Clippy `-D warnings` detectó dos imports sin uso (`MselCommandRunner` y `PathBuf`) en `tests/msel_bridge.rs`, ya que el test que los usa es solo Linux. Se limitan los imports a `#[cfg(target_os = "linux")]`, conservando las pruebas multiplataforma y el test original opcional. No cambia el motor MSEL, sesiones WhatsApp ni Vault. README revisados: 2/2. [CI de diagnóstico](https://github.com/Matterssmith/Base-Matter/actions/runs/44954149724). Nuevo CI pendiente.
