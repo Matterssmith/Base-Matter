@@ -1,3 +1,10 @@
+## 2026-11-23 — Continuidad validada del menú Matter
+
+Para toda nueva modificación de Base-Matter, guardar en el mismo commit AGENTS.md, docs/DECISION_LOG.md, docs/DEVELOPMENT_STATUS.md y docs/WORK_CONTINUITY.md; revisar ambos README (2/2). En el menú el usuario solicitó datos inspirados en un ejemplo de Aura Reed, pero se implementan con fuentes reales, sin copiar identidad ni estadísticas. Solo mostrar host, memoria y uptime del controlador a un socket owner autenticado; no confundir con el proveedor WhatsApp. Estado del SHA 73311eba: fmt, cargo check, tests y Clippy Linux pasaron; fallo la regla per-commit de continuidad. Este commit sincroniza el registro. Mantener alpha, no desplegar a procesos en producción.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Menú de información Matter con telemetría bajo permisos
 
 Se añade en Base-Matter/alpha una sección dinámica de información inspirada únicamente en campos de un ejemplo externo, conservando el diseño y la identidad Matterssmith. `src/menu/telemetry.rs` recoge fecha, OS, hostname, memoria del servidor, RSS y uptime del **proceso de control**, no del proveedor WhatsApp; `src/menu.rs` muestra datos públicos y limita los datos del host al propietario del socket autenticado. No se copian cifras de Aura Reed. Ver `docs/MENU_TELEMETRY_AUTOMATION.md`: quedan pendientes los conteos reales sub-bot/premium, URL por instancia, uptime/RAM del proceso proveedor e integraciones Telegram/Discord. No requiere nuevas sesiones ni cambia permisos. Validación Rust/CI y prueba WhatsApp siguen pendientes. No desplegar en producción automáticamente. Revisar README de raíz y proveedor.

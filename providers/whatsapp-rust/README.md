@@ -1,3 +1,10 @@
+## 2026-11-23 — Revisión de integración de información automática
+
+Base-Matter/alpha añadió datos de solo lectura del controlador al menú, sin cambios a la sesión WhatsApp-Rust. No declarar memoria RSS/uptime del proveedor, sub-bots, premium o enlace de la instancia como métricas reales hasta incorporar un registro y un contrato de telemetría firmado. Los datos de host solo aparecen para el owner del socket autenticado. CI de integración y prueba en dispositivo pendientes. No reiniciar ni migrar proveedores activos del servidor compartido idkbot. Contrato: docs/MENU_TELEMETRY_AUTOMATION.md en Base-Matter.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Integración pendiente de métricas en el menú
 
 `Base-Matter/alpha` integra información dinámica general en `=/>menu`. Las cifras de uso del servidor son del host y el RSS/uptime mostrados corresponden **al proceso controlador Base**, no al proveedor WhatsApp-Rust. Para acreditar el campo «RAM del bot», el proveedor deberá reportar telemetría verificable del proceso por un contrato autenticado, sin exponer sesiones, tokens, JID de terceros ni identificadores privados. También faltan contadores verificados de sub-bots y premium y URL por instancia. No hay cambios de conexión, sesiones, roles, ni botón en WhatsApp en esta revisión. Contrato: [docs/MENU_TELEMETRY_AUTOMATION.md](../../docs/MENU_TELEMETRY_AUTOMATION.md). Prueba real de dispositivo y CI pendientes.

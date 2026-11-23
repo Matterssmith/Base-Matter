@@ -1,3 +1,10 @@
+## 2026-11-23 — Decisión: métricas reales en menú Matter, nunca cifras de terceros
+
+Adoptar estructura informativa general del ejemplo aportado por el propietario, no la marca, propietario, host, URL, cifras ni conteo de bots ajenos. El menú en alpha muestra fecha, versión de Base, comandos de catálogo y los campos disponibles; el propietario del socket autenticado ve métricas del proceso de control y del host. Sub-bots/premium, URL por instancia y RSS/uptime del proveedor WhatsApp quedan expresamente sin fuente verificada y pendientes de integración. La muestra no concede autoridad ni incorpora secretos. Continuidad obligatoria en todos los commits, revisando ambos README. No realizar despliegue sobre idkbot ni otros servidores compartidos sin pruebas, coordinación y autorización.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-21 — Rustfmt CI import ordering
 
 La verificación Linux del SHA `aaea9f45205c` detectó únicamente el orden rustfmt de imports condicionados a Linux en `tests/msel_bridge.rs`. Aplicada la corrección exacta de GitHub Actions `44954393053`. Se conservan importaciones condicionales en Windows, pruebas de host MSEL real opt-in, permisos y scripts originales. README revisados: 2/2. Nuevo SHA pendiente de confirmación CI.

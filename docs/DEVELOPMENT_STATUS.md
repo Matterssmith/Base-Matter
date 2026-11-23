@@ -1,3 +1,10 @@
+## 2026-11-23 — Validación CI del menú dinámico de Matter
+
+Cambio implementado en alpha: src/menu/telemetry.rs, src/menu.rs y tests/menu_catalog.rs; contrato en docs/MENU_TELEMETRY_AUTOMATION.md. En el SHA 73311eba5dbdc839c4c931db06fa3527ba2ec1b0, GitHub Actions Linux ejecutó rustfmt, cargo check, pruebas predeterminadas y Clippy -D warnings correctamente. El chequeo final scripts/check_continuity.py falló porque ese commit individual no había modificado los cuatro documentos obligatorios; corregido en este commit documental conjunto, pendiente de CI completo de este SHA. Windows y proveedor deben verificarse aparte. El menú todavía no se ha instalado ni probado en WhatsApp real. No equiparar memoria del controlador con el bot WhatsApp.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Menú Matter con telemetría del controlador (alpha, no desplegado)
 
 Implementación en `src/menu/telemetry.rs` y `src/menu.rs`; pruebas de catálogo añadidas en `tests/menu_catalog.rs`. Captura fecha local, hostname, SO/arquitectura, MemTotal−MemAvailable, RSS y uptime del proceso controlador. Solo el propietario del socket autenticado ve host/recursos; usuarios externos ven versión Base, fecha, prefijo y conteo del catálogo. `Sub-bots` y `Bots premium` quedan como «sin registro verificado». No usar 130, 3, 238 ni otros valores del bot de ejemplo. Contrato y próximos pasos: `docs/MENU_TELEMETRY_AUTOMATION.md`. Pendientes pruebas Rustfmt/Cargo/CI y dispositivo WhatsApp, contadores por instancia y métricas reales del proveedor. No se actualizan procesos en servidor compartido. No afirmar despliegue.
