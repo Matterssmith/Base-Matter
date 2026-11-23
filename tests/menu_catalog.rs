@@ -3,7 +3,7 @@ use matter_base::menu::{Language, MenuPreferences, Preferences, Style};
 use std::sync::Arc;
 
 #[test]
-fn live_menu_registry_builds_categories_without_personal_brand_or_footer_credits() {
+fn live_menu_registry_builds_categories_with_project_info_without_footer_credits() {
     let prefs = Arc::new(MenuPreferences::open(":memory:").unwrap());
     let control = ControlThemes::new(ControlTheme::new("Base-Matter", "principal", "✦").unwrap())
         .with_dynamic_menu(Arc::clone(&prefs));
@@ -14,7 +14,8 @@ fn live_menu_registry_builds_categories_without_personal_brand_or_footer_credits
     assert!(root.contains("menu config"));
     assert!(root.contains("menu anti"));
     assert!(root.contains("menu mode"));
-    assert!(!root.contains("Matterssmith"));
+    assert!(root.contains("Proyecto: Matterssmith"));
+    assert!(!root.contains("Aura Reed"));
     assert!(!root.contains("Créditos:"));
     assert!(root.matches("=/>").count() >= 1);
     assert_eq!(matter_base::menu::CATEGORIES.len(), 20);
