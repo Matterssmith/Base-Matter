@@ -1,3 +1,10 @@
+## 2026-11-23 — Control del ingreso WhatsApp: rechazo estricto de variantes de lectura
+
+El CI del SHA cec5997 reportó 17/18 pruebas del proveedor correctas y fallo en incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority. Causa: el fallback genérico de signed_public_readonly admitía variantes rechazadas por el catálogo (por ejemplo =/>menu unset, =/>status --debug, =/>test run). Se limita ese fallback a verbos con potencial de mutación que el controlador y Vault autentican; todas las rutas de menú, estado, ayuda, prueba visual, Vault y crédito usan patrones explícitos de admisión. Se conserva verificación de remitente, HMAC, alcance de socket y ausencia de privilegios automáticos para terceros. Prueba real de vinculación no realizada, nuevo CI pendiente. No tocar sesiones, bases SQLite ni servicios idkbot. README revisados (2/2).
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Test de menú corregido para etiqueta de plantilla
 
 CI Linux de 0fa6284 verificó Rustfmt y compiló; 6/7 pruebas de menu_catalog pasaron y una conservaba la etiqueta literal obsoleta «Comandos de catálogo» pese al contrato nuevo @LabelCommands: @Commands. La prueba ahora valida Comandos: [menu::command_count()] en vez de un texto anterior. No cambia fuente de datos ni estilos, no hay despliegue WhatsApp. README revisados: 2/2. Mantener registros continuos y MSEL P0. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].

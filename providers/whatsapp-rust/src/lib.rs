@@ -434,17 +434,17 @@ impl Config {
                         .parse::<usize>()
                         .is_ok_and(|value| (1..=8).contains(&value))
             }
-            // Forward supported control verbs for any signed sender; only
-            // Vault-verified global owners can execute non-readonly actions.
-            // Unknown verbs still fail in the dispatcher, not in WhatsApp.
+            // Only stateful verbs may reach the controller via this fallback.
+            // Public read-only, help, menu, pairing diagnostics and Vault
+            // commands use the explicitly validated arms above. No fallback
+            // may turn an invalid read-only variant into a signed frame.
+            // Actual privileges are still checked by the controller and Vault.
             [verb, _rest @ ..]
                 if matches!(
                     *verb,
                     "=/>group"
                         | "=/>grupo"
                         | "=/>bot"
-                        | "=/>status"
-                        | "=/>estado"
                         | "=/>set"
                         | "=/>unset"
                         | "=/>role"
@@ -455,17 +455,6 @@ impl Config {
                         | "=/>add"
                         | "=/>add++"
                         | "=/>anti"
-                        | "=/>register"
-                        | "=/>test"
-                        | "=/>menu"
-                        | "=/>menú"
-                        | "=/>help"
-                        | "=/>h"
-                        | "=/>ayuda"
-                        | "=/>vault"
-                        | "=/>credits"
-                        | "=/>creditos"
-                        | "=/>créditos"
                 ) =>
             {
                 true
