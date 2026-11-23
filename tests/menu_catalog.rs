@@ -249,7 +249,7 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     assert!(!public.contains("╭─💠 Control del socket"));
     assert!(!public.contains("test-socket"));
     assert!(public.contains("Fecha:"));
-    assert!(public.contains("Comandos de catálogo:"));
+    assert!(public.contains(&format!("Comandos: {}", menu::command_count())));
     assert!(!public.contains("RAM del servidor:"));
     assert!(!public.contains("RAM del controlador:"));
 }

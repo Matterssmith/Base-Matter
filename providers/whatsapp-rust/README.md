@@ -1,3 +1,7 @@
+## 2026-11-23 — Test de menú corregido para etiqueta de plantilla
+
+CI Linux de 0fa6284 verificó Rustfmt y compiló; 6/7 pruebas de menu_catalog pasaron y una conservaba la etiqueta literal obsoleta «Comandos de catálogo» pese al contrato nuevo @LabelCommands: @Commands. La prueba ahora valida Comandos: [menu::command_count()] en vez de un texto anterior. No cambia fuente de datos ni estilos, no hay despliegue WhatsApp. README revisados: 2/2. Mantener registros continuos y MSEL P0. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Compilación del motor de menú: corrección de préstamo mutable
 
 GitHub Actions para 8bd87f verificó cargo fmt, pero cargo check identificó E0499 en src/menu/theme.rs: el argumento de v.insert("Pagination", if...) intentaba modificar v dentro de otro préstamo mutable. Se calcula pagination primero y se inserta después, sin cambiar estilos, comandos ni permisos. CI del nuevo SHA pendiente; no se instaló en WhatsApp. README revisados: 2/2, continuidad sincronizada por commit. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
