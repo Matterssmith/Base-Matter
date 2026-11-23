@@ -103,7 +103,7 @@ fn local_date() -> String {
 fn read_hostname() -> String {
     #[cfg(target_os = "linux")]
     {
-        return fs::read_to_string("/proc/sys/kernel/hostname")
+        fs::read_to_string("/proc/sys/kernel/hostname")
             .ok()
             .map(|host| host.trim().to_owned())
             .filter(|host| {
