@@ -7,8 +7,8 @@
 1. **MSEL** (privado) sigue siendo el lenguaje y toolchain oficial P0, con lexer/parser/IR/ABI propios. No se traslada ni se publica su implementación privada.
 2. **Engine-Matter** (futuro nombre del actual WhatsApp-Matter) es el motor central de sistemas Matter, incluida la capacidad de hospedar Social-Matter y bots como extensiones. La carpeta `Matter-MSEL/` vivirá en Engine-Matter, con interfaces para consumir MSEL sin duplicar el compilador privado.
 3. **Base-Matter** permanece como biblioteca reusable, contratos, servicios fundamentales y políticas desacopladas de plataforma. La relación preferida es Engine → Base; nunca Base → Engine si produce un ciclo.
-4. **Extension-Matter** (futuro Telegram-Matter) implementa todos los adaptadores de redes sociales ajenas como WhatsApp, Telegram y Discord. No se importan sus protocolos en Engine-Matter. La interfaz de transporte usa eventos de datos no confiables, identidad autenticada, ACL, consentimiento, anti-replay y permisos Vault fail-closed.
-5. **Social-Matter** es sistema propio Matter, distinto de proveedores de redes externas. **Extensions-Matter** (plural) es el proyecto privado existente de módulos generales/Anti, distinto del singular Extension-Matter.
+4. **Engine-Extensions-Matter** (futuro Telegram-Matter) implementa todos los adaptadores de redes sociales ajenas como WhatsApp, Telegram y Discord. No se importan sus protocolos en Engine-Matter. La interfaz de transporte usa eventos de datos no confiables, identidad autenticada, ACL, consentimiento, anti-replay y permisos Vault fail-closed.
+5. **Social-Matter** es sistema propio Matter, distinto de proveedores de redes externas. **Extensions-Matter** (sin prefijo Engine) es el proyecto privado existente de módulos generales/Anti, distinto del singular Engine-Extensions-Matter.
 6. **Discord-Matter** se eliminará solamente después de inventario, respaldo, migración de referencias/código y verificación. **Bot-Matter** sigue bloqueado hasta cumplir criterios reales.
 
 ## Inventario actual pendiente de extraer
@@ -21,7 +21,7 @@
 
 1. Conservar SHAs, estado CI, remotos, workflows, inventario de referencias y respaldo antes de editar Rust.
 2. Especificar contrato Engine↔Base y Engine↔Extension versionado, mínimo y sin ciclos. Separar núcleo del protocolo WhatsApp y preparar feature flags/despliegues sin proveedor externo.
-3. Copiar (no borrar todavía) código transport-specific desde WhatsApp-Matter a Extension-Matter y completar pruebas de Linux/Windows, autenticación, consentimiento, replay y emisión.
+3. Copiar (no borrar todavía) código transport-specific desde WhatsApp-Matter a Engine-Extensions-Matter y completar pruebas de Linux/Windows, autenticación, consentimiento, replay y emisión.
 4. Integrar Matter-MSEL en Engine como host del lenguaje MSEL original; probar ABI y capacidades con aplicaciones Matter internas (Social-Matter). En árboles Git alpha inspeccionados no apareció una carpeta previa `Matter-MSEL`; por ahora solo está preparado el destino.
 5. Verificar bajo CI que Engine compila y arranca sin WhatsApp/Telegram/Discord, que los conectores pueden desconectarse sin afectar servicios internos y que Vault bloquea cualquier operación no autorizada.
 6. Cutover controlado de WhatsApp con una única sesión, sin duplicar pairing o leer/copiar secretos, manteniendo rollback. Solo tras pruebas reales eliminar duplicaciones y renombrar repositorios desde GitHub admin; archivar/eliminar Discord-Matter tras respaldo.
