@@ -13,6 +13,7 @@ pub mod sandbox;
 pub mod set;
 pub mod status;
 pub mod system;
+pub mod telemetry;
 
 #[derive(Clone, Copy, Debug)]
 pub struct CommandSpec {
@@ -534,6 +535,7 @@ pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> 
             "Global control menu".to_owned()
         }]
     };
+    let telemetry = telemetry::MenuTelemetry::capture();
     let visible_ids = visible_category_ids();
     let visible_entries: Vec<_> = ENTRIES
         .iter()
@@ -606,8 +608,13 @@ pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> 
             format!("     ╠[ ◉ 𝐄𝐬𝐭𝐚𝐝𝐨: *{}*", viewer.status),
             format!("✧☽︎╩[ ♧ 𝐒𝐨𝐜𝐤𝐞𝐭: *{}*", viewer.socket),
             String::new(),
-            "╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀".to_owned(),
         ]);
+        lines.extend(telemetry.public_classic());
+        if viewer.socket_owner {
+            lines.extend(telemetry.private_classic());
+        }
+        lines.push(String::new());
+        lines.push("╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀".to_owned());
         // WhatsApp quotes distinguish operational notes from ornamental lines.
         // Keep every line short for narrow Android screens.
         for instruction in [
@@ -636,6 +643,11 @@ pub fn render_root_with_viewer(options: Preferences, viewer: MenuViewer<'_>) -> 
         lines.push(format!("Rango: {}", viewer.role));
         lines.push(format!("Estado: {}", viewer.status));
         lines.push(format!("Socket: {}", viewer.socket));
+        lines.push(String::new());
+        lines.extend(telemetry.public_plain());
+        if viewer.socket_owner {
+            lines.extend(telemetry.private_plain());
+        }
         lines.push(String::new());
         lines.push("Instrucciones:".to_owned());
         lines.push("status incluso con bot OFF.".to_owned());
