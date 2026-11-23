@@ -399,7 +399,7 @@ pub fn render_root(options: Preferences, viewer: MenuViewer<'_>) -> Result<Strin
     v.insert(
         "OwnerBlock",
         if viewer.socket_owner && options.style == Style::Classic {
-            Theme::layout(options.style, "owner")?.trim_end().to_owned()
+            format!("{}\n\n", Theme::layout(options.style, "owner")?.trim_end())
         } else {
             String::new()
         },
@@ -407,9 +407,10 @@ pub fn render_root(options: Preferences, viewer: MenuViewer<'_>) -> Result<Strin
     v.insert(
         "SystemBlock",
         if viewer.socket_owner {
-            fill(Theme::layout(options.style, "system")?, &v)?
-                .trim_end()
-                .to_owned()
+            format!(
+                "{}\n\n",
+                fill(Theme::layout(options.style, "system")?, &v)?.trim_end()
+            )
         } else {
             String::new()
         },

@@ -2,11 +2,12 @@
 
 💬 @Title
 
-╭─💠 @CategoriesTitle
+╭─ 💠 @CategoriesTitle
 @CategoryRows
-╰─╮╭────────⟨🌀
+╰─╮╭────────⟨ 🌀
        ││
-@OwnerBlock
+@Information
+
 ✧☽︎╦[ @LabelUser: *@User* 🌀 ]═☾︎✧
      ╠[ ◈ @LabelBot: *@Bot*
      ╠[ ✦ @LabelPrefix: *[ @Prefix ]*
@@ -16,9 +17,7 @@
      ╠[ ◉ @LabelStatus: *@Status*
 ✧☽︎╩[ ♧ @LabelSocket: *@Socket*
 
-@Information
-@SystemBlock
-╭─💠 @InstructionsTitle
+@OwnerBlock@SystemBlock╭─ 💠 @InstructionsTitle
 @Instructions
 ╰───────────⟨ 🌀
 

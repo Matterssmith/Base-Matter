@@ -10,7 +10,7 @@ fn live_menu_registry_builds_categories_with_project_info_without_footer_credits
     let root = control.render(None, "menu").unwrap();
     assert!(root.starts_with("*꒦꒷✰꒷꒦︶"));
     assert!(root.contains("│·♪·╠[ *ⴵ ·· 𝙸𝙰* `[menu ia]`"));
-    assert!(root.contains("╰─╮╭────────⟨🌀"));
+    assert!(root.contains("╰─╮╭────────⟨ 🌀"));
     assert!(root.contains("menu config"));
     assert!(root.contains("menu anti"));
     assert!(root.contains("menu mode"));
@@ -172,8 +172,8 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     let classic = menu::render_root_with_viewer(Preferences::default(), context).unwrap();
     assert!(classic.starts_with("*꒦꒷✰꒷꒦︶"));
     assert!(classic.contains("💬 𝗦𝗶𝘀𝘁𝗲𝗺𝗮 𝗱𝗲 𝗖𝗼𝗻𝘁𝗿𝗼𝗹 𝗚𝗹𝗼𝗯𝗮𝗹"));
-    assert!(classic.contains("╭─💠 Control del socket"));
-    assert!(classic.contains("╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀"));
+    assert!(classic.contains("╭─ 💠 Control del socket"));
+    assert!(classic.contains("╭─ 💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀"));
     assert!(classic.contains("𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝗰𝗶ó𝗻 𝗠𝗮𝘁𝘁𝗲𝗿"));
     assert!(classic.contains(&format!("Versión Base: {}", env!("CARGO_PKG_VERSION"))));
     assert!(classic.contains("Prefijo: =/>"));
@@ -183,7 +183,7 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     assert!(classic.contains("Propietario: Lou-Nyx"));
     assert!(classic.contains("URL: No verificado"));
     let quoted_instructions = classic
-        .split_once("╭─💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀")
+        .split_once("╭─ 💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀")
         .unwrap()
         .1
         .split_once("╰───────────⟨ 🌀")
@@ -246,12 +246,28 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
         },
     )
     .unwrap();
-    assert!(!public.contains("╭─💠 Control del socket"));
+    assert!(!public.contains("╭─ 💠 Control del socket"));
     assert!(!public.contains("test-socket"));
     assert!(public.contains("Fecha:"));
     assert!(public.contains(&format!("Comandos: {}", menu::command_count())));
     assert!(!public.contains("RAM del servidor:"));
     assert!(!public.contains("RAM del controlador:"));
+    // El diseño público replica la jerarquía y los espacios del menú aprobado.
+    let categories = public.find("╭─ 💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀").unwrap();
+    let information = public.find("╭─ 💠 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝗰𝗶ó𝗻 𝗠𝗮𝘁𝘁𝗲𝗿").unwrap();
+    let user = public.find("✧☽︎╦[ Usuario: *@usuario* 🌀 ]═☾︎✧").unwrap();
+    let instructions = public.find("╭─ 💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀").unwrap();
+    assert!(categories < information && information < user && user < instructions);
+    assert!(public.contains("╰─╮╭────────⟨ 🌀\n       ││\n╭─ 💠 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝗰𝗶ó𝗻 𝗠𝗮𝘁𝘁𝗲𝗿"));
+    assert!(public.contains("╰───────────⟨ 🌀\n\n✧☽︎╦[ Usuario:"));
+    assert!(public.contains("✧☽︎╩[ ♧ Socket: *Privado*\n\n╭─ 💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀"));
+    assert!(!public.contains("\n\n\n"));
+    // Para propietarios verificados, los bloques privados permanecen visibles.
+    let owner_block = classic.find("╭─ 💠 Control del socket").unwrap();
+    let system_block = classic.find("╭─ 💠 𝗦𝗶𝘀𝘁𝗲𝗺𝗮 · 𝗛𝗼𝘀𝘁").unwrap();
+    let private_instructions = classic.find("╭─ 💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀").unwrap();
+    assert!(owner_block < system_block && system_block < private_instructions);
+    assert!(!classic.contains("\n\n\n"));
 }
 
 #[test]

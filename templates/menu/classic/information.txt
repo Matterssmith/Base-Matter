@@ -1,4 +1,4 @@
-╭─💠 @InformationTitle
+╭─ 💠 @InformationTitle
 │ @LabelBot: @Bot
 │ @LabelVersion: @Version
 │ @LabelProject: @Project

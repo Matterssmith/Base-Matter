@@ -1,5 +1,9 @@
 # Motor de plantillas de menú Matter — contrato oficial
 
+## 2026-11-23 — Orden exacto del menú clásico
+
+La vista clásica pública conserva obligatoriamente: (1) título + Categorías, (2) Información Matter inmediatamente después del conector «││», (3) ficha del usuario y socket, (4) Instrucciones. Los tres encabezados usan «╭─ 💠» (espacio U+0020 antes de 💠); el cierre de categorías usa «╰─╮╭────────⟨ 🌀» (espacio antes de 🌀). Hay una línea vacía entre Información Matter y la ficha de usuario, y otra entre la ficha y las Instrucciones, sin líneas triples. El propietario autenticado conserva sus bloques adicionales entre la ficha y las Instrucciones; los visitantes públicos nunca los reciben. No fijar datos dinámicos en la plantilla ni cambiar style none.
+
 Estado: implementación en Base-Matter/alpha, sin despliegue de binarios. La fuente de verdad de las vistas dinámicas es templates/menu/, no el diseño copiado de un tercero ni cadenas decorativas dentro de src/menu.rs.
 
 ## Arquitectura: equivalente conceptual de HTML + estilos + datos

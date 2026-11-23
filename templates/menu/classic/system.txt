@@ -1,4 +1,4 @@
-╭─💠 @SystemTitle
+╭─ 💠 @SystemTitle
 │ @LabelHost: @Host
 │ @LabelOS: @OS
 │ @LabelUptime: @Uptime

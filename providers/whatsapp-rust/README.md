@@ -1,3 +1,14 @@
+## 2026-11-23 — Orden y espacios del menú clásico de control global
+
+- Orden aprobado de la vista clásica pública: Categorías → Información Matter → ficha de Usuario → Instrucciones, conservando el marco ornamental y la identidad Matter.
+- Espaciado literal verificado: encabezados con «╭─ 💠», cierre de categorías con «⟨ 🌀», sin línea vacía entre el conector «││» y la información; una línea vacía entre información/ficha de usuario y entre ficha/instrucciones. Sin triples saltos de línea.
+- Los bloques exclusivos del propietario verificado («Control del socket» y «Sistema · Host») continúan disponibles después de la ficha; no se revelan al público. No se cambian permisos, sesiones ni lógica de comandos.
+- Los campos dinámicos se conservan (fecha, versión, cantidades y datos del usuario). Se actualizan las plantillas, el formateo de los bloques opcionales y las aserciones de tests/menu_catalog.rs. Cambios solo en alpha; CI y prueba real en WhatsApp pendientes.
+- Revisión documental de ambos README, docs/DEVELOPMENT_STATUS.md, docs/WORK_CONTINUITY.md y docs/MENU_TEMPLATE_ENGINE.md.
+
+Créditos:
+Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Control del ingreso WhatsApp: rechazo estricto de variantes de lectura
 
 El CI del SHA cec5997 reportó 17/18 pruebas del proveedor correctas y fallo en incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority. Causa: el fallback genérico de signed_public_readonly admitía variantes rechazadas por el catálogo (por ejemplo =/>menu unset, =/>status --debug, =/>test run). Se limita ese fallback a verbos con potencial de mutación que el controlador y Vault autentican; todas las rutas de menú, estado, ayuda, prueba visual, Vault y crédito usan patrones explícitos de admisión. Se conserva verificación de remitente, HMAC, alcance de socket y ausencia de privilegios automáticos para terceros. Prueba real de vinculación no realizada, nuevo CI pendiente. No tocar sesiones, bases SQLite ni servicios idkbot. README revisados (2/2).
