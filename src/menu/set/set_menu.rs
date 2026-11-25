@@ -10,6 +10,7 @@ pub const COMMAND: CommandSpec = CommandSpec {
         "set menu",
         "set menu web",
         "set menu classic",
+        "set menu buttons",
     ],
     implemented: true,
 };
