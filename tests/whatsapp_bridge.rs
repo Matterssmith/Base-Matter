@@ -443,6 +443,28 @@ fn test_command_responds_in_owner_private_and_verified_group() {
     let mut group = frame("visual-owner-group", "=/>test");
     group.chat_jid = "12036312345@g.us".into();
     sign(&mut group, &SECRET);
+
+    // A valid owner signature alone does not turn on an inactive group.
+    // The actual group must first be enabled through the regular owner
+    // control, and every request (including visual diagnostics) is gated.
+    assert_eq!(
+        bridge.ingest(&group).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
+    );
+    let mut activate_group = frame("visual-enable-group", "=/>bot on");
+    activate_group.chat_jid = group.chat_jid.clone();
+    sign(&mut activate_group, &SECRET);
+    assert!(matches!(
+        bridge.ingest(&activate_group).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
+            scope,
+            policy: Some(true),
+        }) if scope == "current"
+    ));
+    // Use a fresh signed WhatsApp message ID: the inactive request has
+    // already been replay-claimed, and must never run twice.
+    group.message_id = "visual-owner-group-enabled".into();
+    sign(&mut group, &SECRET);
     assert!(matches!(
         bridge.ingest(&group).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
@@ -467,7 +489,34 @@ fn test_command_responds_in_owner_private_and_verified_group() {
     group.message_id = "visual-owner-html".into();
     group.text = "=/>test html".into();
     sign(&mut group, &SECRET);
-    assert!(bridge.ingest(&group).is_err());
+    assert!(matches!(
+        bridge.ingest(&group).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
+            command,
+            ..
+        }) if command == "test"
+    ));
+    // Replays stay blocked even for the owner and even for HTML.
+    assert_eq!(
+        bridge.ingest(&group).unwrap(),
+        WhatsAppBridgeOutcome::Duplicate
+    );
+    let mut disable_group = frame("visual-disable-group", "=/>bot off");
+    disable_group.chat_jid = group.chat_jid.clone();
+    sign(&mut disable_group, &SECRET);
+    assert!(matches!(
+        bridge.ingest(&disable_group).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
+            policy: Some(false),
+            ..
+        })
+    ));
+    group.message_id = "visual-owner-html-disabled".into();
+    sign(&mut group, &SECRET);
+    assert_eq!(
+        bridge.ingest(&group).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
+    );
 }
 
 #[test]
