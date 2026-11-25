@@ -1,5 +1,22 @@
 # Menú Matter desplegable para WhatsApp — alpha
 
+## 2026-11-24 — Prueba de todas las interfaces sin desactivar HTML
+
+Aclaración del propietario: desea mantener **HTML RichResponse y NativeFlow habilitados** mientras se diagnostican las respuestas intermitentes. Los valores recomendados para probar simultáneamente son:
+
+- `MATTER_WA_RICH_HTML=1`: habilita transporte experimental `AIRichResponseMessage`, incluida la prueba explícita `=/>test html`.
+- `MATTER_WA_HTML_AUTOSEND=1`: permite enviar la tarjeta HTML junto al menú raíz `=/>menu`, **solo en chat privado de propietario autenticado**; el menú nativo sigue saliendo como segunda tarjeta y el texto clásico sigue accesible.
+- `MATTER_WA_NATIVE_BUTTONS=1`: mantiene los botones «Ver más» y «Menú clásico» y los experimentos `=/>test ui`.
+- `MATTER_WA_DIAG=1`: logs de recepción/validación/transporte sin IDs, números ni secretos.
+- El experimento de estrés `MATTER_WA_MENU_LAB=1` adicional envía varias tarjetas de prueba TS18/TS19 y audio **en cada** `=/>menu` de chat privado, por lo que no debe confundirse con habilitar HTML: dejarlo sin activar durante pruebas de recepción de `status`, y usar `=/>test html`, `=/>test ui`, `=/>test row` para ejercitar los formatos sin tráfico repetido.
+
+Se añadieron timeouts de ocho segundos a los envíos del laboratorio HTML/NativeFlow/ButtonsRow/audio en `providers/whatsapp-rust/src/main.rs`, además de los ya presentes en menú y respuestas. Si el HTML automático ya fue enviado, el laboratorio evita repetirlo. Sigue pendiente compilar y probar en `idkbot` y verificar que el cliente real represente HTML.
+
+**Advertencia:** el éxito de la compilación/protobuf o del envío no demuestra que WhatsApp dibuje el contenido HTML, ni que `status` tenga confiabilidad restaurada. Mantener la sesión existente y el Vault sin cambios.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+
 ## 2026-11-24 — Diagnóstico de estado WhatsApp: un comando y luego silencio
 
 Incidente comunicado por el propietario en `idkbot`: tras actualizar `wa-alpha`, el proveedor sigue conectado, pero `=/>status` responde una vez y los comandos posteriores pueden quedar sin respuesta, sin error visible. **Causa no demostrada en un dispositivo todavía**.
