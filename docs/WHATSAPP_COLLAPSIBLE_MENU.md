@@ -1,3 +1,13 @@
+## 2026-11-24 — Corrección de flags visuales en el lanzador alfa
+
+Se identificó que `scripts/whatsapp-alpha-existing.sh` ejecutaba `source runtime.env` después de recibir las variables de entorno para HTML y botones. Si el archivo privado tenía opciones anteriores, podía sustituir silenciosamente `MATTER_WA_RICH_HTML=1`, `MATTER_WA_HTML_AUTOSEND=1` o `MATTER_WA_NATIVE_BUTTONS=1`. Ahora solo se preservan **valores explícitos 0/1** de estas cinco variables de presentación: `MATTER_WA_RICH_HTML`, `MATTER_WA_HTML_AUTOSEND`, `MATTER_WA_NATIVE_BUTTONS`, `MATTER_WA_DIAG` y `MATTER_WA_MENU_LAB`. No se permite sobrescribir claves, identificadores, sesiones, puente IPC, ni configuración de Vault.
+
+La salida de `--check` muestra `ALPHA_UI_HTML`, `ALPHA_UI_NATIVE_BUTTONS`, `ALPHA_UI_DIAG` y `ALPHA_HTML_CLIENT_RENDER=UNVERIFIED` sin secretos. Un `ALPHA_UI_HTML=1` demuestra que el binario recibió el permiso para intentar el envío, **no** que Android lo renderice.
+
+Comprobar antes del reinicio: `bash -n scripts/whatsapp-alpha-existing.sh`, `--check` con los binarios nuevos, y solo entonces `--resume-only` tras detener únicamente la instancia anterior. Mantener intactos Vault y las bases de datos alfa.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 # Menú Matter desplegable para WhatsApp — alpha
 
 ## 2026-11-24 — Tres menús: web (predeterminado), classic y buttons
