@@ -955,7 +955,18 @@ async fn main() -> Result<()> {
                                 if let Ok(message) = experimental_self_chat_rich_message(&response)
                                 {
                                     match timeout(Duration::from_secs(8), ctx.send_message(message)).await {
-                                        Ok(Ok(_)) => return,
+                                        Ok(Ok(_)) => {
+                                            // A successful WhatsApp send is not proof that
+                                            // Android rendered the experimental HTML.
+                                            // Only this explicit owner-only test receives
+                                            // an extra diagnostic text confirmation.
+                                            println!("Base-Matter: Rich HTML test submitted; client rendering unverified");
+                                            let _ = timeout(
+                                                Duration::from_secs(8),
+                                                ctx.reply("Matter HTML: envío aceptado por el proveedor. Confirma si ves la tarjeta HTML; WhatsApp puede ocultarla."),
+                                            ).await;
+                                            return;
+                                        }
                                         Ok(Err(_)) => eprintln!("Base-Matter: HTML test send rejected"),
                                         Err(_) => eprintln!("Base-Matter: HTML test send timed out"),
                                     }
