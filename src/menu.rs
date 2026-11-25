@@ -685,6 +685,9 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
     match section.trim() {
         "menu" | "menú" => return concise_menu(options),
         "menu all" | "menú all" => return verbose_menu(options),
+        // The original category overview, independent from the interactive
+        // root and distinct from the verbose "menu all" command.
+        "menu classic" | "menú classic" => return concise_menu(options),
         "menu page 1" | "menu page 2" | "menu page 3" => return concise_menu(options),
         _ => {}
     }
