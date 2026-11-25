@@ -1205,7 +1205,7 @@ impl ControlDispatcher {
                 ["set", "--global"] => {
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
-                        output: "Predeterminado general del menú (fábrica, sin configuración Vault): menú web; estilo classic; idioma es.".to_owned(),
+                        output: "Predeterminado general del menú (fábrica, sin configuración Vault): menú web; alternativas classic y buttons; estilo classic; idioma es.".to_owned(),
                     });
                 }
                 ["set", "menu"] | ["set", "menu", "--mod"]
@@ -1221,7 +1221,7 @@ impl ControlDispatcher {
                         .ok_or_else(|| anyhow!("Menu preferences are unavailable"))?;
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
-                        output: format!("Menú predeterminado: {} (web|classic).", themes.current_menu_mode()?.as_str()),
+                        output: format!("Menú predeterminado: {} (web|classic|buttons).", themes.current_menu_mode()?.as_str()),
                     });
                 }
                 ["set", "menu", value]
