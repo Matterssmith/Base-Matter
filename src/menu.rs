@@ -788,6 +788,7 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
         // The web mode is a transport choice. A native/HTML-capable provider
         // renders it; the controller supplies a safe textual fallback.
         "menu web" | "menú web" => return concise_menu(options),
+        "menu buttons" | "menú buttons" => return concise_menu(options),
         // The original category overview, independent from the interactive
         // root and distinct from the verbose "menu all" command.
         "menu classic" | "menú classic" => return concise_menu(options),
@@ -987,6 +988,7 @@ mod tests {
         let options = Preferences::default();
         let original = render("menu", options).unwrap();
         assert_eq!(render("menu web", options).unwrap(), original);
+        assert_eq!(render("menu buttons", options).unwrap(), original);
         assert_eq!(render("menu classic", options).unwrap(), original);
         assert_ne!(render("menu all", options).unwrap(), original);
         assert!(render("menu unknown", options).is_err());
