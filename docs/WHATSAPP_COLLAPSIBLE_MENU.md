@@ -1,3 +1,15 @@
+## 2026-11-24 — Un solo mensaje por menú, selector final y fallback web visible
+
+**Cambio solicitado:** eliminar los botones rápidos duplicados de cambio de menú y el envío por separado de las tarjetas `menu buttons`. Todos los modos `=/>menu`, `=/>menu classic`, `=/>menu web`, `=/>menu buttons` y las categorías ahora envían **una sola tarjeta NativeFlow** con el contenido en el cuerpo y exactamente **un botón al final: «Seleccionar categoría»**. Su lista separa «Categorías» de «Otros menús», donde figuran `Menu Classic`, `Menu Web` y `Menu Buttons`. Los ID reales continúan limitados al mapeo `readonly_button_command` y pasan por autorización firmada; seleccionar una opción no concede privilegios.
+
+La lista de WhatsApp tiene hasta diez filas por tarjeta. Para las diez categorías implementadas, la primera página incluye seis categorías, «Más categorías» y los tres formatos; la segunda, las cuatro categorías restantes, «Anterior» y los tres formatos. Cada selección genera la respuesta del menú elegido en su propio **único** mensaje; ya no se producen cuatro tarjetas para un solo `menu buttons`. El selector permanece al final en ambas páginas y todos los submenús. Se eliminó también el laboratorio automático de menú, que creaba mensajes adicionales y audio en `menu`; los comandos `=/>test ui`, `=/>test row` y `=/>test html` siguen separados.
+
+**HTML experimental:** se identificó que el antiguo menú `web` enviaba un `AIRichResponseMessage` opcional y a continuación un NativeFlow cuyo cuerpo era solo U+200B, con resultado aparentemente vacío cuando el cliente no representaba el rich HTML. El nuevo menú `web` usa una **única tarjeta nativa con cuerpo visible en WhatsApp**, tema textual Matter y el selector final. El HTML real `GenAIaeacdsnwHtmlPrimitive` queda disponible únicamente para diagnóstico explícito con `=/>test html`, sin enviar tarjetas ocultas ni adicionales durante `menu web`. **Esto es un respaldo visible, no HTML renderizado.** No atribuir compatibilidad visual a una confirmación de envío. Si el usuario necesita HTML real, deberá abrirse en un navegador/webview autorizado y desplegado, no asumir que WhatsApp admite contenido HTML arbitrario.
+
+Los mensajes de consola `Base-Matter DIAG: buttons category card 1 sent` hasta `card 4 sent` provienen del **binario anterior todavía en ejecución** y desaparecerán una vez compilada, verificada y reanudada la nueva versión. Mantener Vault y la sesión sin cambios y pasar por `cargo run` protegido al actualizar. No reiniciar antes de aprobar las suites de núcleo y proveedor.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-24 — Pruebas visuales en grupos y `cargo run` verificado
 
 ### Pruebas en grupos, sin saltarse la identidad ni el permiso del chat
