@@ -82,7 +82,7 @@ small{{display:block;margin:15px 0;color:#a5b8d8}}
 pub fn menu_inline_html(menu: &str) -> Result<String> {
     if menu.is_empty()
         || menu.len() > MAX_TEXT_BYTES
-        || menu.chars().any(|c| c.is_control() && c != '\\n')
+        || menu.chars().any(|c| c.is_control() && c != '\n')
     {
         bail!("Invalid menu for inline HTML");
     }
@@ -93,7 +93,7 @@ pub fn menu_inline_html(menu: &str) -> Result<String> {
             '<' => escaped.push_str("&lt;"),
             '>' => escaped.push_str("&gt;"),
             '"' => escaped.push_str("&quot;"),
-            '\\'' => escaped.push_str("&#39;"),
+            '\'' => escaped.push_str("&#39;"),
             _ => escaped.push(ch),
         }
     }
