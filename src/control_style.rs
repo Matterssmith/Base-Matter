@@ -4,7 +4,7 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
-use crate::menu::{Language, MenuPreferences, MenuViewer, Style};
+use crate::menu::{Language, MenuMode, MenuPreferences, MenuViewer, Style};
 use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -155,6 +155,20 @@ impl ControlThemes {
             .as_ref()
             .ok_or_else(|| anyhow!("Dynamic menu not configured"))?
             .get()
+    }
+
+    pub fn current_menu_mode(&self) -> Result<MenuMode> {
+        self.dynamic_menu
+            .as_ref()
+            .ok_or_else(|| anyhow!("Dynamic menu not configured"))?
+            .get_mode()
+    }
+
+    pub fn set_menu_mode(&self, value: &str) -> Result<()> {
+        self.dynamic_menu
+            .as_ref()
+            .ok_or_else(|| anyhow!("Dynamic menu not configured"))?
+            .set_mode(MenuMode::parse(value)?)
     }
 
     pub fn set_menu_style(&self, value: &str) -> Result<()> {
