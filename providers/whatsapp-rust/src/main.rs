@@ -938,11 +938,18 @@ async fn main() -> Result<()> {
                                 || actual_command.starts_with("=/>menu ")
                                 || actual_command.starts_with("=/>menú ");
                             let is_root = matches!(actual_command, "=/>menu" | "=/>menú");
+                            // "Menú clásico" must reveal the complete original control
+                            // response as normal WhatsApp text, without another selector.
+                            let is_classic = matches!(actual_command, "=/>menu all" | "=/>menú all");
                             // Help is text-only. A help reply must not display a category selector.
                             // A verified =/>menu may deliver the experimental in-chat HTML card.
                             // The native selector is ALSO sent so category taps still map to
                             // authenticated, real read-only commands rather than inert HTML.
-                            let mut sent = false;
+                            let mut sent = if is_classic {
+                                ctx.reply(&response).await.is_ok()
+                            } else {
+                                false
+                            };
                             if rich_html_trial && is_root {
                                 match experimental_self_chat_rich_message(&response) {
                                     Ok(html) => {
@@ -956,7 +963,7 @@ async fn main() -> Result<()> {
                                     Err(_) => eprintln!("Base-Matter: Rich HTML menu unavailable; native/text fallback"),
                                 }
                             }
-                            if native_buttons && is_menu {
+                            if native_buttons && is_menu && !is_classic {
                                 let native_sent = match native_navigation_message(&response, actual_command) {
                                     Ok(interactive) => ctx.send_message(interactive).await.is_ok(),
                                     Err(_) => false,
