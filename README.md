@@ -1,3 +1,13 @@
+## 2026-11-24 — Reparación de regresión control_ipc en idkbot
+
+La prueba `local_tcp_loopback_roundtrip_rejects_replay_before_second_effect` falló porque esperaba el prefijo literal `╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹`, mientras la plantilla oficial `templates/matterssmith-control.txt` contiene `╭─ 💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹` (espacio intencional). La prueba de integración ahora importa la plantilla real con `include_str!`, divide por `{{BODY}}` y verifica prefijo, sufijo, contenido y saltos de línea sin asumir un espaciado duplicado. No se cambiaron la lógica de producción, la autenticación ni Vault por este error.
+
+Corrección publicada en `Base-Matter/alpha`: commit `2962d25f8574a1e45b1088f03b3f335a70baba97` (o SHA posterior si hubo más commits). Validación pendiente de `cargo test --test control_ipc` en `idkbot`; no afirmar pruebas verdes antes de ejecutar.
+
+Comando local: `cd /home/Sakura/Matter-Ecosystem/Base-Matter && git fetch origin alpha && git merge --ff-only origin/alpha && CARGO_BUILD_JOBS=2 cargo test --test control_ipc`.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-24 — Preferencia del menú WhatsApp: web por defecto
 
 En `Base-Matter/alpha` se agregaron `=/>menu web`, `=/>menu classic`, `=/>set menu`, `=/>set menu web` y `=/>set menu classic`. La preferencia `web|classic` se guarda en el SQLite privado de menús del controlador (predeterminado **web**), se migra desde esquemas existentes sin alterar el idioma/estilo, y se comunica al proveedor como metadato de una respuesta IPC previamente autenticada para `=/>menu`. En el modo web se intenta HTML experimental en chat propio cuando `MATTER_WA_RICH_HTML=1`, junto con el respaldo NativeFlow: categorías y botón «Menú clásico», sin cuerpo visible. El modo clásico devuelve el antiguo menú de texto. `menu all` conserva su catálogo completo.
