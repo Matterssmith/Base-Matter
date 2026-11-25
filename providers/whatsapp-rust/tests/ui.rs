@@ -63,17 +63,26 @@ fn menu_has_exactly_one_categories_selector() {
     let original = include_str!("../../../templates/matterssmith-menu.txt").trim_end();
     let message = native_menu_message(original).unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
-    assert_eq!(
-        interactive.body.as_option().unwrap().text.as_deref(),
-        Some(original)
-    );
+    let body = interactive.body.as_option().unwrap().text.as_deref().unwrap();
+    assert!(body.contains("Menú interactivo"));
+    assert!(body.contains("Categorías"));
+    assert!(body.contains("Ver texto"));
+    assert!(!body.contains("=/>status --mod"));
+    assert!(!body.contains("*Base-Matter* · ✦"));
+    assert!(body.len() < 400);
     let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
         interactive.interactive_message.as_ref()
     else {
         panic!("Expected NativeFlow");
     };
-    assert_eq!(native.buttons.len(), 1);
+    assert_eq!(native.buttons.len(), 2);
     assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
+    assert_eq!(native.buttons[1].name.as_deref(), Some("quick_reply"));
+    let reveal: serde_json::Value =
+        serde_json::from_str(native.buttons[1].button_params_json.as_deref().unwrap()).unwrap();
+    assert_eq!(reveal["display_text"], "Ver texto");
+    assert_eq!(reveal["id"], "matter.read.menu.all");
+    assert_eq!(readonly_button_command(&native_click("matter.read.menu.all", "quick_reply")), Some("=/>menu all"));
     let categories: serde_json::Value =
         serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
     let rows = categories["sections"][0]["rows"].as_array().unwrap();
@@ -119,8 +128,13 @@ fn submenus_offer_only_active_categories_and_one_selector() {
         else {
             panic!("Expected single selector");
         };
-        assert_eq!(native.buttons.len(), 1);
+        assert_eq!(native.buttons.len(), if request == "=/>menu antis" { 1 } else { 2 });
         assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
+        if request == "=/>menu antis" {
+            assert_eq!(interactive.body.as_option().unwrap().text.as_deref(), Some("Protecciones"));
+        } else {
+            assert!(interactive.body.as_option().unwrap().text.as_deref().unwrap().contains("Menú interactivo"));
+        }
         if request == "=/>menu antis" {
             assert_eq!(
                 native.buttons[0].button_params_json,
@@ -139,6 +153,21 @@ fn submenus_offer_only_active_categories_and_one_selector() {
         }
     }
     assert!(native_navigation_message("Unsafe", "=/>set role owner").is_err());
+}
+
+#[test]
+fn explicit_menu_all_reveals_text_only_after_selection() {
+    let full = "*Menú completo*\\n=/>status\\n=/>menu anti";
+    let response = native_navigation_message(full, "=/>menu all").unwrap();
+    let interactive = response.interactive_message.as_option().unwrap();
+    assert_eq!(interactive.body.as_option().unwrap().text.as_deref(), Some(full));
+    let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
+        interactive.interactive_message.as_ref()
+    else {
+        panic!("Expected native menu");
+    };
+    assert_eq!(native.buttons.len(), 1);
+    assert_eq!(readonly_button_command(&native_click("matter.read.menu.all", "quick_reply")), Some("=/>menu all"));
 }
 
 #[test]
