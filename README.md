@@ -1,3 +1,11 @@
+## 2026-11-24 — Auditoría CI: enlaces del README del proveedor
+
+La última ejecución pasó formato, compilación, pruebas del núcleo, documentación, Clippy y registros de continuidad; la auditoría de enlaces detectó una ruta relativa incorrecta en `providers/whatsapp-rust/README.md`: `docs/ENGINE_EXTENSION_REFACTOR_PLAN.md` no se resuelve desde la carpeta del proveedor. Se corrigió a `../../docs/ENGINE_EXTENSION_REFACTOR_PLAN.md`, cuyo objetivo sí existe. Sin cambios de permisos, sesiones, Vault, conexión ni proveedor de WhatsApp. El menú sigue unificado en una sola tarjeta con el selector final y respaldo visible para `menu web`. CI de este commit pendiente.
+
+README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-24 — Un solo mensaje por menú, selector final y fallback web visible
 
 **Cambio solicitado:** eliminar los botones rápidos duplicados de cambio de menú y el envío por separado de las tarjetas `menu buttons`. Todos los modos `=/>menu`, `=/>menu classic`, `=/>menu web`, `=/>menu buttons` y las categorías ahora envían **una sola tarjeta NativeFlow** con el contenido en el cuerpo y exactamente **un botón al final: «Seleccionar categoría»**. Su lista separa «Categorías» de «Otros menús», donde figuran `Menu Classic`, `Menu Web` y `Menu Buttons`. Los ID reales continúan limitados al mapeo `readonly_button_command` y pasan por autorización firmada; seleccionar una opción no concede privilegios.
