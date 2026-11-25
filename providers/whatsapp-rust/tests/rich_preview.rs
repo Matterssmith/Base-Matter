@@ -61,7 +61,9 @@ fn inline_html_menu_has_clickable_collapsed_text_without_script() {
     assert!(!html.contains("<details open"));
     assert!(!html.contains("<script"));
     assert!(!html.contains("data:audio"));
-    assert!(menu_inline_html("<script>alert(1)</script>").unwrap().contains("&lt;script&gt;"));
+    assert!(menu_inline_html("<script>alert(1)</script>")
+        .unwrap()
+        .contains("&lt;script&gt;"));
 }
 
 #[test]
