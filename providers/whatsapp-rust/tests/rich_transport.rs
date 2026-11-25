@@ -49,7 +49,10 @@ fn rich_transport_wraps_original_owner_menu_without_fake_meta_ai_origin() {
     // Escaping ">" in user-visible command text is intentional and required.
     assert!(html.contains("=/&gt;status"));
     assert!(!html.contains("=/>status"));
-    assert_eq!(json["sections"][0]["view_model"]["primitive"]["__typename"], "GenAIaeacdsnwHtmlPrimitive");
+    assert_eq!(
+        json["sections"][0]["view_model"]["primitive"]["__typename"],
+        "GenAIaeacdsnwHtmlPrimitive"
+    );
     let wire = json.to_string();
     for marker in [
         "0@bot",
@@ -72,7 +75,13 @@ fn rich_transport_bounds_inputs_and_uses_fresh_message_ids() {
     let second = experimental_self_chat_rich_message(original_menu()).unwrap();
     let get_id = |message: whatsapp_rust::prelude::wa::Message| {
         let nested = message.bot_forwarded_message.as_option().unwrap();
-        let rich = nested.message.as_option().unwrap().rich_response_message.as_option().unwrap();
+        let rich = nested
+            .message
+            .as_option()
+            .unwrap()
+            .rich_response_message
+            .as_option()
+            .unwrap();
         let data = rich
             .unified_response
             .as_option()
