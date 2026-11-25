@@ -1014,7 +1014,8 @@ mod tests {
                     mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web','classic'))
                 );
                 INSERT INTO menu_preferences VALUES(1,'none','en','classic');",
-            ).unwrap();
+            )
+            .unwrap();
         }
         #[cfg(unix)]
         {
