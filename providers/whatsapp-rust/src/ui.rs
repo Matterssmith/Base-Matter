@@ -287,7 +287,7 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
         name: Some("single_select".to_owned()),
         button_params_json: Some(
             serde_json::json!({
-                "title": "Categorías",
+                "title": "Seleccionar categoría",
                 "sections": [{
                     "title": "Categorías",
                     "rows": rows
