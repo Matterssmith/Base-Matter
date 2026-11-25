@@ -1,5 +1,23 @@
 # Menú Matter desplegable para WhatsApp — alpha
 
+## 2026-11-24 — Corrección del menú observado en WhatsApp
+
+El propietario confirmó que `=/>menu` mostraba una tarjeta NativeFlow larga («Menú interactivo», «Categorías», «Ver texto», «Página 1/2») **sin HTML visible** en su cliente. Este comportamiento observado demuestra que el selector nativo sí se renderiza, pero **no** que el cliente haya renderizado `AIRichResponseMessage`.
+
+Nuevo comportamiento deseado e implementado en `alpha`:
+- `=/>menu`: tarjeta de dos líneas (identidad Matterssmith y «Menú») con **dos respuestas rápidas** del cliente: «Ver más» → `matter.read.menu.page.1` → `=/>menu page 1`, y «Menú clásico» → `matter.read.menu.all` → `=/>menu all`. No muestra páginas, listas ni textos instructivos en el mensaje inicial.
+- `=/>menu page 1/2`: selector nativo con categorías implementadas y opción «Menú clásico». Las páginas se muestran únicamente tras seleccionar «Ver más». Todas las acciones se traducen mediante la tabla allowlist autenticada; ninguna acción concederá permisos.
+- `=/>menu all`: ahora se envía **como texto convencional de WhatsApp** usando la respuesta completa del controlador `ControlThemes`, sin otro selector. El controlador mantiene el catálogo dinámico y el renderizado original.
+- Si `MATTER_WA_RICH_HTML=1`, la tarjeta experimental usa `rich_preview::original_menu()` para evitar rebasar el máximo de bytes con menús dinámicos extensos. El HTML emplea el tema de Matter Register y contiene `<details>` inicialmente cerrado. El envío RichResponse, aun aceptado, **no confirma representación en Android**; el envío nativo breve sigue como respaldo.
+- El color de las letras de botones no puede imponerse mediante el protocolo NativeFlow: lo decide el cliente de WhatsApp. Las etiquetas son «Ver más» y «Menú clásico», pero no se promete azul exacto.
+
+`whatsapp-rust 0.7.0` ofrece las estructuras protobuf `AIRichResponseMessage` y `botForwardedMessage`, y las pruebas del empaquetado habían pasado. Eso **no basta para afirmar compatibilidad visual del HTML**. Baileys/AIRich usa el mismo formato experimental y sus distintas implementaciones dependen de la versión y política del cliente; no se debe sustituir la sesión activa ni migrar SQLite por este único síntoma. Si `=/>test html` en chat propio no muestra una tarjeta (aunque el proveedor indique «send accepted»), registrar el resultado y probar un adaptador separado sin tocar `wa-alpha`.
+
+Verificación pendiente de esta revisión: `cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --test ui --test rich_preview --test rich_transport`, `cargo build --manifest-path providers/whatsapp-rust/Cargo.toml`, y prueba visual con la sesión existente. No se ha desplegado desde esta conversación.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+
 ## 2026-11-24 — Corrección tras ejecución real de pruebas en idkbot
 
 El propietario ejecutó `cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --test ui --test rich_preview --test rich_transport` sobre `alpha`. Se reportaron **dos fallos de assertions** en `--test rich_preview` (2 passed / 2 failed): `inline_html_menu_has_clickable_collapsed_text_without_script` buscaba `=/>status` literal y `sample_rich_screen_shape_is_offline_and_does_not_spoof_meta_ai` buscaba el título plano `Matterssmith · Menú`.
