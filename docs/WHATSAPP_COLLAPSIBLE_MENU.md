@@ -1,5 +1,16 @@
 # Menú Matter desplegable para WhatsApp — alpha
 
+## 2026-11-24 — Corrección tras ejecución real de pruebas en idkbot
+
+El propietario ejecutó `cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --test ui --test rich_preview --test rich_transport` sobre `alpha`. Se reportaron **dos fallos de assertions** en `--test rich_preview` (2 passed / 2 failed): `inline_html_menu_has_clickable_collapsed_text_without_script` buscaba `=/>status` literal y `sample_rich_screen_shape_is_offline_and_does_not_spoof_meta_ai` buscaba el título plano `Matterssmith · Menú`.
+
+Diagnóstico a partir del código y plantilla originales: el escapado HTML transforma `>` en `&gt;` dentro de `<pre>`, por lo que el HTML serializado contiene `=/&gt;status`, aunque el navegador lo visualiza como `=/>status`. La marca visible también está separada en `Matter<span>ssmith</span>` por el estilo de Matter Register. Se corrigieron **solo los assertions** correspondientes en `tests/rich_preview.rs` y `tests/rich_transport.rs`: exigen el comando escapado (rechazan el sin escapar) y la marca estilizada, conservando las validaciones de contenido, cierre `<details>`, seguridad y transporte.
+
+**Pendiente:** repetir las tres pruebas en `idkbot` después del `git pull --ff-only origin alpha`. No reportar éxito de CI, teléfono o binario por una corrección de tests no ejecutada. Mantener `Cargo.lock` local y el flujo de sesión `--resume-only` existente.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+
 ## 2026-11-24 — Tema del menú HTML basado en Matter Register
 
 El propietario pidió usar Matter Register como referencia visual directa. Se revisó `web/matter-register/app.js` desde la rama `feat/matter-register-web`: variables originales `--bg:#070b14`, `--a:#46e7ff`, `--b:#7386ff`, `--ink:#e8f8ff`, `--muted:#abc3d4`; paneles de vidrio oscuro, bordes luminosos, marca con símbolo ✦, partículas sutiles, chips y tratamiento de `prefers-reduced-motion`.
