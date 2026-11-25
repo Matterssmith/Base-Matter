@@ -1,5 +1,30 @@
 # Menú Matter desplegable para WhatsApp — alpha
 
+## 2026-11-24 — Tres menús: web (predeterminado), classic y buttons
+
+El propietario solicitó tres vistas del menú WhatsApp sin instrucciones visibles en la tarjeta principal:
+
+| Comando | Resultado |
+| --- | --- |
+| `=/>menu` | Modo guardado del socket (predeterminado `web`) |
+| `=/>menu web` | Intenta tarjeta HTML experimental en chat propio y envía controles nativos: «Seleccionar categoría», «Menú clásico», «Menu Buttons» |
+| `=/>menu classic` | Envía menú tradicional completo **en texto** y una tarjeta de controles «Seleccionar categoría», «Menú web», «Menu Buttons» |
+| `=/>menu buttons` | Envía primero una tarjeta con botones **Menu Classic** y **Menu Web**, además de «Seleccionar categoría»; después cuatro tarjetas de categorías con hasta tres botones reales cada una |
+| `=/>menu all` | Inventario tradicional completo más controles de navegación, sin alterar sus comandos |
+| `=/>set menu` | Consultar la preferencia actual; solo propietario autorizado, chat privado |
+| `=/>set menu web|classic|buttons` | Guardar la preferencia para las siguientes llamadas a `=/>menu`, manteniendo `web` como predeterminado de fábrica |
+
+Las categorías salen del manifiesto `templates/menu-visible-categories.json`: **únicamente las categorías implementadas**, con los mismos IDs autorizados por el controlador. Todos los controles de respuesta rápida siguen siendo solo lectura y llegan al dispatcher autenticado; **no** se crea un atajo de rol. La preferencia SQLite se migra de `CHECK('web','classic')` a `CHECK('web','classic','buttons')` transaccionalmente y preserva el estado anterior. El código de envío incorpora límites de espera y detiene las tarjetas adicionales en el primer fallo; la tarjeta principal de selección queda disponible para navegar incluso en ese caso.
+
+**Límite de WhatsApp:** los botones rápidos permiten normalmente hasta tres por mensaje, y las listas permiten hasta diez filas. Por eso el modo `buttons` no intenta meter diez botones en una sola tarjeta. En determinados clientes, `NativeFlow` puede aceptarse sin que el dispositivo dibuje controles; el resultado del envío no equivale a una confirmación de representación. La opción «Seleccionar categoría» permanece en todas las vistas.
+
+**HTML aún sin confirmación:** `=/>menu web` transporta `AIRichResponseMessage`/ `GenAIaeacdsnwHtmlPrimitive` experimental y solo en chat propio verificado con `MATTER_WA_RICH_HTML=1`. Según la investigación pública de implementaciones Baileys, ese primitivo depende del cliente Android y no tiene equivalencia garantizada en Web/Desktop/iOS. El proveedor no debe suplantar identidades de bots ni fabricar firmas de Meta AI para forzar su aparición. El HTML no puede considerarse funcional en el teléfono hasta que el usuario confirme que visualiza la tarjeta y pulsa su contenido. El comando `=/>test html` envía una confirmación de diagnóstico; `MATTER_WA_DIAG=1` deja registro de aceptación o rechazo del transporte, sin secretos.
+
+**Verificación necesaria antes de despliegue:** `cargo fmt --all -- --check` y `cargo fmt --manifest-path providers/whatsapp-rust/Cargo.toml --all -- --check`; `cargo test --lib menu::tests`; `cargo test --test control_ipc`; `cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --test provider --test ui --test rich_preview --test rich_transport` y compilación de ambos binarios. No detener Vault ni solicitar pairing.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+
 ## 2026-11-24 — Menú web predeterminado y elección persistente por propietario
 
 Nuevos comandos de WhatsApp en el controlador `Base-Matter/alpha`:
