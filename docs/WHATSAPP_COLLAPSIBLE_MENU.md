@@ -1,5 +1,30 @@
 # Menú Matter desplegable para WhatsApp — alpha
 
+## 2026-11-24 — Menú web predeterminado y elección persistente por propietario
+
+Nuevos comandos de WhatsApp en el controlador `Base-Matter/alpha`:
+
+| Comando | Función |
+| --- | --- |
+| `=/>menu` | Abre el modo predeterminado del socket; **web** en instalaciones nuevas |
+| `=/>menu web` | Solicita explícitamente HTML experimental `AIRichResponseMessage` (el selector de categorías y botón clásico permanecen como respaldo) |
+| `=/>menu classic` | Envía **el menú original de categorías en texto** |
+| `=/>menu all` | Envía el inventario completo de comandos en texto |
+| `=/>set menu` | Consulta el modo guardado; requiere chat privado y propietario autenticado |
+| `=/>set menu web` | Guarda `web` como predeterminado; requiere propietario autenticado |
+| `=/>set menu classic` | Guarda `classic` como predeterminado; requiere propietario autenticado |
+
+**Persistencia:** `src/menu.rs` extiende el SQLite privado de preferencias existente con la columna `mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web','classic'))`. Los archivos con esquema previo reciben una migración `ALTER TABLE`, preservando estilo `classic|none` e idioma `es|en` y los demás datos. El controlador expone `current_menu_mode` tras autorización, y únicamente para un `=/>menu` autenticado incluye el atributo `menu_mode` en su respuesta IPC. El proveedor valida exactamente `web|classic`; jamás utiliza texto escrito por terceros para escoger privilegios. `=/>set menu` es **configuración de transporte**, diferente de `=/>set style`.
+
+**Presentación:** en modo web, la tarjeta NativeFlow de respaldo tiene **cuerpo invisible**, sin instrucciones ni pie y muestra un selector de categorías (únicamente las implementadas) y una respuesta rápida `Menú clásico` mapeada a `=/>menu classic`. El menú HTML usa `<details>` cerrado con tema Matter Register. La visualización del HTML en Android **no está confirmada**: el envío protobuf correcto no obliga al cliente WhatsApp a representarlo. El envío enriquecido necesita `MATTER_WA_RICH_HTML=1` y, por seguridad, se limita por ahora al chat privado propio del propietario autenticado; otros chats siguen teniendo el selector nativo. `MATTER_WA_HTML_AUTOSEND=0` permite suspender solo el envío HTML automático para diagnóstico sin alterar la preferencia persistida. La consola mantiene `MATTER_WA_DIAG=1` opcional y límites de espera.
+
+**Estado:** cambios guardados en GitHub `alpha`. Compilación Rust, CI y representación real en `idkbot` siguen pendientes de ejecutar para esta revisión; no se modificó la sesión ni Vault. No intentar pairing ni crear una segunda sesión.
+
+Pruebas sugeridas después de compilar controlador y proveedor: `cargo test --lib menu::tests`, `cargo test --test control_ipc`, `cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --test provider --test ui --test rich_preview --test rich_transport` y las dos compilaciones; primero `=/>set menu`, `=/>set menu classic`, `=/>menu`, `=/>set menu web`, `=/>menu`, `=/>menu web`, `=/>menu classic`, `=/>test html`.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+
 ## 2026-11-24 — Prueba de todas las interfaces sin desactivar HTML
 
 Aclaración del propietario: desea mantener **HTML RichResponse y NativeFlow habilitados** mientras se diagnostican las respuestas intermitentes. Los valores recomendados para probar simultáneamente son:
