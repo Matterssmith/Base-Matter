@@ -576,8 +576,9 @@ async fn main() -> Result<()> {
         std::env::var("MATTER_WA_NATIVE_BUTTONS").as_deref(),
         Ok("0" | "off" | "false")
     );
-    // Unverified rich-HTML transport, explicitly enabled only for
-    // an authenticated owner's self-chat. No forged Meta AI envelope.
+    // Experimental in-chat HTML Rich UI: explicit operator opt-in, and only
+    // after controller authentication/authorization of =/>menu.
+    // No claims about phone rendering or Meta AI identity.
     let rich_html_trial = matches!(std::env::var("MATTER_WA_RICH_HTML").as_deref(), Ok("1"));
     let menu_lab = matches!(std::env::var("MATTER_WA_MENU_LAB").as_deref(), Ok("1"));
     require_local_controller(config.bridge_addr).await?;
@@ -938,14 +939,32 @@ async fn main() -> Result<()> {
                                 || actual_command.starts_with("=/>menú ");
                             let is_root = matches!(actual_command, "=/>menu" | "=/>menú");
                             // Help is text-only. A help reply must not display a category selector.
+                            // A verified =/>menu may deliver the experimental in-chat HTML card.
+                            // The native selector is ALSO sent so category taps still map to
+                            // authenticated, real read-only commands rather than inert HTML.
                             let mut sent = false;
+                            if rich_html_trial && is_root {
+                                match experimental_self_chat_rich_message(&response) {
+                                    Ok(html) => {
+                                        if ctx.send_message(html).await.is_ok() {
+                                            sent = true;
+                                            println!("Base-Matter: Rich HTML menu submitted; client rendering unverified");
+                                        } else {
+                                            eprintln!("Base-Matter: Rich HTML not accepted; native/text fallback");
+                                        }
+                                    }
+                                    Err(_) => eprintln!("Base-Matter: Rich HTML menu unavailable; native/text fallback"),
+                                }
+                            }
                             if native_buttons && is_menu {
-                                if let Ok(interactive) = native_navigation_message(&response, actual_command) {
-                                    sent = ctx.send_message(interactive).await.is_ok();
+                                let native_sent = match native_navigation_message(&response, actual_command) {
+                                    Ok(interactive) => ctx.send_message(interactive).await.is_ok(),
+                                    Err(_) => false,
+                                };
+                                if !native_sent {
+                                    eprintln!("Base-Matter: native selector unavailable");
                                 }
-                                if !sent {
-                                    eprintln!("Base-Matter: native selector unavailable; using text");
-                                }
+                                sent |= native_sent;
                             }
                             if !sent {
                                 sent = ctx.reply(&response).await.is_ok();
