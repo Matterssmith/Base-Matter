@@ -1,3 +1,13 @@
+## 2026-11-24 — Menú WhatsApp unificado: un mensaje y selector al final
+
+**Decisión:** cada vista (`=/>menu`, `=/>menu web`, `=/>menu classic`, `=/>menu buttons`, `=/>menu all` y categorías) responde con **un único NativeFlow**; elimina tarjetas extra, quick replies de cambio de formato y audio automático. Un solo botón «Seleccionar categoría» al final abre una lista de categorías implementadas y, en sección «Otros menús», `Menu Classic`, `Menu Web`, `Menu Buttons`; paginación 6+4 categorías para respetar las diez filas por lista. Los IDs son los mismos allowlist de lectura y cada selección conserva autorización del controlador y protección antirreproducción.
+
+**Corrección de visibilidad:** el modo web ya no utiliza cuerpo invisible U+200B ni envía automáticamente `AIRichResponseMessage`; muestra texto compatible en la misma tarjeta que contiene el selector. HTML arbitrario no está garantizado por WhatsApp y el único experimento explícito sigue siendo `=/>test html`. Un `send_message` aceptado no equivale a renderizado. Los cuatro logs anteriores `buttons category card X sent` indican que en `idkbot` sigue cargado el **binario viejo**, no esta revisión.
+
+**Despliegue:** rama `alpha`, sin tocar Vault ni sesiones. `cargo run` solo reanuda cuando formato, check, test, build y preflight pasen; no iniciar otra instancia. README revisados: 2/2. Pruebas CI de la última revisión pendientes de resultado final.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Arquitectura aprobada: Engine-Matter y Extension-Matter
 
 El propietario dispone que WhatsApp-Matter se renombre a **Engine-Matter** (núcleo de sistemas Matter sin soporte directo WhatsApp/Telegram/Discord) y Telegram-Matter se renombre a **Extension-Matter** (conectores externos WhatsApp/Telegram/Discord y futuras redes). Discord-Matter será retirado de forma controlada con respaldo. **Matter-MSEL/** tendrá su ubicación en Engine-Matter como integración del lenguaje oficial independiente MSEL. Social-Matter es sistema propio del motor; Bot-Matter sigue bloqueado. **Extensions-Matter** (plural) no es el nuevo Extension-Matter y continúa separado. Se conserva Base-Matter como biblioteca y contratos sin dependencias cíclicas.
