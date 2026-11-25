@@ -5,6 +5,7 @@ pub mod main_command;
 pub mod set_anti;
 pub mod set_antilink;
 pub mod set_lang;
+pub mod set_menu;
 pub mod set_role;
 pub mod set_style;
 
@@ -17,6 +18,7 @@ pub const CATEGORY: Category = Category {
         main_command::COMMAND,
         set_style::COMMAND,
         set_lang::COMMAND,
+        set_menu::COMMAND,
         set_role::COMMAND,
         set_anti::COMMAND,
     ],
