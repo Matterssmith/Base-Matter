@@ -769,6 +769,9 @@ async fn main() -> Result<()> {
                 // Edited messages may be inspected but must never trigger
                 // the normal control dispatcher as new executable commands.
                 if edit_state != "original" {
+                    if diagnostic_messages {
+                        println!("Base-Matter DIAG: edit or opaque message ignored for control");
+                    }
                     return;
                 }
                 let data = Event {
@@ -1065,8 +1068,14 @@ async fn main() -> Result<()> {
                         }
                         Ok(ControlAck::Duplicate) => {
                             println!("Base-Matter duplicate control ignored (no new effect)");
+                            if diagnostic_messages {
+                                println!("Base-Matter DIAG: controller replied duplicate");
+                            }
                         }
                         Ok(ControlAck::Ignored) => {
+                            if diagnostic_messages {
+                                println!("Base-Matter DIAG: controller ignored or chat disabled");
+                            }
                             // The bot is intentionally silent while disabled.
                             // Only no-argument =/>test and status explain why.
                             if frame.text.starts_with("=/>test") {
