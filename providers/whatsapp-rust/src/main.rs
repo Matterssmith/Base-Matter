@@ -583,10 +583,13 @@ async fn main() -> Result<()> {
     // after controller authentication/authorization of =/>menu.
     // No claims about phone rendering or Meta AI identity.
     let rich_html_trial = matches!(std::env::var("MATTER_WA_RICH_HTML").as_deref(), Ok("1"));
-    // Normal menus stay native/text until RichResponse is visually validated.
-    // This separate opt-in is restricted to the authenticated owner self-chat.
-    let rich_html_auto_send =
-        matches!(std::env::var("MATTER_WA_HTML_AUTOSEND").as_deref(), Ok("1"));
+    // Web is the default persisted preference, but the experimental transport
+    // still requires MATTER_WA_RICH_HTML=1. Operator may disable only automatic
+    // RichResponse with MATTER_WA_HTML_AUTOSEND=0 for diagnosis.
+    let rich_html_auto_send = !matches!(
+        std::env::var("MATTER_WA_HTML_AUTOSEND").as_deref(),
+        Ok("0" | "off" | "false")
+    );
     // Logs processing stages only, never message bodies, JIDs, IDs or secrets.
     let diagnostic_messages = matches!(std::env::var("MATTER_WA_DIAG").as_deref(), Ok("1"));
     let menu_lab = matches!(std::env::var("MATTER_WA_MENU_LAB").as_deref(), Ok("1"));
@@ -839,13 +842,26 @@ async fn main() -> Result<()> {
                 }
                 match verified {
                     Ok(Some(frame)) => match deliver(config.bridge_addr, &frame).await {
-                        Ok(ack @ (ControlAck::Applied | ControlAck::AppliedWithMessage(_))) => {
+                        Ok(ack @ (
+                            ControlAck::Applied
+                            | ControlAck::AppliedWithMessage(_)
+                            | ControlAck::AppliedWithMenuMode { .. }
+                        )) => {
                             println!("Base-Matter owner control applied");
                             // Only an authorized signed control may receive a
                             // response. External senders require independent
                             // Vault-global-owner authorization for mutations.
-                            let ipc_already_templated =
-                                matches!(&ack, ControlAck::AppliedWithMessage(_));
+                            let ipc_already_templated = matches!(
+                                &ack,
+                                ControlAck::AppliedWithMessage(_)
+                                    | ControlAck::AppliedWithMenuMode { .. }
+                            );
+                            // This value comes from a successful authenticated IPC reply,
+                            // never from user-authored WhatsApp text.
+                            let preferred_menu_mode = match &ack {
+                                ControlAck::AppliedWithMenuMode { mode, .. } => Some(mode.as_str()),
+                                _ => None,
+                            };
                             let debug_requested = frame.text.ends_with(" --debug");
                             let actual_command = frame.text
                                 .strip_suffix(" --debug")
@@ -885,6 +901,7 @@ async fn main() -> Result<()> {
                             } else {
                                 match ack {
                                     ControlAck::AppliedWithMessage(text) => text,
+                                    ControlAck::AppliedWithMenuMode { message, .. } => message,
                                     _ => "Base-Matter: solicitud procesada.".to_owned(),
                                 }
                             };
@@ -982,7 +999,10 @@ async fn main() -> Result<()> {
                             let is_classic = matches!(
                                 actual_command,
                                 "=/>menu all" | "=/>menú all" | "=/>menu classic" | "=/>menú classic"
-                            );
+                            ) || (is_root && preferred_menu_mode == Some("classic"));
+                            let is_web = matches!(
+                                actual_command, "=/>menu web" | "=/>menú web"
+                            ) || (is_root && preferred_menu_mode.unwrap_or("web") == "web");
                             // Help is text-only. A help reply must not display a category selector.
                             // A verified =/>menu may deliver the experimental in-chat HTML card.
                             // The native selector is ALSO sent so category taps still map to
@@ -1004,7 +1024,7 @@ async fn main() -> Result<()> {
                             };
                             if rich_html_trial
                                 && rich_html_auto_send
-                                && is_root
+                                && is_web
                                 && frame.from_me
                                 && !data.is_group
                                 && frame.chat_jid == config.owner_jid
@@ -1030,7 +1050,8 @@ async fn main() -> Result<()> {
                                 }
                             }
                             if native_buttons && is_menu && !is_classic {
-                                let native_sent = match native_navigation_message(&response, actual_command) {
+                                let navigation_request = if is_web { "=/>menu" } else { actual_command };
+                                let native_sent = match native_navigation_message(&response, navigation_request) {
                                     Ok(interactive) => match timeout(Duration::from_secs(8), ctx.send_message(interactive)).await {
                                         Ok(Ok(_)) => true,
                                         Ok(Err(_)) => {
