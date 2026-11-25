@@ -222,21 +222,18 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     };
     // Historical page IDs are still read-only aliases, not empty pages.
     let page = requested_page.min(pages);
-    // NativeFlow is the expandable surface. Keep the authenticated full menu
-    // as a fallback, but do not expose it until the user selects a category
-    // or explicitly requests =/>menu all. No HTML executes inside WhatsApp.
-    let collapsed_root = matches!(
+    // WhatsApp's own quick replies provide the user-requested compact root.
+    // Keep category pagination only after pressing "Ver más"; do not expose
+    // page numbers or the full command inventory in the root card.
+    let root_menu = matches!(request, "=/>menu" | "=/>menú");
+    let category_page = matches!(
         request,
-        "=/>menu"
-            | "=/>menú"
-            | "=/>menu page 1"
-            | "=/>menu page 2"
-            | "=/>menu page 3"
+        "=/>menu page 1" | "=/>menu page 2" | "=/>menu page 3"
     );
-    let body_text = if collapsed_root {
-        format!(
-            "꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡 ۞₪»̶⟩\n*Menú interactivo* · ✦\n\nToca *Categorías* para abrir una sección.\nPulsa *Ver texto* para mostrar todos los comandos.\n\nPágina {page}/{pages}"
-        )
+    let body_text = if root_menu {
+        "꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡 ۞₪»̶⟩\n*✦ Menú*".to_owned()
+    } else if category_page {
+        "✦ Matterssmith · Categorías".to_owned()
     } else {
         menu.to_owned()
     };
@@ -279,28 +276,39 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
             .to_string(),
         ),
     };
-    let mut buttons = vec![selector];
-    if collapsed_root {
-        // Button IDs are resolved by the existing authenticated, read-only
-        // control router. Never derive an executable command from UI text.
-        buttons.push(wa::message::interactive_message::native_flow_message::NativeFlowButton {
+    let quick_reply = |label: &str, id: &str| {
+        wa::message::interactive_message::native_flow_message::NativeFlowButton {
             name: Some("quick_reply".to_owned()),
             button_params_json: Some(
-                serde_json::json!({
-                    "display_text": "Ver texto",
-                    "id": "matter.read.menu.all"
-                })
-                .to_string(),
+                serde_json::json!({ "display_text": label, "id": id }).to_string(),
             ),
-        });
-    }
+        }
+    };
+    // Root: no category selector, no extra instructions, no hidden pages.
+    // The authenticated controller handles both selections as read-only.
+    let buttons = if root_menu {
+        vec![
+            quick_reply("Ver más", "matter.read.menu.page.1"),
+            quick_reply("Menú clásico", "matter.read.menu.all"),
+        ]
+    } else if category_page {
+        vec![selector, quick_reply("Menú clásico", "matter.read.menu.all")]
+    } else {
+        vec![selector]
+    };
     Ok(wa::Message {
         interactive_message: MessageField::some(wa::message::InteractiveMessage {
             body: MessageField::some(wa::message::interactive_message::Body {
                 text: Some(body_text),
             }),
             footer: MessageField::some(wa::message::interactive_message::Footer {
-                text: Some(format!("Control · Categorías {page}/{pages}")),
+                text: Some(if root_menu {
+                    "Matter Ecosystem".to_owned()
+                } else if category_page {
+                    "Selecciona una categoría".to_owned()
+                } else {
+                    "Matter Ecosystem".to_owned()
+                }),
                 ..Default::default()
             }),
             interactive_message: Some(
