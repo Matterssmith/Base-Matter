@@ -270,6 +270,27 @@ impl Default for Preferences {
         }
     }
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MenuMode {
+    Web,
+    Classic,
+}
+impl MenuMode {
+    pub fn parse(value: &str) -> Result<Self> {
+        match value {
+            "web" => Ok(Self::Web),
+            "classic" => Ok(Self::Classic),
+            _ => bail!("Available menu modes: web, classic"),
+        }
+    }
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Web => "web",
+            Self::Classic => "classic",
+        }
+    }
+}
+
 pub struct MenuPreferences {
     db: Mutex<Connection>,
 }
@@ -309,9 +330,29 @@ impl MenuPreferences {
             "CREATE TABLE IF NOT EXISTS menu_preferences(
                 singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
                 style TEXT NOT NULL CHECK(style IN ('classic', 'none')),
-                language TEXT NOT NULL CHECK(language IN ('es', 'en'))
+                language TEXT NOT NULL CHECK(language IN ('es', 'en')),
+                mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web', 'classic'))
             )",
         )?;
+        // SQLite CREATE TABLE IF NOT EXISTS does not migrate older stores.
+        // Preserve all existing style/language preferences and add only
+        // the requested mode with the new default when absent.
+        let mut has_mode = false;
+        {
+            let mut stmt = db.prepare("PRAGMA table_info(menu_preferences)")?;
+            let columns = stmt.query_map([], |row| row.get::<_, String>(1))?;
+            for column in columns {
+                if column? == "mode" {
+                    has_mode = true;
+                    break;
+                }
+            }
+        }
+        if !has_mode {
+            db.execute_batch(
+                "ALTER TABLE menu_preferences ADD COLUMN mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web', 'classic'))",
+            )?;
+        }
         Ok(Self { db: Mutex::new(db) })
     }
     pub fn get(&self) -> Result<Preferences> {
@@ -334,6 +375,38 @@ impl MenuPreferences {
             None => Ok(Preferences::default()),
         }
     }
+    pub fn get_mode(&self) -> Result<MenuMode> {
+        let db = self
+            .db
+            .lock()
+            .map_err(|_| anyhow!("Menu database locked"))?;
+        let stored: Option<String> = db
+            .query_row(
+                "SELECT mode FROM menu_preferences WHERE singleton = 1",
+                [],
+                |row| row.get(0),
+            )
+            .optional()?;
+        match stored {
+            Some(mode) => MenuMode::parse(&mode),
+            None => Ok(MenuMode::Web),
+        }
+    }
+
+    pub fn set_mode(&self, mode: MenuMode) -> Result<()> {
+        let db = self
+            .db
+            .lock()
+            .map_err(|_| anyhow!("Menu database locked"))?;
+        db.execute(
+            "INSERT INTO menu_preferences(singleton,style,language,mode)
+             VALUES(1,'classic','es',?1)
+             ON CONFLICT(singleton) DO UPDATE SET mode=excluded.mode",
+            params![mode.as_str()],
+        )?;
+        Ok(())
+    }
+
     pub fn set_style(&self, style: Style) -> Result<()> {
         let db = self
             .db
@@ -685,6 +758,9 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
     match section.trim() {
         "menu" | "menú" => return concise_menu(options),
         "menu all" | "menú all" => return verbose_menu(options),
+        // The web mode is a transport choice. A native/HTML-capable provider
+        // renders it; the controller supplies a safe textual fallback.
+        "menu web" | "menú web" => return concise_menu(options),
         // The original category overview, independent from the interactive
         // root and distinct from the verbose "menu all" command.
         "menu classic" | "menú classic" => return concise_menu(options),
@@ -857,6 +933,12 @@ mod tests {
     fn persisted_preferences_are_independent() {
         let store = MenuPreferences::open(":memory:").unwrap();
         assert_eq!(store.get().unwrap(), Preferences::default());
+        assert_eq!(store.get_mode().unwrap(), MenuMode::Web);
+        store.set_mode(MenuMode::Classic).unwrap();
+        assert_eq!(store.get_mode().unwrap(), MenuMode::Classic);
+        store.set_mode(MenuMode::Web).unwrap();
+        assert_eq!(store.get_mode().unwrap(), MenuMode::Web);
+        assert!(MenuMode::parse("html").is_err());
         store.set_style(Style::None).unwrap();
         store.set_language(Language::En).unwrap();
         assert_eq!(
@@ -868,5 +950,50 @@ mod tests {
         );
         store.set_style(Style::Classic).unwrap();
         assert_eq!(store.get().unwrap().language, Language::En);
+        assert_eq!(store.get_mode().unwrap(), MenuMode::Web);
+    }
+
+    #[test]
+    fn old_menu_sqlite_schema_is_migrated_without_losing_existing_options() {
+        let file = std::env::temp_dir().join(format!(
+            "matter-menu-migration-{}-{}.sqlite",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos(),
+        ));
+        {
+            let conn = Connection::open(&file).unwrap();
+            conn.execute_batch(
+                "CREATE TABLE menu_preferences(
+                   singleton INTEGER PRIMARY KEY CHECK(singleton=1),
+                   style TEXT NOT NULL CHECK(style IN ('classic','none')),
+                   language TEXT NOT NULL CHECK(language IN ('es','en'))
+                 );
+                 INSERT INTO menu_preferences VALUES(1,'none','en');",
+            )
+            .unwrap();
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        {
+            let prefs = MenuPreferences::open(&file).unwrap();
+            assert_eq!(prefs.get_mode().unwrap(), MenuMode::Web);
+            assert_eq!(prefs.get().unwrap().style, Style::None);
+            assert_eq!(prefs.get().unwrap().language, Language::En);
+            prefs.set_mode(MenuMode::Classic).unwrap();
+            prefs.set_language(Language::Es).unwrap();
+        }
+        {
+            let prefs = MenuPreferences::open(&file).unwrap();
+            assert_eq!(prefs.get_mode().unwrap(), MenuMode::Classic);
+            assert_eq!(prefs.get().unwrap().style, Style::None);
+            assert_eq!(prefs.get().unwrap().language, Language::Es);
+        }
+        std::fs::remove_file(&file).unwrap();
     }
 }
