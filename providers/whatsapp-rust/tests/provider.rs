@@ -336,9 +336,11 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
         "=/>menu set",
         "=/>menu web",
         "=/>menu classic",
+        "=/>menu buttons",
         "=/>set menu",
         "=/>set menu web",
         "=/>set menu classic",
+        "=/>set menu buttons",
         "=/>menu antis",
         "=/>menu antis 2",
         "=/>menu system",
@@ -668,7 +670,7 @@ fn controller_ack_distinguishes_applied_and_duplicate_without_false_success() {
 
 #[test]
 fn root_menu_mode_ack_accepts_only_authenticated_known_modes() {
-    for mode in ["web", "classic"] {
+    for mode in ["web", "classic", "buttons"] {
         let wire = serde_json::json!({
             "ok": true,
             "outcome": "applied",
