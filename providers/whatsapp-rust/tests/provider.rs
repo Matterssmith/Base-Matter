@@ -65,7 +65,12 @@ fn standalone_provider_uses_exact_same_external_matterssmith_template() {
         "REGISTER: solo lectura, sin cambios en grupos.",
     )
     .unwrap();
-    assert!(text.starts_with("╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹"));
+    // Compare the canonical external control template instead of duplicating
+    // presentation whitespace in tests.
+    let template = include_str!("../../../templates/matterssmith-control.txt");
+    let (prefix, suffix) = template.split_once("{{BODY}}").unwrap();
+    assert!(text.starts_with(prefix));
+    assert!(text.ends_with(suffix));
     assert!(text.contains("REGISTER: solo lectura"));
     assert!(text.contains('\n'));
     assert!(!text.contains("\\n"));
@@ -436,11 +441,28 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
             sign_frame(&signed, &config.bridge_key).unwrap()
         );
     }
+    // Mutable requests may be signed as *unprivileged* incoming frames so
+    // the controller can require encrypted Vault global-owner authority.
+    // Signing alone must not impersonate the socket owner or grant a role.
     for text in [
-        "=/>status --debug",
         "=/>group on",
         "=/>bot on",
         "=/>set role 12345678901 admin",
+    ] {
+        incoming.text = text;
+        let signed = config
+            .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+            .unwrap()
+            .expect("potential Vault-owned control must preserve public actor");
+        assert!(!signed.from_me);
+        assert_eq!(signed.actor_id, public_id);
+        assert_ne!(signed.actor_id, config.actor_id);
+        assert_eq!(signed.chat_jid, incoming.chat_jid);
+        assert_eq!(signed.signature, sign_frame(&signed, &config.bridge_key).unwrap());
+    }
+    // Unknown commands and owner-only probes still fail before any IPC.
+    for text in [
+        "=/>status --debug",
         "=/>menu unknown",
         "=/>menu antis 999",
         "=/>menu unset",
@@ -452,10 +474,13 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "#ping",
     ] {
         incoming.text = text;
-        assert!(config
-            .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
-            .unwrap()
-            .is_none());
+        assert!(
+            config
+                .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+                .unwrap()
+                .is_none(),
+            "unauthorized public command was signed: {text}"
+        );
     }
     incoming.text = "=/>status";
     assert!(config
