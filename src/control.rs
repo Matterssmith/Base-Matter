@@ -441,15 +441,6 @@ impl ControlDispatcher {
                 let output = theme.render(group, &section)?;
                 Ok(DispatchResult::Extension { command: "help".to_owned(), output })
             }
-            ["=/>test", "html"] if group.is_some() => {
-                if !decision.decision.enabled {
-                    return Ok(DispatchResult::Inactive);
-                }
-                Ok(DispatchResult::Extension {
-                    command: "test".to_owned(),
-                    output: "🧪 HTML experimental: prueba autorizada para este grupo. El envío no garantiza que el cliente de WhatsApp muestre HTML.".to_owned(),
-                })
-            }
             ["=/>test"]
             | ["=/>test", "ui" | "row"]
             | ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => {
