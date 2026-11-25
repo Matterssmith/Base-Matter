@@ -1,3 +1,9 @@
+## 2026-11-24 — Menú WhatsApp simplificado tras prueba en Android
+
+En `providers/whatsapp-rust` se reemplazó la tarjeta inicial «Control · Categorías 1/2» por dos respuestas rápidas: **«Ver más»** (`=/>menu page 1`, abre selector de categorías) y **«Menú clásico»** (`=/>menu all`, entrega el menú completo **como texto**, sin otro selector). No se fuerzan colores: WhatsApp controla la apariencia de los botones. El ensayo de HTML Rich queda separado con `MATTER_WA_RICH_HTML=1`: el proveedor puede serializar y enviar la estructura, pero la compilación y las pruebas de protobuf **no prueban representación en el cliente**. Para el HTML se usa el catálogo original acotado, evitando rechazos por tamaño del menú dinámico. Conservar `wa-alpha` y Vault, no reemplazar el proveedor sin prueba de dispositivo. Estado: código y pruebas actualizados en `alpha`; **no desplegado ni verificado en idkbot**. Detalles: [docs/WHATSAPP_COLLAPSIBLE_MENU.md](docs/WHATSAPP_COLLAPSIBLE_MENU.md).
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-24 — Tema del menú HTML basado en Matter Register
 
 El propietario pidió usar Matter Register como referencia visual directa. Se revisó `web/matter-register/app.js` desde la rama `feat/matter-register-web`: variables originales `--bg:#070b14`, `--a:#46e7ff`, `--b:#7386ff`, `--ink:#e8f8ff`, `--muted:#abc3d4`; paneles de vidrio oscuro, bordes luminosos, marca con símbolo ✦, partículas sutiles, chips y tratamiento de `prefers-reduced-motion`.
