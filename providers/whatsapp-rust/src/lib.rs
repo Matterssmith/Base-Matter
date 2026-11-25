@@ -426,7 +426,7 @@ impl Config {
                                 .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
                     })
             }
-            ["=/>menu" | "=/>menú", category] => public_category(category) || *category == "all",
+            ["=/>menu" | "=/>menú", category] => public_category(category) || matches!(*category, "all" | "classic"),
             ["=/>menu" | "=/>menú", "page", page] => matches!(*page, "1" | "2" | "3"),
             ["=/>menu" | "=/>menú", category, page] => {
                 public_category(category)
