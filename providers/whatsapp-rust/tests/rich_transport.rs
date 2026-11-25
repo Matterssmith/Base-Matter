@@ -46,7 +46,9 @@ fn rich_transport_wraps_original_owner_menu_without_fake_meta_ai_origin() {
     assert!(html.contains("<details class=\"matter-details\"><summary>Mostrar menú de texto"));
     assert!(!html.contains("<details open"));
     assert!(!html.contains("<script"));
-    assert!(html.contains("=/>status"));
+    // Escaping ">" in user-visible command text is intentional and required.
+    assert!(html.contains("=/&gt;status"));
+    assert!(!html.contains("=/>status"));
     assert_eq!(json["sections"][0]["view_model"]["primitive"]["__typename"], "GenAIaeacdsnwHtmlPrimitive");
     let wire = json.to_string();
     for marker in [
