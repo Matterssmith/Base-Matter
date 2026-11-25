@@ -62,8 +62,32 @@ main() {
     return 1
   fi
 
+  # Presentation flags passed on the command line must survive runtime.env.
+  # Preserve ONLY these explicitly allowlisted 0/1 values; never override
+  # private session, bridge, identity, enrollment or Vault configuration.
+  local ui_override_name
+  local -a ui_override_keys=(
+    MATTER_WA_RICH_HTML
+    MATTER_WA_HTML_AUTOSEND
+    MATTER_WA_NATIVE_BUTTONS
+    MATTER_WA_DIAG
+    MATTER_WA_MENU_LAB
+  )
+  local -a ui_override_values=()
+  for ui_override_name in "${ui_override_keys[@]}"; do
+    case "${!ui_override_name-}" in
+      0|1) ui_override_values+=("${!ui_override_name}") ;;
+      *) ui_override_values+=("") ;;
+    esac
+  done
   # Source ONLY a pre-existing locally owned private file, never Git content.
   source "$config"
+  local ui_override_index
+  for ui_override_index in "${!ui_override_keys[@]}"; do
+    if [[ -n "${ui_override_values[$ui_override_index]}" ]]; then
+      export "${ui_override_keys[$ui_override_index]}=${ui_override_values[$ui_override_index]}"
+    fi
+  done
   for vault_var in ${!MATTER_VAULT_@}; do
     unset "$vault_var"
   done
