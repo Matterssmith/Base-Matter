@@ -44,7 +44,13 @@ fn untrusted_text_cannot_inject_scripts_or_html_attributes() {
 #[test]
 fn inline_html_menu_has_clickable_collapsed_text_without_script() {
     let html = menu_inline_html(original_menu()).unwrap();
-    assert!(html.contains("<details><summary>Mostrar menú de texto</summary>"));
+    assert!(html.contains("Matterssmith · Menú") == false);
+    assert!(html.contains("Tu mundo. <em>Tu Matter.</em>"));
+    assert!(html.contains("--matter-a:#46e7ff"));
+    assert!(html.contains("--matter-b:#7386ff"));
+    assert!(html.contains("Matter Ecosystem · Control"));
+    assert!(html.contains("<details class=\"matter-details\"><summary>Mostrar menú de texto"));
+    assert!(html.contains("@media(prefers-reduced-motion:reduce)"));
     assert!(html.contains("=/>status"));
     assert!(html.contains("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
     assert!(!html.contains("<details open"));
