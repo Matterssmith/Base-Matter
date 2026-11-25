@@ -1,3 +1,9 @@
+## 2026-11-25 — Selector exclusivo «Otros menús»
+
+Corrección solicitada por el propietario: la tarjeta conserva su contenido y un único selector final «Otros menús». No se muestran categorías, páginas ni accesos a categorías en ese selector. Cada formato explícito ofrece los otros dos; la vista sin formato específico ofrece los tres. Las categorías y los comandos manuales del catálogo se conservan. El proveedor conserva el contenido real del controlador en web/buttons como respaldo textual, no HTML real, y resuelve correctamente el modo clásico persistido. El receptor admite variantes de ID de selección y nombre NativeFlow ausente, siempre limitados a la lista de comandos de lectura existente; mantiene HMAC, identidad y antirreplay. Se agregaron pruebas de ida y vuelta de cada formato, variantes de respuesta y rechazo de mutación. El diagnóstico no registra contenido ni identificadores privados. README revisados: 2/2. CI, instalación y prueba de selección real en WhatsApp pendientes; no se cambian sesiones ni Vault.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-24 — Auditoría CI: enlaces del README del proveedor
 
 La última ejecución pasó formato, compilación, pruebas del núcleo, documentación, Clippy y registros de continuidad; la auditoría de enlaces detectó una ruta relativa incorrecta en `providers/whatsapp-rust/README.md`: `docs/ENGINE_EXTENSION_REFACTOR_PLAN.md` no se resuelve desde la carpeta del proveedor. Se corrigió a `../../docs/ENGINE_EXTENSION_REFACTOR_PLAN.md`, cuyo objetivo sí existe. Sin cambios de permisos, sesiones, Vault, conexión ni proveedor de WhatsApp. El menú sigue unificado en una sola tarjeta con el selector final y respaldo visible para `menu web`. CI de este commit pendiente.

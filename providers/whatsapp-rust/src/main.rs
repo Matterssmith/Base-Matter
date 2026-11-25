@@ -628,6 +628,9 @@ async fn main() -> Result<()> {
                 let own_pn = ctx.client.pn().map(|jid| jid.to_non_ad_string());
                 let own_lid = ctx.client.lid().map(|jid| jid.to_non_ad_string());
                 let selected_button = readonly_button_command(&ctx.message);
+                if diagnostic_messages && ctx.message.interactive_response_message.as_option().is_some() {
+                    println!("Base-Matter DIAG: native response recognized={}", selected_button.is_some());
+                }
                 let reply_help = help_from_quoted_message(
                     &ctx.message,
                     ctx.message.text_content().unwrap_or_default(),
@@ -937,8 +940,8 @@ async fn main() -> Result<()> {
                             let sent = if is_menu && native_buttons {
                                 let navigation_request = if is_buttons {
                                     "=/>menu buttons"
-                                } else if is_classic {
-                                    actual_command
+                                } else if is_classic && is_root {
+                                    "=/>menu classic"
                                 } else if is_web {
                                     "=/>menu web"
                                 } else {

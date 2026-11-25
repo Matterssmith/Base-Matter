@@ -10,31 +10,6 @@ use wa::message::interactive_response_message::InteractiveResponseMessage as Nat
 use whatsapp_rust::prelude::wa;
 
 const MAX_MENU_BYTES: usize = 3800;
-const VISIBLE_CATEGORIES: &str = include_str!("../../../templates/menu-visible-categories.json");
-
-const NAV_CATEGORIES: [(&str, &str, &str); 21] = [
-    ("ia", "ⴵ IA", "matter.read.menu.ia"),
-    ("anti", "☾︎ Anti", "matter.read.menu.anti"),
-    ("all", "✦ Todo", "matter.read.menu.all"),
-    ("config", "⚙︎ Configuración", "matter.read.menu.config"),
-    ("downloads", "⇩ Descargas", "matter.read.menu.downloads"),
-    ("economy", "◈ Economía", "matter.read.menu.economy"),
-    ("fun", "♫ Diversión", "matter.read.menu.fun"),
-    ("gacha", "✰ Gacha", "matter.read.menu.gacha"),
-    ("games", "🎮 Juegos", "matter.read.menu.games"),
-    ("group", "♧ Grupo", "matter.read.menu.group"),
-    ("info", "ⓘ Información", "matter.read.menu.info"),
-    ("links", "🔗 Enlaces", "matter.read.menu.links"),
-    ("main", "✪ Principal", "matter.read.menu.main"),
-    ("mode", "◉ Modo", "matter.read.menu.mode"),
-    ("owner", "♛ Propietario", "matter.read.menu.owner"),
-    ("profile", "♙ Perfil", "matter.read.menu.profile"),
-    ("reactions", "♡ Reacciones", "matter.read.menu.reactions"),
-    ("search", "⌕ Búsqueda", "matter.read.menu.search"),
-    ("sockets", "ⴵ Conexiones", "matter.read.menu.sockets"),
-    ("system", "⚙︎ Sistema", "matter.read.menu.system"),
-    ("utils", "✧ Utilidades", "matter.read.menu.utils"),
-];
 
 fn button_command(id: &str) -> Option<&'static str> {
     match id {
@@ -170,7 +145,7 @@ pub fn short_html_to_whatsapp(input: &str) -> Result<String> {
     Ok(output)
 }
 
-/// Construct a NativeFlow menu with exactly one Categories selector.
+/// Construct a NativeFlow menu with exactly one menu-format selector.
 /// The phone must confirm visual support; no selection grants roles.
 pub fn native_menu_message(menu: &str) -> Result<wa::Message> {
     native_navigation_message(menu, "=/>menu")
@@ -196,109 +171,37 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     {
         bail!("Native navigation is read-only");
     }
-    // Shared visibility manifest: only implemented categories are selectable.
-    // The core tests assert that this manifest matches implemented commands.
-    let active: Vec<String> = serde_json::from_str(VISIBLE_CATEGORIES)?;
-    if active.is_empty()
-        || active.len() > NAV_CATEGORIES.len()
-        || active.iter().any(|id| {
-            !NAV_CATEGORIES
-                .iter()
-                .any(|(known, _, _)| *known == id.as_str())
-        })
-    {
-        bail!("Invalid visible menu categories");
-    }
-    let categories: Vec<_> = NAV_CATEGORIES
-        .iter()
-        .filter(|(id, _, _)| active.iter().any(|shown| shown.as_str() == *id))
-        .collect();
-    if categories.len() != active.len() {
-        bail!("Duplicate visible menu category");
-    }
-    // One NativeFlow message, one final selector. The client allows at most
-    // ten list entries; repeat the 3 menu choices on both navigation pages.
-    const PAGE_SIZE: usize = 6;
-    let pages = categories.len().div_ceil(PAGE_SIZE).max(1);
-    let requested_page = match request {
-        "=/>menu page 2" => 2,
-        "=/>menu page 3" => 3,
-        _ => 1,
+    // Categories stay in the controller catalog, not in the format picker.
+    // Old category/page IDs remain readable for messages already delivered.
+    let current = match request {
+        "=/>menu classic" | "=/>menú classic" => Some("classic"),
+        "=/>menu web" | "=/>menú web" => Some("web"),
+        "=/>menu buttons" | "=/>menú buttons" => Some("buttons"),
+        _ => None,
     };
-    let page = requested_page.min(pages);
-    let root_menu = matches!(
-        request,
-        "=/>menu"
-            | "=/>menú"
-            | "=/>menu web"
-            | "=/>menú web"
-            | "=/>menu classic"
-            | "=/>menú classic"
-            | "=/>menu buttons"
-            | "=/>menú buttons"
-            | "=/>menu all"
-            | "=/>menú all"
-    );
-    let web_menu = matches!(request, "=/>menu web" | "=/>menú web");
-    let buttons_menu = matches!(request, "=/>menu buttons" | "=/>menú buttons");
-    let category_page = matches!(
-        request,
-        "=/>menu page 1" | "=/>menu page 2" | "=/>menu page 3"
-    );
-    // A blank U+200B body hid the entire web menu on some WhatsApp clients.
-    // This compact, styled fallback is always visible without HTML support.
-    // The classic and category bodies retain their full controller text.
-    let body_text = if web_menu {
-        "*Matterssmith* · ✦\n*Menú web*\nSelecciona una categoría o un formato en el menú inferior."
-            .to_owned()
-    } else if buttons_menu {
-        "*Matterssmith* · ✦\n*Menu Buttons*\nCategorías y formatos disponibles en el selector inferior.".to_owned()
-    } else if category_page {
-        format!("*Matterssmith* · ✦\n*Categorías · página {page}/{pages}*")
-    } else if root_menu && matches!(request, "=/>menu" | "=/>menú") {
-        // The controller resolves the persisted default. The provider does
-        // not hide the body's contents when the authenticated mode is known.
-        menu.to_owned()
-    } else {
-        menu.to_owned()
+    let body_text = match current {
+        Some("web") => format!("*Menú web*\n{menu}"),
+        Some("buttons") => format!("*Menu Buttons*\n{menu}"),
+        _ => menu.to_owned(),
     };
-    let start = (page - 1) * PAGE_SIZE;
-    let mut category_rows: Vec<_> = categories
-        .iter()
-        .skip(start)
-        .take(PAGE_SIZE)
-        .map(|(_, label, id)| serde_json::json!({"title": label, "id": id}))
-        .collect();
-    if page > 1 {
-        category_rows.push(serde_json::json!({
-            "title": "Anterior",
-            "id": format!("matter.read.menu.page.{}", page - 1)
-        }));
-    } else if page < pages {
-        category_rows.push(serde_json::json!({
-            "title": "Más categorías",
-            "id": format!("matter.read.menu.page.{}", page + 1)
-        }));
+    if body_text.len() > MAX_MENU_BYTES {
+        bail!("Native menu body exceeds safe bounds");
     }
-    // Only the three presentation choices; no quick-reply menu buttons.
-    // Keep this section last in the picker on every page.
-    let mode_rows = [
-        serde_json::json!({"title": "Menu Classic", "id": "matter.read.menu.classic"}),
-        serde_json::json!({"title": "Menu Web", "id": "matter.read.menu.web"}),
-        serde_json::json!({"title": "Menu Buttons", "id": "matter.read.menu.buttons"}),
-    ];
-    if category_rows.len() + mode_rows.len() > 10 {
-        bail!("WhatsApp menu exceeds the ten-row limit");
-    }
+    let mode_rows: Vec<_> = [
+        ("classic", "Menu Classic", "matter.read.menu.classic"),
+        ("web", "Menu Web", "matter.read.menu.web"),
+        ("buttons", "Menu Buttons", "matter.read.menu.buttons"),
+    ]
+    .iter()
+    .filter(|(mode, _, _)| current != Some(*mode))
+    .map(|(_, title, id)| serde_json::json!({"title": title, "id": id}))
+    .collect();
     let selector = wa::message::interactive_message::native_flow_message::NativeFlowButton {
         name: Some("single_select".to_owned()),
         button_params_json: Some(
             serde_json::json!({
-                "title": "Seleccionar categoría",
-                "sections": [
-                    {"title": "Categorías", "rows": category_rows},
-                    {"title": "Otros menús", "rows": mode_rows}
-                ]
+                "title": "Otros menús",
+                "sections": [{"title": "Otros menús", "rows": mode_rows}]
             })
             .to_string(),
         ),
@@ -535,7 +438,7 @@ pub fn readonly_button_command(message: &wa::Message) -> Option<&'static str> {
             response.interactive_response_message.as_ref()?;
         if !matches!(
             native.name.as_deref(),
-            Some("quick_reply" | "single_select")
+            None | Some("quick_reply" | "single_select")
         ) {
             return None;
         }
@@ -548,6 +451,10 @@ pub fn readonly_button_command(message: &wa::Message) -> Option<&'static str> {
             .get("id")
             .or_else(|| value.get("selectedRowId"))
             .or_else(|| value.get("selected_row_id"))
+            .or_else(|| value.get("selectedId"))
+            .or_else(|| value.get("selectedButtonId"))
+            .or_else(|| value.pointer("/single_select_reply/selected_row_id"))
+            .or_else(|| value.pointer("/singleSelectReply/selectedRowId"))
             .and_then(serde_json::Value::as_str)
             .map(str::to_owned)
     } else if let Some(response) = message.list_response_message.as_option() {

@@ -59,7 +59,7 @@ fn legacy_click(id: &str) -> wa::Message {
 }
 
 #[test]
-fn root_menu_has_only_the_final_selector_with_categories_and_menu_modes() {
+fn root_menu_has_only_the_final_menu_format_selector() {
     let original = include_str!("../../../templates/matterssmith-menu.txt").trim_end();
     let message = native_menu_message(original).unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
@@ -78,61 +78,90 @@ fn root_menu_has_only_the_final_selector_with_categories_and_menu_modes() {
     assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
     let data: serde_json::Value =
         serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
-    assert_eq!(data["title"], "Seleccionar categoría");
+    assert_eq!(data["title"], "Otros menús");
     let sections = data["sections"].as_array().unwrap();
-    assert_eq!(sections.len(), 2);
-    assert_eq!(sections[0]["title"], "Categorías");
-    assert_eq!(sections[1]["title"], "Otros menús");
-    let categories = sections[0]["rows"].as_array().unwrap();
-    assert_eq!(categories.len(), 7);
-    let shown: Vec<String> = serde_json::from_str(include_str!(
-        "../../../templates/menu-visible-categories.json"
-    ))
-    .unwrap();
-    assert_eq!(shown.len(), 10);
-    for (item, id) in categories.iter().take(6).zip(shown.iter().take(6)) {
-        assert_eq!(item["id"], format!("matter.read.menu.{id}"));
-        assert_ne!(item["title"], format!("=/>menu {id}"));
-    }
-    assert_eq!(categories[6]["id"], "matter.read.menu.page.2");
-    let modes = sections[1]["rows"].as_array().unwrap();
+    assert_eq!(sections.len(), 1);
+    assert_eq!(sections[0]["title"], "Otros menús");
+    let modes = sections[0]["rows"].as_array().unwrap();
     assert_eq!(modes.len(), 3);
     assert_eq!(modes[0]["id"], "matter.read.menu.classic");
     assert_eq!(modes[1]["id"], "matter.read.menu.web");
     assert_eq!(modes[2]["id"], "matter.read.menu.buttons");
-    assert_eq!(categories.len() + modes.len(), 10);
 }
 
 #[test]
-fn second_page_contains_remaining_categories_and_menu_modes_at_the_end() {
-    let message = native_navigation_message("Categorías", "=/>menu page 2").unwrap();
-    let interactive = message.interactive_message.as_option().unwrap();
-    assert!(interactive
-        .body
-        .as_option()
-        .unwrap()
-        .text
-        .as_deref()
-        .unwrap()
-        .contains("página 2/2"));
-    assert!(interactive.footer.as_option().is_none());
-    let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
-        interactive.interactive_message.as_ref()
-    else {
-        panic!("Expected NativeFlow");
-    };
-    assert_eq!(native.buttons.len(), 1);
-    assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
-    let params: serde_json::Value =
-        serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
-    let sections = params["sections"].as_array().unwrap();
-    let categories = sections[0]["rows"].as_array().unwrap();
-    assert_eq!(categories.len(), 5);
-    for (i, id) in ["mode", "owner", "system", "utils"].iter().enumerate() {
-        assert_eq!(categories[i]["id"], format!("matter.read.menu.{id}"));
+fn each_mode_links_only_to_the_other_two_and_roundtrips() {
+    for mode in ["classic", "web", "buttons"] {
+        let request = format!("=/>menu {mode}");
+        let message = native_navigation_message("Contenido", &request).unwrap();
+        let interactive = message.interactive_message.as_option().unwrap();
+        let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
+            interactive.interactive_message.as_ref()
+        else {
+            panic!("Expected NativeFlow");
+        };
+        let params: serde_json::Value =
+            serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
+        let sections = params["sections"].as_array().unwrap();
+        assert_eq!(sections.len(), 1);
+        let rows = sections[0]["rows"].as_array().unwrap();
+        assert_eq!(rows.len(), 2);
+        for row in rows {
+            let id = row["id"].as_str().unwrap();
+            let command = readonly_button_command(&native_click(id, "single_select")).unwrap();
+            assert_ne!(command, request);
+            assert_eq!(readonly_button_command(&list_click(id)), Some(command));
+            let next = native_navigation_message("Contenido siguiente", command).unwrap();
+            assert!(next.interactive_message.as_option().is_some());
+        }
     }
-    assert_eq!(categories[4]["id"], "matter.read.menu.page.1");
-    assert_eq!(sections[1]["rows"].as_array().unwrap().len(), 3);
+}
+
+#[test]
+fn native_selection_accepts_known_id_variants_but_not_mutation() {
+    for (name, payload, expected) in [
+        (
+            Some("single_select"),
+            serde_json::json!({"singleSelectReply": {"selectedRowId": "matter.read.menu.web"}}),
+            Some("=/>menu web"),
+        ),
+        (
+            None,
+            serde_json::json!({"selectedId": "matter.read.menu.classic"}),
+            Some("=/>menu classic"),
+        ),
+        (
+            Some("single_select"),
+            serde_json::json!({"selectedButtonId": "matter.read.menu.buttons"}),
+            Some("=/>menu buttons"),
+        ),
+        (
+            None,
+            serde_json::json!({"selectedId": "matter.read.roles.grant"}),
+            None,
+        ),
+    ] {
+        let message = wa::Message {
+            interactive_response_message: MessageField::some(
+                wa::message::InteractiveResponseMessage {
+                    interactive_response_message: Some(
+                        wa::message::interactive_response_message::InteractiveResponseMessage::NativeFlowResponseMessage(
+                            Box::new(
+                                wa::message::interactive_response_message::NativeFlowResponseMessage {
+                                    name: name.map(str::to_owned),
+                                    params_json: Some(payload.to_string()),
+                                    ..Default::default()
+                                },
+                            ),
+                        ),
+                    ),
+                    ..Default::default()
+                },
+            ),
+            ..Default::default()
+        };
+        assert_eq!(readonly_button_command(&message), expected);
+    }
 }
 
 #[test]
@@ -154,7 +183,7 @@ fn category_menu_keeps_its_text_and_its_one_final_selector() {
 }
 
 #[test]
-fn formats_are_readonly_and_selected_through_category_picker() {
+fn formats_are_readonly_and_selected_through_menu_picker() {
     for (id, command) in [
         ("matter.read.menu.classic", "=/>menu classic"),
         ("matter.read.menu.web", "=/>menu web"),

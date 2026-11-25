@@ -1,3 +1,9 @@
+## 2026-11-25 — Selector exclusivo «Otros menús»
+
+Corrección solicitada por el propietario: la tarjeta conserva su contenido y un único selector final «Otros menús». No se muestran categorías, páginas ni accesos a categorías en ese selector. Cada formato explícito ofrece los otros dos; la vista sin formato específico ofrece los tres. Las categorías y los comandos manuales del catálogo se conservan. El proveedor conserva el contenido real del controlador en web/buttons como respaldo textual, no HTML real, y resuelve correctamente el modo clásico persistido. El receptor admite variantes de ID de selección y nombre NativeFlow ausente, siempre limitados a la lista de comandos de lectura existente; mantiene HMAC, identidad y antirreplay. Se agregaron pruebas de ida y vuelta de cada formato, variantes de respuesta y rechazo de mutación. El diagnóstico no registra contenido ni identificadores privados. README revisados: 2/2. CI, instalación y prueba de selección real en WhatsApp pendientes; no se cambian sesiones ni Vault.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Arquitectura aprobada: Engine-Matter y Extension-Matter
 
 El propietario dispone que WhatsApp-Matter se renombre a **Engine-Matter** (núcleo de sistemas Matter sin soporte directo WhatsApp/Telegram/Discord) y Telegram-Matter se renombre a **Extension-Matter** (conectores externos WhatsApp/Telegram/Discord y futuras redes). Discord-Matter será retirado de forma controlada con respaldo. **Matter-MSEL/** tendrá su ubicación en Engine-Matter como integración del lenguaje oficial independiente MSEL. Social-Matter es sistema propio del motor; Bot-Matter sigue bloqueado. **Extensions-Matter** (plural) no es el nuevo Extension-Matter y continúa separado. Se conserva Base-Matter como biblioteca y contratos sin dependencias cíclicas.
