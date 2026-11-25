@@ -115,7 +115,8 @@ pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
             Ok(ControlAck::AppliedWithMessage(message))
         }
         (true, "applied", Some(message), Some(mode))
-            if valid_message(&message) && matches!(mode.as_str(), "web" | "classic" | "buttons") =>
+            if valid_message(&message)
+                && matches!(mode.as_str(), "web" | "classic" | "buttons") =>
         {
             Ok(ControlAck::AppliedWithMenuMode { message, mode })
         }
@@ -440,7 +441,10 @@ impl Config {
                                 .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
                     })
             }
-            ["=/>menu" | "=/>menú", category] => public_category(category) || matches!(*category, "all" | "classic" | "web" | "buttons"),
+            ["=/>menu" | "=/>menú", category] => {
+                public_category(category)
+                    || matches!(*category, "all" | "classic" | "web" | "buttons")
+            }
             ["=/>menu" | "=/>menú", "page", page] => matches!(*page, "1" | "2" | "3"),
             ["=/>menu" | "=/>menú", category, page] => {
                 public_category(category)
