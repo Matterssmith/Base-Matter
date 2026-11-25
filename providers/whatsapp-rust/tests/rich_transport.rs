@@ -43,7 +43,7 @@ fn rich_transport_wraps_original_owner_menu_without_fake_meta_ai_origin() {
         .unwrap();
     assert!(html.contains("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
     assert!(html.contains("꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡"));
-    assert!(html.contains("<details><summary>Mostrar menú de texto</summary>"));
+    assert!(html.contains("<details class=\"matter-details\"><summary>Mostrar menú de texto"));
     assert!(!html.contains("<details open"));
     assert!(!html.contains("<script"));
     assert!(html.contains("=/>status"));
