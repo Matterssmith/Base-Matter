@@ -8,9 +8,12 @@ use std::{env, error::Error, path::PathBuf, process::Command};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let script = root.join("scripts/whatsapp-one-terminal.sh");
+    // The default Cargo run must prove core/provider correctness before
+    // touching the existing WhatsApp alpha session. The legacy one-terminal
+    // pairing launcher remains explicit and is never called implicitly.
+    let script = root.join("scripts/matter-verified-run.sh");
     if !script.is_file() {
-        return Err("Single-terminal launcher script is missing".into());
+        return Err("Verified alpha launcher script is missing".into());
     }
     let status = Command::new("bash")
         .arg(script)
