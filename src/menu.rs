@@ -274,19 +274,22 @@ impl Default for Preferences {
 pub enum MenuMode {
     Web,
     Classic,
+    Buttons,
 }
 impl MenuMode {
     pub fn parse(value: &str) -> Result<Self> {
         match value {
             "web" => Ok(Self::Web),
             "classic" => Ok(Self::Classic),
-            _ => bail!("Available menu modes: web, classic"),
+            "buttons" => Ok(Self::Buttons),
+            _ => bail!("Available menu modes: web, classic, buttons"),
         }
     }
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Web => "web",
             Self::Classic => "classic",
+            Self::Buttons => "buttons",
         }
     }
 }
@@ -324,14 +327,14 @@ impl MenuPreferences {
                 Err(error) => return Err(error.into()),
             }
         }
-        let db = Connection::open(path)?;
+        let mut db = Connection::open(path)?;
         db.busy_timeout(Duration::from_secs(3))?;
         db.execute_batch(
             "CREATE TABLE IF NOT EXISTS menu_preferences(
                 singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
                 style TEXT NOT NULL CHECK(style IN ('classic', 'none')),
                 language TEXT NOT NULL CHECK(language IN ('es', 'en')),
-                mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web', 'classic'))
+                mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web', 'classic', 'buttons'))
             )",
         )?;
         // SQLite CREATE TABLE IF NOT EXISTS does not migrate older stores.
@@ -352,6 +355,30 @@ impl MenuPreferences {
             db.execute_batch(
                 "ALTER TABLE menu_preferences ADD COLUMN mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web', 'classic'))",
             )?;
+        }
+        // A previous alpha shipped a two-mode CHECK constraint. SQLite
+        // cannot widen a CHECK in place; rebuild just this preferences table
+        // in a rollback-safe transaction while preserving the saved values.
+        let definition: String = db.query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='menu_preferences'",
+            [],
+            |row| row.get(0),
+        )?;
+        if !definition.contains("'buttons'") {
+            let tx = db.transaction()?;
+            tx.execute_batch(
+                "CREATE TABLE menu_preferences_next(
+                    singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
+                    style TEXT NOT NULL CHECK(style IN ('classic', 'none')),
+                    language TEXT NOT NULL CHECK(language IN ('es', 'en')),
+                    mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web', 'classic', 'buttons'))
+                );
+                INSERT INTO menu_preferences_next(singleton,style,language,mode)
+                    SELECT singleton,style,language,mode FROM menu_preferences;
+                DROP TABLE menu_preferences;
+                ALTER TABLE menu_preferences_next RENAME TO menu_preferences;",
+            )?;
+            tx.commit()?;
         }
         Ok(Self { db: Mutex::new(db) })
     }
@@ -936,6 +963,8 @@ mod tests {
         assert_eq!(store.get_mode().unwrap(), MenuMode::Web);
         store.set_mode(MenuMode::Classic).unwrap();
         assert_eq!(store.get_mode().unwrap(), MenuMode::Classic);
+        store.set_mode(MenuMode::Buttons).unwrap();
+        assert_eq!(store.get_mode().unwrap(), MenuMode::Buttons);
         store.set_mode(MenuMode::Web).unwrap();
         assert_eq!(store.get_mode().unwrap(), MenuMode::Web);
         assert!(MenuMode::parse("html").is_err());
@@ -961,6 +990,48 @@ mod tests {
         assert_eq!(render("menu classic", options).unwrap(), original);
         assert_ne!(render("menu all", options).unwrap(), original);
         assert!(render("menu unknown", options).is_err());
+    }
+
+    #[test]
+    fn existing_two_mode_schema_is_upgraded_with_preserved_selection() {
+        let file = std::env::temp_dir().join(format!(
+            "matter-menu-three-modes-{}-{}.sqlite",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos(),
+        ));
+        {
+            let conn = Connection::open(&file).unwrap();
+            conn.execute_batch(
+                "CREATE TABLE menu_preferences(
+                    singleton INTEGER PRIMARY KEY CHECK(singleton=1),
+                    style TEXT NOT NULL CHECK(style IN ('classic','none')),
+                    language TEXT NOT NULL CHECK(language IN ('es','en')),
+                    mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web','classic'))
+                );
+                INSERT INTO menu_preferences VALUES(1,'none','en','classic');",
+            ).unwrap();
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        {
+            let prefs = MenuPreferences::open(&file).unwrap();
+            assert_eq!(prefs.get_mode().unwrap(), MenuMode::Classic);
+            assert_eq!(prefs.get().unwrap().style, Style::None);
+            assert_eq!(prefs.get().unwrap().language, Language::En);
+            prefs.set_mode(MenuMode::Buttons).unwrap();
+        }
+        {
+            let prefs = MenuPreferences::open(&file).unwrap();
+            assert_eq!(prefs.get_mode().unwrap(), MenuMode::Buttons);
+            assert_eq!(prefs.get().unwrap().language, Language::En);
+        }
+        std::fs::remove_file(&file).unwrap();
     }
 
     #[test]
@@ -995,12 +1066,12 @@ mod tests {
             assert_eq!(prefs.get_mode().unwrap(), MenuMode::Web);
             assert_eq!(prefs.get().unwrap().style, Style::None);
             assert_eq!(prefs.get().unwrap().language, Language::En);
-            prefs.set_mode(MenuMode::Classic).unwrap();
+            prefs.set_mode(MenuMode::Buttons).unwrap();
             prefs.set_language(Language::Es).unwrap();
         }
         {
             let prefs = MenuPreferences::open(&file).unwrap();
-            assert_eq!(prefs.get_mode().unwrap(), MenuMode::Classic);
+            assert_eq!(prefs.get_mode().unwrap(), MenuMode::Buttons);
             assert_eq!(prefs.get().unwrap().style, Style::None);
             assert_eq!(prefs.get().unwrap().language, Language::Es);
         }
