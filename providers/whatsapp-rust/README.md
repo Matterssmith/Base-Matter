@@ -1,3 +1,9 @@
+## 2026-11-25 — Consola compacta y ping de control
+
+`MATTER_WA_DIAG=1`: cuatro líneas estilo Matter, colores ANSI solo en TTY (NO_COLOR desactiva), nombre de perfil, username/LID si WhatsApp los facilita, nombre y JID del grupo, IPC y TX juntos con latencias y resultados. Consulta de metadatos de grupo limitada a 500 ms, caché de 256 entradas durante cinco minutos, sin efecto sobre permisos; sin dato se muestra `-`. `=/>ping` es control de lectura autenticado, disponible incluso con bot OFF, mide RTT local del puente HMAC en milisegundos; no mide latencia del teléfono. Añadido a Información, ayuda y botón. `#ping` sigue fuera del control. No se cambian sesiones ni Vault. CI y formato pendientes; probar en dispositivo antes de declarar estable.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-25 — Diagnóstico compacto de comandos WhatsApp
 
 Con `MATTER_WA_DIAG=1` la consola local identifica cada comando por número correlativo, hora UTC, origen (texto/botón/cita), nombre de perfil no verificado, JID de usuario y chat, etapas IPC y TX, resultado y tiempo total. No registra mensajes normales, argumentos sensibles, respuestas, claves ni payloads de error. Los JID son datos personales: desactivar con `MATTER_WA_DIAG=0` antes de compartir registros. El nombre de grupo no se consulta todavía; se identifica por JID para no introducir tráfico ni bloqueos de metadatos. Un ACK IPC o TX no confirma renderizado en el teléfono; un timeout indica entrega incierta. También se acotan los avisos de error IPC a ocho segundos. Se conserva la separación web/classic/buttons y no se habilitan reintentos, pairing ni cambios en Vault. Prueba de redacción incluida; CI y ejecución real pendientes.

@@ -145,7 +145,7 @@ fn private_database(name: &str) -> Result<PathBuf> {
 fn main() -> Result<()> {
     let action = env::args().nth(1).unwrap_or_else(|| "--help".into());
     if action == "--help" {
-        println!("Base-Matter WhatsApp control: --check, --init once, then --serve on loopback. No QR, ping, or Bot-Matter runtime.");
+        println!("Base-Matter WhatsApp control: --check, --init once, then --serve on loopback. No QR or Bot-Matter runtime. =/>ping is an authenticated read-only control.");
         return Ok(());
     }
     if action != "--init" && action != "--serve" && action != "--check" {

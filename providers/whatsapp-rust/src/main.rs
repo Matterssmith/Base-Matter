@@ -9,9 +9,10 @@ use std::{
     collections::{HashMap, HashSet},
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
-        Arc, Mutex,
+        Arc, Mutex, OnceLock,
     },
     time::Instant,
+    io::IsTerminal,
 };
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -67,19 +68,72 @@ fn console_command(text: &str) -> String {
     }
 }
 
+type ConsoleMetadata = (String, String, String);
+type ConsoleCache = HashMap<(String, String), (Instant, ConsoleMetadata)>;
+
+async fn console_metadata(ctx: &whatsapp_rust::bot::MessageContext, data: &Event<'_>) -> ConsoleMetadata {
+    let alt = ctx.info.source.sender_alt.as_ref().map(|j| j.to_non_ad_string());
+    let lid = [Some(data.sender_jid), alt.as_deref()].into_iter().flatten()
+        .find(|j| j.ends_with("@lid")).unwrap_or("-");
+    let fallback = ("-".to_owned(), "-".to_owned(), console_field(lid, 96));
+    if !data.is_group {
+        return fallback;
+    }
+    static CACHE: OnceLock<Mutex<ConsoleCache>> = OnceLock::new();
+    let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+    let key = (data.chat_jid.to_owned(), data.sender_jid.to_owned());
+    if let Some(value) = cache.lock().ok().and_then(|c| c.get(&key)
+        .filter(|(at, _)| at.elapsed() < Duration::from_secs(300))
+        .map(|(_, value)| value.clone())) {
+        return value;
+    }
+    // Best effort only: no indefinite network wait or authorization by profile fields.
+    let value = match timeout(Duration::from_millis(500), ctx.client.groups().get_metadata(&ctx.info.source.chat)).await {
+        Ok(Ok(metadata)) => {
+            let participant = metadata.participants.iter().find(|p| {
+                [&p.jid, p.phone_number.as_ref().unwrap_or(&p.jid), p.lid.as_ref().unwrap_or(&p.jid)]
+                    .iter().any(|j| j.to_non_ad_string() == data.sender_jid)
+            });
+            let username = participant.and_then(|p| p.username.as_ref()).map(|u| console_field(u.as_str(), 32))
+                .unwrap_or_else(|| "-".to_owned());
+            let lid = participant.and_then(|p| p.lid.as_ref()).map(|j| j.to_non_ad_string())
+                .unwrap_or_else(|| fallback.2.clone());
+            (console_field(&metadata.subject, 40), username, console_field(&lid, 96))
+        }
+        _ => fallback,
+    };
+    if let Ok(mut c) = cache.lock() {
+        if c.len() >= 256 { c.clear(); }
+        c.insert(key, (Instant::now(), value.clone()));
+    }
+    value
+}
+
+fn console_color(value: &str, color: &str) -> String {
+    if std::io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none() {
+        format!("\x1b[{color}m{value}\x1b[0m")
+    } else {
+        value.to_owned()
+    }
+}
+
 struct CommandTrace {
     id: u64,
     started: Instant,
     enabled: bool,
+    ipc: Mutex<String>,
+    tx: Mutex<Vec<String>>,
 }
 
 impl CommandTrace {
-    fn begin(enabled: bool, ctx: &whatsapp_rust::bot::MessageContext, data: &Event<'_>, origin: &str) -> Self {
+    async fn begin(enabled: bool, ctx: &whatsapp_rust::bot::MessageContext, data: &Event<'_>, origin: &str) -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(1);
         let trace = Self {
             id: NEXT.fetch_add(1, Ordering::Relaxed),
             started: Instant::now(),
             enabled,
+            ipc: Mutex::new("PEND".to_owned()),
+            tx: Mutex::new(Vec::new()),
         };
         if enabled {
             let clock = data.timestamp.rem_euclid(86400);
@@ -87,22 +141,34 @@ impl CommandTrace {
             let name = console_field(&ctx.info.push_name, 32);
             let sender = console_field(data.sender_jid, 96);
             let chat = console_field(data.chat_jid, 96);
-            let scope = if data.is_group { "Grupo" } else { "Privado" };
-            let command = console_command(data.text);
-            println!("╭─ WA #{:04} {h:02}:{m:02}:{s:02} UTC | {command} [{origin}]\n│ Usuario: {name} ({sender})\n│ {scope}: {chat}", trace.id);
+            let command = console_color(&console_command(data.text), "1;36");
+            let (group, username, lid) = console_metadata(ctx, data).await;
+            let identity = if lid == "-" { format!("JID:{sender}") } else { format!("LID:{lid}") };
+            let scope = if data.is_group { format!("Grupo: {group} · {chat}") } else { format!("Privado: {chat}") };
+            println!("{} #{:04} {h:02}:{m:02}:{s:02} UTC · {command} [{origin}]\n│·♪· Usuario: {} · @{} · {}\n│·♪· {}",
+                console_color("╭─ 💠 𝗠𝗮𝘁𝘁𝗲𝗿", "1;35"), trace.id,
+                console_color(&name, "36"), username, identity, console_color(&scope, "34"));
         }
         trace
     }
 
     fn stage(&self, stage: &str) {
-        if self.enabled {
-            println!("│ #{:04} {stage}", self.id);
+        if !self.enabled { return; }
+        if let Some(value) = stage.strip_prefix("IPC: ") {
+            if let Ok(mut ipc) = self.ipc.lock() { *ipc = value.to_owned(); }
+        } else if let Ok(mut tx) = self.tx.lock() {
+            tx.push(stage.to_owned());
         }
     }
 
     fn finish(&self, state: &str) {
         if self.enabled {
-            println!("╰─ #{:04} {state} | {} ms", self.id, self.started.elapsed().as_millis());
+            let ipc = self.ipc.lock().map(|v| v.clone()).unwrap_or_default();
+            let tx = self.tx.lock().map(|v| if v.is_empty() { "-".to_owned() } else { v.join(" / ") }).unwrap_or_default();
+            let color = if state.starts_with("ENVÍO ACEPTADO") || state.starts_with("ENVIADO") || state.starts_with("HTML ENVIADO") { "32" } else { "33" };
+            println!("{} #{:04} IPC:{} · TX:{} · {} · {}ms", console_color("╰─╮╭────⟨ ✦", "35"), self.id,
+                console_color(&ipc, if ipc.starts_with("OK") { "32" } else { "33" }), tx,
+                console_color(state, color), self.started.elapsed().as_millis());
         }
     }
 
@@ -111,14 +177,16 @@ impl CommandTrace {
         kind: &str,
         future: impl std::future::Future<Output = std::result::Result<T, E>>,
     ) -> std::result::Result<std::result::Result<T, E>, tokio::time::error::Elapsed> {
-        self.stage(&format!("TX {kind}: ENVIANDO"));
+        let start = Instant::now();
         let result = timeout(Duration::from_secs(8), future).await;
-        let status = match &result {
-            Ok(Ok(_)) => "ACEPTADO",
-            Ok(Err(_)) => "RECHAZADO",
-            Err(_) => "TIMEOUT (entrega incierta)",
+        let (status, color) = match &result {
+            Ok(Ok(_)) => ("OK", "32"),
+            Ok(Err(_)) => ("ERROR", "31"),
+            Err(_) => ("TIMEOUT?", "33"),
         };
-        self.stage(&format!("TX {kind}: {status}"));
+        if self.enabled {
+            self.stage(&format!("{kind}:{} {}ms", console_color(status, color), start.elapsed().as_millis()));
+        }
         result
     }
 }
@@ -813,7 +881,7 @@ async fn main() -> Result<()> {
                 } else {
                     "texto"
                 };
-                let trace = CommandTrace::begin(diagnostic_messages, &ctx, &data, origin);
+                let trace = CommandTrace::begin(diagnostic_messages, &ctx, &data, origin).await;
                 let verified = if data.from_me {
                     config.signed_verified_control(
                         &data, own_pn.as_deref(), own_lid.as_deref(),
@@ -828,6 +896,7 @@ async fn main() -> Result<()> {
                 };
                 if let Ok(Some(frame)) = verified {
                     trace.stage("IPC: ENVIANDO");
+                    let ipc_started = Instant::now();
                     match deliver(config.bridge_addr, &frame).await {
                         Ok(ack @ (
                             ControlAck::Applied
@@ -835,7 +904,8 @@ async fn main() -> Result<()> {
                             | ControlAck::AppliedWithMenuMode { .. }
                             | ControlAck::AppliedWithMenuItems { .. }
                         )) => {
-                            trace.stage("IPC: ACEPTADO");
+                            let ipc_ms = ipc_started.elapsed().as_millis();
+                            trace.stage(&format!("IPC: OK {ipc_ms}ms"));
                             if !diagnostic_messages {
                                 println!("Base-Matter: comando aceptado");
                             }
@@ -902,6 +972,11 @@ async fn main() -> Result<()> {
                                     | ControlAck::AppliedWithMenuItems { message, .. } => message,
                                     _ => "Base-Matter: solicitud procesada.".to_owned(),
                                 }
+                            };
+                            let response = if actual_command == "=/>ping" {
+                                response.replace("Latencia IPC: pendiente", &format!("Latencia IPC: {ipc_ms} ms"))
+                            } else {
+                                response
                             };
                             // Never mistake a typed ACK for a real button click.
                             // The controller already verified this callback.
@@ -1140,8 +1215,14 @@ async fn main() -> Result<()> {
                                 println!("Base-Matter: Vault owner response submitted to WhatsApp");
                             }
                         }
-                        Ok(ControlAck::Duplicate) => trace.finish("IPC: DUPLICADO"),
-                        Ok(ControlAck::Ignored) => trace.finish("IPC: IGNORADO"),
+                        Ok(ControlAck::Duplicate) => {
+                            trace.stage("IPC: DUPLICADO");
+                            trace.finish("DUPLICADO");
+                        }
+                        Ok(ControlAck::Ignored) => {
+                            trace.stage("IPC: IGNORADO");
+                            trace.finish("IGNORADO");
+                        }
                         Err(_) => {
                             trace.stage("IPC: DENEGADO O NO DISPONIBLE");
                             eprintln!("Base-Matter control denied or unreachable");
@@ -1161,6 +1242,7 @@ async fn main() -> Result<()> {
                         }
                     }
                 } else {
+                    trace.stage("IPC: NO ADMITIDO");
                     trace.finish("NO ADMITIDO (firma o política local)");
                 }
             }

@@ -275,6 +275,7 @@ impl Config {
                     | "=/>h"
                     | "=/>ayuda"
                     | "=/>status"
+                    | "=/>ping"
                     | "=/>estado"
                     | "=/>bot"
                     | "=/>start"
@@ -292,6 +293,7 @@ impl Config {
             matches!(
                 command,
                 "=/>status"
+                    | "=/>ping"
                     | "=/>estado"
                     | "=/>bot"
                     | "=/>menu"
@@ -431,7 +433,8 @@ impl Config {
                     .all(|byte| byte.is_ascii_alphanumeric() || b"_-".contains(&byte))
         };
         let allowed = match parts.as_slice() {
-            ["=/>status" | "=/>estado"]
+            ["=/>ping"]
+            | ["=/>status" | "=/>estado"]
             | ["=/>status" | "=/>estado", "--mod"]
             | ["=/>status" | "=/>estado", "--global"]
             | ["=/>menu" | "=/>menú"]

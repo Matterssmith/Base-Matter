@@ -421,6 +421,7 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
     }
     for text in [
         "=/>status",
+        "=/>ping",
         "=/>estado",
         "=/>status --global",
         "=/>menu",

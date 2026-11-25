@@ -14,6 +14,7 @@ const MAX_MENU_BYTES: usize = 3800;
 fn button_command(id: &str) -> Option<&'static str> {
     match id {
         "matter.read.status" => Some("=/>status"),
+        "matter.read.ping" => Some("=/>ping"),
         "matter.read.menu" => Some("=/>menu"),
         "matter.read.antis" => Some("=/>menu antis"),
         "matter.read.help" => Some("=/>help"),

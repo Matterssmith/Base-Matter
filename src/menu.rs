@@ -135,7 +135,17 @@ pub static CATEGORIES: &[Category] = &[
         es: "Información",
         en: "Information",
         icon: "ⓘ",
-        commands: &[status::main_command::COMMAND, navigation::credits::COMMAND],
+        commands: &[
+            status::main_command::COMMAND,
+            CommandSpec {
+                name: "ping",
+                es: "Medir respuesta del controlador",
+                en: "Measure controller response latency",
+                usages: &["ping"],
+                implemented: true,
+            },
+            navigation::credits::COMMAND,
+        ],
     },
     Category {
         id: "links",
@@ -534,6 +544,7 @@ pub fn button_menu_items(section: &str, language: Language) -> Vec<serde_json::V
         .map(|cmd| {
             let (id, title) = match cmd.name {
                 "status" => ("matter.read.status".to_owned(), "status".to_owned()),
+                "ping" => ("matter.read.ping".to_owned(), "ping".to_owned()),
                 "menu" => ("matter.read.menu.buttons".to_owned(), "menu".to_owned()),
                 "help" => ("matter.read.help".to_owned(), "help".to_owned()),
                 _ => (

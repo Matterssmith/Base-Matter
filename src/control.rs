@@ -386,6 +386,10 @@ impl ControlDispatcher {
                     output: crate::guest::registration_notice(start_requested).to_owned(),
                 })
             }
+            ["=/>ping"] => Ok(DispatchResult::Extension {
+                command: "ping".to_owned(),
+                output: "Pong · Latencia IPC: pendiente".to_owned(),
+            }),
             ["=/>status" | "=/>estado"] => {
                 if let Some(group_id) = group {
                     Ok(DispatchResult::GroupStatus {
@@ -983,6 +987,16 @@ impl ControlDispatcher {
                     return Ok(DispatchResult::Extension {
                         command: "credits".to_owned(),
                         output: PROJECT_CREDITS.to_owned(),
+                    });
+                }
+                ["ping"] if canonical_global_prefix => {
+                    let admission = self.bot_admission(receiving_socket, group, kind)?;
+                    if admission.owner_id != actor {
+                        bail!("Socket owner authorization denied");
+                    }
+                    return Ok(DispatchResult::Extension {
+                        command: "ping".to_owned(),
+                        output: "Pong · Latencia IPC: pendiente".to_owned(),
                     });
                 }
                 ["status" | "estado"] | ["status" | "estado", "--debug"] => {

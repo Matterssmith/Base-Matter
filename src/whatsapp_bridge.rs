@@ -344,6 +344,7 @@ impl WhatsAppControlBridge {
                     | "=/>h"
                     | "=/>ayuda"
                     | "=/>status"
+                    | "=/>ping"
                     | "=/>estado"
                     | "=/>bot"
                     | "=/>start"
@@ -362,6 +363,7 @@ impl WhatsAppControlBridge {
         } else if !matches!(
             verb,
             "=/>status"
+                | "=/>ping"
                 | "=/>estado"
                 | "=/>bot"
                 | "=/>menu"
