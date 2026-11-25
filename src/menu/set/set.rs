@@ -13,7 +13,7 @@ pub const COMMAND: CommandSpec = CommandSpec {
         "set --global",
         "set style classic|none",
         "set lang es|en",
-        "set menu web|classic",
+        "set menu web|classic|buttons",
     ],
     implemented: true,
 };
