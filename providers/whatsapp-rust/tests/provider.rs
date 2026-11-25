@@ -635,6 +635,34 @@ fn controller_ack_distinguishes_applied_and_duplicate_without_false_success() {
 }
 
 #[test]
+fn root_menu_mode_ack_accepts_only_authenticated_known_modes() {
+    for mode in ["web", "classic"] {
+        let wire = serde_json::json!({
+            "ok": true,
+            "outcome": "applied",
+            "message": "Menú verificado",
+            "menu_mode": mode,
+        });
+        assert_eq!(
+            parse_control_ack(&serde_json::to_vec(&wire).unwrap()).unwrap(),
+            ControlAck::AppliedWithMenuMode {
+                message: "Menú verificado".to_owned(),
+                mode: mode.to_owned(),
+            }
+        );
+    }
+    for wire in [
+        serde_json::json!({"ok":true, "outcome":"applied", "message":"Menu", "menu_mode":"admin"}),
+        serde_json::json!({"ok":true, "outcome":"applied", "menu_mode":"web"}),
+        serde_json::json!({"ok":false, "outcome":"applied", "message":"Menu", "menu_mode":"web"}),
+        serde_json::json!({"ok":true, "outcome":"duplicate", "menu_mode":"web"}),
+        serde_json::json!({"ok":true, "outcome":"applied", "message":"", "menu_mode":"web"}),
+    ] {
+        assert!(parse_control_ack(&serde_json::to_vec(&wire).unwrap()).is_err());
+    }
+}
+
+#[test]
 fn long_category_menu_ack_is_bounded_and_does_not_accept_control_characters() {
     let menu = "✦ Menú Matterssmith\\n".repeat(70);
     assert!(menu.len() > 1024);
