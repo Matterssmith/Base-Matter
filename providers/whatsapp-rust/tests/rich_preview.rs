@@ -12,6 +12,9 @@ use whatsapp_matter_rust_provider::rich_preview::{
 fn original_matterssmith_menu_is_preserved_inside_offline_html() {
     let html = menu_html_preview(original_menu()).unwrap();
     assert!(html.starts_with("<!doctype html>"));
+    assert!(html.contains("<details><summary>Mostrar menú de texto</summary>"));
+    assert!(html.contains("</pre></details>"));
+    assert!(!html.contains("<details open"));
     assert!(html.contains("꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡"));
     assert!(html.contains("*Base-Matter* · ✦"));
     assert!(html.contains("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
