@@ -3818,3 +3818,9 @@ to `matter` occurred.
   El README del proveedor no requiere edición para esta corrección.
 - Verificación remota, pruebas CI y sesión viva: pendientes de comprobar
   en el SHA exacto una vez publicados los cambios.
+
+## 2026-11-25 — Consola y ping alpha
+
+Por solicitud del propietario, registro compacto con nombre de perfil, username y LID si disponibles, grupo/nombre/JID, IPC y TX con latencias y colores ANSI en terminal. `=/>ping` es lectura autenticada, no `#ping`; mide RTT local del controlador. No modificar sesiones ni Vault; metadatos no autorizan acciones. README revisados: 2/2. CI y verificación de formato/compilación pendientes, idkbot reportado caído. No iniciar dos proveedores con la misma identidad.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].

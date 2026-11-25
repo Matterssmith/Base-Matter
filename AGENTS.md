@@ -1468,3 +1468,9 @@ El proveedor de WhatsApp seleccionado es whatsapp-rust, ejecutado desde provider
 - El bot solo debe planificar y reportar, NO añadir usuarios sin su consentimiento ni eludir ajustes de privacidad, cuotas o suspensiones. La promoción de un grupo a otra comunidad exige autorización admin, verificación del chat origen, destino y capacidad API. `--hide` es una preferencia, no una técnica para ocultar usuarios.
 - Un mensaje citado se resuelve desde metadata confiable. Un alias @usuario solo se acepta si el proveedor da una resolución de identidad comprobable. Los comandos de grupo aún no cuentan con admisión de mensajes grupales: no declarar mutaciones completas.
 - `=/>add++` sigue siendo diferente: inventario y respaldo cifrado preventivo de participantes; no es autorización para incorporaciones masivas.
+
+## 2026-11-25 — Consola y ping alpha
+
+Por solicitud del propietario, registro compacto con nombre de perfil, username y LID si disponibles, grupo/nombre/JID, IPC y TX con latencias y colores ANSI en terminal. `=/>ping` es lectura autenticada, no `#ping`; mide RTT local del controlador. No modificar sesiones ni Vault; metadatos no autorizan acciones. README revisados: 2/2. CI y verificación de formato/compilación pendientes, idkbot reportado caído. No iniciar dos proveedores con la misma identidad.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
