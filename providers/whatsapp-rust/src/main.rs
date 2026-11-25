@@ -951,7 +951,13 @@ async fn main() -> Result<()> {
                                 false
                             };
                             if rich_html_trial && is_root {
-                                match experimental_self_chat_rich_message(&response) {
+                                // The dynamic controller menu may exceed the rich
+                                // transport budget. Use the verified original menu
+                                // template for the HTML card instead; categories
+                                // and classic text remain sourced from the controller.
+                                match experimental_self_chat_rich_message(
+                                    whatsapp_matter_rust_provider::rich_preview::original_menu(),
+                                ) {
                                     Ok(html) => {
                                         if ctx.send_message(html).await.is_ok() {
                                             sent = true;
