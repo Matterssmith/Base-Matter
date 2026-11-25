@@ -1,3 +1,15 @@
+## 2026-11-24 — Menú buttons adicional, navegación completa y HTML experimental
+
+El menú principal ahora admite los modos `web` (predeterminado), `classic` y `buttons`. `=/>menu` usa la preferencia SQLite del socket; `=/>menu web`, `=/>menu classic` y `=/>menu buttons` son variantes explícitas. El propietario cambia con `=/>set menu web|classic|buttons` y consulta con `=/>set menu` en chat privado verificado. SQLite migra transaccionalmente del anterior `CHECK(mode IN ('web','classic'))` a tres valores, conservando estilo e idioma.
+
+**Interacción solicitada:** cada modo contiene botón «Seleccionar categoría» (`single_select` con la lista autorizada de categorías implementadas) y accesos a los otros formatos. `classic` entrega el antiguo texto más botones hacia `web` y `buttons`; `web` intenta la tarjeta HTML experimental y conserva el selector nativo más `classic`/`buttons`; `buttons` comienza con «Menu Classic» y «Menu Web», luego «Seleccionar categoría», y continúa con botones reales para cada una de las diez categorías implementadas en cuatro tarjetas de hasta tres respuestas rápidas. Las tarjetas usan timeout de cuatro segundos; ante el primer fallo se detienen las restantes y queda el selector. Ningún botón ejecuta directamente mutaciones o concede roles.
+
+**Límite funcional:** la vista HTML `GenAIaeacdsnwHtmlPrimitive` no se ha demostrado visible en el cliente WhatsApp del usuario. Se mantiene como experimento para el chat propio con `MATTER_WA_RICH_HTML=1`, **no** se falsifican pruebas de identidad Meta ni firmas, y la vista nativa funciona como respaldo. Envío aceptado != HTML representado. Confirmar el resultado de `=/>test html` y los diagnósticos `MATTER_WA_DIAG=1`.
+
+Guía detallada: `docs/WHATSAPP_COLLAPSIBLE_MENU.md`. Las suites y compilaciones deben pasar antes de reiniciar `idkbot`. Los cambios están en la rama `alpha`, sin modificación de sesiones ni Vault.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-24 — Pruebas `provider`: plantilla y firma externa sin privilegios
 
 En `idkbot` se reportaron dos fallos de `cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --test provider`: `standalone_provider_uses_exact_same_external_matterssmith_template` y `incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority` (17 pruebas sí pasaban).
