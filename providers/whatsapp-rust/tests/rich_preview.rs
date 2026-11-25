@@ -53,7 +53,10 @@ fn inline_html_menu_has_clickable_collapsed_text_without_script() {
     assert!(html.contains("Matter Ecosystem · Control"));
     assert!(html.contains("<details class=\"matter-details\"><summary>Mostrar menú de texto"));
     assert!(html.contains("@media(prefers-reduced-motion:reduce)"));
-    assert!(html.contains("=/>status"));
+    // The command is encoded for safe HTML text content; browser shows
+    // the original =/>status while serialized HTML contains &gt;.
+    assert!(html.contains("=/&gt;status"));
+    assert!(!html.contains("=/>status"));
     assert!(html.contains("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
     assert!(!html.contains("<details open"));
     assert!(!html.contains("<script"));
@@ -78,7 +81,10 @@ fn sample_rich_screen_shape_is_offline_and_does_not_spoof_meta_ai() {
         ["primitive"]["payload"]
         .as_str()
         .unwrap();
-    assert!(html.contains("Matterssmith · Menú"));
+    // The visible brand is split across elements, not a flat text string.
+    assert!(html.contains("Matter<span>ssmith</span>"));
+    assert!(html.contains("Tu mundo. <em>Tu Matter.</em>"));
+    assert!(html.contains("=/&gt;status"));
     assert_eq!(
         value["sections"][0]["view_model"]["primitive"]["__typename"],
         "GenAIaeacdsnwHtmlPrimitive"
