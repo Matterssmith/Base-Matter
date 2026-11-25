@@ -180,8 +180,14 @@ fn modes_keep_selector_and_switch_to_each_other_with_no_root_prose() {
             panic!("Expected NativeFlow");
         };
         assert_eq!(native.buttons.len(), 3);
-        assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
-        for (i, id) in [(1, first), (2, second)] {
+        let selector_index = if mode == "=/>menu buttons" { 2 } else { 0 };
+        assert_eq!(native.buttons[selector_index].name.as_deref(), Some("single_select"));
+        let switch_positions = if mode == "=/>menu buttons" {
+            [(0, first), (1, second)]
+        } else {
+            [(1, first), (2, second)]
+        };
+        for (i, id) in switch_positions {
             let params: serde_json::Value =
                 serde_json::from_str(native.buttons[i].button_params_json.as_deref().unwrap()).unwrap();
             assert_eq!(params["id"], id);
