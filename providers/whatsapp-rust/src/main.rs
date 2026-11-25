@@ -103,7 +103,9 @@ async fn send_menu_lab(
     if owner_self_chat && rich_html {
         if let Ok(message) = experimental_self_chat_rich_message(menu) {
             match timeout(Duration::from_secs(8), ctx.send_message(message)).await {
-                Ok(Ok(_)) => eprintln!("Base-Matter: rich HTML lab send accepted; rendering unverified"),
+                Ok(Ok(_)) => {
+                    eprintln!("Base-Matter: rich HTML lab send accepted; rendering unverified")
+                }
                 Ok(Err(_)) => eprintln!("Base-Matter: rich HTML lab send rejected"),
                 Err(_) => eprintln!("Base-Matter: rich HTML lab send timed out"),
             }
@@ -112,16 +114,24 @@ async fn send_menu_lab(
         }
     }
     for variant in [MenuCardVariant::Ts18, MenuCardVariant::Ts19] {
-        let native_sent =
-            matches!(
-                timeout(Duration::from_secs(8), ctx.send_message(native_menu_lab_card(variant))).await,
-                Ok(Ok(_))
-            );
+        let native_sent = matches!(
+            timeout(
+                Duration::from_secs(8),
+                ctx.send_message(native_menu_lab_card(variant))
+            )
+            .await,
+            Ok(Ok(_))
+        );
         if !native_sent {
             eprintln!("Base-Matter: NativeFlow lab card unavailable; trying legacy buttons");
         }
         if !native_sent || owner_self_chat {
-            match timeout(Duration::from_secs(8), ctx.send_message(menu_lab_card(variant))).await {
+            match timeout(
+                Duration::from_secs(8),
+                ctx.send_message(menu_lab_card(variant)),
+            )
+            .await
+            {
                 Ok(Ok(_)) => {}
                 Ok(Err(_)) => eprintln!("Base-Matter: legacy lab card rejected"),
                 Err(_) => eprintln!("Base-Matter: legacy lab card send timed out"),
