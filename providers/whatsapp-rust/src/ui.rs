@@ -180,7 +180,7 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
         _ => None,
     };
     let body_text = match current {
-        Some("web") => format!("*Menú web*\n{menu}"),
+        Some("web") => "*Matterssmith* · ✦".to_owned(),
         Some("buttons") => format!("*Menu Buttons*\n{menu}"),
         _ => menu.to_owned(),
     };
@@ -206,8 +206,8 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
             .to_string(),
         ),
     };
-    // Sole button, always last. The command list is in this same WhatsApp
-    // message body, not in a second reply or a subsequent buttons carousel.
+    // Sole button, always last. For web this is navigation only;
+    // the actual HTML uses the separate experimental RichResponse transport.
     Ok(wa::Message {
         interactive_message: MessageField::some(wa::message::InteractiveMessage {
             body: MessageField::some(wa::message::interactive_message::Body {

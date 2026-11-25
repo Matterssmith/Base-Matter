@@ -505,6 +505,7 @@ async fn main() -> Result<()> {
     // after controller authentication/authorization of =/>menu.
     // No claims about phone rendering or Meta AI identity.
     let rich_html_trial = matches!(std::env::var("MATTER_WA_RICH_HTML").as_deref(), Ok("1"));
+    let rich_html_autosend = matches!(std::env::var("MATTER_WA_HTML_AUTOSEND").as_deref(), Ok("1"));
     // Menu web uses a single visible NativeFlow message. The unsupported
     // experimental HTML transport is tested only with explicit =/>test html.
     // Never send two messages for a single menu request.
@@ -889,10 +890,9 @@ async fn main() -> Result<()> {
                                 || actual_command.starts_with("=/>menu ")
                                 || actual_command.starts_with("=/>menú ");
                             let is_root = matches!(actual_command, "=/>menu" | "=/>menú");
-                            // The menu is ONE message: controller-owned
-                            // body + the final single_select control.
-                            // No extra HTML rich envelope or category cards:
-                            // unsupported HTML is invisible on many clients.
+                            // Classic and buttons use one NativeFlow card.
+                            // Web uses actual RichResponse plus independent native
+                            // navigation; do not disguise classic text as HTML.
                             let is_classic = matches!(
                                 actual_command,
                                 "=/>menu all" | "=/>menú all" | "=/>menu classic" | "=/>menú classic"
@@ -903,6 +903,27 @@ async fn main() -> Result<()> {
                             let is_buttons = matches!(
                                 actual_command, "=/>menu buttons" | "=/>menú buttons"
                             ) || (is_root && preferred_menu_mode.as_deref() == Some("buttons"));
+                            let mut web_submitted = false;
+                            if is_web
+                                && rich_html_trial
+                                && (!is_root || rich_html_autosend)
+                                && frame.from_me
+                                && (data.is_group || frame.chat_jid == config.owner_jid)
+                            {
+                                if let Ok(message) = experimental_self_chat_rich_message(&response) {
+                                    match timeout(Duration::from_secs(8), ctx.send_message(message)).await {
+                                        Ok(Ok(_)) => {
+                                            web_submitted = true;
+                                        }
+                                        Ok(Err(_)) => eprintln!("Base-Matter: HTML menu send rejected"),
+                                        Err(_) => {
+                                            eprintln!("Base-Matter: HTML menu send timed out; rendering unverified");
+                                        }
+                                    }
+                                } else {
+                                    eprintln!("Base-Matter: HTML menu could not be constructed");
+                                }
+                            }
                             let sent = if is_menu && native_buttons {
                                 let navigation_request = if is_buttons {
                                     "=/>menu buttons"
@@ -913,7 +934,12 @@ async fn main() -> Result<()> {
                                 } else {
                                     actual_command
                                 };
-                                match native_navigation_message(&response, navigation_request) {
+                                let navigation_body = if is_web {
+                                    "Matterssmith"
+                                } else {
+                                    &response
+                                };
+                                match native_navigation_message(navigation_body, navigation_request) {
                                     Ok(message) => match timeout(
                                         Duration::from_secs(8),
                                         ctx.send_message(message),
@@ -938,10 +964,19 @@ async fn main() -> Result<()> {
                                 false
                             };
                             let sent = if !sent {
-                                matches!(
-                                    timeout(Duration::from_secs(8), ctx.reply(&response)).await,
-                                    Ok(Ok(_))
-                                )
+                                if is_web && web_submitted {
+                                    true
+                                } else {
+                                    let fallback = if is_web {
+                                        "La vista HTML no está disponible. Usa =/>menu classic o =/>menu buttons."
+                                    } else {
+                                        &response
+                                    };
+                                    matches!(
+                                        timeout(Duration::from_secs(8), ctx.reply(fallback)).await,
+                                        Ok(Ok(_))
+                                    )
+                                }
                             } else {
                                 true
                             };

@@ -203,9 +203,33 @@ fn formats_are_readonly_and_selected_through_menu_picker() {
 }
 
 #[test]
-fn all_modes_use_one_visible_message_and_one_last_selector() {
+fn web_navigation_has_no_classic_body_or_mode_heading() {
+    let original = "MARCO CLASICO\nCategorías\n=/>status";
+    let web = native_navigation_message(original, "=/>menu web").unwrap();
+    let interactive = web.interactive_message.as_option().unwrap();
+    let body = interactive.body.as_option().unwrap().text.as_deref().unwrap();
+    assert_eq!(body, "*Matterssmith* · ✦");
+    assert!(!body.contains("Menú web"));
+    assert!(!body.contains("MARCO CLASICO"));
+    let classic = native_navigation_message(original, "=/>menu classic").unwrap();
+    assert_eq!(
+        classic
+            .interactive_message
+            .as_option()
+            .unwrap()
+            .body
+            .as_option()
+            .unwrap()
+            .text
+            .as_deref(),
+        Some(original)
+    );
+}
+
+#[test]
+fn native_navigation_has_one_visible_message_and_one_last_selector() {
     for (request, expected) in [
-        ("=/>menu web", "*Menú web*"),
+        ("=/>menu web", "*Matterssmith* · ✦"),
         ("=/>menu buttons", "*Menu Buttons*"),
         ("=/>menu classic", "Categorías"),
         ("=/>menu all", "Categorías"),
