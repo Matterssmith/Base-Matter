@@ -19,26 +19,22 @@ use tokio::{
 };
 use whatsapp_matter_rust_provider::{
     help_reply::help_from_quoted_message,
-    menu_sound, parse_control_ack,
+    parse_control_ack,
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
     render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
     ui::{
-        legacy_row_probe_message, menu_lab_card, native_category_button_cards,
-        native_menu_lab_card, native_navigation_message, native_ui_probe_message,
-        readonly_button_command, MenuCardVariant,
+        legacy_row_probe_message, native_navigation_message, native_ui_probe_message,
+        readonly_button_command,
     },
     Config, ControlAck, Event, SessionLease,
 };
 use whatsapp_rust::{
-    download::MediaType,
-    media::{self, AudioOptions},
     pair_code::PairCodeOptions,
     prelude::*,
     types::events::ConnectFailureReason,
-    upload::UploadOptions,
 };
 
 async fn deliver(
@@ -87,87 +83,6 @@ fn is_private_vault_command(
     frame.from_me
         && frame.chat_jid == verified_owner_jid
         && frame.text.split_whitespace().next() == Some("=/>vault")
-}
-
-// Optional laboratory: native buttons are read-only and may be tested
-// in an activated private chat. Experimental Rich HTML, legacy comparison
-// and audio stay limited to a verified owner self-chat.
-async fn send_menu_lab(
-    ctx: &whatsapp_rust::bot::MessageContext,
-    menu: &str,
-    rich_html: bool,
-    owner_self_chat: bool,
-) {
-    // Do not let optional UI experiments occupy the WhatsApp callback
-    // indefinitely. All transport errors are logged without message data.
-    if owner_self_chat && rich_html {
-        if let Ok(message) = experimental_self_chat_rich_message(menu) {
-            match timeout(Duration::from_secs(8), ctx.send_message(message)).await {
-                Ok(Ok(_)) => {
-                    eprintln!("Base-Matter: rich HTML lab send accepted; rendering unverified")
-                }
-                Ok(Err(_)) => eprintln!("Base-Matter: rich HTML lab send rejected"),
-                Err(_) => eprintln!("Base-Matter: rich HTML lab send timed out"),
-            }
-        } else {
-            eprintln!("Base-Matter: rich HTML lab menu exceeds bounds");
-        }
-    }
-    for variant in [MenuCardVariant::Ts18, MenuCardVariant::Ts19] {
-        let native_sent = matches!(
-            timeout(
-                Duration::from_secs(8),
-                ctx.send_message(native_menu_lab_card(variant))
-            )
-            .await,
-            Ok(Ok(_))
-        );
-        if !native_sent {
-            eprintln!("Base-Matter: NativeFlow lab card unavailable; trying legacy buttons");
-        }
-        if !native_sent || owner_self_chat {
-            match timeout(
-                Duration::from_secs(8),
-                ctx.send_message(menu_lab_card(variant)),
-            )
-            .await
-            {
-                Ok(Ok(_)) => {}
-                Ok(Err(_)) => eprintln!("Base-Matter: legacy lab card rejected"),
-                Err(_) => eprintln!("Base-Matter: legacy lab card send timed out"),
-            }
-        }
-    }
-    if !owner_self_chat {
-        return;
-    }
-    let upload = timeout(
-        Duration::from_secs(15),
-        ctx.client.upload(
-            menu_sound::menu_tone_bytes().to_vec(),
-            MediaType::Audio,
-            UploadOptions::default(),
-        ),
-    )
-    .await;
-    match upload {
-        Ok(Ok(uploaded)) => {
-            let sound = media::audio_message(
-                uploaded,
-                AudioOptions {
-                    duration_seconds: Some(1),
-                    ptt: Some(false),
-                    ..Default::default()
-                },
-            );
-            match timeout(Duration::from_secs(8), ctx.send_message(sound)).await {
-                Ok(Ok(_)) => {}
-                Ok(Err(_)) => eprintln!("Base-Matter: menu audio message rejected"),
-                Err(_) => eprintln!("Base-Matter: menu audio message timed out"),
-            }
-        }
-        _ => eprintln!("Base-Matter: menu audio upload unavailable"),
-    }
 }
 
 async fn require_local_controller(address: std::net::SocketAddrV4) -> Result<()> {
@@ -594,16 +509,11 @@ async fn main() -> Result<()> {
     // after controller authentication/authorization of =/>menu.
     // No claims about phone rendering or Meta AI identity.
     let rich_html_trial = matches!(std::env::var("MATTER_WA_RICH_HTML").as_deref(), Ok("1"));
-    // Web is the default persisted preference, but the experimental transport
-    // still requires MATTER_WA_RICH_HTML=1. Operator may disable only automatic
-    // RichResponse with MATTER_WA_HTML_AUTOSEND=0 for diagnosis.
-    let rich_html_auto_send = !matches!(
-        std::env::var("MATTER_WA_HTML_AUTOSEND").as_deref(),
-        Ok("0" | "off" | "false")
-    );
+    // Menu web uses a single visible NativeFlow message. The unsupported
+    // experimental HTML transport is tested only with explicit =/>test html.
+    // Never send two messages for a single menu request.
     // Logs processing stages only, never message bodies, JIDs, IDs or secrets.
     let diagnostic_messages = matches!(std::env::var("MATTER_WA_DIAG").as_deref(), Ok("1"));
-    let menu_lab = matches!(std::env::var("MATTER_WA_MENU_LAB").as_deref(), Ok("1"));
     require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
     let database = config
@@ -1014,8 +924,10 @@ async fn main() -> Result<()> {
                                 || actual_command.starts_with("=/>menu ")
                                 || actual_command.starts_with("=/>menú ");
                             let is_root = matches!(actual_command, "=/>menu" | "=/>menú");
-                            // "Menú clásico" must reveal the complete original control
-                            // response as normal WhatsApp text, without another selector.
+                            // The menu is ONE message: controller-owned
+                            // body + the final single_select control.
+                            // No extra HTML rich envelope or category cards:
+                            // unsupported HTML is invisible on many clients.
                             let is_classic = matches!(
                                 actual_command,
                                 "=/>menu all" | "=/>menú all" | "=/>menu classic" | "=/>menú classic"
@@ -1026,122 +938,48 @@ async fn main() -> Result<()> {
                             let is_buttons = matches!(
                                 actual_command, "=/>menu buttons" | "=/>menú buttons"
                             ) || (is_root && preferred_menu_mode.as_deref() == Some("buttons"));
-                            // Help is text-only. A help reply must not display a category selector.
-                            // A verified =/>menu may deliver the experimental in-chat HTML card.
-                            // The native selector is ALSO sent so category taps still map to
-                            // authenticated, real read-only commands rather than inert HTML.
-                            let mut sent = if is_classic {
-                                match timeout(Duration::from_secs(8), ctx.reply(&response)).await {
-                                    Ok(Ok(_)) => true,
-                                    Ok(Err(_)) => {
-                                        eprintln!("Base-Matter: classic text reply rejected");
-                                        false
-                                    }
+                            let sent = if is_menu && native_buttons {
+                                let navigation_request = if is_buttons {
+                                    "=/>menu buttons"
+                                } else if is_classic {
+                                    actual_command
+                                } else if is_web {
+                                    "=/>menu web"
+                                } else {
+                                    actual_command
+                                };
+                                match native_navigation_message(&response, navigation_request) {
+                                    Ok(message) => match timeout(
+                                        Duration::from_secs(8),
+                                        ctx.send_message(message),
+                                    ).await {
+                                        Ok(Ok(_)) => true,
+                                        Ok(Err(_)) => {
+                                            eprintln!("Base-Matter: unified menu rejected; attempting a single text fallback");
+                                            false
+                                        }
+                                        Err(_) => {
+                                            eprintln!("Base-Matter: unified menu timed out; refusing duplicate reply");
+                                            // A timed-out send may already have been accepted.
+                                            return;
+                                        }
+                                    },
                                     Err(_) => {
-                                        eprintln!("Base-Matter: classic text reply timed out");
+                                        eprintln!("Base-Matter: unified menu could not be constructed");
                                         false
                                     }
                                 }
                             } else {
                                 false
                             };
-                            if rich_html_trial
-                                && rich_html_auto_send
-                                && is_web
-                                && frame.from_me
-                                && (data.is_group || frame.chat_jid == config.owner_jid)
-                            {
-                                // The dynamic controller menu may exceed the rich
-                                // transport budget. Use the verified original menu
-                                // template for the HTML card instead; categories
-                                // and classic text remain sourced from the controller.
-                                match experimental_self_chat_rich_message(
-                                    whatsapp_matter_rust_provider::rich_preview::original_menu(),
-                                ) {
-                                    Ok(html) => {
-                                        match timeout(Duration::from_secs(8), ctx.send_message(html)).await {
-                                            Ok(Ok(_)) => {
-                                                sent = true;
-                                                println!("Base-Matter: Rich HTML menu submitted; client rendering unverified");
-                                            }
-                                            Ok(Err(_)) => eprintln!("Base-Matter: Rich HTML not accepted; native/text fallback"),
-                                            Err(_) => eprintln!("Base-Matter: Rich HTML send timed out; native/text fallback"),
-                                        }
-                                    }
-                                    Err(_) => eprintln!("Base-Matter: Rich HTML menu unavailable; native/text fallback"),
-                                }
-                            }
-                            // Every menu, including the original classic text, keeps a
-                            // category selector and direct links to the other layouts.
-                            if native_buttons && is_menu {
-                                let navigation_request = if is_buttons {
-                                    "=/>menu buttons"
-                                } else if is_classic {
-                                    "=/>menu classic"
-                                } else if is_web {
-                                    "=/>menu web"
-                                } else {
-                                    actual_command
-                                };
-                                let native_sent = match native_navigation_message(&response, navigation_request) {
-                                    Ok(interactive) => match timeout(Duration::from_secs(8), ctx.send_message(interactive)).await {
-                                        Ok(Ok(_)) => true,
-                                        Ok(Err(_)) => {
-                                            eprintln!("Base-Matter: native menu send rejected");
-                                            false
-                                        }
-                                        Err(_) => {
-                                            eprintln!("Base-Matter: native menu send timed out");
-                                            false
-                                        }
-                                    },
-                                    Err(_) => false,
-                                };
-                                if !native_sent {
-                                    eprintln!("Base-Matter: native selector unavailable");
-                                }
-                                sent |= native_sent;
-                                if native_sent && is_buttons {
-                                    // WhatsApp permits only 3 quick replies per card.
-                                    // One separate card holds Classic/Web switches;
-                                    // category action cards are sent in groups of 3.
-                                    match native_category_button_cards() {
-                                        Ok(cards) => {
-                                            for (index, card) in cards.into_iter().enumerate() {
-                                                match timeout(Duration::from_secs(4), ctx.send_message(card)).await {
-                                                    Ok(Ok(_)) => {
-                                                        if diagnostic_messages {
-                                                            println!("Base-Matter DIAG: buttons category card {} sent", index + 1);
-                                                        }
-                                                    }
-                                                    Ok(Err(_)) => {
-                                                        eprintln!("Base-Matter: category buttons card rejected; category selector remains available");
-                                                        break;
-                                                    }
-                                                    Err(_) => {
-                                                        eprintln!("Base-Matter: category buttons card timed out; category selector remains available");
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        Err(_) => eprintln!("Base-Matter: category button cards invalid; selector remains available"),
-                                    }
-                                }
-                            }
-                            if !sent {
-                                sent = match timeout(Duration::from_secs(8), ctx.reply(&response)).await {
-                                    Ok(Ok(_)) => true,
-                                    Ok(Err(_)) => {
-                                        eprintln!("Base-Matter: control text reply rejected");
-                                        false
-                                    }
-                                    Err(_) => {
-                                        eprintln!("Base-Matter: control text reply timed out");
-                                        false
-                                    }
-                                };
-                            }
+                            let sent = if !sent {
+                                matches!(
+                                    timeout(Duration::from_secs(8), ctx.reply(&response)).await,
+                                    Ok(Ok(_))
+                                )
+                            } else {
+                                true
+                            };
                             if sent && is_private_vault_command(&frame, &config.owner_jid) {
                                 println!("Base-Matter: Vault owner response submitted to WhatsApp");
                             }
@@ -1151,17 +989,7 @@ async fn main() -> Result<()> {
                             if sent && selected_button.is_some() {
                                 println!("Base-Matter: interactive control received and authenticated");
                             }
-                            if sent && menu_lab && is_root && !data.is_group {
-                                let owner_self_chat =
-                                    frame.from_me && frame.chat_jid == config.owner_jid;
-                                send_menu_lab(
-                                    &ctx,
-                                    &response,
-                                    rich_html_trial && !rich_html_auto_send,
-                                    owner_self_chat,
-                                )
-                                .await;
-                            }
+
                         }
                         Ok(ControlAck::Duplicate) => {
                             println!("Base-Matter duplicate control ignored (no new effect)");
