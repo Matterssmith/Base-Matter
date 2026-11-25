@@ -476,6 +476,95 @@ pub fn visible_category_ids() -> Vec<&'static str> {
     ids
 }
 
+/// Platform-neutral button descriptors derived from the same command catalog.
+/// IDs carry the category identity; the provider adds presentation context.
+pub fn button_menu_items(section: &str, language: Language) -> Vec<serde_json::Value> {
+    let parts: Vec<_> = section.split_whitespace().collect();
+    let root = matches!(
+        parts.as_slice(),
+        ["=/>menu" | "=/>menú"]
+            | ["=/>menu" | "=/>menú", "classic" | "web" | "buttons" | "all"]
+            | ["=/>menu" | "=/>menú", "page", _]
+    );
+    if root {
+        return visible_category_ids()
+            .into_iter()
+            .filter(|id| *id != "all" || !section.ends_with(" all"))
+            .filter_map(|id| {
+                let title = if id == "all" {
+                    match language {
+                        Language::Es => "Todo",
+                        Language::En => "All",
+                    }
+                } else {
+                    label(CATEGORIES.iter().find(|cat| cat.id == id)?, language)
+                };
+                Some(serde_json::json!({
+                    "id": format!("matter.read.buttons.menu.{id}"),
+                    "title": title,
+                }))
+            })
+            .collect();
+    }
+    let (id, page) = match parts.as_slice() {
+        ["=/>menu" | "=/>menú", id] => (*id, 1),
+        ["=/>menu" | "=/>menú", id, page] => (*id, page.parse::<usize>().unwrap_or(0)),
+        _ => return Vec::new(),
+    };
+    let Some(category) = CATEGORIES.iter().find(|cat| cat.id == canonical_category(id)) else {
+        return Vec::new();
+    };
+    let commands: Vec<_> = category.commands.iter().filter(|cmd| cmd.implemented).collect();
+    const PAGE_SIZE: usize = 7;
+    let pages = commands.len().div_ceil(PAGE_SIZE);
+    if page == 0 || page > pages {
+        return Vec::new();
+    }
+    let mut items: Vec<_> = commands
+        .iter()
+        .skip((page - 1) * PAGE_SIZE)
+        .take(PAGE_SIZE)
+        .map(|cmd| {
+            let (id, title) = match cmd.name {
+                "status" => ("matter.read.status".to_owned(), "status".to_owned()),
+                "menu" => ("matter.read.menu.buttons".to_owned(), "menu".to_owned()),
+                "help" => ("matter.read.help".to_owned(), "help".to_owned()),
+                _ => (
+                    format!("matter.read.help.command.{}", cmd.name.replace(' ', ".")),
+                    format!(
+                        "{}: {}",
+                        match language {
+                            Language::Es => "Ayuda",
+                            Language::En => "Help",
+                        },
+                        cmd.name
+                    ),
+                ),
+            };
+            serde_json::json!({"id": id, "title": title})
+        })
+        .collect();
+    if page < pages {
+        items.push(serde_json::json!({
+            "id": format!("matter.read.buttons.menu.{}.{}", category.id, page + 1),
+            "title": match language {
+                Language::Es => "Siguiente",
+                Language::En => "Next",
+            },
+        }));
+    }
+    if page > 1 {
+        items.push(serde_json::json!({
+            "id": format!("matter.read.buttons.menu.{}.{}", category.id, page - 1),
+            "title": match language {
+                Language::Es => "Anterior",
+                Language::En => "Previous",
+            },
+        }));
+    }
+    items
+}
+
 pub fn command_count() -> usize {
     CATEGORIES
         .iter()

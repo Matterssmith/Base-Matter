@@ -207,16 +207,7 @@ fn web_navigation_has_no_classic_body_or_mode_heading() {
     let original = "MARCO CLASICO\nCategorías\n=/>status";
     let web = native_navigation_message(original, "=/>menu web").unwrap();
     let interactive = web.interactive_message.as_option().unwrap();
-    let body = interactive
-        .body
-        .as_option()
-        .unwrap()
-        .text
-        .as_deref()
-        .unwrap();
-    assert_eq!(body, "*Matterssmith* · ✦");
-    assert!(!body.contains("Menú web"));
-    assert!(!body.contains("MARCO CLASICO"));
+    assert!(interactive.body.as_option().is_none());
     let classic = native_navigation_message(original, "=/>menu classic").unwrap();
     assert_eq!(
         classic
@@ -235,7 +226,6 @@ fn web_navigation_has_no_classic_body_or_mode_heading() {
 #[test]
 fn native_navigation_has_one_visible_message_and_one_last_selector() {
     for (request, expected) in [
-        ("=/>menu web", "*Matterssmith* · ✦"),
         ("=/>menu buttons", "*Menu Buttons*"),
         ("=/>menu classic", "Categorías"),
         ("=/>menu all", "Categorías"),
@@ -458,4 +448,46 @@ fn native_ts18_ts19_buttons_use_quick_reply_and_readonly_ack_ids() {
         assert!(card.buttons_message.as_option().is_none());
         assert!(card.rich_response_message.as_option().is_none());
     }
+}
+
+#[test]
+fn buttons_use_catalog_descriptors_and_preserve_category_context() {
+    use whatsapp_matter_rust_provider::{ui, MenuItem};
+    let items = vec![
+        MenuItem {
+            id: "matter.read.buttons.menu.ia".to_owned(),
+            title: "IA".to_owned(),
+        },
+        MenuItem {
+            id: "matter.read.buttons.menu.anti.2".to_owned(),
+            title: "Siguiente".to_owned(),
+        },
+        MenuItem {
+            id: "matter.read.help.command.matter".to_owned(),
+            title: "Ayuda: matter".to_owned(),
+        },
+        MenuItem {
+            id: "matter.read.status".to_owned(),
+            title: "status".to_owned(),
+        },
+    ];
+    let cards = ui::button_menu_cards(&items, "IA");
+    assert_eq!(cards.len(), 2);
+    assert_eq!(
+        ui::menu_button_selection(&native_click(&items[0].id, "quick_reply")),
+        Some(("=/>menu ia".to_owned(), true))
+    );
+    assert_eq!(
+        ui::menu_button_selection(&native_click(&items[1].id, "quick_reply")),
+        Some(("=/>menu anti 2".to_owned(), true))
+    );
+    assert_eq!(
+        ui::menu_button_selection(&native_click(&items[2].id, "quick_reply")),
+        Some(("=/>help matter".to_owned(), true))
+    );
+    assert!(ui::menu_button_selection(&native_click(
+        "matter.read.buttons.menu.classic",
+        "quick_reply"
+    ))
+    .is_none());
 }

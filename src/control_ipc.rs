@@ -286,7 +286,23 @@ impl WhatsAppControlIpc {
         } else {
             None
         };
-        let response = if let Some(message) = message {
+        let menu_items = if matches!(&result, ControlIpcOutcome::Applied) {
+            serde_json::from_slice::<WhatsAppControlFrame>(&request)
+                .ok()
+                .filter(|frame| {
+                    matches!(
+                        frame.text.split_whitespace().next(),
+                        Some("=/>menu" | "=/>menú")
+                    )
+                })
+                .and_then(|frame| {
+                    let options = self.themes.current_menu_preferences().ok()?;
+                    Some(crate::menu::button_menu_items(&frame.text, options.language))
+                })
+        } else {
+            None
+        };
+        let mut response = if let Some(message) = message {
             if let Some(mode) = menu_mode {
                 serde_json::json!({
                     "ok":result.permitted(),"outcome":result.as_str(),
@@ -302,6 +318,11 @@ impl WhatsAppControlIpc {
                 "ok":result.permitted(),"outcome":result.as_str(),
             })
         };
+        if let Some(items) = menu_items {
+            if response.get("message").is_some() {
+                response["menu_items"] = serde_json::Value::Array(items);
+            }
+        }
         let encoded = serde_json::to_vec(&response)?;
         stream.write_all(&encoded)?;
         Ok(())

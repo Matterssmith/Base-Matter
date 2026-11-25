@@ -6,10 +6,10 @@
  */
 use anyhow::{bail, Result};
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc,
+        Arc, Mutex,
     },
 };
 use tokio::{
@@ -26,8 +26,8 @@ use whatsapp_matter_rust_provider::{
     render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
     ui::{
-        legacy_row_probe_message, native_navigation_message, native_ui_probe_message,
-        readonly_button_command,
+        button_menu_cards, legacy_row_probe_message, menu_button_selection,
+        native_navigation_message, native_ui_probe_message,
     },
     Config, ControlAck, Event, SessionLease,
 };
@@ -511,6 +511,8 @@ async fn main() -> Result<()> {
     // Never send two messages for a single menu request.
     // Logs processing stages only, never message bodies, JIDs, IDs or secrets.
     let diagnostic_messages = matches!(std::env::var("MATTER_WA_DIAG").as_deref(), Ok("1"));
+    // Presentation context only; scoped to authenticated chat and sender.
+    let menu_views = Arc::new(Mutex::new(HashMap::<(String, String), bool>::new()));
     require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
     let database = config
@@ -617,6 +619,7 @@ async fn main() -> Result<()> {
         )
         .on_message(move |ctx| {
             let config = Arc::clone(&config);
+            let menu_views = Arc::clone(&menu_views);
             async move {
                 let source = &ctx.info.source;
                 // Match across PN/LID with the linked client's verified
@@ -625,7 +628,7 @@ async fn main() -> Result<()> {
                 let sender = source.sender.to_non_ad_string();
                 let own_pn = ctx.client.pn().map(|jid| jid.to_non_ad_string());
                 let own_lid = ctx.client.lid().map(|jid| jid.to_non_ad_string());
-                let selected_button = readonly_button_command(&ctx.message);
+                let selected_button = menu_button_selection(&ctx.message);
                 let reply_help = help_from_quoted_message(
                     &ctx.message,
                     ctx.message.text_content().unwrap_or_default(),
@@ -701,6 +704,8 @@ async fn main() -> Result<()> {
                     sender_jid: &sender,
                     message_id: &ctx.info.id,
                     text: selected_button
+                        .as_ref()
+                        .map(|(command, _)| command.as_str())
                         .or(reply_help.as_deref())
                         .or_else(|| ctx.message.text_content())
                         .unwrap_or_default(),
@@ -729,6 +734,7 @@ async fn main() -> Result<()> {
                             ControlAck::Applied
                             | ControlAck::AppliedWithMessage(_)
                             | ControlAck::AppliedWithMenuMode { .. }
+                            | ControlAck::AppliedWithMenuItems { .. }
                         )) => {
                             if diagnostic_messages && selected_button.is_some() {
                                 println!("Base-Matter: comando interactivo aceptado");
@@ -742,12 +748,18 @@ async fn main() -> Result<()> {
                                 &ack,
                                 ControlAck::AppliedWithMessage(_)
                                     | ControlAck::AppliedWithMenuMode { .. }
+                                    | ControlAck::AppliedWithMenuItems { .. }
                             );
                             // This value comes from a successful authenticated IPC reply,
                             // never from user-authored WhatsApp text.
                             let preferred_menu_mode = match &ack {
                                 ControlAck::AppliedWithMenuMode { mode, .. } => Some(mode.clone()),
+                                ControlAck::AppliedWithMenuItems { mode, .. } => mode.clone(),
                                 _ => None,
+                            };
+                            let menu_items = match &ack {
+                                ControlAck::AppliedWithMenuItems { items, .. } => items.clone(),
+                                _ => Vec::new(),
                             };
                             let debug_requested = frame.text.ends_with(" --debug");
                             let actual_command = frame.text
@@ -788,7 +800,8 @@ async fn main() -> Result<()> {
                             } else {
                                 match ack {
                                     ControlAck::AppliedWithMessage(text) => text,
-                                    ControlAck::AppliedWithMenuMode { message, .. } => message,
+                                    ControlAck::AppliedWithMenuMode { message, .. }
+                                    | ControlAck::AppliedWithMenuItems { message, .. } => message,
                                     _ => "Base-Matter: solicitud procesada.".to_owned(),
                                 }
                             };
@@ -893,16 +906,34 @@ async fn main() -> Result<()> {
                             // Classic and buttons use one NativeFlow card.
                             // Web uses actual RichResponse plus independent native
                             // navigation; do not disguise classic text as HTML.
-                            let is_classic = matches!(
-                                actual_command,
-                                "=/>menu all" | "=/>menú all" | "=/>menu classic" | "=/>menú classic"
-                            ) || (is_root && preferred_menu_mode.as_deref() == Some("classic"));
-                            let is_web = matches!(
-                                actual_command, "=/>menu web" | "=/>menú web"
-                            ) || (is_root && preferred_menu_mode.as_deref().unwrap_or("web") == "web");
-                            let is_buttons = matches!(
-                                actual_command, "=/>menu buttons" | "=/>menú buttons"
-                            ) || (is_root && preferred_menu_mode.as_deref() == Some("buttons"));
+                            let explicit_classic = matches!(actual_command, "=/>menu classic" | "=/>menú classic");
+                            let explicit_web = matches!(actual_command, "=/>menu web" | "=/>menú web");
+                            let explicit_buttons = matches!(actual_command, "=/>menu buttons" | "=/>menú buttons");
+                            let view_key = (chat.clone(), sender.clone());
+                            let prior_buttons = menu_views.lock().ok()
+                                .and_then(|views| views.get(&view_key).copied())
+                                .unwrap_or(false);
+                            let category_buttons = is_menu
+                                && !is_root
+                                && !explicit_classic
+                                && !explicit_web
+                                && !explicit_buttons
+                                && (prior_buttons || selected_button.as_ref().is_some_and(|(_, buttons)| *buttons));
+                            let is_buttons = explicit_buttons
+                                || (is_root && preferred_menu_mode.as_deref() == Some("buttons"))
+                                || category_buttons;
+                            let is_web = explicit_web
+                                || (is_root && preferred_menu_mode.as_deref().unwrap_or("web") == "web");
+                            if is_menu {
+                                if let Ok(mut views) = menu_views.lock() {
+                                    if views.len() >= 1024 && !views.contains_key(&view_key) {
+                                        views.clear();
+                                    }
+                                    views.insert(view_key, is_buttons);
+                                }
+                            }
+                            let is_classic = explicit_classic
+                                || (is_root && preferred_menu_mode.as_deref() == Some("classic"));
                             let mut web_submitted = false;
                             if is_web
                                 && rich_html_trial
@@ -924,6 +955,26 @@ async fn main() -> Result<()> {
                                     eprintln!("Base-Matter: HTML menu could not be constructed");
                                 }
                             }
+                            // Buttons never copy the classic body. The last card is
+                            // the independent format selector, not another category list.
+                            if is_buttons && native_buttons {
+                                let title = if is_root || explicit_buttons {
+                                    "Menu Buttons"
+                                } else {
+                                    actual_command.strip_prefix("=/>menu ")
+                                        .or_else(|| actual_command.strip_prefix("=/>menú "))
+                                        .unwrap_or("Menu Buttons")
+                                };
+                                for card in button_menu_cards(&menu_items, title) {
+                                    match timeout(Duration::from_secs(8), ctx.send_message(card)).await {
+                                        Ok(Ok(_)) => {}
+                                        _ => {
+                                            eprintln!("Base-Matter: menu button card unavailable");
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                             let sent = if is_menu && native_buttons {
                                 let navigation_request = if is_buttons {
                                     "=/>menu buttons"
@@ -934,8 +985,8 @@ async fn main() -> Result<()> {
                                 } else {
                                     actual_command
                                 };
-                                let navigation_body = if is_web {
-                                    "Matterssmith"
+                                let navigation_body = if is_web || is_buttons {
+                                    "Matter"
                                 } else {
                                     &response
                                 };
@@ -964,11 +1015,11 @@ async fn main() -> Result<()> {
                                 false
                             };
                             let sent = if !sent {
-                                if is_web && web_submitted {
-                                    true
+                                if is_web {
+                                    web_submitted
                                 } else {
-                                    let fallback = if is_web {
-                                        "La vista HTML no está disponible. Usa =/>menu classic o =/>menu buttons."
+                                    let fallback = if is_buttons {
+                                        "Los botones no están disponibles en este cliente."
                                     } else {
                                         &response
                                     };

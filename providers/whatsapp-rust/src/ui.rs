@@ -180,11 +180,11 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
         _ => None,
     };
     let body_text = match current {
-        Some("web") => "*Matterssmith* · ✦".to_owned(),
-        Some("buttons") => format!("*Menu Buttons*\n{menu}"),
-        _ => menu.to_owned(),
+        Some("web") => None,
+        Some("buttons") => Some("*Menu Buttons*".to_owned()),
+        _ => Some(menu.to_owned()),
     };
-    if body_text.len() > MAX_MENU_BYTES {
+    if body_text.as_ref().is_some_and(|body| body.len() > MAX_MENU_BYTES) {
         bail!("Native menu body exceeds safe bounds");
     }
     let mode_rows: Vec<_> = [
@@ -210,9 +210,12 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     // the actual HTML uses the separate experimental RichResponse transport.
     Ok(wa::Message {
         interactive_message: MessageField::some(wa::message::InteractiveMessage {
-            body: MessageField::some(wa::message::interactive_message::Body {
-                text: Some(body_text),
-            }),
+            body: match body_text {
+                Some(text) => MessageField::some(wa::message::interactive_message::Body {
+                    text: Some(text),
+                }),
+                None => MessageField::default(),
+            },
             interactive_message: Some(
                 wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(Box::new(
                     wa::message::interactive_message::NativeFlowMessage {
@@ -226,6 +229,43 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
         }),
         ..Default::default()
     })
+}
+
+/// Render at most three real read-only quick replies per native card.
+/// The descriptors come from the authenticated shared controller catalog.
+pub fn button_menu_cards(items: &[crate::MenuItem], title: &str) -> Vec<wa::Message> {
+    items
+        .chunks(3)
+        .map(|chunk| {
+            let buttons = chunk
+                .iter()
+                .map(|item| wa::message::interactive_message::native_flow_message::NativeFlowButton {
+                    name: Some("quick_reply".to_owned()),
+                    button_params_json: Some(
+                        serde_json::json!({"display_text": item.title, "id": item.id}).to_string(),
+                    ),
+                })
+                .collect();
+            wa::Message {
+                interactive_message: MessageField::some(wa::message::InteractiveMessage {
+                    body: MessageField::some(wa::message::interactive_message::Body {
+                        text: Some(title.to_owned()),
+                    }),
+                    interactive_message: Some(
+                        wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(
+                            Box::new(wa::message::interactive_message::NativeFlowMessage {
+                                buttons,
+                                message_version: Some(1),
+                                ..Default::default()
+                            }),
+                        ),
+                    ),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }
+        })
+        .collect()
 }
 
 /// Owner-only UI diagnostic transport. This does not verify phone rendering;
@@ -430,7 +470,7 @@ pub fn legacy_row_probe_message() -> wa::Message {
 /// A response is only a request to a read-only, fixed command.
 /// The normal WhatsApp identity, HMAC and replay checks run after mapping.
 /// Legacy button replies are recognized for Go-style ButtonsRow compatibility.
-pub fn readonly_button_command(message: &wa::Message) -> Option<&'static str> {
+fn response_id(message: &wa::Message) -> Option<String> {
     // WhatsApp list rows are not guaranteed to arrive as NativeFlow.
     // Select by opaque protocol IDs only; never trust visible text.
     let id = if let Some(response) = message.interactive_response_message.as_option() {
@@ -473,5 +513,48 @@ pub fn readonly_button_command(message: &wa::Message) -> Option<&'static str> {
     if id.len() > 128 {
         return None;
     }
-    button_command(&id)
+    Some(id)
+}
+
+pub fn readonly_button_command(message: &wa::Message) -> Option<&'static str> {
+    button_command(&response_id(message)?)
+}
+
+/// A format-qualified category ID carries presentation context, not authority.
+/// The resulting command still goes through the normal signed dispatcher.
+pub fn menu_button_selection(message: &wa::Message) -> Option<(String, bool)> {
+    let id = response_id(message)?;
+    if let Some(category) = id.strip_prefix("matter.read.buttons.menu.") {
+        let (category, page) = category
+            .split_once('.')
+            .map_or((category, None), |(category, page)| (category, Some(page)));
+        let command = button_command(&format!("matter.read.menu.{category}"))?;
+        if !command.starts_with("=/>menu ")
+            || matches!(category, "classic" | "web" | "buttons")
+        {
+            return None;
+        }
+        let command = match page {
+            Some(page) if page.parse::<usize>().is_ok_and(|n| (1..=8).contains(&n)) => {
+                format!("{command} {page}")
+            }
+            Some(_) => return None,
+            None => command.to_owned(),
+        };
+        return Some((command, true));
+    }
+    if let Some(name) = id.strip_prefix("matter.read.help.command.") {
+        if name.is_empty()
+            || name.len() > 64
+            || name.split('.').count() > 3
+            || name.split('.').any(|part| {
+                part.is_empty()
+                    || !part.bytes().all(|b| b.is_ascii_alphanumeric() || b"_-".contains(&b))
+            })
+        {
+            return None;
+        }
+        return Some((format!("=/>help {}", name.replace('.', " ")), true));
+    }
+    button_command(&id).map(|command| (command.to_owned(), false))
 }

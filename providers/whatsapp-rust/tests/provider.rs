@@ -787,3 +787,17 @@ fn group_anti_observation_is_signed_without_owner_privileges() {
         .is_none());
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn menu_descriptors_are_read_only_typed_ack_metadata() {
+    let data = serde_json::json!({
+        "ok": true,
+        "outcome": "applied",
+        "message": "IA",
+        "menu_items": [{"id": "matter.read.buttons.menu.ia", "title": "IA"}]
+    });
+    assert!(matches!(
+        whatsapp_matter_rust_provider::parse_control_ack(data.to_string().as_bytes()).unwrap(),
+        whatsapp_matter_rust_provider::ControlAck::AppliedWithMenuItems { .. }
+    ));
+}

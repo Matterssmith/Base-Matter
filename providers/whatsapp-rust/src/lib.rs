@@ -76,8 +76,20 @@ pub enum ControlAck {
     Applied,
     AppliedWithMessage(String),
     AppliedWithMenuMode { message: String, mode: String },
+    AppliedWithMenuItems {
+        message: String,
+        mode: Option<String>,
+        items: Vec<MenuItem>,
+    },
     Duplicate,
     Ignored,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MenuItem {
+    pub id: String,
+    pub title: String,
 }
 
 #[derive(Deserialize)]
@@ -89,6 +101,8 @@ struct ControlAckWire {
     message: Option<String>,
     #[serde(default)]
     menu_mode: Option<String>,
+    #[serde(default)]
+    menu_items: Option<Vec<MenuItem>>,
 }
 
 /// Interpret the signed-control IPC acknowledgment conservatively.
@@ -104,6 +118,35 @@ pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
             && message.len() <= 3800
             && !message.chars().any(|c| c.is_control() && c != '\n')
     };
+    if let Some(items) = response.menu_items {
+        if !response.ok
+            || response.outcome != "applied"
+            || items.len() > 21
+            || items.iter().any(|item| {
+                item.id.len() > 128
+                    || item.title.is_empty()
+                    || item.title.len() > 128
+                    || item.title.chars().any(char::is_control)
+                    || !item.id.starts_with("matter.read.")
+                    || !item.id.bytes().all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+            })
+            || response
+                .menu_mode
+                .as_deref()
+                .is_some_and(|mode| !matches!(mode, "web" | "classic" | "buttons"))
+        {
+            bail!("Invalid menu descriptor acknowledgment");
+        }
+        let message = response
+            .message
+            .filter(|message| valid_message(message))
+            .ok_or_else(|| anyhow!("Missing menu descriptor message"))?;
+        return Ok(ControlAck::AppliedWithMenuItems {
+            message,
+            mode: response.menu_mode,
+            items,
+        });
+    }
     match (
         response.ok,
         response.outcome.as_str(),
