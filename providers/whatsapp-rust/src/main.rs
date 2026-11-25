@@ -97,32 +97,33 @@ async fn send_menu_lab(
     rich_html: bool,
     owner_self_chat: bool,
 ) {
+    // Do not let optional UI experiments occupy the WhatsApp callback
+    // indefinitely. All transport errors are logged without message data.
     if owner_self_chat && rich_html {
         if let Ok(message) = experimental_self_chat_rich_message(menu) {
-            if ctx.send_message(message).await.is_err() {
-                eprintln!("Base-Matter: rich HTML menu experiment rejected");
-            } else {
-                eprintln!("Base-Matter: rich HTML send accepted; mobile rendering unverified");
+            match timeout(Duration::from_secs(8), ctx.send_message(message)).await {
+                Ok(Ok(_)) => eprintln!("Base-Matter: rich HTML lab send accepted; rendering unverified"),
+                Ok(Err(_)) => eprintln!("Base-Matter: rich HTML lab send rejected"),
+                Err(_) => eprintln!("Base-Matter: rich HTML lab send timed out"),
             }
         } else {
-            eprintln!("Base-Matter: rich HTML preview exceeds bounds");
+            eprintln!("Base-Matter: rich HTML lab menu exceeds bounds");
         }
     }
     for variant in [MenuCardVariant::Ts18, MenuCardVariant::Ts19] {
-        if ctx
-            .send_message(native_menu_lab_card(variant))
-            .await
-            .is_err()
-        {
-            eprintln!("Base-Matter: NativeFlow test card rejected; trying legacy buttons");
-            if ctx.send_message(menu_lab_card(variant)).await.is_err() {
-                eprintln!("Base-Matter: legacy button card rejected");
-            }
-        } else if owner_self_chat {
-            // Self-chat only: compare transports to identify clients that
-            // silently accept a message but fail to display its buttons.
-            if ctx.send_message(menu_lab_card(variant)).await.is_err() {
-                eprintln!("Base-Matter: legacy comparison card rejected");
+        let native_sent =
+            matches!(
+                timeout(Duration::from_secs(8), ctx.send_message(native_menu_lab_card(variant))).await,
+                Ok(Ok(_))
+            );
+        if !native_sent {
+            eprintln!("Base-Matter: NativeFlow lab card unavailable; trying legacy buttons");
+        }
+        if !native_sent || owner_self_chat {
+            match timeout(Duration::from_secs(8), ctx.send_message(menu_lab_card(variant))).await {
+                Ok(Ok(_)) => {}
+                Ok(Err(_)) => eprintln!("Base-Matter: legacy lab card rejected"),
+                Err(_) => eprintln!("Base-Matter: legacy lab card send timed out"),
             }
         }
     }
@@ -148,8 +149,10 @@ async fn send_menu_lab(
                     ..Default::default()
                 },
             );
-            if ctx.send_message(sound).await.is_err() {
-                eprintln!("Base-Matter: menu audio message rejected");
+            match timeout(Duration::from_secs(8), ctx.send_message(sound)).await {
+                Ok(Ok(_)) => {}
+                Ok(Err(_)) => eprintln!("Base-Matter: menu audio message rejected"),
+                Err(_) => eprintln!("Base-Matter: menu audio message timed out"),
             }
         }
         _ => eprintln!("Base-Matter: menu audio upload unavailable"),
@@ -1060,7 +1063,7 @@ async fn main() -> Result<()> {
                                 send_menu_lab(
                                     &ctx,
                                     &response,
-                                    rich_html_trial,
+                                    rich_html_trial && !rich_html_auto_send,
                                     owner_self_chat,
                                 )
                                 .await;
