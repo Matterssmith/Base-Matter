@@ -1,5 +1,21 @@
 # Menú Matter desplegable para WhatsApp — alpha
 
+## 2026-11-24 — HTML enriquecido dentro del chat (experimento real)
+
+Se revisó el código de `jbeckforddev/Aura-Bot-2.0` (rama `master`): `cmd/socket/menu.ts` aún envía texto con previsualización; en cambio `cmd/funy/xd1.ts`, `cmd/system/Testxd3.ts` y los juegos usan `GenAIaeacdsnwHtmlPrimitive` dentro de `AIRichResponseMessage`, habitualmente anidado en `botForwardedMessage` (protobuf 104). El formato es **experimental**, no una interfaz HTML pública oficial estable ni una prueba de renderizado en cada teléfono.
+
+Se adaptó el protocolo a Rust, sin copiar diseños de Aura: `rich_preview::menu_inline_html` crea una tarjeta Matterssmith original con HTML/CSS y `<details>` cerrado por defecto, escapando el texto; `experimental_rich_schema` incluye el HTML directo en `sections` y en el contenedor de pestaña; `rich_transport` lo empaqueta en `wa::message::FutureProofMessage`/ `bot_forwarded_message` como envoltorio. No se fabrican comprobantes, nombres o JIDs de Meta AI. La prueba `=/>test html` sigue limitada al propietario en su chat propio.
+
+Con `MATTER_WA_RICH_HTML=1` en la configuración **privada ya existente del proveedor** (nunca en Git), `=/>menu` envía la tarjeta HTML a un chat previamente autorizado por el controlador y, además, el selector NativeFlow pequeño para accionar categorías de lectura. Este segundo mensaje es necesario porque pulsar un elemento del HTML no autoriza ni envía por sí solo un comando WhatsApp. No se crean permisos nuevos. Con la variable ausente u OFF queda la interfaz nativa/texto. Un éxito de `send_message` solo acredita envío; el móvil debe comprobar el contenido visible.
+
+**Pruebas requeridas antes de despliegue**:
+`cargo fmt --manifest-path providers/whatsapp-rust/Cargo.toml -- --check`;
+`cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --test rich_preview --test rich_transport --test ui`.
+Después compilar el proveedor de forma aislada, comparar el binario y hacer cambio controlado con respaldo y `--resume-only`, sin duplicar WhatsApp ni tocar Vault.
+
+Estado actual: código y regresiones actualizados en `alpha`. Sin validación Cargo, CI ni prueba real en WhatsApp en esta conversación. Si el cliente no muestra HTML, conservar el selector nativo y usar `=/>menu all` para texto.
+
+
 Estado: cambio de código en `alpha`, **sin despliegue en idkbot ni verificación visual en teléfono**. Fecha: 2026-11-24.
 
 ## Contrato visible solicitado
