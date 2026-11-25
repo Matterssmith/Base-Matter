@@ -12,9 +12,16 @@ use whatsapp_matter_rust_provider::{
 #[test]
 fn rich_transport_wraps_original_owner_menu_without_fake_meta_ai_origin() {
     let message = experimental_self_chat_rich_message(original_menu()).unwrap();
-    assert!(message.bot_forwarded_message.as_option().is_none());
+    assert!(message.rich_response_message.as_option().is_none());
     assert!(message.message_context_info.as_option().is_none());
-    let rich = message.rich_response_message.as_option().unwrap();
+    let nested = message
+        .bot_forwarded_message
+        .as_option()
+        .unwrap()
+        .message
+        .as_option()
+        .unwrap();
+    let rich = nested.rich_response_message.as_option().unwrap();
     assert!(rich.context_info.as_option().is_none());
     assert_eq!(rich.submessages.len(), 1);
     let body = rich
@@ -36,10 +43,11 @@ fn rich_transport_wraps_original_owner_menu_without_fake_meta_ai_origin() {
         .unwrap();
     assert!(html.contains("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
     assert!(html.contains("꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡"));
-    assert!(html.contains("disabled>Audio</button>"));
-    assert!(html.contains("disabled>MP4</button>"));
-    assert!(html.contains("disabled>Enlace</button>"));
-    assert!(html.contains("data:audio/ogg;base64,"));
+    assert!(html.contains("<details><summary>Mostrar menú de texto</summary>"));
+    assert!(!html.contains("<details open"));
+    assert!(!html.contains("<script"));
+    assert!(html.contains("=/>status"));
+    assert_eq!(json["sections"][0]["view_model"]["primitive"]["__typename"], "GenAIaeacdsnwHtmlPrimitive");
     let wire = json.to_string();
     for marker in [
         "0@bot",
@@ -61,10 +69,9 @@ fn rich_transport_bounds_inputs_and_uses_fresh_message_ids() {
     let first = experimental_self_chat_rich_message(original_menu()).unwrap();
     let second = experimental_self_chat_rich_message(original_menu()).unwrap();
     let get_id = |message: whatsapp_rust::prelude::wa::Message| {
-        let rich = message.rich_response_message;
+        let nested = message.bot_forwarded_message.as_option().unwrap();
+        let rich = nested.message.as_option().unwrap().rich_response_message.as_option().unwrap();
         let data = rich
-            .as_option()
-            .unwrap()
             .unified_response
             .as_option()
             .unwrap()
