@@ -31,11 +31,7 @@ use whatsapp_matter_rust_provider::{
     },
     Config, ControlAck, Event, SessionLease,
 };
-use whatsapp_rust::{
-    pair_code::PairCodeOptions,
-    prelude::*,
-    types::events::ConnectFailureReason,
-};
+use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*, types::events::ConnectFailureReason};
 
 async fn deliver(
     address: std::net::SocketAddrV4,
