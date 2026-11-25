@@ -6,9 +6,9 @@
  */
 use buffa::MessageField;
 use whatsapp_matter_rust_provider::ui::{
-    legacy_row_probe_message, menu_lab_card, native_menu_lab_card, native_menu_message,
-    native_category_button_cards, native_navigation_message, native_ui_probe_message, readonly_button_command,
-    short_html_to_whatsapp, MenuCardVariant,
+    legacy_row_probe_message, menu_lab_card, native_category_button_cards, native_menu_lab_card,
+    native_menu_message, native_navigation_message, native_ui_probe_message,
+    readonly_button_command, short_html_to_whatsapp, MenuCardVariant,
 };
 use whatsapp_rust::prelude::wa;
 
@@ -63,7 +63,13 @@ fn root_menu_shows_categories_and_classic_button_without_visible_text() {
     let original = include_str!("../../../templates/matterssmith-menu.txt").trim_end();
     let message = native_menu_message(original).unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
-    let body = interactive.body.as_option().unwrap().text.as_deref().unwrap();
+    let body = interactive
+        .body
+        .as_option()
+        .unwrap()
+        .text
+        .as_deref()
+        .unwrap();
     assert_eq!(body, "\u{200b}");
     assert!(interactive.footer.as_option().is_none());
     assert!(message.conversation.is_none());
@@ -108,7 +114,10 @@ fn root_menu_shows_categories_and_classic_button_without_visible_text() {
 fn second_page_preserves_categories_and_classic_quick_reply() {
     let message = native_navigation_message("Categorías", "=/>menu page 2").unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
-    assert_eq!(interactive.body.as_option().unwrap().text.as_deref(), Some("\u{200b}"));
+    assert_eq!(
+        interactive.body.as_option().unwrap().text.as_deref(),
+        Some("\u{200b}")
+    );
     assert!(interactive.footer.as_option().is_none());
     let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
         interactive.interactive_message.as_ref()
@@ -157,23 +166,50 @@ fn classic_button_routes_without_permissions_and_menu_all_remains_supported() {
         ("matter.read.menu.buttons", "=/>menu buttons"),
         ("matter.read.menu.all", "=/>menu all"),
     ] {
-        assert_eq!(readonly_button_command(&native_click(id, "quick_reply")), Some(command));
-        assert_eq!(readonly_button_command(&native_click(id, "single_select")), Some(command));
+        assert_eq!(
+            readonly_button_command(&native_click(id, "quick_reply")),
+            Some(command)
+        );
+        assert_eq!(
+            readonly_button_command(&native_click(id, "single_select")),
+            Some(command)
+        );
     }
-    assert!(readonly_button_command(&native_click("matter.read.roles.grant", "quick_reply")).is_none());
+    assert!(
+        readonly_button_command(&native_click("matter.read.roles.grant", "quick_reply")).is_none()
+    );
 }
 
 #[test]
 fn modes_keep_selector_and_switch_to_each_other_with_no_root_prose() {
     for (mode, first, second) in [
-        ("=/>menu web", "matter.read.menu.classic", "matter.read.menu.buttons"),
-        ("=/>menu classic", "matter.read.menu.web", "matter.read.menu.buttons"),
-        ("=/>menu buttons", "matter.read.menu.classic", "matter.read.menu.web"),
-        ("=/>menu all", "matter.read.menu.web", "matter.read.menu.buttons"),
+        (
+            "=/>menu web",
+            "matter.read.menu.classic",
+            "matter.read.menu.buttons",
+        ),
+        (
+            "=/>menu classic",
+            "matter.read.menu.web",
+            "matter.read.menu.buttons",
+        ),
+        (
+            "=/>menu buttons",
+            "matter.read.menu.classic",
+            "matter.read.menu.web",
+        ),
+        (
+            "=/>menu all",
+            "matter.read.menu.web",
+            "matter.read.menu.buttons",
+        ),
     ] {
         let message = native_navigation_message("Categorías", mode).unwrap();
         let interactive = message.interactive_message.as_option().unwrap();
-        assert_eq!(interactive.body.as_option().unwrap().text.as_deref(), Some("\u{200b}"));
+        assert_eq!(
+            interactive.body.as_option().unwrap().text.as_deref(),
+            Some("\u{200b}")
+        );
         let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
             interactive.interactive_message.as_ref()
         else {
@@ -181,7 +217,10 @@ fn modes_keep_selector_and_switch_to_each_other_with_no_root_prose() {
         };
         assert_eq!(native.buttons.len(), 3);
         let selector_index = if mode == "=/>menu buttons" { 2 } else { 0 };
-        assert_eq!(native.buttons[selector_index].name.as_deref(), Some("single_select"));
+        assert_eq!(
+            native.buttons[selector_index].name.as_deref(),
+            Some("single_select")
+        );
         let switch_positions = if mode == "=/>menu buttons" {
             [(0, first), (1, second)]
         } else {
@@ -189,7 +228,8 @@ fn modes_keep_selector_and_switch_to_each_other_with_no_root_prose() {
         };
         for (i, id) in switch_positions {
             let params: serde_json::Value =
-                serde_json::from_str(native.buttons[i].button_params_json.as_deref().unwrap()).unwrap();
+                serde_json::from_str(native.buttons[i].button_params_json.as_deref().unwrap())
+                    .unwrap();
             assert_eq!(params["id"], id);
             assert!(readonly_button_command(&native_click(id, "quick_reply")).is_some());
         }
@@ -199,14 +239,19 @@ fn modes_keep_selector_and_switch_to_each_other_with_no_root_prose() {
 #[test]
 fn buttons_menu_has_one_real_clickable_button_per_visible_category_in_bounded_cards() {
     let cards = native_category_button_cards().unwrap();
-    let visible: Vec<String> =
-        serde_json::from_str(include_str!("../../../templates/menu-visible-categories.json")).unwrap();
+    let visible: Vec<String> = serde_json::from_str(include_str!(
+        "../../../templates/menu-visible-categories.json"
+    ))
+    .unwrap();
     assert_eq!(cards.len(), visible.len().div_ceil(3));
     assert_eq!(cards.len(), 4);
     let mut seen = Vec::new();
     for card in cards {
         let interactive = card.interactive_message.as_option().unwrap();
-        assert_eq!(interactive.body.as_option().unwrap().text.as_deref(), Some("\u{200b}"));
+        assert_eq!(
+            interactive.body.as_option().unwrap().text.as_deref(),
+            Some("\u{200b}")
+        );
         let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
             interactive.interactive_message.as_ref()
         else {
@@ -219,14 +264,19 @@ fn buttons_menu_has_one_real_clickable_button_per_visible_category_in_bounded_ca
             let data: serde_json::Value =
                 serde_json::from_str(button.button_params_json.as_deref().unwrap()).unwrap();
             let id = data["id"].as_str().unwrap();
-            assert!(data["display_text"].as_str().is_some_and(|s| !s.is_empty() && s.chars().count() <= 20));
+            assert!(data["display_text"]
+                .as_str()
+                .is_some_and(|s| !s.is_empty() && s.chars().count() <= 20));
             assert!(readonly_button_command(&native_click(id, "quick_reply")).is_some());
             seen.push(id.to_owned());
         }
     }
     assert_eq!(
         seen,
-        visible.into_iter().map(|id| format!("matter.read.menu.{id}")).collect::<Vec<_>>()
+        visible
+            .into_iter()
+            .map(|id| format!("matter.read.menu.{id}"))
+            .collect::<Vec<_>>()
     );
 }
 
