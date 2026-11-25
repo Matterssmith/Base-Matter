@@ -397,6 +397,10 @@ impl Config {
                         .all(|byte| byte.is_ascii_alphanumeric() || b"-_".contains(&byte))
             }
             ["=/>test"] | ["=/>test", "ui" | "row"] => true,
+            // Rich HTML is an opt-in, read-only transport probe. Allow it
+            // from verified group metadata; never from a foreign private chat.
+            // Admission and bot-on policy are still enforced by the controller.
+            ["=/>test", "html"] => event.is_group,
             ["=/>register"] | ["=/>register", "start"] => true,
             // The provider proves the private sender; the controller MUST
             // consult encrypted Vault global authority before answering.
