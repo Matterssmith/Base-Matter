@@ -184,7 +184,10 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
         Some("buttons") => Some("*Menu Buttons*".to_owned()),
         _ => Some(menu.to_owned()),
     };
-    if body_text.as_ref().is_some_and(|body| body.len() > MAX_MENU_BYTES) {
+    if body_text
+        .as_ref()
+        .is_some_and(|body| body.len() > MAX_MENU_BYTES)
+    {
         bail!("Native menu body exceeds safe bounds");
     }
     let mode_rows: Vec<_> = [
@@ -211,9 +214,9 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     Ok(wa::Message {
         interactive_message: MessageField::some(wa::message::InteractiveMessage {
             body: match body_text {
-                Some(text) => MessageField::some(wa::message::interactive_message::Body {
-                    text: Some(text),
-                }),
+                Some(text) => {
+                    MessageField::some(wa::message::interactive_message::Body { text: Some(text) })
+                }
                 None => MessageField::default(),
             },
             interactive_message: Some(
@@ -239,11 +242,14 @@ pub fn button_menu_cards(items: &[crate::MenuItem], title: &str) -> Vec<wa::Mess
         .map(|chunk| {
             let buttons = chunk
                 .iter()
-                .map(|item| wa::message::interactive_message::native_flow_message::NativeFlowButton {
-                    name: Some("quick_reply".to_owned()),
-                    button_params_json: Some(
-                        serde_json::json!({"display_text": item.title, "id": item.id}).to_string(),
-                    ),
+                .map(|item| {
+                    wa::message::interactive_message::native_flow_message::NativeFlowButton {
+                        name: Some("quick_reply".to_owned()),
+                        button_params_json: Some(
+                            serde_json::json!({"display_text": item.title, "id": item.id})
+                                .to_string(),
+                        ),
+                    }
                 })
                 .collect();
             wa::Message {
@@ -529,9 +535,7 @@ pub fn menu_button_selection(message: &wa::Message) -> Option<(String, bool)> {
             .split_once('.')
             .map_or((category, None), |(category, page)| (category, Some(page)));
         let command = button_command(&format!("matter.read.menu.{category}"))?;
-        if !command.starts_with("=/>menu ")
-            || matches!(category, "classic" | "web" | "buttons")
-        {
+        if !command.starts_with("=/>menu ") || matches!(category, "classic" | "web" | "buttons") {
             return None;
         }
         let command = match page {
@@ -549,7 +553,9 @@ pub fn menu_button_selection(message: &wa::Message) -> Option<(String, bool)> {
             || name.split('.').count() > 3
             || name.split('.').any(|part| {
                 part.is_empty()
-                    || !part.bytes().all(|b| b.is_ascii_alphanumeric() || b"_-".contains(&b))
+                    || !part
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b"_-".contains(&b))
             })
         {
             return None;

@@ -511,10 +511,17 @@ pub fn button_menu_items(section: &str, language: Language) -> Vec<serde_json::V
         ["=/>menu" | "=/>menú", id, page] => (*id, page.parse::<usize>().unwrap_or(0)),
         _ => return Vec::new(),
     };
-    let Some(category) = CATEGORIES.iter().find(|cat| cat.id == canonical_category(id)) else {
+    let Some(category) = CATEGORIES
+        .iter()
+        .find(|cat| cat.id == canonical_category(id))
+    else {
         return Vec::new();
     };
-    let commands: Vec<_> = category.commands.iter().filter(|cmd| cmd.implemented).collect();
+    let commands: Vec<_> = category
+        .commands
+        .iter()
+        .filter(|cmd| cmd.implemented)
+        .collect();
     const PAGE_SIZE: usize = 7;
     let pages = commands.len().div_ceil(PAGE_SIZE);
     if page == 0 || page > pages {

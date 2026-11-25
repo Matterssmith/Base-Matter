@@ -297,7 +297,10 @@ impl WhatsAppControlIpc {
                 })
                 .and_then(|frame| {
                     let options = self.themes.current_menu_preferences().ok()?;
-                    Some(crate::menu::button_menu_items(&frame.text, options.language))
+                    Some(crate::menu::button_menu_items(
+                        &frame.text,
+                        options.language,
+                    ))
                 })
         } else {
             None

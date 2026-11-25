@@ -1,3 +1,9 @@
+## 2026-11-25 — Rustfmt del catálogo compartido
+
+CI del SHA 0a2b1e6 y servidor idkbot detuvieron el arranque en formato. Aplicadas todas las diferencias exactas de rustfmt de los dos workflows Linux: src/menu.rs, src/control_ipc.rs y proveedor src/lib.rs y src/ui.rs. Sin cambios de comportamiento, permisos, sesión ni Vault. README revisados: 2/2. Nuevo CI pendiente; no declarar aprobación hasta comprobar resultados.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-25 — Vistas independientes y categoría compartida
 
 Solicitud del propietario: web sin texto de respaldo ni marca en el selector; Buttons no debe copiar el clásico; un ID canónico por categoría con presentación según el formato. El controlador deriva descriptores de botones del mismo CATEGORIES/CommandSpec y los adjunta únicamente al ACK autorizado. El proveedor muestra respuestas rápidas de hasta tres por tarjeta y selector final exclusivo «Otros menús». Los ID de navegación Buttons contienen el ID canónico y conservan el contexto al pulsarlos incluso desde una tarjeta anterior; el último formato se recuerda por chat/remitente en memoria acotada para los comandos escritos. Los botones de comandos sin argumentos seguros muestran ayuda explícita, no mutan configuración. Todo agrega navegación por categorías; las páginas de una categoría conservan su identificador. El catálogo web por categoría queda pendiente: las consultas desde web siguen usando clásico mientras no se verifique el HTML. Web no tiene cuerpo nativo textual; HTML y selector son transportes separados, sin garantía de renderizado del selector sin cuerpo. No se modifica Vault, autenticación ni sesiones. README revisados: 2/2. CI, formato y prueba real pendientes.

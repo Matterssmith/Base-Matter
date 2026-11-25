@@ -75,7 +75,10 @@ pub struct SignedFrame {
 pub enum ControlAck {
     Applied,
     AppliedWithMessage(String),
-    AppliedWithMenuMode { message: String, mode: String },
+    AppliedWithMenuMode {
+        message: String,
+        mode: String,
+    },
     AppliedWithMenuItems {
         message: String,
         mode: Option<String>,
@@ -128,7 +131,10 @@ pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
                     || item.title.len() > 128
                     || item.title.chars().any(char::is_control)
                     || !item.id.starts_with("matter.read.")
-                    || !item.id.bytes().all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+                    || !item
+                        .id
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
             })
             || response
                 .menu_mode
