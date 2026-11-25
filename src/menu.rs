@@ -808,6 +808,21 @@ mod tests {
     }
 
     #[test]
+    fn explicit_menu_classic_restores_original_category_overview() {
+        let options = Preferences::default();
+        let original = render("menu", options).unwrap();
+        let classic = render("menu classic", options).unwrap();
+        let spanish = render("menú classic", options).unwrap();
+        let all = render("menu all", options).unwrap();
+        assert_eq!(classic, original);
+        assert_eq!(spanish, original);
+        assert!(classic.contains("Proyecto: Matter Ecosystem"));
+        assert!(classic.contains("[menu ia]"));
+        assert!(classic.contains("[menu anti]"));
+        assert_ne!(classic, all);
+    }
+
+    #[test]
     fn category_submenus_are_paginated_and_describe_commands() {
         let options = Preferences::default();
         let set = render("menu set", options).unwrap();
