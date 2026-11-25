@@ -1208,20 +1208,26 @@ impl ControlDispatcher {
                         output: "Predeterminado general del menú (fábrica, sin configuración Vault): menú web; alternativas classic y buttons; estilo classic; idioma es.".to_owned(),
                     });
                 }
-                ["set", "menu"] | ["set", "menu", "--mod"]
-                | ["set", "--mod", "menu"] => {
+                ["set", "menu"] | ["set", "menu", "--mod"] | ["set", "--mod", "menu"] => {
                     if group.is_some() {
                         bail!("Menu configuration requires the owner's private chat");
                     }
-                    let admission = self.activation.admission(receiving_socket, None, self.global_policy)?;
+                    let admission =
+                        self.activation
+                            .admission(receiving_socket, None, self.global_policy)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }
-                    let themes = self.public_menu.as_ref()
+                    let themes = self
+                        .public_menu
+                        .as_ref()
                         .ok_or_else(|| anyhow!("Menu preferences are unavailable"))?;
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
-                        output: format!("Menú predeterminado: {} (web|classic|buttons).", themes.current_menu_mode()?.as_str()),
+                        output: format!(
+                            "Menú predeterminado: {} (web|classic|buttons).",
+                            themes.current_menu_mode()?.as_str()
+                        ),
                     });
                 }
                 ["set", "menu", value]
@@ -1231,16 +1237,22 @@ impl ControlDispatcher {
                     if group.is_some() {
                         bail!("Menu configuration requires the owner's private chat");
                     }
-                    let admission = self.activation.admission(receiving_socket, None, self.global_policy)?;
+                    let admission =
+                        self.activation
+                            .admission(receiving_socket, None, self.global_policy)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
                     }
-                    let themes = self.public_menu.as_ref()
+                    let themes = self
+                        .public_menu
+                        .as_ref()
                         .ok_or_else(|| anyhow!("Menu preferences are unavailable"))?;
                     themes.set_menu_mode(value)?;
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
-                        output: format!("Menú predeterminado: {value}. Abre =/>menu para verificar."),
+                        output: format!(
+                            "Menú predeterminado: {value}. Abre =/>menu para verificar."
+                        ),
                     });
                 }
                 ["set", "style" | "lang" | "language", value]
