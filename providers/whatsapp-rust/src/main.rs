@@ -26,8 +26,9 @@ use whatsapp_matter_rust_provider::{
     render_provider_control,
     rich_transport::experimental_self_chat_rich_message,
     ui::{
-        legacy_row_probe_message, menu_lab_card, native_menu_lab_card, native_navigation_message,
-        native_ui_probe_message, readonly_button_command, MenuCardVariant,
+        legacy_row_probe_message, menu_lab_card, native_category_button_cards,
+        native_menu_lab_card, native_navigation_message, native_ui_probe_message,
+        readonly_button_command, MenuCardVariant,
     },
     Config, ControlAck, Event, SessionLease,
 };
@@ -1003,6 +1004,9 @@ async fn main() -> Result<()> {
                             let is_web = matches!(
                                 actual_command, "=/>menu web" | "=/>menú web"
                             ) || (is_root && preferred_menu_mode.as_deref().unwrap_or("web") == "web");
+                            let is_buttons = matches!(
+                                actual_command, "=/>menu buttons" | "=/>menú buttons"
+                            ) || (is_root && preferred_menu_mode.as_deref() == Some("buttons"));
                             // Help is text-only. A help reply must not display a category selector.
                             // A verified =/>menu may deliver the experimental in-chat HTML card.
                             // The native selector is ALSO sent so category taps still map to
@@ -1049,8 +1053,18 @@ async fn main() -> Result<()> {
                                     Err(_) => eprintln!("Base-Matter: Rich HTML menu unavailable; native/text fallback"),
                                 }
                             }
-                            if native_buttons && is_menu && !is_classic {
-                                let navigation_request = if is_web { "=/>menu" } else { actual_command };
+                            // Every menu, including the original classic text, keeps a
+                            // category selector and direct links to the other layouts.
+                            if native_buttons && is_menu {
+                                let navigation_request = if is_buttons {
+                                    "=/>menu buttons"
+                                } else if is_classic {
+                                    "=/>menu classic"
+                                } else if is_web {
+                                    "=/>menu web"
+                                } else {
+                                    actual_command
+                                };
                                 let native_sent = match native_navigation_message(&response, navigation_request) {
                                     Ok(interactive) => match timeout(Duration::from_secs(8), ctx.send_message(interactive)).await {
                                         Ok(Ok(_)) => true,
@@ -1069,6 +1083,33 @@ async fn main() -> Result<()> {
                                     eprintln!("Base-Matter: native selector unavailable");
                                 }
                                 sent |= native_sent;
+                                if native_sent && is_buttons {
+                                    // WhatsApp permits only 3 quick replies per card.
+                                    // One separate card holds Classic/Web switches;
+                                    // category action cards are sent in groups of 3.
+                                    match native_category_button_cards() {
+                                        Ok(cards) => {
+                                            for (index, card) in cards.into_iter().enumerate() {
+                                                match timeout(Duration::from_secs(4), ctx.send_message(card)).await {
+                                                    Ok(Ok(_)) => {
+                                                        if diagnostic_messages {
+                                                            println!("Base-Matter DIAG: buttons category card {} sent", index + 1);
+                                                        }
+                                                    }
+                                                    Ok(Err(_)) => {
+                                                        eprintln!("Base-Matter: category buttons card rejected; category selector remains available");
+                                                        break;
+                                                    }
+                                                    Err(_) => {
+                                                        eprintln!("Base-Matter: category buttons card timed out; category selector remains available");
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        Err(_) => eprintln!("Base-Matter: category button cards invalid; selector remains available"),
+                                    }
+                                }
                             }
                             if !sent {
                                 sent = match timeout(Duration::from_secs(8), ctx.reply(&response)).await {
