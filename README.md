@@ -1,3 +1,30 @@
+## 2026-11-24 — Pruebas visuales en grupos y `cargo run` verificado
+
+### Pruebas en grupos, sin saltarse la identidad ni el permiso del chat
+
+En la rama `alpha`, los comandos `=/>test`, `=/>test ui`, `=/>test row`, `=/>test html` y `=/>test ack a|b|one|two|audio|mp4|link` pueden ejecutarse en **grupos habilitados** por el socket, tanto desde el propietario identificado por la sesión como desde otros remitentes cuya identidad WhatsApp sea verificada y cuyo comando se firme por el proveedor. El controlador sigue aplicando la política del grupo. Las pruebas no cambian roles, secretos, la política de activación ni Vault. Un comando de terceros para `=/>test html` en chat privado se rechaza.
+
+`=/>test html` envía `AIRichResponseMessage` experimental al **mismo chat de grupo** después del ACK firmado del controlador, siempre que `MATTER_WA_RICH_HTML=1`; `=/>menu web` puede intentar el mismo HTML en grupos habilitados y conserva su selector de categorías como respaldo. El éxito del transporte no confirma visualización HTML en Android. Las pruebas `ui`/`row` incorporan timeout de 8 segundos para no bloquear el loop principal si la plataforma se demora. Las respuestas visuales se limitan a los comandos explícitos; no se envían automáticamente en todos los mensajes del grupo.
+
+### Arranque seguro con `cargo run` desde la raíz de Base-Matter
+
+El `default-run = "base-matter"` de `Cargo.toml` invoca `src/bin/base_matter.rs`, que ahora llama a `scripts/matter-verified-run.sh` **en lugar del lanzador con pairing**. El nuevo lanzamiento ejecuta, y se detiene ante el primer error:
+
+1. `cargo fmt --all -- --check` para núcleo y proveedor.
+2. `cargo check --all-targets` para núcleo y proveedor.
+3. `cargo test --all-targets` para núcleo y proveedor.
+4. `cargo build --bin whatsapp-matter-control` y `cargo build --manifest-path providers/whatsapp-rust/Cargo.toml --bin whatsapp-matter-rust-provider`.
+5. `scripts/whatsapp-alpha-existing.sh --check`, con binarios absolutos derivados de `cargo metadata` y `--vault-env /etc/base-matter/vault-alpha.env`.
+6. Si pasó todo y no corre otra instancia: `--resume-only` de la sesión WhatsApp alfa existente **sin solicitar pairing**.
+
+`cargo run -- --check-only` ejecuta las mismas verificaciones pero **no inicia WhatsApp**. `cargo run -- --help` únicamente imprime instrucciones. El script requiere rama `alpha`, Cargo, Python3, `pgrep`, los archivos Vault dedicados, no ejecuta un segundo bot cuando ve uno activo y no baja a modo sin Vault silenciosamente. Usa `CARGO_BUILD_JOBS=2` de forma predeterminada y preserva opciones explícitas de HTML, NativeFlow y diagnósticos. Las pruebas son una barrera contra regresiones, **no una prueba absoluta de seguridad**; la autenticación y autorización siguen dentro del proveedor, control y Vault.
+
+Uso desde `/home/Sakura/Matter-Ecosystem/Base-Matter`, en `tmux` después de detener la instancia anterior del bot (no detener Vault): `export PATH="$HOME/.cargo/bin:$PATH"; cargo run`. Con el bot activo, usar `cargo run -- --check-only` puede fallar en el chequeo de sesión activa; la revisión se diseña para realizarse antes del reinicio, no para sobrescribir ejecutables en uso.
+
+**Estado:** código publicado en `alpha`, CI y validación en servidor pendientes de confirmar para esta revisión; no se ha alterado `runtime.env`, las bases de datos reales ni la clave Vault. No declarar HTML visualmente funcional hasta verlo en el cliente.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-24 — Corrección de flags visuales en el lanzador alfa
 
 Se identificó que `scripts/whatsapp-alpha-existing.sh` ejecutaba `source runtime.env` después de recibir las variables de entorno para HTML y botones. Si el archivo privado tenía opciones anteriores, podía sustituir silenciosamente `MATTER_WA_RICH_HTML=1`, `MATTER_WA_HTML_AUTOSEND=1` o `MATTER_WA_NATIVE_BUTTONS=1`. Ahora solo se preservan **valores explícitos 0/1** de estas cinco variables de presentación: `MATTER_WA_RICH_HTML`, `MATTER_WA_HTML_AUTOSEND`, `MATTER_WA_NATIVE_BUTTONS`, `MATTER_WA_DIAG` y `MATTER_WA_MENU_LAB`. No se permite sobrescribir claves, identificadores, sesiones, puente IPC, ni configuración de Vault.
