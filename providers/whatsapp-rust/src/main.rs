@@ -8,9 +8,10 @@ use anyhow::{bail, Result};
 use std::{
     collections::{HashMap, HashSet},
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Mutex,
     },
+    time::Instant,
 };
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -32,6 +33,95 @@ use whatsapp_matter_rust_provider::{
     Config, ControlAck, Event, SessionLease,
 };
 use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*, types::events::ConnectFailureReason};
+
+// Command-only diagnostics; identity metadata stays in the local operator console.
+fn console_field(value: &str, limit: usize) -> String {
+    let cleaned: String = value
+        .chars()
+        .filter(|c| !c.is_control() && !matches!(*c, '\u{061c}' | '\u{200b}'..='\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2060}'..='\u{206f}'))
+        .take(limit)
+        .collect();
+    if cleaned.trim().is_empty() {
+        "-".to_owned()
+    } else {
+        cleaned
+    }
+}
+
+fn console_command(text: &str) -> String {
+    let mut parts = text.split_whitespace();
+    let verb = parts.next().unwrap_or_default();
+    match verb {
+        "=/>menu" | "=/>menú" => {
+            let category = parts.next().unwrap_or_default();
+            if matches!(category, "classic" | "web" | "buttons" | "all" | "todo" | "anti" | "control" | "system" | "config" | "owner" | "help" | "ia" | "admin" | "economy" | "downloads") {
+                format!("{verb} {category}")
+            } else {
+                verb.to_owned()
+            }
+        }
+        "=/>status" | "=/>vault" | "=/>register" | "=/>help" | "=/>h" | "=/>set"
+        | "=/>role" | "=/>start" | "=/>add" | "=/>add++" | "=/>test" | "=/>matter"
+        | "=/>update" | "=/>restart" | "=/>reload" | "=/>anti" | "=/>ping" => verb.to_owned(),
+        _ => "=/>[otro]".to_owned(),
+    }
+}
+
+struct CommandTrace {
+    id: u64,
+    started: Instant,
+    enabled: bool,
+}
+
+impl CommandTrace {
+    fn begin(enabled: bool, ctx: &whatsapp_rust::bot::MessageContext, data: &Event<'_>, origin: &str) -> Self {
+        static NEXT: AtomicU64 = AtomicU64::new(1);
+        let trace = Self {
+            id: NEXT.fetch_add(1, Ordering::Relaxed),
+            started: Instant::now(),
+            enabled,
+        };
+        if enabled {
+            let clock = data.timestamp.rem_euclid(86400);
+            let (h, m, s) = (clock / 3600, clock / 60 % 60, clock % 60);
+            let name = console_field(&ctx.info.push_name, 32);
+            let sender = console_field(data.sender_jid, 96);
+            let chat = console_field(data.chat_jid, 96);
+            let scope = if data.is_group { "Grupo" } else { "Privado" };
+            let command = console_command(data.text);
+            println!("╭─ WA #{:04} {h:02}:{m:02}:{s:02} UTC | {command} [{origin}]\n│ Usuario: {name} ({sender})\n│ {scope}: {chat}", trace.id);
+        }
+        trace
+    }
+
+    fn stage(&self, stage: &str) {
+        if self.enabled {
+            println!("│ #{:04} {stage}", self.id);
+        }
+    }
+
+    fn finish(&self, state: &str) {
+        if self.enabled {
+            println!("╰─ #{:04} {state} | {} ms", self.id, self.started.elapsed().as_millis());
+        }
+    }
+
+    async fn send<T, E>(
+        &self,
+        kind: &str,
+        future: impl std::future::Future<Output = std::result::Result<T, E>>,
+    ) -> std::result::Result<std::result::Result<T, E>, tokio::time::error::Elapsed> {
+        self.stage(&format!("TX {kind}: ENVIANDO"));
+        let result = timeout(Duration::from_secs(8), future).await;
+        let status = match &result {
+            Ok(Ok(_)) => "ACEPTADO",
+            Ok(Err(_)) => "RECHAZADO",
+            Err(_) => "TIMEOUT (entrega incierta)",
+        };
+        self.stage(&format!("TX {kind}: {status}"));
+        result
+    }
+}
 
 async fn deliver(
     address: std::net::SocketAddrV4,
@@ -509,7 +599,7 @@ async fn main() -> Result<()> {
     // Menu web uses a single visible NativeFlow message. The unsupported
     // experimental HTML transport is tested only with explicit =/>test html.
     // Never send two messages for a single menu request.
-    // Logs processing stages only, never message bodies, JIDs, IDs or secrets.
+    // Opt-in local command diagnostics: sender/chat JIDs, display name and stages; no raw bodies or secrets.
     let diagnostic_messages = matches!(std::env::var("MATTER_WA_DIAG").as_deref(), Ok("1"));
     // Presentation context only; scoped to authenticated chat and sender.
     let menu_views = Arc::new(Mutex::new(HashMap::<(String, String), bool>::new()));
@@ -716,6 +806,14 @@ async fn main() -> Result<()> {
                 if !data.text.starts_with("=/>") {
                     return;
                 }
+                let origin = if selected_button.is_some() {
+                    "botón"
+                } else if reply_help.is_some() {
+                    "cita"
+                } else {
+                    "texto"
+                };
+                let trace = CommandTrace::begin(diagnostic_messages, &ctx, &data, origin);
                 let verified = if data.from_me {
                     config.signed_verified_control(
                         &data, own_pn.as_deref(), own_lid.as_deref(),
@@ -729,6 +827,7 @@ async fn main() -> Result<()> {
                     )
                 };
                 if let Ok(Some(frame)) = verified {
+                    trace.stage("IPC: ENVIANDO");
                     match deliver(config.bridge_addr, &frame).await {
                         Ok(ack @ (
                             ControlAck::Applied
@@ -736,9 +835,8 @@ async fn main() -> Result<()> {
                             | ControlAck::AppliedWithMenuMode { .. }
                             | ControlAck::AppliedWithMenuItems { .. }
                         )) => {
-                            if diagnostic_messages && selected_button.is_some() {
-                                println!("Base-Matter: comando interactivo aceptado");
-                            } else {
+                            trace.stage("IPC: ACEPTADO");
+                            if !diagnostic_messages {
                                 println!("Base-Matter: comando aceptado");
                             }
                             // Only an authorized signed control may receive a
@@ -843,6 +941,7 @@ async fn main() -> Result<()> {
                                     Ok(formatted) => formatted,
                                     Err(_) => {
                                         eprintln!("Base-Matter: control response rejected by theme");
+                                        trace.finish("ERROR TEMA");
                                         return;
                                     }
                                 }
@@ -852,9 +951,10 @@ async fn main() -> Result<()> {
                             {
                                 if let Ok(probe) = native_ui_probe_message() {
                                     if matches!(
-                                        timeout(Duration::from_secs(8), ctx.send_message(probe)).await,
+                                        trace.send("UI", ctx.send_message(probe)).await,
                                         Ok(Ok(_))
                                     ) {
+                                        trace.finish("ENVIADO (UI)");
                                         return;
                                     }
                                 }
@@ -863,9 +963,10 @@ async fn main() -> Result<()> {
                             if actual_command == "=/>test row"
                             {
                                 if matches!(
-                                    timeout(Duration::from_secs(8), ctx.send_message(legacy_row_probe_message())).await,
+                                    trace.send("ROW", ctx.send_message(legacy_row_probe_message())).await,
                                     Ok(Ok(_))
                                 ) {
+                                    trace.finish("ENVIADO (ROW)");
                                     return;
                                 }
                                 eprintln!("Base-Matter: classic ButtonsRow test rejected; using text");
@@ -880,17 +981,15 @@ async fn main() -> Result<()> {
                             {
                                 if let Ok(message) = experimental_self_chat_rich_message(&response)
                                 {
-                                    match timeout(Duration::from_secs(8), ctx.send_message(message)).await {
+                                    match trace.send("HTML TEST", ctx.send_message(message)).await {
                                         Ok(Ok(_)) => {
                                             // A successful WhatsApp send is not proof that
                                             // Android rendered the experimental HTML.
                                             // Every admitted visual test receives a
                                             // diagnostic, including enabled groups.
                                             println!("Base-Matter: Rich HTML test submitted; client rendering unverified");
-                                            let _ = timeout(
-                                                Duration::from_secs(8),
-                                                ctx.reply("Matter HTML: envío aceptado por el proveedor. Confirma si ves la tarjeta HTML; WhatsApp puede ocultarla."),
-                                            ).await;
+                                            let _ = trace.send("AVISO HTML", ctx.reply("Matter HTML: envío aceptado por el proveedor. Confirma si ves la tarjeta HTML; WhatsApp puede ocultarla.")).await;
+                                            trace.finish("HTML ENVIADO (render no verificado)");
                                             return;
                                         }
                                         Ok(Err(_)) => eprintln!("Base-Matter: HTML test send rejected"),
@@ -942,7 +1041,7 @@ async fn main() -> Result<()> {
                                 && (data.is_group || frame.chat_jid == config.owner_jid)
                             {
                                 if let Ok(message) = experimental_self_chat_rich_message(&response) {
-                                    match timeout(Duration::from_secs(8), ctx.send_message(message)).await {
+                                    match trace.send("HTML", ctx.send_message(message)).await {
                                         Ok(Ok(_)) => {
                                             web_submitted = true;
                                         }
@@ -966,7 +1065,7 @@ async fn main() -> Result<()> {
                                         .unwrap_or("Menu Buttons")
                                 };
                                 for card in button_menu_cards(&menu_items, title) {
-                                    match timeout(Duration::from_secs(8), ctx.send_message(card)).await {
+                                    match trace.send("TARJETA", ctx.send_message(card)).await {
                                         Ok(Ok(_)) => {}
                                         _ => {
                                             eprintln!("Base-Matter: menu button card unavailable");
@@ -991,10 +1090,7 @@ async fn main() -> Result<()> {
                                     &response
                                 };
                                 match native_navigation_message(navigation_body, navigation_request) {
-                                    Ok(message) => match timeout(
-                                        Duration::from_secs(8),
-                                        ctx.send_message(message),
-                                    ).await {
+                                    Ok(message) => match trace.send("NAVEGACIÓN", ctx.send_message(message)).await {
                                         Ok(Ok(_)) => true,
                                         Ok(Err(_)) => {
                                             eprintln!("Base-Matter: unified menu rejected; attempting a single text fallback");
@@ -1003,6 +1099,7 @@ async fn main() -> Result<()> {
                                         Err(_) => {
                                             eprintln!("Base-Matter: unified menu timed out; refusing duplicate reply");
                                             // A timed-out send may already have been accepted.
+                                            trace.finish("TIMEOUT NAVEGACIÓN (sin duplicar)");
                                             return;
                                         }
                                     },
@@ -1024,40 +1121,47 @@ async fn main() -> Result<()> {
                                         &response
                                     };
                                     matches!(
-                                        timeout(Duration::from_secs(8), ctx.reply(fallback)).await,
+                                        trace.send("TEXTO", ctx.reply(fallback)).await,
                                         Ok(Ok(_))
                                     )
                                 }
                             } else {
                                 true
                             };
+                            if is_web && !web_submitted {
+                                trace.stage("WEB: HTML NO ENVIADO");
+                            }
+                            trace.finish(if sent {
+                                "ENVÍO ACEPTADO (render no verificado)"
+                            } else {
+                                "SIN ENVÍO CONFIRMADO"
+                            });
                             if sent && is_private_vault_command(&frame, &config.owner_jid) {
                                 println!("Base-Matter: Vault owner response submitted to WhatsApp");
                             }
                         }
-                        Ok(ControlAck::Duplicate | ControlAck::Ignored) => {}
+                        Ok(ControlAck::Duplicate) => trace.finish("IPC: DUPLICADO"),
+                        Ok(ControlAck::Ignored) => trace.finish("IPC: IGNORADO"),
                         Err(_) => {
+                            trace.stage("IPC: DENEGADO O NO DISPONIBLE");
                             eprintln!("Base-Matter control denied or unreachable");
                             // The verified owner receives a generic Vault error,
                             // without exposing IPC details, keys or private data.
                             if is_private_vault_command(&frame, &config.owner_jid) {
-                                let _ = ctx
-                                    .reply("Vault-Matter: consulta no completada. Revisa el controlador y la credencial del socket; no se modificaron roles.")
-                                    .await;
+                                let _ = trace.send("AVISO", ctx.reply("Vault-Matter: consulta no completada. Revisa el controlador y la credencial del socket; no se modificaron roles.")).await;
                             } else if frame.from_me
                                 && frame.text.starts_with("=/>set role owner --global")
                                 && !frame.chat_jid.ends_with("@g.us")
                             {
-                                let _ = ctx
-                                    .reply("Vault-Matter: asignación denegada. Verifica la identidad principal y el servicio privado.")
-                                    .await;
+                                let _ = trace.send("AVISO", ctx.reply("Vault-Matter: asignación denegada. Verifica la identidad principal y el servicio privado.")).await;
                             } else if frame.from_me && frame.text.starts_with("=/>test") {
-                                let _ = ctx
-                                    .reply("Base-Matter: prueba rechazada por el controlador. Revisa permisos del chat y el registro local.")
-                                    .await;
+                                let _ = trace.send("AVISO", ctx.reply("Base-Matter: prueba rechazada por el controlador. Revisa permisos del chat y el registro local.")).await;
                             }
+                            trace.finish("IPC FALLÓ");
                         }
                     }
+                } else {
+                    trace.finish("NO ADMITIDO (firma o política local)");
                 }
             }
         })
@@ -1089,6 +1193,14 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod readiness_tests {
     use super::*;
+
+    #[test]
+    fn console_diagnostics_redact_arguments_and_control_characters() {
+        assert_eq!(console_command("=/>set role owner --global SECRET"), "=/>set");
+        assert_eq!(console_command("=/>menu anti 2"), "=/>menu anti");
+        assert_eq!(console_command("=/>unknown-secret"), "=/>[otro]");
+        assert_eq!(console_field("a\n\u{001b}\u{202e}b", 8), "ab");
+    }
 
     #[test]
     fn vault_diagnostic_never_exposes_service_to_group_or_other_sender() {

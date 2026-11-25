@@ -1,3 +1,9 @@
+## 2026-11-25 — Diagnóstico compacto de comandos WhatsApp
+
+Con `MATTER_WA_DIAG=1` la consola local identifica cada comando por número correlativo, hora UTC, origen (texto/botón/cita), nombre de perfil no verificado, JID de usuario y chat, etapas IPC y TX, resultado y tiempo total. No registra mensajes normales, argumentos sensibles, respuestas, claves ni payloads de error. Los JID son datos personales: desactivar con `MATTER_WA_DIAG=0` antes de compartir registros. El nombre de grupo no se consulta todavía; se identifica por JID para no introducir tráfico ni bloqueos de metadatos. Un ACK IPC o TX no confirma renderizado en el teléfono; un timeout indica entrega incierta. También se acotan los avisos de error IPC a ocho segundos. Se conserva la separación web/classic/buttons y no se habilitan reintentos, pairing ni cambios en Vault. Prueba de redacción incluida; CI y ejecución real pendientes.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-25 — Rustfmt del catálogo compartido
 
 CI del SHA 0a2b1e6 y servidor idkbot detuvieron el arranque en formato. Aplicadas todas las diferencias exactas de rustfmt de los dos workflows Linux: src/menu.rs, src/control_ipc.rs y proveedor src/lib.rs y src/ui.rs. Sin cambios de comportamiento, permisos, sesión ni Vault. README revisados: 2/2. Nuevo CI pendiente; no declarar aprobación hasta comprobar resultados.
