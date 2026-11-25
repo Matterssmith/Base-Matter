@@ -568,12 +568,13 @@ async fn main() -> Result<()> {
         Some(_) => bail!("Unsupported provider operation"),
     }
     let config = Arc::new(Config::from_env()?);
-    // Opt-in until a real phone has confirmed NativeFlow rendering.
-    // No platform guessing: the same three read-only buttons are offered
-    // to every verified recipient, or the original text is sent.
-    let native_buttons = matches!(
+    // Opt-out native navigation in alpha: the new root menu is intentionally
+    // compact and sends only read-only selectors after authenticated IPC.
+    // Operators can set MATTER_WA_NATIVE_BUTTONS=0 when a client fails to
+    // render it; a transport send error still falls back to normal text.
+    let native_buttons = !matches!(
         std::env::var("MATTER_WA_NATIVE_BUTTONS").as_deref(),
-        Ok("1")
+        Ok("0" | "off" | "false")
     );
     // Unverified rich-HTML transport, explicitly enabled only for
     // an authenticated owner's self-chat. No forged Meta AI envelope.
