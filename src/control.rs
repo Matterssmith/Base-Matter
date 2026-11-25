@@ -441,9 +441,7 @@ impl ControlDispatcher {
                 let output = theme.render(group, &section)?;
                 Ok(DispatchResult::Extension { command: "help".to_owned(), output })
             }
-            ["=/>test"] | ["=/>test", "ui" | "row"]
-            | ["=/>test", "html"] if group.is_some() =>
-            {
+            ["=/>test", "html"] if group.is_some() => {
                 if !decision.decision.enabled {
                     return Ok(DispatchResult::Inactive);
                 }
@@ -473,7 +471,7 @@ impl ControlDispatcher {
                     ["=/>test", "ack", selected] => format!(
                         "🧪 ACK {selected}: comando de texto autorizado. Solo una respuesta                          interactiva detectada por el proveedor prueba la pulsación."
                     ),
-                    _ => "🧪 Pruebas del chat: =/>test ui (NativeFlow), =/>test row (ButtonsRow). Requieren bot activo. =/>test html es exclusivo del propietario en su chat privado.".to_owned(),
+                    _ => "🧪 Pruebas del chat: =/>test ui (NativeFlow), =/>test row (ButtonsRow), =/>test html (Rich HTML experimental en grupos habilitados).".to_owned(),
                 };
                 Ok(DispatchResult::Extension {
                     command: "test".to_owned(),
