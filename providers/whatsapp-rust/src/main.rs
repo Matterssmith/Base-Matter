@@ -723,8 +723,8 @@ async fn main() -> Result<()> {
                         &data, own_pn.as_deref(), own_lid.as_deref(),
                     )
                 };
-                match verified {
-                    Ok(Some(frame)) => match deliver(config.bridge_addr, &frame).await {
+                if let Ok(Some(frame)) = verified {
+                    match deliver(config.bridge_addr, &frame).await {
                         Ok(ack @ (
                             ControlAck::Applied
                             | ControlAck::AppliedWithMessage(_)
@@ -1006,8 +1006,7 @@ async fn main() -> Result<()> {
                                     .await;
                             }
                         }
-                    },
-                    Ok(None) | Err(_) => {}
+                    }
                 }
             }
         })

@@ -1,3 +1,9 @@
+## 2026-11-25 — Clippy del proveedor y verificación del formato web
+
+CI del SHA e076cfd: núcleo aprobado y proveedor pasó formato, compilación y pruebas antes de fallar en Clippy por single_match (main.rs). Se sustituye el match exterior por if let sin cambiar la admisión, los ACK ni el silencio ante rechazos. Se mantiene la corrección rustfmt de tests/ui.rs. README revisados: 2/2. Nuevo CI pendiente; no se modifica la sesión ni Vault.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-25 — Formato de la prueba de menú web
 
 El propietario reportó bloqueo MATTER_GATE=FORMAT en idkbot. Se aplica exactamente la diferencia de rustfmt en providers/whatsapp-rust/tests/ui.rs; no cambia el comportamiento, la sesión ni Vault. README revisados: 2/2. CI y arranque pendientes de confirmación.
