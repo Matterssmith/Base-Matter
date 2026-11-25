@@ -6,9 +6,9 @@
  */
 use buffa::MessageField;
 use whatsapp_matter_rust_provider::ui::{
-    legacy_row_probe_message, menu_lab_card, native_menu_lab_card,
-    native_menu_message, native_navigation_message, native_ui_probe_message,
-    readonly_button_command, short_html_to_whatsapp, MenuCardVariant,
+    legacy_row_probe_message, menu_lab_card, native_menu_lab_card, native_menu_message,
+    native_navigation_message, native_ui_probe_message, readonly_button_command,
+    short_html_to_whatsapp, MenuCardVariant,
 };
 use whatsapp_rust::prelude::wa;
 
@@ -63,7 +63,10 @@ fn root_menu_has_only_the_final_selector_with_categories_and_menu_modes() {
     let original = include_str!("../../../templates/matterssmith-menu.txt").trim_end();
     let message = native_menu_message(original).unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
-    assert_eq!(interactive.body.as_option().unwrap().text.as_deref(), Some(original));
+    assert_eq!(
+        interactive.body.as_option().unwrap().text.as_deref(),
+        Some(original)
+    );
     assert!(interactive.footer.as_option().is_none());
     assert!(message.conversation.is_none());
     let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
@@ -82,8 +85,10 @@ fn root_menu_has_only_the_final_selector_with_categories_and_menu_modes() {
     assert_eq!(sections[1]["title"], "Otros menús");
     let categories = sections[0]["rows"].as_array().unwrap();
     assert_eq!(categories.len(), 7);
-    let shown: Vec<String> =
-        serde_json::from_str(include_str!("../../../templates/menu-visible-categories.json")).unwrap();
+    let shown: Vec<String> = serde_json::from_str(include_str!(
+        "../../../templates/menu-visible-categories.json"
+    ))
+    .unwrap();
     assert_eq!(shown.len(), 10);
     for (item, id) in categories.iter().take(6).zip(shown.iter().take(6)) {
         assert_eq!(item["id"], format!("matter.read.menu.{id}"));
@@ -102,7 +107,14 @@ fn root_menu_has_only_the_final_selector_with_categories_and_menu_modes() {
 fn second_page_contains_remaining_categories_and_menu_modes_at_the_end() {
     let message = native_navigation_message("Categorías", "=/>menu page 2").unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
-    assert!(interactive.body.as_option().unwrap().text.as_deref().unwrap().contains("página 2/2"));
+    assert!(interactive
+        .body
+        .as_option()
+        .unwrap()
+        .text
+        .as_deref()
+        .unwrap()
+        .contains("página 2/2"));
     assert!(interactive.footer.as_option().is_none());
     let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
         interactive.interactive_message.as_ref()
@@ -127,7 +139,10 @@ fn second_page_contains_remaining_categories_and_menu_modes_at_the_end() {
 fn category_menu_keeps_its_text_and_its_one_final_selector() {
     let message = native_navigation_message("Protecciones", "=/>menu anti").unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
-    assert_eq!(interactive.body.as_option().unwrap().text.as_deref(), Some("Protecciones"));
+    assert_eq!(
+        interactive.body.as_option().unwrap().text.as_deref(),
+        Some("Protecciones")
+    );
     let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
         interactive.interactive_message.as_ref()
     else {
@@ -146,10 +161,16 @@ fn formats_are_readonly_and_selected_through_category_picker() {
         ("matter.read.menu.buttons", "=/>menu buttons"),
         ("matter.read.menu.all", "=/>menu all"),
     ] {
-        assert_eq!(readonly_button_command(&native_click(id, "single_select")), Some(command));
+        assert_eq!(
+            readonly_button_command(&native_click(id, "single_select")),
+            Some(command)
+        );
         assert_eq!(readonly_button_command(&list_click(id)), Some(command));
     }
-    assert!(readonly_button_command(&native_click("matter.read.roles.grant", "single_select")).is_none());
+    assert!(
+        readonly_button_command(&native_click("matter.read.roles.grant", "single_select"))
+            .is_none()
+    );
 }
 
 #[test]
@@ -162,7 +183,14 @@ fn all_modes_use_one_visible_message_and_one_last_selector() {
     ] {
         let message = native_navigation_message("Categorías", request).unwrap();
         let interactive = message.interactive_message.as_option().unwrap();
-        assert!(interactive.body.as_option().unwrap().text.as_deref().unwrap().contains(expected));
+        assert!(interactive
+            .body
+            .as_option()
+            .unwrap()
+            .text
+            .as_deref()
+            .unwrap()
+            .contains(expected));
         assert!(interactive.footer.as_option().is_none());
         let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
             interactive.interactive_message.as_ref()
