@@ -446,11 +446,7 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
     // Mutable requests may be signed as *unprivileged* incoming frames so
     // the controller can require encrypted Vault global-owner authority.
     // Signing alone must not impersonate the socket owner or grant a role.
-    for text in [
-        "=/>group on",
-        "=/>bot on",
-        "=/>set role 12345678901 admin",
-    ] {
+    for text in ["=/>group on", "=/>bot on", "=/>set role 12345678901 admin"] {
         incoming.text = text;
         let signed = config
             .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
@@ -460,7 +456,10 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         assert_eq!(signed.actor_id, public_id);
         assert_ne!(signed.actor_id, config.actor_id);
         assert_eq!(signed.chat_jid, incoming.chat_jid);
-        assert_eq!(signed.signature, sign_frame(&signed, &config.bridge_key).unwrap());
+        assert_eq!(
+            signed.signature,
+            sign_frame(&signed, &config.bridge_key).unwrap()
+        );
     }
     // Unknown commands and owner-only probes still fail before any IPC.
     for text in [
