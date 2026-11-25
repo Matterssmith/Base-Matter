@@ -216,18 +216,16 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     if categories.len() != active.len() {
         bail!("Duplicate visible menu category");
     }
-    const PAGE_SIZE: usize = 9;
+    // One NativeFlow message, one final selector. The client allows at most
+    // ten list entries; repeat the 3 menu choices on both navigation pages.
+    const PAGE_SIZE: usize = 6;
     let pages = categories.len().div_ceil(PAGE_SIZE).max(1);
     let requested_page = match request {
         "=/>menu page 2" => 2,
         "=/>menu page 3" => 3,
         _ => 1,
     };
-    // Historical page IDs are still read-only aliases, not empty pages.
     let page = requested_page.min(pages);
-    // NativeFlow root: categories visible through the selector itself,
-    // plus the explicit, authenticated classic-text option. No prose bubble
-    // or footer: preserve only the clickable controls until HTML is rendered.
     let root_menu = matches!(
         request,
         "=/>menu"
@@ -241,114 +239,82 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
             | "=/>menu all"
             | "=/>menú all"
     );
-    let classic_menu = matches!(
-        request,
-        "=/>menu classic" | "=/>menú classic" | "=/>menu all" | "=/>menú all"
-    );
+    let web_menu = matches!(request, "=/>menu web" | "=/>menú web");
     let buttons_menu = matches!(request, "=/>menu buttons" | "=/>menú buttons");
     let category_page = matches!(
         request,
         "=/>menu page 1" | "=/>menu page 2" | "=/>menu page 3"
     );
-    // A zero-width placeholder keeps the native interactive body present
-    // without displaying any introductory text on clients requiring Body.
-    let body_text = if root_menu || category_page {
-        "\u{200b}".to_owned()
+    // A blank U+200B body hid the entire web menu on some WhatsApp clients.
+    // This compact, styled fallback is always visible without HTML support.
+    // The classic and category bodies retain their full controller text.
+    let body_text = if web_menu {
+        "*Matterssmith* · ✦\n*Menú web*\nSelecciona una categoría o un formato en el menú inferior.".to_owned()
+    } else if buttons_menu {
+        "*Matterssmith* · ✦\n*Menu Buttons*\nCategorías y formatos disponibles en el selector inferior.".to_owned()
+    } else if category_page {
+        format!("*Matterssmith* · ✦\n*Categorías · página {page}/{pages}*")
+    } else if root_menu && matches!(request, "=/>menu" | "=/>menú") {
+        // The controller resolves the persisted default. The provider does
+        // not hide the body's contents when the authenticated mode is known.
+        menu.to_owned()
     } else {
         menu.to_owned()
     };
     let start = (page - 1) * PAGE_SIZE;
-    let mut rows: Vec<_> = categories
+    let mut category_rows: Vec<_> = categories
         .iter()
         .skip(start)
         .take(PAGE_SIZE)
         .map(|(_, label, id)| {
-            // Human-readable category labels; the server interprets only
-            // allowlisted IDs and keeps all permissions on the controller.
-            serde_json::json!({
-                "title": label,
-                "id": id
-            })
+            serde_json::json!({"title": label, "id": id})
         })
         .collect();
     if page > 1 {
-        rows.push(serde_json::json!({
+        category_rows.push(serde_json::json!({
             "title": "Anterior",
             "id": format!("matter.read.menu.page.{}", page - 1)
         }));
-    }
-    if page < pages {
-        rows.push(serde_json::json!({
+    } else if page < pages {
+        category_rows.push(serde_json::json!({
             "title": "Más categorías",
             "id": format!("matter.read.menu.page.{}", page + 1)
         }));
+    }
+    // Only the three presentation choices; no quick-reply menu buttons.
+    // Keep this section last in the picker on every page.
+    let mode_rows = [
+        serde_json::json!({"title": "Menu Classic", "id": "matter.read.menu.classic"}),
+        serde_json::json!({"title": "Menu Web", "id": "matter.read.menu.web"}),
+        serde_json::json!({"title": "Menu Buttons", "id": "matter.read.menu.buttons"}),
+    ];
+    if category_rows.len() + mode_rows.len() > 10 {
+        bail!("WhatsApp menu exceeds the ten-row limit");
     }
     let selector = wa::message::interactive_message::native_flow_message::NativeFlowButton {
         name: Some("single_select".to_owned()),
         button_params_json: Some(
             serde_json::json!({
                 "title": "Seleccionar categoría",
-                "sections": [{
-                    "title": "Categorías",
-                    "rows": rows
-                }]
+                "sections": [
+                    {"title": "Categorías", "rows": category_rows},
+                    {"title": "Otros menús", "rows": mode_rows}
+                ]
             })
             .to_string(),
         ),
     };
-    let quick_reply = |label: &str, id: &str| {
-        wa::message::interactive_message::native_flow_message::NativeFlowButton {
-            name: Some("quick_reply".to_owned()),
-            button_params_json: Some(
-                serde_json::json!({ "display_text": label, "id": id }).to_string(),
-            ),
-        }
-    };
-    // At most three controls in each interactive message. Every menu keeps
-    // Select Category; the alternatives change only the presentation.
-    // A category selection maps to an allowlisted, read-only command.
-    let buttons = if buttons_menu {
-        vec![
-            quick_reply("Menu Classic", "matter.read.menu.classic"),
-            quick_reply("Menu Web", "matter.read.menu.web"),
-            selector,
-        ]
-    } else if classic_menu {
-        vec![
-            selector,
-            quick_reply("Menú web", "matter.read.menu.web"),
-            quick_reply("Menu Buttons", "matter.read.menu.buttons"),
-        ]
-    } else if root_menu || category_page {
-        vec![
-            selector,
-            quick_reply("Menú clásico", "matter.read.menu.classic"),
-            quick_reply("Menu Buttons", "matter.read.menu.buttons"),
-        ]
-    } else {
-        vec![
-            selector,
-            quick_reply("Menú web", "matter.read.menu.web"),
-            quick_reply("Menu Buttons", "matter.read.menu.buttons"),
-        ]
-    };
+    // Sole button, always last. The command list is in this same WhatsApp
+    // message body, not in a second reply or a subsequent buttons carousel.
     Ok(wa::Message {
         interactive_message: MessageField::some(wa::message::InteractiveMessage {
             body: MessageField::some(wa::message::interactive_message::Body {
                 text: Some(body_text),
             }),
-            footer: if root_menu || category_page {
-                MessageField::default()
-            } else {
-                MessageField::some(wa::message::interactive_message::Footer {
-                    text: Some("Matter Ecosystem".to_owned()),
-                    ..Default::default()
-                })
-            },
             interactive_message: Some(
                 wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(Box::new(
                     wa::message::interactive_message::NativeFlowMessage {
-                        buttons,
+                        buttons: vec![selector],
                         message_version: Some(1),
                         ..Default::default()
                     },
@@ -358,67 +324,6 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
         }),
         ..Default::default()
     })
-}
-
-/// Each implemented category gets a real clickable quick reply, split
-/// into small cards. WhatsApp's portable quick-reply limit is three per
-/// message; never send ten controls in one message or silently truncate.
-pub fn native_category_button_cards() -> Result<Vec<wa::Message>> {
-    let active: Vec<String> = serde_json::from_str(VISIBLE_CATEGORIES)?;
-    if active.is_empty()
-        || active.len() > NAV_CATEGORIES.len()
-        || active.iter().any(|id| {
-            !NAV_CATEGORIES
-                .iter()
-                .any(|(known, _, _)| *known == id.as_str())
-        })
-    {
-        bail!("Invalid visible category manifest");
-    }
-    let categories: Vec<_> = NAV_CATEGORIES
-        .iter()
-        .filter(|(id, _, _)| active.iter().any(|shown| shown.as_str() == *id))
-        .collect();
-    if categories.len() != active.len() {
-        bail!("Duplicate or missing category in manifest");
-    }
-    let mut cards = Vec::new();
-    for chunk in categories.chunks(3) {
-        let buttons = chunk
-            .iter()
-            .map(|(_, label, id)| {
-                wa::message::interactive_message::native_flow_message::NativeFlowButton {
-                    name: Some("quick_reply".to_owned()),
-                    button_params_json: Some(
-                        serde_json::json!({
-                            "display_text": label.chars().take(20).collect::<String>(),
-                            "id": id,
-                        })
-                        .to_string(),
-                    ),
-                }
-            })
-            .collect();
-        cards.push(wa::Message {
-            interactive_message: MessageField::some(wa::message::InteractiveMessage {
-                body: MessageField::some(wa::message::interactive_message::Body {
-                    text: Some("\u{200b}".to_owned()),
-                }),
-                interactive_message: Some(
-                    wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(
-                        Box::new(wa::message::interactive_message::NativeFlowMessage {
-                            buttons,
-                            message_version: Some(1),
-                            ..Default::default()
-                        }),
-                    ),
-                ),
-                ..Default::default()
-            }),
-            ..Default::default()
-        });
-    }
-    Ok(cards)
 }
 
 /// Owner-only UI diagnostic transport. This does not verify phone rendering;
