@@ -1,3 +1,9 @@
+## 2026-11-24 — Menú WhatsApp compacto y desplegable (alpha)
+
+Se implementó en el proveedor `whatsapp-rust` una tarjeta raíz `=/>menu` **breve** con selector nativo de categorías y botón `Ver texto`, sin mostrar el catálogo completo hasta el clic. Los IDs existentes devuelven `=/>menu <categoría>` o `=/>menu all` tras autorización, HMAC y comprobación antirreplay, sin nuevos privilegios; `=/>help` conserva su comportamiento. En alpha el selector queda habilitado por defecto con opción `MATTER_WA_NATIVE_BUTTONS=0` para regresar al texto; si el cliente acepta un envío pero no dibuja botones, el usuario puede escribir `=/>menu all` manualmente. La vista HTML offline utiliza `<details>` cerrado por defecto; **WhatsApp no interpreta HTML arbitrario** y su RichResponse experimental no equivale a soporte del cliente. Código y pruebas escritos en alpha; **CI/compilación, renderizado Android y despliegue en idkbot todavía no verificados**. Sesión WhatsApp, Vault y beta/stable no modificados. Detalles: [docs/WHATSAPP_COLLAPSIBLE_MENU.md](docs/WHATSAPP_COLLAPSIBLE_MENU.md).
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Arquitectura aprobada: Engine-Matter y Engine-Extensions-Matter
 
 El propietario dispone que WhatsApp-Matter se renombre a **Engine-Matter** (núcleo de sistemas Matter sin soporte directo WhatsApp/Telegram/Discord) y Telegram-Matter se renombre a **Engine-Extensions-Matter** (conectores externos WhatsApp/Telegram/Discord y futuras redes). Discord-Matter será retirado de forma controlada con respaldo. **Matter-MSEL/** tendrá su ubicación en Engine-Matter como integración del lenguaje oficial independiente MSEL. Social-Matter es sistema propio del motor; Bot-Matter sigue bloqueado. **Extensions-Matter** (sin prefijo Engine) no es el nuevo Engine-Extensions-Matter y continúa separado. Se conserva Base-Matter como biblioteca y contratos sin dependencias cíclicas.
