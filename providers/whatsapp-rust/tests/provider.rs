@@ -238,7 +238,14 @@ fn verified_owner_group_controls_are_signed_for_exact_group_jid() {
         .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
         .unwrap()
         .is_some());
-    for probe in ["=/>test", "=/>test ui", "=/>test row"] {
+    for probe in [
+        "=/>test",
+        "=/>test ui",
+        "=/>test row",
+        "=/>test html",
+        "=/>test ack a",
+        "=/>test ack audio",
+    ] {
         event.text = probe;
         assert!(c
             .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
@@ -427,6 +434,7 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>test",
         "=/>test ui",
         "=/>test row",
+        "=/>test html",
         "=/>test ack audio",
     ] {
         incoming.text = text;
@@ -469,7 +477,6 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>menu unset",
         "=/>menu config extra",
         "=/>help run(unknown)",
-        "=/>test html",
         "=/>test run",
         "=/>test ack invalid",
         "#ping",
@@ -504,6 +511,13 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
         .unwrap()
         .is_some());
+    // Rich HTML never becomes available to foreign private chats.
+    incoming.text = "=/>test html";
+    assert!(config
+        .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
+    incoming.text = "=/>status";
     incoming.chat_jid = "another@s.whatsapp.net";
     assert!(config
         .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
