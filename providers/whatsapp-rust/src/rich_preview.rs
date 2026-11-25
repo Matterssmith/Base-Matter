@@ -47,13 +47,20 @@ pub fn menu_html_preview(menu: &str) -> Result<String> {
 body{{margin:0;background:#090d18;color:#f3f7ff;font-family:system-ui,sans-serif;padding:18px}}
 main{{max-width:470px;margin:0 auto;padding:22px 16px;border:1px solid #31466d;border-radius:17px;background:linear-gradient(150deg,#101c38,#14111f)}}
 pre{{font-family:inherit;font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}}
+h1{{font-size:20px;margin:0 0 8px}}
+p{{margin:0 0 16px;color:#b7c8e7;font-size:13px}}
+details{{border:1px solid #536c99;border-radius:12px;background:#172440;overflow:hidden}}
+summary{{cursor:pointer;padding:14px;font-weight:700;list-style:revert}}
+details pre{{padding:16px;border-top:1px solid #536c99}}
 .controls{{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}}
 button{{border-radius:10px;border:1px solid #576d9d;background:#273554;color:#fff;padding:11px 3px;opacity:.8}}
 small{{display:block;margin:15px 0;color:#a5b8d8}}
 </style>
 </head>
 <body><main>
-<pre>{escaped}</pre>
+<h1>Matterssmith · Menú</h1>
+<p>Abre esta sección para consultar los comandos. WhatsApp usa su selector nativo, no este documento HTML.</p>
+<details><summary>Mostrar menú de texto</summary><pre>{escaped}</pre></details>
 <div class="controls">
 <button type="button" disabled>Audio</button>
 <button type="button" disabled>MP4</button>
