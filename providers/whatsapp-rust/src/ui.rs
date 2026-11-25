@@ -230,11 +230,16 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     // or footer: preserve only the clickable controls until HTML is rendered.
     let root_menu = matches!(
         request,
-        "=/>menu" | "=/>menú"
-            | "=/>menu web" | "=/>menú web"
-            | "=/>menu classic" | "=/>menú classic"
-            | "=/>menu buttons" | "=/>menú buttons"
-            | "=/>menu all" | "=/>menú all"
+        "=/>menu"
+            | "=/>menú"
+            | "=/>menu web"
+            | "=/>menú web"
+            | "=/>menu classic"
+            | "=/>menú classic"
+            | "=/>menu buttons"
+            | "=/>menú buttons"
+            | "=/>menu all"
+            | "=/>menú all"
     );
     let classic_menu = matches!(
         request,
@@ -363,7 +368,9 @@ pub fn native_category_button_cards() -> Result<Vec<wa::Message>> {
     if active.is_empty()
         || active.len() > NAV_CATEGORIES.len()
         || active.iter().any(|id| {
-            !NAV_CATEGORIES.iter().any(|(known, _, _)| *known == id.as_str())
+            !NAV_CATEGORIES
+                .iter()
+                .any(|(known, _, _)| *known == id.as_str())
         })
     {
         bail!("Invalid visible category manifest");
@@ -377,17 +384,21 @@ pub fn native_category_button_cards() -> Result<Vec<wa::Message>> {
     }
     let mut cards = Vec::new();
     for chunk in categories.chunks(3) {
-        let buttons = chunk.iter().map(|(_, label, id)| {
-            wa::message::interactive_message::native_flow_message::NativeFlowButton {
-                name: Some("quick_reply".to_owned()),
-                button_params_json: Some(
-                    serde_json::json!({
-                        "display_text": label.chars().take(20).collect::<String>(),
-                        "id": id,
-                    }).to_string(),
-                ),
-            }
-        }).collect();
+        let buttons = chunk
+            .iter()
+            .map(|(_, label, id)| {
+                wa::message::interactive_message::native_flow_message::NativeFlowButton {
+                    name: Some("quick_reply".to_owned()),
+                    button_params_json: Some(
+                        serde_json::json!({
+                            "display_text": label.chars().take(20).collect::<String>(),
+                            "id": id,
+                        })
+                        .to_string(),
+                    ),
+                }
+            })
+            .collect();
         cards.push(wa::Message {
             interactive_message: MessageField::some(wa::message::InteractiveMessage {
                 body: MessageField::some(wa::message::interactive_message::Body {
