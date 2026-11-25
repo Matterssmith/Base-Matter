@@ -196,17 +196,34 @@ fn html_ui_row_and_ack_tests_are_allowed_in_owner_or_public_group_scopes() {
         .is_err());
     assert_eq!(
         control
-            .dispatch("wa-alpha", "socket-owner", group, Some(group), "=/>test html")
+            .dispatch(
+                "wa-alpha",
+                "socket-owner",
+                group,
+                Some(group),
+                "=/>test html"
+            )
             .unwrap(),
         DispatchResult::Inactive
     );
     control
-        .dispatch("wa-alpha", "socket-owner", group, Some(group), "=/>group on")
+        .dispatch(
+            "wa-alpha",
+            "socket-owner",
+            group,
+            Some(group),
+            "=/>group on",
+        )
         .unwrap();
     control
         .dispatch("wa-alpha", "socket-owner", "self", None, "=/>on")
         .unwrap();
-    assert!(activation.resolve("wa-alpha", Some(group), None).unwrap().enabled);
+    assert!(
+        activation
+            .resolve("wa-alpha", Some(group), None)
+            .unwrap()
+            .enabled
+    );
     for command in ["=/>test", "=/>test ui", "=/>test row", "=/>test ack audio"] {
         assert!(
             matches!(
@@ -224,17 +241,41 @@ fn html_ui_row_and_ack_tests_are_allowed_in_owner_or_public_group_scopes() {
         .dispatch_public_readonly("wa-alpha", outsider, group, Some(group), "=/>test html")
         .is_err());
     assert!(control
-        .dispatch_public_readonly("wa-alpha", outsider, "other@g.us", Some(group), "=/>test ui")
+        .dispatch_public_readonly(
+            "wa-alpha",
+            outsider,
+            "other@g.us",
+            Some(group),
+            "=/>test ui"
+        )
         .is_err());
     assert!(control
-        .dispatch_public_readonly("wa-alpha", outsider, group, Some(group), "=/>set role owner --global")
+        .dispatch_public_readonly(
+            "wa-alpha",
+            outsider,
+            group,
+            Some(group),
+            "=/>set role owner --global"
+        )
         .is_err());
     control
-        .dispatch("wa-alpha", "socket-owner", group, Some(group), "=/>group off")
+        .dispatch(
+            "wa-alpha",
+            "socket-owner",
+            group,
+            Some(group),
+            "=/>group off",
+        )
         .unwrap();
     assert_eq!(
         control
-            .dispatch("wa-alpha", "socket-owner", group, Some(group), "=/>test html")
+            .dispatch(
+                "wa-alpha",
+                "socket-owner",
+                group,
+                Some(group),
+                "=/>test html"
+            )
             .unwrap(),
         DispatchResult::Inactive
     );
