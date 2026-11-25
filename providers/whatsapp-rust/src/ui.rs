@@ -45,6 +45,7 @@ fn button_command(id: &str) -> Option<&'static str> {
         "matter.read.menu.ia" => Some("=/>menu ia"),
         "matter.read.menu.anti" => Some("=/>menu anti"),
         "matter.read.menu.all" => Some("=/>menu all"),
+        "matter.read.menu.classic" => Some("=/>menu classic"),
         "matter.read.menu.config" => Some("=/>menu config"),
         "matter.read.menu.downloads" => Some("=/>menu downloads"),
         "matter.read.menu.economy" => Some("=/>menu economy"),
@@ -222,18 +223,18 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     };
     // Historical page IDs are still read-only aliases, not empty pages.
     let page = requested_page.min(pages);
-    // WhatsApp's own quick replies provide the user-requested compact root.
-    // Keep category pagination only after pressing "Ver más"; do not expose
-    // page numbers or the full command inventory in the root card.
+    // NativeFlow root: categories visible through the selector itself,
+    // plus the explicit, authenticated classic-text option. No prose bubble
+    // or footer: preserve only the clickable controls until HTML is rendered.
     let root_menu = matches!(request, "=/>menu" | "=/>menú");
     let category_page = matches!(
         request,
         "=/>menu page 1" | "=/>menu page 2" | "=/>menu page 3"
     );
-    let body_text = if root_menu {
-        "꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡 ۞₪»̶⟩\n*✦ Menú*".to_owned()
-    } else if category_page {
-        "✦ Matterssmith · Categorías".to_owned()
+    // A zero-width placeholder keeps the native interactive body present
+    // without displaying any introductory text on clients requiring Body.
+    let body_text = if root_menu || category_page {
+        "\u{200b}".to_owned()
     } else {
         menu.to_owned()
     };
@@ -242,11 +243,11 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
         .iter()
         .skip(start)
         .take(PAGE_SIZE)
-        .map(|(category, _, id)| {
-            // WhatsApp shows the selected row's title as the outgoing
-            // chat bubble. It must be the exact command, not decoration.
+        .map(|(_, label, id)| {
+            // Human-readable category labels; the server interprets only
+            // allowlisted IDs and keeps all permissions on the controller.
             serde_json::json!({
-                "title": format!("=/>menu {category}"),
+                "title": label,
                 "id": id
             })
         })
@@ -284,15 +285,10 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
             ),
         }
     };
-    // Root: no category selector, no extra instructions, no hidden pages.
-    // The authenticated controller handles both selections as read-only.
-    let buttons = if root_menu {
-        vec![
-            quick_reply("Ver más", "matter.read.menu.page.1"),
-            quick_reply("Menú clásico", "matter.read.menu.all"),
-        ]
-    } else if category_page {
-        vec![selector, quick_reply("Menú clásico", "matter.read.menu.all")]
+    // Root categories + classic text, without the former "Ver más" layer.
+    // Categories continue to paginate inside the selector when necessary.
+    let buttons = if root_menu || category_page {
+        vec![selector, quick_reply("Menú clásico", "matter.read.menu.classic")]
     } else {
         vec![selector]
     };
@@ -301,16 +297,14 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
             body: MessageField::some(wa::message::interactive_message::Body {
                 text: Some(body_text),
             }),
-            footer: MessageField::some(wa::message::interactive_message::Footer {
-                text: Some(if root_menu {
-                    "Matter Ecosystem".to_owned()
-                } else if category_page {
-                    "Selecciona una categoría".to_owned()
-                } else {
-                    "Matter Ecosystem".to_owned()
-                }),
-                ..Default::default()
-            }),
+            footer: if root_menu || category_page {
+                MessageField::default()
+            } else {
+                MessageField::some(wa::message::interactive_message::Footer {
+                    text: Some("Matter Ecosystem".to_owned()),
+                    ..Default::default()
+                })
+            },
             interactive_message: Some(
                 wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(Box::new(
                     wa::message::interactive_message::NativeFlowMessage {
