@@ -40,25 +40,28 @@ pub fn menu_html_preview(menu: &str) -> Result<String> {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Base-Matter · Vista previa experimental</title>
+<title>Matterssmith · Menú HTML</title>
 <style>
-:root{{color-scheme:dark}}
+:root{{color-scheme:dark;--bg:#070b14;--surface:#111827;--ink:#e8f8ff;--muted:#abc3d4;--a:#46e7ff;--b:#7386ff;font:14px/1.45 system-ui,-apple-system,Segoe UI,Arial,sans-serif}}
 *{{box-sizing:border-box}}
-body{{margin:0;background:#090d18;color:#f3f7ff;font-family:system-ui,sans-serif;padding:18px}}
-main{{max-width:470px;margin:0 auto;padding:22px 16px;border:1px solid #31466d;border-radius:17px;background:linear-gradient(150deg,#101c38,#14111f)}}
+body{{margin:0;min-height:100vh;padding:20px 12px;background:radial-gradient(ellipse at 75% 5%,#46e7ff28,transparent 43%),radial-gradient(ellipse at 0 80%,#7039ae2b,transparent 48%),var(--bg);color:var(--ink)}}
+main{{max-width:470px;margin:0 auto;padding:24px 18px;border:1px solid #46e7ff77;border-radius:24px;background:linear-gradient(155deg,#142037,#0b1221);box-shadow:0 16px 55px #0008,0 0 25px #46e7ff1a}}
 pre{{font-family:inherit;font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}}
-h1{{font-size:20px;margin:0 0 8px}}
-p{{margin:0 0 16px;color:#b7c8e7;font-size:13px}}
-details{{border:1px solid #536c99;border-radius:12px;background:#172440;overflow:hidden}}
-summary{{cursor:pointer;padding:14px;font-weight:700;list-style:revert}}
-details pre{{padding:16px;border-top:1px solid #536c99}}
+h1{{font-size:22px;line-height:1.1;letter-spacing:-.03em;margin:0 0 9px;color:var(--a)}}
+p{{margin:0 0 17px;color:var(--muted);font-size:13px}}
+details{{border:1px solid #46e7ff60;border-radius:14px;background:#101b2c;overflow:hidden}}
+details[open]{{box-shadow:inset 0 0 28px #46e7ff15}}
+summary{{cursor:pointer;padding:15px;font-weight:800;list-style:revert;background:linear-gradient(125deg,#46e7ff15,#7386ff18)}}
+summary:focus-visible{{outline:2px solid var(--a);outline-offset:-3px}}
+details pre{{padding:16px;border-top:1px solid #364459;max-height:330px;overflow-y:auto}}
 .controls{{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}}
-button{{border-radius:10px;border:1px solid #576d9d;background:#273554;color:#fff;padding:11px 3px;opacity:.8}}
-small{{display:block;margin:15px 0;color:#a5b8d8}}
+button{{border-radius:12px;border:1px solid #46e7ff5e;background:#142033;color:var(--ink);padding:11px 3px;opacity:.65}}
+small{{display:block;margin:15px 0;color:var(--muted)}}
+@media(prefers-reduced-motion:reduce){{*,*:before,*:after{{animation:none!important;transition:none!important}}}}
 </style>
 </head>
 <body><main>
-<h1>Matterssmith · Menú</h1>
+<h1>✦ Matterssmith · Menú</h1>
 <p>Abre esta sección para consultar los comandos. WhatsApp usa su selector nativo, no este documento HTML.</p>
 <details><summary>Mostrar menú de texto</summary><pre>{escaped}</pre></details>
 <div class="controls">
