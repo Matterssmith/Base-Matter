@@ -363,14 +363,14 @@ pub fn native_category_button_cards() -> Result<Vec<wa::Message>> {
     if active.is_empty()
         || active.len() > NAV_CATEGORIES.len()
         || active.iter().any(|id| {
-            !NAV_CATEGORIES.iter().any(|(known, _, _)| *known == id)
+            !NAV_CATEGORIES.iter().any(|(known, _, _)| *known == id.as_str())
         })
     {
         bail!("Invalid visible category manifest");
     }
     let categories: Vec<_> = NAV_CATEGORIES
         .iter()
-        .filter(|(id, _, _)| active.iter().any(|shown| shown == *id))
+        .filter(|(id, _, _)| active.iter().any(|shown| shown.as_str() == *id))
         .collect();
     if categories.len() != active.len() {
         bail!("Duplicate or missing category in manifest");
