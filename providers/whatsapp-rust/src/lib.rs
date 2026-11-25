@@ -75,6 +75,7 @@ pub struct SignedFrame {
 pub enum ControlAck {
     Applied,
     AppliedWithMessage(String),
+    AppliedWithMenuMode { message: String, mode: String },
     Duplicate,
     Ignored,
 }
@@ -86,6 +87,8 @@ struct ControlAckWire {
     outcome: String,
     #[serde(default)]
     message: Option<String>,
+    #[serde(default)]
+    menu_mode: Option<String>,
 }
 
 /// Interpret the signed-control IPC acknowledgment conservatively.
@@ -96,17 +99,28 @@ pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
     }
     let response: ControlAckWire =
         serde_json::from_slice(input).map_err(|_| anyhow!("Invalid controller acknowledgment"))?;
-    match (response.ok, response.outcome.as_str(), response.message) {
-        (true, "applied", None) => Ok(ControlAck::Applied),
-        (true, "applied", Some(message))
-            if !message.is_empty()
-                && message.len() <= 3800
-                && !message.chars().any(|c| c.is_control() && c != '\n') =>
-        {
+    let valid_message = |message: &str| {
+        !message.is_empty()
+            && message.len() <= 3800
+            && !message.chars().any(|c| c.is_control() && c != '\n')
+    };
+    match (
+        response.ok,
+        response.outcome.as_str(),
+        response.message,
+        response.menu_mode,
+    ) {
+        (true, "applied", None, None) => Ok(ControlAck::Applied),
+        (true, "applied", Some(message), None) if valid_message(&message) => {
             Ok(ControlAck::AppliedWithMessage(message))
         }
-        (true, "duplicate", None) => Ok(ControlAck::Duplicate),
-        (true, "ignored", None) => Ok(ControlAck::Ignored),
+        (true, "applied", Some(message), Some(mode))
+            if valid_message(&message) && matches!(mode.as_str(), "web" | "classic") =>
+        {
+            Ok(ControlAck::AppliedWithMenuMode { message, mode })
+        }
+        (true, "duplicate", None, None) => Ok(ControlAck::Duplicate),
+        (true, "ignored", None, None) => Ok(ControlAck::Ignored),
         _ => bail!("Controller denied the operation"),
     }
 }
