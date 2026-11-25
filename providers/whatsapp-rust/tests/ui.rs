@@ -207,7 +207,13 @@ fn web_navigation_has_no_classic_body_or_mode_heading() {
     let original = "MARCO CLASICO\nCategorías\n=/>status";
     let web = native_navigation_message(original, "=/>menu web").unwrap();
     let interactive = web.interactive_message.as_option().unwrap();
-    let body = interactive.body.as_option().unwrap().text.as_deref().unwrap();
+    let body = interactive
+        .body
+        .as_option()
+        .unwrap()
+        .text
+        .as_deref()
+        .unwrap();
     assert_eq!(body, "*Matterssmith* · ✦");
     assert!(!body.contains("Menú web"));
     assert!(!body.contains("MARCO CLASICO"));

@@ -1,3 +1,9 @@
+## 2026-11-25 — Formato de la prueba de menú web
+
+El propietario reportó bloqueo MATTER_GATE=FORMAT en idkbot. Se aplica exactamente la diferencia de rustfmt en providers/whatsapp-rust/tests/ui.rs; no cambia el comportamiento, la sesión ni Vault. README revisados: 2/2. CI y arranque pendientes de confirmación.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-25 — Separar HTML real del menú clásico
 
 El propietario informa que web muestra el marco clásico precedido por «Menú web». Se retira ese encabezado y la copia del cuerpo clásico del NativeFlow web. El proveedor vuelve a intentar el RichResponse HTML real con el contenido autorizado del controlador, solo para el propietario de la sesión autenticada en chat propio o grupo habilitado; requiere MATTER_WA_RICH_HTML=1 y, para el menú raíz automático, MATTER_WA_HTML_AUTOSEND=1. El selector nativo «Otros menús» conserva exclusivamente los formatos alternativos y un cuerpo mínimo de marca. **Excepción de transporte:** web puede enviar dos mensajes (HTML experimental y tarjeta nativa de navegación), ya que no hay representación combinada verificada; classic/buttons siguen con una sola tarjeta. Si HTML no se representa, no se suplanta con el clásico. La aceptación del envío no confirma el renderizado del cliente. Prueba de regresión del cuerpo web añadido; CI y dispositivo pendientes. Sin cambios en Vault, permisos ni sesiones. README revisados: 2/2.
