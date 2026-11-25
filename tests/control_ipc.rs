@@ -235,6 +235,11 @@ fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
         (signed("network-a", "=/>bot on"), "duplicate"),
         (signed("network-b", "=/>bot off"), "applied"),
     ];
+    // Keep the integration assertion aligned with the actual control
+    // template; the whitespace between frame glyphs is presentation, not
+    // an IPC contract. Still validate frame, content, and actual newlines.
+    let template = include_str!("../templates/matterssmith-control.txt");
+    let (frame_prefix, frame_suffix) = template.split_once("{{BODY}}").unwrap();
     for (frame, outcome) in frames {
         let mut client = TcpStream::connect(addr).unwrap();
         client.write_all(&frame).unwrap();
@@ -245,12 +250,16 @@ fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
         assert_eq!(response["ok"], true);
         assert_eq!(response["outcome"], outcome);
         if outcome == "applied" {
-            assert!(response["message"].as_str().is_some_and(|text| {
-                text.starts_with("╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹")
-                    && text.contains("Política del bot para")
-                    && text.contains("\n")
-                    && !text.contains("\\n")
-            }));
+            assert!(
+                response["message"].as_str().is_some_and(|text| {
+                    text.starts_with(frame_prefix)
+                        && text.ends_with(frame_suffix)
+                        && text.contains("Política del bot para")
+                        && text.contains('\n')
+                        && !text.contains("\\n")
+                }),
+                "Authenticated IPC response does not match the configured control frame"
+            );
         } else {
             assert!(response.get("message").is_none());
         }
