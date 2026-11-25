@@ -580,6 +580,12 @@ async fn main() -> Result<()> {
     // after controller authentication/authorization of =/>menu.
     // No claims about phone rendering or Meta AI identity.
     let rich_html_trial = matches!(std::env::var("MATTER_WA_RICH_HTML").as_deref(), Ok("1"));
+    // Normal menus stay native/text until RichResponse is visually validated.
+    // This separate opt-in is restricted to the authenticated owner self-chat.
+    let rich_html_auto_send =
+        matches!(std::env::var("MATTER_WA_HTML_AUTOSEND").as_deref(), Ok("1"));
+    // Logs processing stages only, never message bodies, JIDs, IDs or secrets.
+    let diagnostic_messages = matches!(std::env::var("MATTER_WA_DIAG").as_deref(), Ok("1"));
     let menu_lab = matches!(std::env::var("MATTER_WA_MENU_LAB").as_deref(), Ok("1"));
     require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
@@ -688,6 +694,9 @@ async fn main() -> Result<()> {
         .on_message(move |ctx| {
             let config = Arc::clone(&config);
             async move {
+                if diagnostic_messages {
+                    println!("Base-Matter DIAG: WhatsApp callback received");
+                }
                 let source = &ctx.info.source;
                 // Match across PN/LID with the linked client's verified
                 // identities, stripping the per-device suffix on all JIDs.
@@ -774,6 +783,10 @@ async fn main() -> Result<()> {
                     is_group: source.is_group,
                     timestamp: ctx.info.timestamp.timestamp(),
                 };
+                let candidate = data.text.starts_with("=/>");
+                if diagnostic_messages && candidate {
+                    println!("Base-Matter DIAG: control candidate received");
+                }
                 let verified = if data.from_me {
                     config.signed_verified_control(
                         &data, own_pn.as_deref(), own_lid.as_deref(),
@@ -809,6 +822,13 @@ async fn main() -> Result<()> {
                             "Base-Matter: self-chat control denied (connected account identity mismatch or invalid event)"
                         ),
                         Ok(Some(_)) => {}
+                    }
+                }
+                if diagnostic_messages && candidate {
+                    match &verified {
+                        Ok(Some(_)) => println!("Base-Matter DIAG: control signed for IPC"),
+                        Ok(None) => println!("Base-Matter DIAG: control not admitted by signer"),
+                        Err(_) => println!("Base-Matter DIAG: control signer rejected event"),
                     }
                 }
                 match verified {
@@ -928,8 +948,10 @@ async fn main() -> Result<()> {
                             {
                                 if let Ok(message) = experimental_self_chat_rich_message(&response)
                                 {
-                                    if ctx.send_message(message).await.is_ok() {
-                                        return;
+                                    match timeout(Duration::from_secs(8), ctx.send_message(message)).await {
+                                        Ok(Ok(_)) => return,
+                                        Ok(Err(_)) => eprintln!("Base-Matter: HTML test send rejected"),
+                                        Err(_) => eprintln!("Base-Matter: HTML test send timed out"),
                                     }
                                 }
                                 eprintln!("Base-Matter: HTML test unavailable; sending text instructions");
@@ -946,11 +968,27 @@ async fn main() -> Result<()> {
                             // The native selector is ALSO sent so category taps still map to
                             // authenticated, real read-only commands rather than inert HTML.
                             let mut sent = if is_classic {
-                                ctx.reply(&response).await.is_ok()
+                                match timeout(Duration::from_secs(8), ctx.reply(&response)).await {
+                                    Ok(Ok(_)) => true,
+                                    Ok(Err(_)) => {
+                                        eprintln!("Base-Matter: classic text reply rejected");
+                                        false
+                                    }
+                                    Err(_) => {
+                                        eprintln!("Base-Matter: classic text reply timed out");
+                                        false
+                                    }
+                                }
                             } else {
                                 false
                             };
-                            if rich_html_trial && is_root {
+                            if rich_html_trial
+                                && rich_html_auto_send
+                                && is_root
+                                && frame.from_me
+                                && !data.is_group
+                                && frame.chat_jid == config.owner_jid
+                            {
                                 // The dynamic controller menu may exceed the rich
                                 // transport budget. Use the verified original menu
                                 // template for the HTML card instead; categories
@@ -959,11 +997,13 @@ async fn main() -> Result<()> {
                                     whatsapp_matter_rust_provider::rich_preview::original_menu(),
                                 ) {
                                     Ok(html) => {
-                                        if ctx.send_message(html).await.is_ok() {
-                                            sent = true;
-                                            println!("Base-Matter: Rich HTML menu submitted; client rendering unverified");
-                                        } else {
-                                            eprintln!("Base-Matter: Rich HTML not accepted; native/text fallback");
+                                        match timeout(Duration::from_secs(8), ctx.send_message(html)).await {
+                                            Ok(Ok(_)) => {
+                                                sent = true;
+                                                println!("Base-Matter: Rich HTML menu submitted; client rendering unverified");
+                                            }
+                                            Ok(Err(_)) => eprintln!("Base-Matter: Rich HTML not accepted; native/text fallback"),
+                                            Err(_) => eprintln!("Base-Matter: Rich HTML send timed out; native/text fallback"),
                                         }
                                     }
                                     Err(_) => eprintln!("Base-Matter: Rich HTML menu unavailable; native/text fallback"),
@@ -971,7 +1011,17 @@ async fn main() -> Result<()> {
                             }
                             if native_buttons && is_menu && !is_classic {
                                 let native_sent = match native_navigation_message(&response, actual_command) {
-                                    Ok(interactive) => ctx.send_message(interactive).await.is_ok(),
+                                    Ok(interactive) => match timeout(Duration::from_secs(8), ctx.send_message(interactive)).await {
+                                        Ok(Ok(_)) => true,
+                                        Ok(Err(_)) => {
+                                            eprintln!("Base-Matter: native menu send rejected");
+                                            false
+                                        }
+                                        Err(_) => {
+                                            eprintln!("Base-Matter: native menu send timed out");
+                                            false
+                                        }
+                                    },
                                     Err(_) => false,
                                 };
                                 if !native_sent {
@@ -980,10 +1030,17 @@ async fn main() -> Result<()> {
                                 sent |= native_sent;
                             }
                             if !sent {
-                                sent = ctx.reply(&response).await.is_ok();
-                                if !sent {
-                                    eprintln!("Base-Matter: control reply unavailable");
-                                }
+                                sent = match timeout(Duration::from_secs(8), ctx.reply(&response)).await {
+                                    Ok(Ok(_)) => true,
+                                    Ok(Err(_)) => {
+                                        eprintln!("Base-Matter: control text reply rejected");
+                                        false
+                                    }
+                                    Err(_) => {
+                                        eprintln!("Base-Matter: control text reply timed out");
+                                        false
+                                    }
+                                };
                             }
                             if sent && is_private_vault_command(&frame, &config.owner_jid) {
                                 println!("Base-Matter: Vault owner response submitted to WhatsApp");
