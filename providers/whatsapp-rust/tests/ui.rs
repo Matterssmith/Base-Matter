@@ -6,7 +6,7 @@
  */
 use buffa::MessageField;
 use whatsapp_matter_rust_provider::ui::{
-    legacy_row_probe_message, menu_lab_card, native_category_button_cards, native_menu_lab_card,
+    legacy_row_probe_message, menu_lab_card, native_menu_lab_card,
     native_menu_message, native_navigation_message, native_ui_probe_message,
     readonly_button_command, short_html_to_whatsapp, MenuCardVariant,
 };
@@ -59,225 +59,122 @@ fn legacy_click(id: &str) -> wa::Message {
 }
 
 #[test]
-fn root_menu_shows_categories_and_classic_button_without_visible_text() {
+fn root_menu_has_only_the_final_selector_with_categories_and_menu_modes() {
     let original = include_str!("../../../templates/matterssmith-menu.txt").trim_end();
     let message = native_menu_message(original).unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
-    let body = interactive
-        .body
-        .as_option()
-        .unwrap()
-        .text
-        .as_deref()
-        .unwrap();
-    assert_eq!(body, "\u{200b}");
+    assert_eq!(interactive.body.as_option().unwrap().text.as_deref(), Some(original));
     assert!(interactive.footer.as_option().is_none());
     assert!(message.conversation.is_none());
     let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
         interactive.interactive_message.as_ref()
     else {
-        panic!("Expected NativeFlow");
+        panic!("Expected NativeFlow menu");
     };
-    assert_eq!(native.buttons.len(), 3);
+    assert_eq!(native.buttons.len(), 1);
     assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
-    let categories: serde_json::Value =
+    let data: serde_json::Value =
         serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
-    assert_eq!(categories["title"], "Seleccionar categoría");
-    let rows = categories["sections"][0]["rows"].as_array().unwrap();
-    let ids: Vec<String> = serde_json::from_str(include_str!(
-        "../../../templates/menu-visible-categories.json"
-    ))
-    .unwrap();
-    assert_eq!(ids.len(), 10);
-    assert_eq!(rows.len(), 10);
-    for (row, id) in rows.iter().take(9).zip(ids.iter().take(9)) {
-        assert_eq!(row["id"], format!("matter.read.menu.{id}"));
-        assert_ne!(row["title"], format!("=/>menu {id}"));
-        assert!(row["title"].as_str().is_some_and(|label| !label.is_empty()));
+    assert_eq!(data["title"], "Seleccionar categoría");
+    let sections = data["sections"].as_array().unwrap();
+    assert_eq!(sections.len(), 2);
+    assert_eq!(sections[0]["title"], "Categorías");
+    assert_eq!(sections[1]["title"], "Otros menús");
+    let categories = sections[0]["rows"].as_array().unwrap();
+    assert_eq!(categories.len(), 7);
+    let shown: Vec<String> =
+        serde_json::from_str(include_str!("../../../templates/menu-visible-categories.json")).unwrap();
+    assert_eq!(shown.len(), 10);
+    for (item, id) in categories.iter().take(6).zip(shown.iter().take(6)) {
+        assert_eq!(item["id"], format!("matter.read.menu.{id}"));
+        assert_ne!(item["title"], format!("=/>menu {id}"));
     }
-    assert_eq!(rows[9]["id"], "matter.read.menu.page.2");
-    assert_eq!(rows[9]["title"], "Más categorías");
-
-    let classic = &native.buttons[1];
-    assert_eq!(classic.name.as_deref(), Some("quick_reply"));
-    let reveal: serde_json::Value =
-        serde_json::from_str(classic.button_params_json.as_deref().unwrap()).unwrap();
-    assert_eq!(reveal["display_text"], "Menú clásico");
-    assert_eq!(reveal["id"], "matter.read.menu.classic");
-    assert_eq!(
-        readonly_button_command(&native_click("matter.read.menu.classic", "quick_reply")),
-        Some("=/>menu classic")
-    );
+    assert_eq!(categories[6]["id"], "matter.read.menu.page.2");
+    let modes = sections[1]["rows"].as_array().unwrap();
+    assert_eq!(modes.len(), 3);
+    assert_eq!(modes[0]["id"], "matter.read.menu.classic");
+    assert_eq!(modes[1]["id"], "matter.read.menu.web");
+    assert_eq!(modes[2]["id"], "matter.read.menu.buttons");
+    assert_eq!(categories.len() + modes.len(), 10);
 }
 
 #[test]
-fn second_page_preserves_categories_and_classic_quick_reply() {
+fn second_page_contains_remaining_categories_and_menu_modes_at_the_end() {
     let message = native_navigation_message("Categorías", "=/>menu page 2").unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
-    assert_eq!(
-        interactive.body.as_option().unwrap().text.as_deref(),
-        Some("\u{200b}")
-    );
+    assert!(interactive.body.as_option().unwrap().text.as_deref().unwrap().contains("página 2/2"));
     assert!(interactive.footer.as_option().is_none());
     let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
         interactive.interactive_message.as_ref()
     else {
         panic!("Expected NativeFlow");
     };
-    assert_eq!(native.buttons.len(), 3);
+    assert_eq!(native.buttons.len(), 1);
     assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
-    let categories: serde_json::Value =
+    let params: serde_json::Value =
         serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
-    let rows = categories["sections"][0]["rows"].as_array().unwrap();
-    assert_eq!(rows.len(), 2);
-    assert_eq!(rows[0]["id"], "matter.read.menu.utils");
-    assert!(rows[0]["title"].as_str().is_some_and(|s| !s.is_empty()));
-    assert_eq!(rows[1]["id"], "matter.read.menu.page.1");
-    assert_eq!(rows[1]["title"], "Anterior");
-    let reveal: serde_json::Value =
-        serde_json::from_str(native.buttons[1].button_params_json.as_deref().unwrap()).unwrap();
-    assert_eq!(reveal["display_text"], "Menú clásico");
-    assert_eq!(reveal["id"], "matter.read.menu.classic");
+    let sections = params["sections"].as_array().unwrap();
+    let categories = sections[0]["rows"].as_array().unwrap();
+    assert_eq!(categories.len(), 5);
+    for (i, id) in ["mode", "owner", "system", "utils"].iter().enumerate() {
+        assert_eq!(categories[i]["id"], format!("matter.read.menu.{id}"));
+    }
+    assert_eq!(categories[4]["id"], "matter.read.menu.page.1");
+    assert_eq!(sections[1]["rows"].as_array().unwrap().len(), 3);
 }
 
 #[test]
-fn submenu_category_keeps_selector_and_actual_text() {
+fn category_menu_keeps_its_text_and_its_one_final_selector() {
     let message = native_navigation_message("Protecciones", "=/>menu anti").unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
-    assert_eq!(
-        interactive.body.as_option().unwrap().text.as_deref(),
-        Some("Protecciones")
-    );
+    assert_eq!(interactive.body.as_option().unwrap().text.as_deref(), Some("Protecciones"));
     let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
         interactive.interactive_message.as_ref()
     else {
         panic!("Expected NativeFlow");
     };
-    assert_eq!(native.buttons.len(), 3);
+    assert_eq!(native.buttons.len(), 1);
     assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
     assert!(native_navigation_message("Unsafe", "=/>set role owner").is_err());
 }
 
 #[test]
-fn classic_button_routes_without_permissions_and_menu_all_remains_supported() {
+fn formats_are_readonly_and_selected_through_category_picker() {
     for (id, command) in [
         ("matter.read.menu.classic", "=/>menu classic"),
         ("matter.read.menu.web", "=/>menu web"),
         ("matter.read.menu.buttons", "=/>menu buttons"),
         ("matter.read.menu.all", "=/>menu all"),
     ] {
-        assert_eq!(
-            readonly_button_command(&native_click(id, "quick_reply")),
-            Some(command)
-        );
-        assert_eq!(
-            readonly_button_command(&native_click(id, "single_select")),
-            Some(command)
-        );
+        assert_eq!(readonly_button_command(&native_click(id, "single_select")), Some(command));
+        assert_eq!(readonly_button_command(&list_click(id)), Some(command));
     }
-    assert!(
-        readonly_button_command(&native_click("matter.read.roles.grant", "quick_reply")).is_none()
-    );
+    assert!(readonly_button_command(&native_click("matter.read.roles.grant", "single_select")).is_none());
 }
 
 #[test]
-fn modes_keep_selector_and_switch_to_each_other_with_no_root_prose() {
-    for (mode, first, second) in [
-        (
-            "=/>menu web",
-            "matter.read.menu.classic",
-            "matter.read.menu.buttons",
-        ),
-        (
-            "=/>menu classic",
-            "matter.read.menu.web",
-            "matter.read.menu.buttons",
-        ),
-        (
-            "=/>menu buttons",
-            "matter.read.menu.classic",
-            "matter.read.menu.web",
-        ),
-        (
-            "=/>menu all",
-            "matter.read.menu.web",
-            "matter.read.menu.buttons",
-        ),
+fn all_modes_use_one_visible_message_and_one_last_selector() {
+    for (request, expected) in [
+        ("=/>menu web", "*Menú web*"),
+        ("=/>menu buttons", "*Menu Buttons*"),
+        ("=/>menu classic", "Categorías"),
+        ("=/>menu all", "Categorías"),
     ] {
-        let message = native_navigation_message("Categorías", mode).unwrap();
+        let message = native_navigation_message("Categorías", request).unwrap();
         let interactive = message.interactive_message.as_option().unwrap();
-        assert_eq!(
-            interactive.body.as_option().unwrap().text.as_deref(),
-            Some("\u{200b}")
-        );
+        assert!(interactive.body.as_option().unwrap().text.as_deref().unwrap().contains(expected));
+        assert!(interactive.footer.as_option().is_none());
         let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
             interactive.interactive_message.as_ref()
         else {
             panic!("Expected NativeFlow");
         };
-        assert_eq!(native.buttons.len(), 3);
-        let selector_index = if mode == "=/>menu buttons" { 2 } else { 0 };
-        assert_eq!(
-            native.buttons[selector_index].name.as_deref(),
-            Some("single_select")
-        );
-        let switch_positions = if mode == "=/>menu buttons" {
-            [(0, first), (1, second)]
-        } else {
-            [(1, first), (2, second)]
-        };
-        for (i, id) in switch_positions {
-            let params: serde_json::Value =
-                serde_json::from_str(native.buttons[i].button_params_json.as_deref().unwrap())
-                    .unwrap();
-            assert_eq!(params["id"], id);
-            assert!(readonly_button_command(&native_click(id, "quick_reply")).is_some());
-        }
+        assert_eq!(native.buttons.len(), 1);
+        assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
+        assert!(message.bot_forwarded_message.as_option().is_none());
+        assert!(message.rich_response_message.as_option().is_none());
+        assert!(message.buttons_message.as_option().is_none());
     }
-}
-
-#[test]
-fn buttons_menu_has_one_real_clickable_button_per_visible_category_in_bounded_cards() {
-    let cards = native_category_button_cards().unwrap();
-    let visible: Vec<String> = serde_json::from_str(include_str!(
-        "../../../templates/menu-visible-categories.json"
-    ))
-    .unwrap();
-    assert_eq!(cards.len(), visible.len().div_ceil(3));
-    assert_eq!(cards.len(), 4);
-    let mut seen = Vec::new();
-    for card in cards {
-        let interactive = card.interactive_message.as_option().unwrap();
-        assert_eq!(
-            interactive.body.as_option().unwrap().text.as_deref(),
-            Some("\u{200b}")
-        );
-        let Some(wa::message::interactive_message::InteractiveMessage::NativeFlowMessage(native)) =
-            interactive.interactive_message.as_ref()
-        else {
-            panic!("Expected NativeFlow");
-        };
-        assert!(!native.buttons.is_empty());
-        assert!(native.buttons.len() <= 3);
-        for button in &native.buttons {
-            assert_eq!(button.name.as_deref(), Some("quick_reply"));
-            let data: serde_json::Value =
-                serde_json::from_str(button.button_params_json.as_deref().unwrap()).unwrap();
-            let id = data["id"].as_str().unwrap();
-            assert!(data["display_text"]
-                .as_str()
-                .is_some_and(|s| !s.is_empty() && s.chars().count() <= 20));
-            assert!(readonly_button_command(&native_click(id, "quick_reply")).is_some());
-            seen.push(id.to_owned());
-        }
-    }
-    assert_eq!(
-        seen,
-        visible
-            .into_iter()
-            .map(|id| format!("matter.read.menu.{id}"))
-            .collect::<Vec<_>>()
-    );
 }
 
 #[test]
