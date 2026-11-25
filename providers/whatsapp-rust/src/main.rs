@@ -962,7 +962,10 @@ async fn main() -> Result<()> {
                                 && native_buttons
                             {
                                 if let Ok(probe) = native_ui_probe_message() {
-                                    if ctx.send_message(probe).await.is_ok() {
+                                    if matches!(
+                                        timeout(Duration::from_secs(8), ctx.send_message(probe)).await,
+                                        Ok(Ok(_))
+                                    ) {
                                         return;
                                     }
                                 }
@@ -970,15 +973,21 @@ async fn main() -> Result<()> {
                             }
                             if actual_command == "=/>test row"
                             {
-                                if ctx.send_message(legacy_row_probe_message()).await.is_ok() {
+                                if matches!(
+                                    timeout(Duration::from_secs(8), ctx.send_message(legacy_row_probe_message())).await,
+                                    Ok(Ok(_))
+                                ) {
                                     return;
                                 }
                                 eprintln!("Base-Matter: classic ButtonsRow test rejected; using text");
                             }
+                            // The controller has already admitted a signed
+                            // group test, or the verified owner self-chat.
+                            // No private third-party HTML injection is allowed.
                             if actual_command == "=/>test html"
                                 && rich_html_trial
-                                && frame.from_me
-                                && frame.chat_jid == config.owner_jid
+                                && (data.is_group
+                                    || (frame.from_me && frame.chat_jid == config.owner_jid))
                             {
                                 if let Ok(message) = experimental_self_chat_rich_message(&response)
                                 {
@@ -986,8 +995,8 @@ async fn main() -> Result<()> {
                                         Ok(Ok(_)) => {
                                             // A successful WhatsApp send is not proof that
                                             // Android rendered the experimental HTML.
-                                            // Only this explicit owner-only test receives
-                                            // an extra diagnostic text confirmation.
+                                            // Every admitted visual test receives a
+                                            // diagnostic, including enabled groups.
                                             println!("Base-Matter: Rich HTML test submitted; client rendering unverified");
                                             let _ = timeout(
                                                 Duration::from_secs(8),
@@ -1039,9 +1048,8 @@ async fn main() -> Result<()> {
                             if rich_html_trial
                                 && rich_html_auto_send
                                 && is_web
-                                && frame.from_me
-                                && !data.is_group
-                                && frame.chat_jid == config.owner_jid
+                                && (data.is_group
+                                    || (frame.from_me && frame.chat_jid == config.owner_jid))
                             {
                                 // The dynamic controller menu may exceed the rich
                                 // transport budget. Use the verified original menu
