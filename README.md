@@ -1,3 +1,13 @@
+## 2026-11-24 — Tema del menú HTML basado en Matter Register
+
+El propietario pidió usar Matter Register como referencia visual directa. Se revisó `web/matter-register/app.js` desde la rama `feat/matter-register-web`: variables originales `--bg:#070b14`, `--a:#46e7ff`, `--b:#7386ff`, `--ink:#e8f8ff`, `--muted:#abc3d4`; paneles de vidrio oscuro, bordes luminosos, marca con símbolo ✦, partículas sutiles, chips y tratamiento de `prefers-reduced-motion`.
+
+Se adaptaron **sin copiar formularios ni identidad civil** esos elementos a `providers/whatsapp-rust/src/rich_preview.rs`: `menu_inline_html` crea una tarjeta compacta Matterssmith con `<details>` cerrado, texto escapado, estética cian/índigo, encabezado y crédito. `menu_html_preview` para navegador conserva sus pruebas de audio y tarjetas desactivadas y ahora usa la misma familia visual. Las regresiones en `providers/whatsapp-rust/tests/rich_preview.rs` comprueban paleta, cierre por defecto y escape de HTML.
+
+El envío enriquecido sigue opt-in mediante `MATTER_WA_RICH_HTML=1` y la validación Android/CI sigue pendiente; no se ha actualizado un binario en idkbot ni interrumpido WhatsApp o Vault. El HTML local colapsado **no ejecuta comandos de chat por sí solo**: los comandos reales permanecen en NativeFlow y en el dispatcher autenticado. Si un cliente no interpreta Rich UI, usar `=/>menu all` o el selector nativo.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-24 — Menú WhatsApp compacto y desplegable (alpha)
 
 Se implementó en el proveedor `whatsapp-rust` una tarjeta raíz `=/>menu` **breve** con selector nativo de categorías y botón `Ver texto`, sin mostrar el catálogo completo hasta el clic. Los IDs existentes devuelven `=/>menu <categoría>` o `=/>menu all` tras autorización, HMAC y comprobación antirreplay, sin nuevos privilegios; `=/>help` conserva su comportamiento. En alpha el selector queda habilitado por defecto con opción `MATTER_WA_NATIVE_BUTTONS=0` para regresar al texto; si el cliente acepta un envío pero no dibuja botones, el usuario puede escribir `=/>menu all` manualmente. La vista HTML offline utiliza `<details>` cerrado por defecto; **WhatsApp no interpreta HTML arbitrario** y su RichResponse experimental no equivale a soporte del cliente. Código y pruebas escritos en alpha; **CI/compilación, renderizado Android y despliegue en idkbot todavía no verificados**. Sesión WhatsApp, Vault y beta/stable no modificados. Detalles: [docs/WHATSAPP_COLLAPSIBLE_MENU.md](docs/WHATSAPP_COLLAPSIBLE_MENU.md).
