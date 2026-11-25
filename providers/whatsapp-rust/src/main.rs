@@ -986,8 +986,8 @@ async fn main() -> Result<()> {
                             // No private third-party HTML injection is allowed.
                             if actual_command == "=/>test html"
                                 && rich_html_trial
-                                && (data.is_group
-                                    || (frame.from_me && frame.chat_jid == config.owner_jid))
+                                && frame.from_me
+                                && (data.is_group || frame.chat_jid == config.owner_jid)
                             {
                                 if let Ok(message) = experimental_self_chat_rich_message(&response)
                                 {
@@ -1048,8 +1048,8 @@ async fn main() -> Result<()> {
                             if rich_html_trial
                                 && rich_html_auto_send
                                 && is_web
-                                && (data.is_group
-                                    || (frame.from_me && frame.chat_jid == config.owner_jid))
+                                && frame.from_me
+                                && (data.is_group || frame.chat_jid == config.owner_jid)
                             {
                                 // The dynamic controller menu may exceed the rich
                                 // transport budget. Use the verified original menu
