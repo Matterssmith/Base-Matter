@@ -1,3 +1,21 @@
+## 2026-11-24 — Pruebas `provider`: plantilla y firma externa sin privilegios
+
+En `idkbot` se reportaron dos fallos de `cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --test provider`: `standalone_provider_uses_exact_same_external_matterssmith_template` y `incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority` (17 pruebas sí pasaban).
+
+La primera aserción duplicaba un prefijo obsoleto `╭─💠`, diferente de la plantilla oficial `templates/matterssmith-control.txt` con `╭─ 💠`. El test ahora carga la plantilla con `include_str!` y comprueba prefijo/sufijo exactos, texto, saltos de línea e idempotencia.
+
+La segunda aserción consideraba inválidos `=/>group on`, `=/>bot on` y `=/>set role 12345678901 admin` a nivel de firma. Sin embargo, el proveedor permite enviar estos intentos como eventos **externos y no privilegiados** para que el controlador compruebe después si el actor es un owner global verificado por Vault. La prueba se corrigió para exigir `from_me=false`, `actor_id` igual al remitente real y distinto de `config.actor_id`, JID de destino intacto y HMAC íntegro. La lista negativa conserva comandos desconocidos, variantes inválidas y el probe HTML del propietario. **Firmar no concede autoridad; Vault sigue siendo obligatorio para ejecutar acciones.** No se modificó el código de autorización.
+
+Commit correctivo en `Base-Matter/alpha`: `61d1eea64c102f17a1bf828388a9e4e0bfddf101`. Validación pendiente en `idkbot`:
+
+```bash
+cd /home/Sakura/Matter-Ecosystem/Base-Matter && export PATH="$HOME/.cargo/bin:$PATH" && git fetch origin alpha && git merge --ff-only origin/alpha && CARGO_BUILD_JOBS=2 cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --test provider
+```
+
+Solo después de obtener el resultado verde continuar con el resto de pruebas/compilación. No borrar `runtime.env`, `session.db` ni Vault.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-24 — Reparación de regresión control_ipc en idkbot
 
 La prueba `local_tcp_loopback_roundtrip_rejects_replay_before_second_effect` falló porque esperaba el prefijo literal `╭─💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹`, mientras la plantilla oficial `templates/matterssmith-control.txt` contiene `╭─ 💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹` (espacio intencional). La prueba de integración ahora importa la plantilla real con `include_str!`, divide por `{{BODY}}` y verifica prefijo, sufijo, contenido y saltos de línea sin asumir un espaciado duplicado. No se cambiaron la lógica de producción, la autenticación ni Vault por este error.
