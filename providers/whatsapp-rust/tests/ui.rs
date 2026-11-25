@@ -82,7 +82,7 @@ fn root_menu_shows_categories_and_classic_button_without_visible_text() {
     assert_eq!(native.buttons[0].name.as_deref(), Some("single_select"));
     let categories: serde_json::Value =
         serde_json::from_str(native.buttons[0].button_params_json.as_deref().unwrap()).unwrap();
-    assert_eq!(categories["title"], "Categorías");
+    assert_eq!(categories["title"], "Seleccionar categoría");
     let rows = categories["sections"][0]["rows"].as_array().unwrap();
     let ids: Vec<String> = serde_json::from_str(include_str!(
         "../../../templates/menu-visible-categories.json"
