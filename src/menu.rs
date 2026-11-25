@@ -954,6 +954,16 @@ mod tests {
     }
 
     #[test]
+    fn web_and_classic_are_explicit_readonly_render_variants() {
+        let options = Preferences::default();
+        let original = render("menu", options).unwrap();
+        assert_eq!(render("menu web", options).unwrap(), original);
+        assert_eq!(render("menu classic", options).unwrap(), original);
+        assert_ne!(render("menu all", options).unwrap(), original);
+        assert!(render("menu unknown", options).is_err());
+    }
+
+    #[test]
     fn old_menu_sqlite_schema_is_migrated_without_losing_existing_options() {
         let file = std::env::temp_dir().join(format!(
             "matter-menu-migration-{}-{}.sqlite",
