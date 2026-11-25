@@ -1,3 +1,24 @@
+## 2026-11-24 — Diagnóstico de estado WhatsApp: un comando y luego silencio
+
+Incidente comunicado por el propietario en `idkbot`: tras actualizar `wa-alpha`, el proveedor sigue conectado, pero `=/>status` responde una vez y los comandos posteriores pueden quedar sin respuesta, sin error visible. **Causa no demostrada en un dispositivo todavía**.
+
+Análisis del código: `providers/whatsapp-rust/src/main.rs` recibía eventos en `on_message` y esperaba sin plazo para `ctx.reply` / `ctx.send_message`. Con `MATTER_WA_RICH_HTML=1`, la raíz `=/>menu` podía hacer dos envíos (HTML experimental + NativeFlow) durante un mismo evento. Un envío pendiente es una causa plausible de bloqueo silencioso; alternativamente, el proveedor puede no recibir más eventos o el filtro de identidad/antirreplay puede descartar mensajes. Los mensajes `Ignored` eran principalmente silenciosos.
+
+Cambios exclusivamente en `Base-Matter/alpha`: se agregó `tokio::time::timeout(Duration::from_secs(8), ...)` para mensajes normales, menú nativo, texto clásico y prueba/envío de HTML enriquecido; se separó el HTML automático del menú bajo `MATTER_WA_HTML_AUTOSEND=1` **además** de `MATTER_WA_RICH_HTML=1`, solo para chat propio del propietario. Por defecto se **suspende el HTML automático** para estabilizar `status`, sin quitar la ruta explícita de `=/>test html`. Con `MATTER_WA_DIAG=1` el proveedor imprime exclusivamente etapas `callback received`, `control candidate received`, `control signed`, `control not admitted`, `controller replied duplicate`, `controller ignored`, `reply timed out`, o fallos de envío: **nunca contenido, JID, IDs de mensajes ni claves**.
+
+Prueba en servidor (se debe compilar el **nuevo** binario del proveedor antes de retomar):
+```bash
+cd /home/Sakura/Matter-Ecosystem/Base-Matter
+git fetch origin alpha && git merge --ff-only origin/alpha
+CARGO_BUILD_JOBS=2 cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --test ui --test rich_preview --test rich_transport
+CARGO_BUILD_JOBS=2 cargo build --manifest-path providers/whatsapp-rust/Cargo.toml
+```
+Tras detener exclusivamente el proceso alpha original de manera controlada, usar la sesión `--resume-only`, con el `CONTROLLER` y `PROVIDER` **reales**, Vault habilitado como antes y `MATTER_WA_DIAG=1 MATTER_WA_HTML_AUTOSEND=0 MATTER_WA_RICH_HTML=1 MATTER_WA_NATIVE_BUTTONS=1`. Probar en el mismo chat `=/>status` tres veces con mensajes nuevos, después `=/>menu`, `=/>status`. No borrar `session.db`, `runtime.env`, el almacén de replay, ni reiniciar Vault; no permitir otra instancia paralela.
+
+Interpretación del log: sin nuevos `callback received`, investigar entrega upstream/session; si hay callback sin `candidate`, inspeccionar tipo de mensaje; con `not admitted`, revisar identidad y alcance sin desactivar permisos; con `duplicate`, verificar IDs reales localmente bajo estrictas condiciones de privacidad; con `ignored`, revisar estado y autorización; con `timed out`, examinar envíos y consumidor WhatsApp. **No llamar al bug resuelto sin confirmación de teléfono y pruebas.**
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-24 — Tema del menú HTML basado en Matter Register
 
 El propietario pidió usar Matter Register como referencia visual directa. Se revisó `web/matter-register/app.js` desde la rama `feat/matter-register-web`: variables originales `--bg:#070b14`, `--a:#46e7ff`, `--b:#7386ff`, `--ink:#e8f8ff`, `--muted:#abc3d4`; paneles de vidrio oscuro, bordes luminosos, marca con símbolo ✦, partículas sutiles, chips y tratamiento de `prefers-reduced-motion`.
