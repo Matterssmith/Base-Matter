@@ -1,10 +1,10 @@
 /*
  * WhatsApp-Matter — opt-in RichResponse transport experiment.
  *
- * This path serializes independently-generated HTML preview data into the
- * public whatsapp-rust protobuf. It never claims to be Meta AI, never
- * forwards a non-forwarded message, and never operates without the owner's
- * explicit environment opt-in and authenticated private self-chat context.
+ * This path serializes original Matter HTML into an experimental WhatsApp
+ * RichResponse carried by a BotForwardedMessage container, as used by current
+ * HTML-capable clients. No Meta AI identity, fake signature, or bot JID is forged.
+ * Sending requires provider opt-in and authenticated command admission.
  *
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
@@ -16,7 +16,7 @@ use whatsapp_rust::prelude::wa;
 
 const MAX_WIRE_BYTES: usize = 16_384;
 
-/// Build, but do not send, a non-forged experimental RichResponse message.
+/// Build a RichResponse HTML menu for the authorized provider to send.
 /// A client can ignore or discard these unsupported UI primitives even when
 /// the API reports a successful send. NativeFlow/text remain the fallback.
 pub fn experimental_self_chat_rich_message(menu: &str) -> Result<wa::Message> {
@@ -40,10 +40,18 @@ pub fn experimental_self_chat_rich_message(menu: &str) -> Result<wa::Message> {
         }),
         ..Default::default()
     };
-    // Deliberately NOT a nested BotForwardedMessage. No fabricated 0@bot,
-    // forwarded flag, Meta AI origin, or disguised trusted source.
-    Ok(wa::Message {
+    // Aura and current Rich UI clients carry the response in a nested
+    // BotForwardedMessage (protobuf field 104), rather than at root field 97.
+    // This is structural nesting only: do not claim a Meta AI identity,
+    // forge verification proofs or attach a fake @bot origin.
+    let nested = wa::Message {
         rich_response_message: MessageField::some(rich),
+        ..Default::default()
+    };
+    Ok(wa::Message {
+        bot_forwarded_message: MessageField::some(wa::message::FutureProofMessage {
+            message: MessageField::some(nested),
+        }),
         ..Default::default()
     })
 }
