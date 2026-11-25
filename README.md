@@ -1,3 +1,11 @@
+## 2026-11-24 — Preferencia del menú WhatsApp: web por defecto
+
+En `Base-Matter/alpha` se agregaron `=/>menu web`, `=/>menu classic`, `=/>set menu`, `=/>set menu web` y `=/>set menu classic`. La preferencia `web|classic` se guarda en el SQLite privado de menús del controlador (predeterminado **web**), se migra desde esquemas existentes sin alterar el idioma/estilo, y se comunica al proveedor como metadato de una respuesta IPC previamente autenticada para `=/>menu`. En el modo web se intenta HTML experimental en chat propio cuando `MATTER_WA_RICH_HTML=1`, junto con el respaldo NativeFlow: categorías y botón «Menú clásico», sin cuerpo visible. El modo clásico devuelve el antiguo menú de texto. `menu all` conserva su catálogo completo.
+
+No se ha comprobado que WhatsApp Android represente el HTML, ni compilado/deplegado esta revisión en `idkbot`. Mantener sesión alfa y Vault sin modificar. Guía completa: [docs/WHATSAPP_COLLAPSIBLE_MENU.md](docs/WHATSAPP_COLLAPSIBLE_MENU.md).
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-24 — Diagnóstico de estado WhatsApp: un comando y luego silencio
 
 Incidente comunicado por el propietario en `idkbot`: tras actualizar `wa-alpha`, el proveedor sigue conectado, pero `=/>status` responde una vez y los comandos posteriores pueden quedar sin respuesta, sin error visible. **Causa no demostrada en un dispositivo todavía**.
