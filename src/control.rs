@@ -442,6 +442,18 @@ impl ControlDispatcher {
                 Ok(DispatchResult::Extension { command: "help".to_owned(), output })
             }
             ["=/>test"] | ["=/>test", "ui" | "row"]
+            | ["=/>test", "html"] if group.is_some() =>
+            {
+                if !decision.decision.enabled {
+                    return Ok(DispatchResult::Inactive);
+                }
+                Ok(DispatchResult::Extension {
+                    command: "test".to_owned(),
+                    output: "🧪 HTML experimental: prueba autorizada para este grupo. El envío no garantiza que el cliente de WhatsApp muestre HTML.".to_owned(),
+                })
+            }
+            ["=/>test"]
+            | ["=/>test", "ui" | "row"]
             | ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => {
                 // A no-argument diagnostic is intentionally available with
                 // the bot OFF (same read-only control exception as status).
@@ -758,12 +770,12 @@ impl ControlDispatcher {
                 ["test"]
                 | ["test", "ui" | "html" | "row"]
                 | ["test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => {
-                    if group.is_some() && tokens.as_slice() == ["test", "html"] {
-                        bail!("La prueba HTML requiere el chat privado del propietario");
-                    }
                     let admission =
                         self.activation
                             .admission(receiving_socket, group, self.global_policy)?;
+                    if group.is_some() && !admission.decision.enabled {
+                        return Ok(DispatchResult::Inactive);
+                    }
                     if admission.owner_id != actor {
                         bail!("Solo el propietario verificado puede probar la interfaz");
                     }
@@ -786,7 +798,7 @@ impl ControlDispatcher {
                         .join("\n"),
                         ["test", "html"] => [
                             "🧪 Prueba HTML experimental",
-                            "Solo funciona en el chat privado del propietario.",
+                            "Disponible en grupos habilitados y en el chat privado del propietario.",
                             "Requiere MATTER_WA_RICH_HTML=1.",
                             "El cliente puede ignorar la visualización aunque acepte el envío.",
                             "No ejecuta scripts ni sonidos; esos recursos no están verificados.",
