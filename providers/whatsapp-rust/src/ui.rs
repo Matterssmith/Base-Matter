@@ -235,7 +235,7 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     );
     let body_text = if collapsed_root {
         format!(
-            "꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡 ۞₪»̶⟩\\n*Menú interactivo* · ✦\\n\\nToca *Categorías* para abrir una sección.\\nPulsa *Ver texto* para mostrar todos los comandos.\\n\\nPágina {page}/{pages}"
+            "꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡 ۞₪»̶⟩\n*Menú interactivo* · ✦\n\nToca *Categorías* para abrir una sección.\nPulsa *Ver texto* para mostrar todos los comandos.\n\nPágina {page}/{pages}"
         )
     } else {
         menu.to_owned()
