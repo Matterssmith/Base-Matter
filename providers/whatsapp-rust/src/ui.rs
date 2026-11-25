@@ -249,7 +249,8 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     // This compact, styled fallback is always visible without HTML support.
     // The classic and category bodies retain their full controller text.
     let body_text = if web_menu {
-        "*Matterssmith* · ✦\n*Menú web*\nSelecciona una categoría o un formato en el menú inferior.".to_owned()
+        "*Matterssmith* · ✦\n*Menú web*\nSelecciona una categoría o un formato en el menú inferior."
+            .to_owned()
     } else if buttons_menu {
         "*Matterssmith* · ✦\n*Menu Buttons*\nCategorías y formatos disponibles en el selector inferior.".to_owned()
     } else if category_page {
@@ -266,9 +267,7 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
         .iter()
         .skip(start)
         .take(PAGE_SIZE)
-        .map(|(_, label, id)| {
-            serde_json::json!({"title": label, "id": id})
-        })
+        .map(|(_, label, id)| serde_json::json!({"title": label, "id": id}))
         .collect();
     if page > 1 {
         category_rows.push(serde_json::json!({
