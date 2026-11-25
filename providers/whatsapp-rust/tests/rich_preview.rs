@@ -12,6 +12,8 @@ use whatsapp_matter_rust_provider::rich_preview::{
 fn original_matterssmith_menu_is_preserved_inside_offline_html() {
     let html = menu_html_preview(original_menu()).unwrap();
     assert!(html.starts_with("<!doctype html>"));
+    assert!(html.contains("--a:#46e7ff"));
+    assert!(html.contains("--b:#7386ff"));
     assert!(html.contains("<details><summary>Mostrar menú de texto</summary>"));
     assert!(html.contains("</pre></details>"));
     assert!(!html.contains("<details open"));
@@ -44,7 +46,7 @@ fn untrusted_text_cannot_inject_scripts_or_html_attributes() {
 #[test]
 fn inline_html_menu_has_clickable_collapsed_text_without_script() {
     let html = menu_inline_html(original_menu()).unwrap();
-    assert!(html.contains("Matterssmith · Menú") == false);
+    assert!(html.contains("Matter<span>ssmith</span>"));
     assert!(html.contains("Tu mundo. <em>Tu Matter.</em>"));
     assert!(html.contains("--matter-a:#46e7ff"));
     assert!(html.contains("--matter-b:#7386ff"));
