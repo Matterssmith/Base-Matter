@@ -304,9 +304,9 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     // A category selection maps to an allowlisted, read-only command.
     let buttons = if buttons_menu {
         vec![
-            selector,
             quick_reply("Menu Classic", "matter.read.menu.classic"),
             quick_reply("Menu Web", "matter.read.menu.web"),
+            selector,
         ]
     } else if classic_menu {
         vec![
