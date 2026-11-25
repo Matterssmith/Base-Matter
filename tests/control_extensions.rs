@@ -199,7 +199,9 @@ fn existing_power_behavior_cannot_be_overridden() {
         control.dispatch("socket-a", "alice", "private", None, "=/>ping").unwrap(),
         DispatchResult::Extension { command, .. } if command == "ping"
     ));
-    assert!(control.dispatch("socket-a", "alice", "private", None, "=/>ping extra").is_err());
+    assert!(control
+        .dispatch("socket-a", "alice", "private", None, "=/>ping extra")
+        .is_err());
 }
 // Créditos:
 // Hecho por Lournyx Matterssmith [Lou-Nyx].

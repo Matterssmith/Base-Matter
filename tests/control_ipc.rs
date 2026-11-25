@@ -92,7 +92,7 @@ fn authenticated_wire_changes_socket_only_once() {
     );
 }
 #[test]
-fn invalid_frames_and_ping_are_denied_without_leaks() {
+fn invalid_frames_are_denied_and_authenticated_ping_is_readonly() {
     let (service, _) = make();
     assert_eq!(service.dispatch(b"{"), ControlIpcOutcome::Denied);
     assert_eq!(
@@ -105,6 +105,14 @@ fn invalid_frames_and_ping_are_denied_without_leaks() {
     assert_eq!(service.dispatch(&forged), ControlIpcOutcome::Denied);
     assert_eq!(
         service.dispatch(&signed("two", "=/>ping")),
+        ControlIpcOutcome::Applied
+    );
+    assert_eq!(
+        service.dispatch(&signed("two", "=/>ping")),
+        ControlIpcOutcome::Duplicate
+    );
+    assert_eq!(
+        service.dispatch(&signed("ping-extra", "=/>ping extra")),
         ControlIpcOutcome::Denied
     );
     assert_eq!(

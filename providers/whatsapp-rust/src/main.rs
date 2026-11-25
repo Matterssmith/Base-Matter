@@ -7,12 +7,12 @@
 use anyhow::{bail, Result};
 use std::{
     collections::{HashMap, HashSet},
+    io::IsTerminal,
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Mutex, OnceLock,
     },
     time::Instant,
-    io::IsTerminal,
 };
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -55,15 +55,32 @@ fn console_command(text: &str) -> String {
     match verb {
         "=/>menu" | "=/>menú" => {
             let category = parts.next().unwrap_or_default();
-            if matches!(category, "classic" | "web" | "buttons" | "all" | "todo" | "anti" | "control" | "system" | "config" | "owner" | "help" | "ia" | "admin" | "economy" | "downloads") {
+            if matches!(
+                category,
+                "classic"
+                    | "web"
+                    | "buttons"
+                    | "all"
+                    | "todo"
+                    | "anti"
+                    | "control"
+                    | "system"
+                    | "config"
+                    | "owner"
+                    | "help"
+                    | "ia"
+                    | "admin"
+                    | "economy"
+                    | "downloads"
+            ) {
                 format!("{verb} {category}")
             } else {
                 verb.to_owned()
             }
         }
-        "=/>status" | "=/>vault" | "=/>register" | "=/>help" | "=/>h" | "=/>set"
-        | "=/>role" | "=/>start" | "=/>add" | "=/>add++" | "=/>test" | "=/>matter"
-        | "=/>update" | "=/>restart" | "=/>reload" | "=/>anti" | "=/>ping" => verb.to_owned(),
+        "=/>status" | "=/>vault" | "=/>register" | "=/>help" | "=/>h" | "=/>set" | "=/>role"
+        | "=/>start" | "=/>add" | "=/>add++" | "=/>test" | "=/>matter" | "=/>update"
+        | "=/>restart" | "=/>reload" | "=/>anti" | "=/>ping" => verb.to_owned(),
         _ => "=/>[otro]".to_owned(),
     }
 }
@@ -71,10 +88,21 @@ fn console_command(text: &str) -> String {
 type ConsoleMetadata = (String, String, String);
 type ConsoleCache = HashMap<(String, String), (Instant, ConsoleMetadata)>;
 
-async fn console_metadata(ctx: &whatsapp_rust::bot::MessageContext, data: &Event<'_>) -> ConsoleMetadata {
-    let alt = ctx.info.source.sender_alt.as_ref().map(|j| j.to_non_ad_string());
-    let lid = [Some(data.sender_jid), alt.as_deref()].into_iter().flatten()
-        .find(|j| j.ends_with("@lid")).unwrap_or("-");
+async fn console_metadata(
+    ctx: &whatsapp_rust::bot::MessageContext,
+    data: &Event<'_>,
+) -> ConsoleMetadata {
+    let alt = ctx
+        .info
+        .source
+        .sender_alt
+        .as_ref()
+        .map(|j| j.to_non_ad_string());
+    let lid = [Some(data.sender_jid), alt.as_deref()]
+        .into_iter()
+        .flatten()
+        .find(|j| j.ends_with("@lid"))
+        .unwrap_or("-");
     let fallback = ("-".to_owned(), "-".to_owned(), console_field(lid, 96));
     if !data.is_group {
         return fallback;
@@ -82,28 +110,50 @@ async fn console_metadata(ctx: &whatsapp_rust::bot::MessageContext, data: &Event
     static CACHE: OnceLock<Mutex<ConsoleCache>> = OnceLock::new();
     let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
     let key = (data.chat_jid.to_owned(), data.sender_jid.to_owned());
-    if let Some(value) = cache.lock().ok().and_then(|c| c.get(&key)
-        .filter(|(at, _)| at.elapsed() < Duration::from_secs(300))
-        .map(|(_, value)| value.clone())) {
+    if let Some(value) = cache.lock().ok().and_then(|c| {
+        c.get(&key)
+            .filter(|(at, _)| at.elapsed() < Duration::from_secs(300))
+            .map(|(_, value)| value.clone())
+    }) {
         return value;
     }
     // Best effort only: no indefinite network wait or authorization by profile fields.
-    let value = match timeout(Duration::from_millis(500), ctx.client.groups().get_metadata(&ctx.info.source.chat)).await {
+    let value = match timeout(
+        Duration::from_millis(500),
+        ctx.client.groups().get_metadata(&ctx.info.source.chat),
+    )
+    .await
+    {
         Ok(Ok(metadata)) => {
             let participant = metadata.participants.iter().find(|p| {
-                [&p.jid, p.phone_number.as_ref().unwrap_or(&p.jid), p.lid.as_ref().unwrap_or(&p.jid)]
-                    .iter().any(|j| j.to_non_ad_string() == data.sender_jid)
+                [
+                    &p.jid,
+                    p.phone_number.as_ref().unwrap_or(&p.jid),
+                    p.lid.as_ref().unwrap_or(&p.jid),
+                ]
+                .iter()
+                .any(|j| j.to_non_ad_string() == data.sender_jid)
             });
-            let username = participant.and_then(|p| p.username.as_ref()).map(|u| console_field(u.as_str(), 32))
+            let username = participant
+                .and_then(|p| p.username.as_ref())
+                .map(|u| console_field(u.as_str(), 32))
                 .unwrap_or_else(|| "-".to_owned());
-            let lid = participant.and_then(|p| p.lid.as_ref()).map(|j| j.to_non_ad_string())
+            let lid = participant
+                .and_then(|p| p.lid.as_ref())
+                .map(|j| j.to_non_ad_string())
                 .unwrap_or_else(|| fallback.2.clone());
-            (console_field(&metadata.subject, 40), username, console_field(&lid, 96))
+            (
+                console_field(&metadata.subject, 40),
+                username,
+                console_field(&lid, 96),
+            )
         }
         _ => fallback,
     };
     if let Ok(mut c) = cache.lock() {
-        if c.len() >= 256 { c.clear(); }
+        if c.len() >= 256 {
+            c.clear();
+        }
         c.insert(key, (Instant::now(), value.clone()));
     }
     value
@@ -126,7 +176,12 @@ struct CommandTrace {
 }
 
 impl CommandTrace {
-    async fn begin(enabled: bool, ctx: &whatsapp_rust::bot::MessageContext, data: &Event<'_>, origin: &str) -> Self {
+    async fn begin(
+        enabled: bool,
+        ctx: &whatsapp_rust::bot::MessageContext,
+        data: &Event<'_>,
+        origin: &str,
+    ) -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(1);
         let trace = Self {
             id: NEXT.fetch_add(1, Ordering::Relaxed),
@@ -143,8 +198,16 @@ impl CommandTrace {
             let chat = console_field(data.chat_jid, 96);
             let command = console_color(&console_command(data.text), "1;36");
             let (group, username, lid) = console_metadata(ctx, data).await;
-            let identity = if lid == "-" { format!("JID:{sender}") } else { format!("LID:{lid}") };
-            let scope = if data.is_group { format!("Grupo: {group} · {chat}") } else { format!("Privado: {chat}") };
+            let identity = if lid == "-" {
+                format!("JID:{sender}")
+            } else {
+                format!("LID:{lid}")
+            };
+            let scope = if data.is_group {
+                format!("Grupo: {group} · {chat}")
+            } else {
+                format!("Privado: {chat}")
+            };
             println!("{} #{:04} {h:02}:{m:02}:{s:02} UTC · {command} [{origin}]\n│·♪· Usuario: {} · @{} · {}\n│·♪· {}",
                 console_color("╭─ 💠 𝗠𝗮𝘁𝘁𝗲𝗿", "1;35"), trace.id,
                 console_color(&name, "36"), username, identity, console_color(&scope, "34"));
@@ -153,9 +216,13 @@ impl CommandTrace {
     }
 
     fn stage(&self, stage: &str) {
-        if !self.enabled { return; }
+        if !self.enabled {
+            return;
+        }
         if let Some(value) = stage.strip_prefix("IPC: ") {
-            if let Ok(mut ipc) = self.ipc.lock() { *ipc = value.to_owned(); }
+            if let Ok(mut ipc) = self.ipc.lock() {
+                *ipc = value.to_owned();
+            }
         } else if let Ok(mut tx) = self.tx.lock() {
             tx.push(stage.to_owned());
         }
@@ -164,11 +231,34 @@ impl CommandTrace {
     fn finish(&self, state: &str) {
         if self.enabled {
             let ipc = self.ipc.lock().map(|v| v.clone()).unwrap_or_default();
-            let tx = self.tx.lock().map(|v| if v.is_empty() { "-".to_owned() } else { v.join(" / ") }).unwrap_or_default();
-            let color = if state.starts_with("ENVÍO ACEPTADO") || state.starts_with("ENVIADO") || state.starts_with("HTML ENVIADO") { "32" } else { "33" };
-            println!("{} #{:04} IPC:{} · TX:{} · {} · {}ms", console_color("╰─╮╭────⟨ ✦", "35"), self.id,
-                console_color(&ipc, if ipc.starts_with("OK") { "32" } else { "33" }), tx,
-                console_color(state, color), self.started.elapsed().as_millis());
+            let tx = self
+                .tx
+                .lock()
+                .map(|v| {
+                    if v.is_empty() {
+                        "-".to_owned()
+                    } else {
+                        v.join(" / ")
+                    }
+                })
+                .unwrap_or_default();
+            let color = if state.starts_with("ENVÍO ACEPTADO")
+                || state.starts_with("ENVIADO")
+                || state.starts_with("HTML ENVIADO")
+            {
+                "32"
+            } else {
+                "33"
+            };
+            println!(
+                "{} #{:04} IPC:{} · TX:{} · {} · {}ms",
+                console_color("╰─╮╭────⟨ ✦", "35"),
+                self.id,
+                console_color(&ipc, if ipc.starts_with("OK") { "32" } else { "33" }),
+                tx,
+                console_color(state, color),
+                self.started.elapsed().as_millis()
+            );
         }
     }
 
@@ -185,7 +275,11 @@ impl CommandTrace {
             Err(_) => ("TIMEOUT?", "33"),
         };
         if self.enabled {
-            self.stage(&format!("{kind}:{} {}ms", console_color(status, color), start.elapsed().as_millis()));
+            self.stage(&format!(
+                "{kind}:{} {}ms",
+                console_color(status, color),
+                start.elapsed().as_millis()
+            ));
         }
         result
     }
@@ -1278,7 +1372,10 @@ mod readiness_tests {
 
     #[test]
     fn console_diagnostics_redact_arguments_and_control_characters() {
-        assert_eq!(console_command("=/>set role owner --global SECRET"), "=/>set");
+        assert_eq!(
+            console_command("=/>set role owner --global SECRET"),
+            "=/>set"
+        );
         assert_eq!(console_command("=/>menu anti 2"), "=/>menu anti");
         assert_eq!(console_command("=/>unknown-secret"), "=/>[otro]");
         assert_eq!(console_field("a\n\u{001b}\u{202e}b", 8), "ab");

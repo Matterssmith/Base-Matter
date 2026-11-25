@@ -1807,3 +1807,9 @@ Se añadió prueba offline ejecutando el binario `--recovery-verify`, comproband
 ## Nuevo =/>add (alpha)
 
 El controlador Base-Matter valida la gramática de `=/>add` y responde con un acuse de vista previa, sin realizar altas, traslados ni cambios de permisos. `reply` exigirá metadatos de un mensaje real; `official` deberá resolverse desde un registro verificado de grupos/comunidades. El proveedor actual admite controles globales desde el chat propio y no se declara listo para operar `add user` dentro de grupos.
+
+## 2026-11-25 — Ping de Matter-Bot y corrección CI alpha
+
+El propietario define la plantilla original de Matter-Bot en `docs/MATTER_BOT_PING.md` (Socket, Process, Total). Separada del control autenticado `=/>ping`; `#ping` no se habilita en el proveedor de control. Se aplican diferencias rustfmt exactas de CI y se actualiza prueba IPC: ping autenticado aceptado, replay duplicado y argumentos extra denegados. CI anterior falló formato y expectativa histórica de ping; nueva ejecución pendiente. Error local instabox-se en whatsapp_theme_scopes sin causa inicial en la salida. No tocar sesiones/Vault. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
