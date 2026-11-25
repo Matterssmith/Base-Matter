@@ -276,10 +276,27 @@ impl WhatsAppControlIpc {
                 Err(_) => break (ControlIpcOutcome::Denied, None),
             }
         };
+        // Only the authenticated, replay-checked root menu receives
+        // typed presentation metadata. Other IPC outcomes remain unchanged.
+        let menu_mode = if matches!(&result, ControlIpcOutcome::Applied) {
+            serde_json::from_slice::<WhatsAppControlFrame>(&request)
+                .ok()
+                .filter(|frame| matches!(frame.text.as_str(), "=/>menu" | "=/>menú"))
+                .and_then(|_| self.themes.current_menu_mode().ok())
+        } else {
+            None
+        };
         let response = if let Some(message) = message {
-            serde_json::json!({
-                "ok":result.permitted(),"outcome":result.as_str(),"message":message,
-            })
+            if let Some(mode) = menu_mode {
+                serde_json::json!({
+                    "ok":result.permitted(),"outcome":result.as_str(),
+                    "message":message,"menu_mode":mode.as_str(),
+                })
+            } else {
+                serde_json::json!({
+                    "ok":result.permitted(),"outcome":result.as_str(),"message":message,
+                })
+            }
         } else {
             serde_json::json!({
                 "ok":result.permitted(),"outcome":result.as_str(),
