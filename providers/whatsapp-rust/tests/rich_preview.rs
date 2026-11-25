@@ -5,7 +5,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use whatsapp_matter_rust_provider::rich_preview::{
-    experimental_rich_schema, menu_html_preview, original_menu,
+    experimental_rich_schema, menu_html_preview, menu_inline_html, original_menu,
 };
 
 #[test]
@@ -42,6 +42,18 @@ fn untrusted_text_cannot_inject_scripts_or_html_attributes() {
 }
 
 #[test]
+fn inline_html_menu_has_clickable_collapsed_text_without_script() {
+    let html = menu_inline_html(original_menu()).unwrap();
+    assert!(html.contains("<details><summary>Mostrar menú de texto</summary>"));
+    assert!(html.contains("=/>status"));
+    assert!(html.contains("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
+    assert!(!html.contains("<details open"));
+    assert!(!html.contains("<script"));
+    assert!(!html.contains("data:audio"));
+    assert!(menu_inline_html("<script>alert(1)</script>").unwrap().contains("&lt;script&gt;"));
+}
+
+#[test]
 fn sample_rich_screen_shape_is_offline_and_does_not_spoof_meta_ai() {
     let value = experimental_rich_schema(original_menu()).unwrap();
     assert_eq!(value["response_id"], "matterssmith-preview-v1");
@@ -58,7 +70,11 @@ fn sample_rich_screen_shape_is_offline_and_does_not_spoof_meta_ai() {
         ["primitive"]["payload"]
         .as_str()
         .unwrap();
-    assert!(html.contains("Base-Matter"));
+    assert!(html.contains("Matterssmith · Menú"));
+    assert_eq!(
+        value["sections"][0]["view_model"]["primitive"]["__typename"],
+        "GenAIaeacdsnwHtmlPrimitive"
+    );
     let serialized = value.to_string();
     for forbidden in [
         "0@bot",
