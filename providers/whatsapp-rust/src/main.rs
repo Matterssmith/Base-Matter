@@ -859,7 +859,7 @@ async fn main() -> Result<()> {
                             // This value comes from a successful authenticated IPC reply,
                             // never from user-authored WhatsApp text.
                             let preferred_menu_mode = match &ack {
-                                ControlAck::AppliedWithMenuMode { mode, .. } => Some(mode.as_str()),
+                                ControlAck::AppliedWithMenuMode { mode, .. } => Some(mode.clone()),
                                 _ => None,
                             };
                             let debug_requested = frame.text.ends_with(" --debug");
@@ -999,10 +999,10 @@ async fn main() -> Result<()> {
                             let is_classic = matches!(
                                 actual_command,
                                 "=/>menu all" | "=/>menú all" | "=/>menu classic" | "=/>menú classic"
-                            ) || (is_root && preferred_menu_mode == Some("classic"));
+                            ) || (is_root && preferred_menu_mode.as_deref() == Some("classic"));
                             let is_web = matches!(
                                 actual_command, "=/>menu web" | "=/>menú web"
-                            ) || (is_root && preferred_menu_mode.unwrap_or("web") == "web");
+                            ) || (is_root && preferred_menu_mode.as_deref().unwrap_or("web") == "web");
                             // Help is text-only. A help reply must not display a category selector.
                             // A verified =/>menu may deliver the experimental in-chat HTML card.
                             // The native selector is ALSO sent so category taps still map to
