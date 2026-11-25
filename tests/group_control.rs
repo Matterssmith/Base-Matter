@@ -184,3 +184,49 @@ fn group_control_rejects_nonowners_and_wrong_chat_scope() {
         )
         .is_err());
 }
+
+#[test]
+fn html_ui_row_and_ack_tests_are_readonly_in_enabled_groups() {
+    let (control, activation) = fixture();
+    let group = "120363111@g.us";
+    let outsider = "987654321012346@lid";
+    // The signed ingress is authenticated upstream; no visual probes should
+    // bypass the group's activation policy or grant owner privileges.
+    assert_eq!(
+        control
+            .dispatch_public_readonly("wa-alpha", outsider, group, Some(group), "=/>test html")
+            .unwrap(),
+        DispatchResult::Inactive
+    );
+    control
+        .dispatch("wa-alpha", "socket-owner", group, Some(group), "=/>group on")
+        .unwrap();
+    control
+        .dispatch("wa-alpha", "socket-owner", "self", None, "=/>on")
+        .unwrap();
+    assert!(activation.resolve("wa-alpha", Some(group), None).unwrap().enabled);
+    for command in ["=/>test", "=/>test ui", "=/>test row", "=/>test html", "=/>test ack audio"] {
+        assert!(
+            matches!(
+                control.dispatch_public_readonly("wa-alpha", outsider, group, Some(group), command),
+                Ok(DispatchResult::Extension { command: ref kind, .. }) if kind == "test"
+            ),
+            "Expected admitted read-only group probe: {command}"
+        );
+    }
+    assert!(control
+        .dispatch_public_readonly("wa-alpha", outsider, "different@g.us", Some(group), "=/>test html")
+        .is_err());
+    assert!(control
+        .dispatch_public_readonly("wa-alpha", outsider, group, Some(group), "=/>set role owner --global")
+        .is_err());
+    control
+        .dispatch("wa-alpha", "socket-owner", group, Some(group), "=/>group off")
+        .unwrap();
+    assert_eq!(
+        control
+            .dispatch_public_readonly("wa-alpha", outsider, group, Some(group), "=/>test html")
+            .unwrap(),
+        DispatchResult::Inactive
+    );
+}
