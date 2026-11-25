@@ -434,7 +434,6 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>test",
         "=/>test ui",
         "=/>test row",
-        "=/>test html",
         "=/>test ack audio",
     ] {
         incoming.text = text;
@@ -469,7 +468,7 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
             sign_frame(&signed, &config.bridge_key).unwrap()
         );
     }
-    // Unknown commands and owner-only probes still fail before any IPC.
+    // Unknown commands and owner-only Rich HTML probes fail before IPC.
     for text in [
         "=/>status --debug",
         "=/>menu unknown",
@@ -477,6 +476,7 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>menu unset",
         "=/>menu config extra",
         "=/>help run(unknown)",
+        "=/>test html",
         "=/>test run",
         "=/>test ack invalid",
         "#ping",
