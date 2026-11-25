@@ -222,6 +222,24 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     };
     // Historical page IDs are still read-only aliases, not empty pages.
     let page = requested_page.min(pages);
+    // NativeFlow is the expandable surface. Keep the authenticated full menu
+    // as a fallback, but do not expose it until the user selects a category
+    // or explicitly requests =/>menu all. No HTML executes inside WhatsApp.
+    let collapsed_root = matches!(
+        request,
+        "=/>menu"
+            | "=/>menú"
+            | "=/>menu page 1"
+            | "=/>menu page 2"
+            | "=/>menu page 3"
+    );
+    let body_text = if collapsed_root {
+        format!(
+            "꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡 ۞₪»̶⟩\\n*Menú interactivo* · ✦\\n\\nToca *Categorías* para abrir una sección.\\nPulsa *Ver texto* para mostrar todos los comandos.\\n\\nPágina {page}/{pages}"
+        )
+    } else {
+        menu.to_owned()
+    };
     let start = (page - 1) * PAGE_SIZE;
     let mut rows: Vec<_> = categories
         .iter()
@@ -261,11 +279,25 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
             .to_string(),
         ),
     };
-    let buttons = vec![selector];
+    let mut buttons = vec![selector];
+    if collapsed_root {
+        // Button IDs are resolved by the existing authenticated, read-only
+        // control router. Never derive an executable command from UI text.
+        buttons.push(wa::message::interactive_message::native_flow_message::NativeFlowButton {
+            name: Some("quick_reply".to_owned()),
+            button_params_json: Some(
+                serde_json::json!({
+                    "display_text": "Ver texto",
+                    "id": "matter.read.menu.all"
+                })
+                .to_string(),
+            ),
+        });
+    }
     Ok(wa::Message {
         interactive_message: MessageField::some(wa::message::InteractiveMessage {
             body: MessageField::some(wa::message::interactive_message::Body {
-                text: Some(menu.to_owned()),
+                text: Some(body_text),
             }),
             footer: MessageField::some(wa::message::interactive_message::Footer {
                 text: Some(format!("Control · Categorías {page}/{pages}")),
