@@ -968,7 +968,10 @@ async fn main() -> Result<()> {
                             let is_root = matches!(actual_command, "=/>menu" | "=/>menú");
                             // "Menú clásico" must reveal the complete original control
                             // response as normal WhatsApp text, without another selector.
-                            let is_classic = matches!(actual_command, "=/>menu all" | "=/>menú all");
+                            let is_classic = matches!(
+                                actual_command,
+                                "=/>menu all" | "=/>menú all" | "=/>menu classic" | "=/>menú classic"
+                            );
                             // Help is text-only. A help reply must not display a category selector.
                             // A verified =/>menu may deliver the experimental in-chat HTML card.
                             // The native selector is ALSO sent so category taps still map to
