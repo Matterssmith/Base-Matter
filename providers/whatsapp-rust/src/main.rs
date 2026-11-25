@@ -617,9 +617,6 @@ async fn main() -> Result<()> {
         .on_message(move |ctx| {
             let config = Arc::clone(&config);
             async move {
-                if diagnostic_messages {
-                    println!("Base-Matter DIAG: WhatsApp callback received");
-                }
                 let source = &ctx.info.source;
                 // Match across PN/LID with the linked client's verified
                 // identities, stripping the per-device suffix on all JIDs.
@@ -628,9 +625,6 @@ async fn main() -> Result<()> {
                 let own_pn = ctx.client.pn().map(|jid| jid.to_non_ad_string());
                 let own_lid = ctx.client.lid().map(|jid| jid.to_non_ad_string());
                 let selected_button = readonly_button_command(&ctx.message);
-                if diagnostic_messages && ctx.message.interactive_response_message.as_option().is_some() {
-                    println!("Base-Matter DIAG: native response recognized={}", selected_button.is_some());
-                }
                 let reply_help = help_from_quoted_message(
                     &ctx.message,
                     ctx.message.text_content().unwrap_or_default(),
@@ -679,25 +673,26 @@ async fn main() -> Result<()> {
                         is_group: true,
                         timestamp: ctx.info.timestamp.timestamp(),
                     };
-                    match config.signed_anti_observation(&observation, edit_state) {
-                        Ok(Some(frame)) => {
-                            if !matches!(
-                                deliver(config.bridge_addr, &frame).await,
-                                Ok(ControlAck::Applied | ControlAck::Duplicate)
-                            ) {
-                                eprintln!("Base-Matter: anti observation not confirmed");
+                    // Passive observations are not commands. Never print a
+                    // line for each group message or an expected ignored ACK.
+                    // Report a transport outage once until recovery.
+                    static ANTI_TRANSPORT_WARNING: AtomicBool = AtomicBool::new(false);
+                    if let Ok(Some(frame)) = config.signed_anti_observation(&observation, edit_state) {
+                        match deliver(config.bridge_addr, &frame).await {
+                            Ok(_) => {
+                                ANTI_TRANSPORT_WARNING.store(false, Ordering::Relaxed);
+                            }
+                            Err(_) => {
+                                if !ANTI_TRANSPORT_WARNING.swap(true, Ordering::Relaxed) {
+                                    eprintln!("Base-Matter: anti observation transport unavailable");
+                                }
                             }
                         }
-                        Ok(None) => {}
-                        Err(_) => eprintln!("Base-Matter: anti observation rejected before signing"),
                     }
                 }
                 // Edited messages may be inspected but must never trigger
                 // the normal control dispatcher as new executable commands.
                 if edit_state != "original" {
-                    if diagnostic_messages {
-                        println!("Base-Matter DIAG: edit or opaque message ignored for control");
-                    }
                     return;
                 }
                 let data = Event {
@@ -712,9 +707,8 @@ async fn main() -> Result<()> {
                     is_group: source.is_group,
                     timestamp: ctx.info.timestamp.timestamp(),
                 };
-                let candidate = data.text.starts_with("=/>");
-                if diagnostic_messages && candidate {
-                    println!("Base-Matter DIAG: control candidate received");
+                if !data.text.starts_with("=/>") {
+                    return;
                 }
                 let verified = if data.from_me {
                     config.signed_verified_control(
@@ -728,38 +722,6 @@ async fn main() -> Result<()> {
                         &data, own_pn.as_deref(), own_lid.as_deref(),
                     )
                 };
-                // Whitelisted UI diagnostic ingress logs do not include
-                // message IDs, chat IDs, phone numbers or message bodies.
-                if matches!(
-                    data.text,
-                    "=/>test" | "=/>test ui" | "=/>test row" | "=/>test html"
-                ) {
-                    match &verified {
-                        Ok(Some(_)) => println!("Base-Matter: visual test authenticated for current chat"),
-                        Ok(None) => eprintln!("Base-Matter: visual test ignored before signing"),
-                        Err(_) => eprintln!("Base-Matter: visual test signer rejected current chat"),
-                    }
-                }
-                // Log rejections without leaking phone numbers, LIDs,
-                // message bodies, sessions or cryptographic keys.
-                if data.from_me && !data.is_group && data.text.starts_with("=/>") {
-                    match &verified {
-                        Ok(None) => eprintln!(
-                            "Base-Matter: self-chat control ignored (not this account's private chat)"
-                        ),
-                        Err(_) => eprintln!(
-                            "Base-Matter: self-chat control denied (connected account identity mismatch or invalid event)"
-                        ),
-                        Ok(Some(_)) => {}
-                    }
-                }
-                if diagnostic_messages && candidate {
-                    match &verified {
-                        Ok(Some(_)) => println!("Base-Matter DIAG: control signed for IPC"),
-                        Ok(None) => println!("Base-Matter DIAG: control not admitted by signer"),
-                        Err(_) => println!("Base-Matter DIAG: control signer rejected event"),
-                    }
-                }
                 match verified {
                     Ok(Some(frame)) => match deliver(config.bridge_addr, &frame).await {
                         Ok(ack @ (
@@ -767,7 +729,11 @@ async fn main() -> Result<()> {
                             | ControlAck::AppliedWithMessage(_)
                             | ControlAck::AppliedWithMenuMode { .. }
                         )) => {
-                            println!("Base-Matter owner control applied");
+                            if diagnostic_messages && selected_button.is_some() {
+                                println!("Base-Matter: comando interactivo aceptado");
+                            } else {
+                                println!("Base-Matter: comando aceptado");
+                            }
                             // Only an authorized signed control may receive a
                             // response. External senders require independent
                             // Vault-global-owner authorization for mutations.
@@ -982,30 +948,8 @@ async fn main() -> Result<()> {
                             if sent && is_private_vault_command(&frame, &config.owner_jid) {
                                 println!("Base-Matter: Vault owner response submitted to WhatsApp");
                             }
-                            // Private enabled chats may inspect read-only
-                            // NativeFlow test buttons when the operator opted in.
-                            // HTML, audio and legacy comparison remain owner-self only.
-                            if sent && selected_button.is_some() {
-                                println!("Base-Matter: interactive control received and authenticated");
-                            }
-
                         }
-                        Ok(ControlAck::Duplicate) => {
-                            println!("Base-Matter duplicate control ignored (no new effect)");
-                            if diagnostic_messages {
-                                println!("Base-Matter DIAG: controller replied duplicate");
-                            }
-                        }
-                        Ok(ControlAck::Ignored) => {
-                            if diagnostic_messages {
-                                println!("Base-Matter DIAG: controller ignored or chat disabled");
-                            }
-                            // The bot is intentionally silent while disabled.
-                            // Only no-argument =/>test and status explain why.
-                            if frame.text.starts_with("=/>test") {
-                                eprintln!("Base-Matter: visual test ignored by chat admission");
-                            }
-                        }
+                        Ok(ControlAck::Duplicate | ControlAck::Ignored) => {}
                         Err(_) => {
                             eprintln!("Base-Matter control denied or unreachable");
                             // The verified owner receives a generic Vault error,
@@ -1028,8 +972,7 @@ async fn main() -> Result<()> {
                             }
                         }
                     },
-                    Ok(None) => {}
-                    Err(_) => eprintln!("Unsafe or expired owner control ignored"),
+                    Ok(None) | Err(_) => {}
                 }
             }
         })
