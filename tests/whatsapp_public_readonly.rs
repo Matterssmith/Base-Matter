@@ -44,10 +44,10 @@ fn fixture() -> (WhatsAppControlBridge, Arc<SocketActivationStore>) {
             router,
             None,
         )
-            .with_public_menu(themes)
-            .with_group_antis(Arc::new(AntiStore::open(":memory:").unwrap()))
-            .with_silent_bot_commands()
-            .with_unified_live_controls(),
+        .with_public_menu(themes)
+        .with_group_antis(Arc::new(AntiStore::open(":memory:").unwrap()))
+        .with_silent_bot_commands()
+        .with_unified_live_controls(),
     );
     let bridge = WhatsAppControlBridge::new(
         WhatsAppBridgeConfig {
@@ -375,12 +375,25 @@ fn all_21_canonical_categories_and_three_pages_have_real_dynamic_menu_routing() 
 #[test]
 fn guest_registration_requires_enabled_chat_but_not_enrollment() {
     let (bridge, activation) = fixture();
-    for (index, command) in ["=/>register", "=/>register start", "=/>menu", "=/>set role 123 admin"]
-        .iter()
-        .enumerate()
+    for (index, command) in [
+        "=/>register",
+        "=/>register start",
+        "=/>menu",
+        "=/>set role 123 admin",
+    ]
+    .iter()
+    .enumerate()
     {
         assert_eq!(
-            bridge.ingest(&frame(&format!("guest-off-{index}"), command, READER, READER, false)).unwrap(),
+            bridge
+                .ingest(&frame(
+                    &format!("guest-off-{index}"),
+                    command,
+                    READER,
+                    READER,
+                    false
+                ))
+                .unwrap(),
             WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
         );
     }

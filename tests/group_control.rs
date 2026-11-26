@@ -190,10 +190,13 @@ fn html_ui_row_and_ack_tests_are_allowed_in_owner_or_public_group_scopes() {
     let (control, activation) = fixture();
     let group = "120363111@g.us";
     let outsider = "987654321012346@lid";
-    // Nonowner HTML is always denied, regardless of whether the group is ON.
-    assert!(control
-        .dispatch_public_readonly("wa-alpha", outsider, group, Some(group), "=/>test html")
-        .is_err());
+    // An inactive chat silently ignores even unsupported visual probes.
+    assert_eq!(
+        control
+            .dispatch_public_readonly("wa-alpha", outsider, group, Some(group), "=/>test html")
+            .unwrap(),
+        DispatchResult::Inactive
+    );
     assert_eq!(
         control
             .dispatch(

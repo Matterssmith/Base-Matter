@@ -645,8 +645,10 @@ fn disabled_chat_consumes_every_nonstatus_command_before_vault_or_dispatch() {
             WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
         );
     }
-    assert!(!activation
-        .inspect_bot_defaults("socket-1", "owner")
-        .unwrap()
-        .socket_powered);
+    assert!(
+        !activation
+            .inspect_bot_defaults("socket-1", "owner")
+            .unwrap()
+            .socket_powered
+    );
 }

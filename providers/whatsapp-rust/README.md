@@ -1,3 +1,9 @@
+## 2026-11-26 — Regresiones de status único y recuperación local
+
+Se actualizan las pruebas de control_extensions, group_control y whatsapp_process para la política de admisión: ping falla si el socket está encendido pero el chat no tiene permiso; las solicitudes de chat apagado se ignoran sin respuesta; Vault sigue denegando solicitudes sin credenciales aun con el chat activo. La prueba de proceso verifica bloqueo de recuperación local mientras el controlador está vivo, activación local tras detenerlo y persistencia de replay después de reinicio. Se aplican las diferencias de rustfmt del CI anterior. No se omiten pruebas, no se cambia la implementación de activación ni la sesión. CI nuevo pendiente.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-25 — Solo status en chats desactivados
 
 Política del propietario: el estado efectivo de cada chat se comprueba antes de ejecutar cualquier comando de WhatsApp, incluso si el remitente es owner global. Solo `=/>status` (y su alias `=/>estado`, incluidas sus variantes de consulta sujetas a permisos) permanece disponible. Ping, registro, menús, pruebas, cambios de activación y operaciones Vault quedan silenciados al estar apagado; las solicitudes descartadas no pueden reproducirse tras activar el chat. La administración local autorizada conserva una vía de recuperación separada: detener el controlador y ejecutar `whatsapp-matter-control --set-chat-policy self on` con el entorno privado existente; admite también group/private/channel/community, --mod y un JID de grupo. No se modifica la sesión de WhatsApp ni las claves. Los canales y avisos sin metadatos de plataforma autenticados continúan sin ingreso verificable; no se concede acceso por un JID declarado. CI y pruebas reales pendientes.

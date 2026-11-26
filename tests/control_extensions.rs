@@ -195,10 +195,19 @@ fn existing_power_behavior_cannot_be_overridden() {
             .unwrap()
             .enabled
     );
+    assert!(control
+        .dispatch("socket-a", "alice", "private", None, "=/>ping")
+        .is_err());
+    activation
+        .set_socket_policy("socket-a", "alice", Some(true))
+        .unwrap();
     assert!(matches!(
         control.dispatch("socket-a", "alice", "private", None, "=/>ping").unwrap(),
         DispatchResult::Extension { command, .. } if command == "ping"
     ));
+    assert!(control
+        .dispatch("socket-a", "mallory", "private", None, "=/>ping")
+        .is_err());
     assert!(control
         .dispatch("socket-a", "alice", "private", None, "=/>ping extra")
         .is_err());
