@@ -20,6 +20,7 @@ use tokio::{
     time::{timeout, Duration},
 };
 use whatsapp_matter_rust_provider::{
+    classic_template,
     help_reply::help_from_quoted_message,
     parse_control_ack,
     recovery::{
@@ -342,6 +343,20 @@ fn console_color(value: &str, color: &str) -> String {
     }
 }
 
+fn console_row(body: &str, last: bool) -> String {
+    let branch = classic_template::expand(if last {
+        "{{CLASSIC_LAST_BRANCH}}"
+    } else {
+        "{{CLASSIC_BRANCH}}"
+    });
+    classic_template::render(
+        include_str!("../../../templates/console/row.txt"),
+        &[("BRANCH", &branch), ("BODY", body)],
+    )
+    .trim_end_matches('\n')
+    .to_owned()
+}
+
 struct CommandTrace {
     id: u64,
     started: Instant,
@@ -396,15 +411,31 @@ impl CommandTrace {
             } else {
                 format!("{name} @{username}")
             };
-            println!(
-                "{} #{:04} {h:02}:{m:02}:{s:02}Z · {origin}\n│·♪· CMD {command}\n│·♪· {} {}\n│·♪· Rango: {} · ID {}\n│·♪· {}",
-                console_color("╭─ 💠 𝗠𝗮𝘁𝘁𝗲𝗿", "1;96"),
-                trace.id,
-                console_color("USR", "95"),
-                console_color(&user, "97"),
-                console_color(role, role_color),
-                console_color(&identity, "96"),
+            let header = classic_template::render(
+                include_str!("../../../templates/console/header.txt"),
+                &[
+                    ("EVENT", &format!("#{:04}", trace.id)),
+                    ("CLOCK", &format!("{h:02}:{m:02}:{s:02}Z")),
+                    ("ORIGIN", origin),
+                ],
+            );
+            let rows = [
+                format!("CMD {command}"),
+                format!("{} {}", console_color("USR", "95"), console_color(&user, "97")),
+                format!(
+                    "Rango: {} · ID {}",
+                    console_color(role, role_color),
+                    console_color(&identity, "96")
+                ),
                 scope,
+            ];
+            println!(
+                "{}\n{}",
+                console_color(header.trim_end_matches('\n'), "1;96"),
+                rows.iter()
+                    .map(|row| console_row(row, false))
+                    .collect::<Vec<_>>()
+                    .join("\n")
             );
         }
         trace
@@ -452,27 +483,38 @@ impl CommandTrace {
                 _ => &ipc,
             };
             let mut lines = vec![format!(
-                "│·♪· #{:04} IPC:{} · {} · {}ms",
+                "#{:04} IPC:{} · {} · {}ms",
                 self.id,
                 console_color(ipc_short, ipc_color),
                 console_color(label, color),
                 self.started.elapsed().as_millis()
             )];
             if tx.is_empty() {
-                lines.push("│·♪· TX: -".to_owned());
+                lines.push("TX: -".to_owned());
             } else {
                 for item in tx.iter().take(4) {
-                    lines.push(format!("│·♪· TX: {item}"));
+                    lines.push(format!("TX: {item}"));
                 }
                 if tx.len() > 4 {
-                    lines.push(format!("│·♪· TX: +{} etapas", tx.len() - 4));
+                    lines.push(format!("TX: +{} etapas", tx.len() - 4));
                 }
             }
             if label == "ACEPTADO" {
-                lines.push("│·♪· Cliente: visualización no verificada".to_owned());
+                lines.push("Cliente: visualización no verificada".to_owned());
             }
-            lines.push(console_color("╰─╮╭────⟨ ✦", "1;96"));
-            println!("{}", lines.join("\n"));
+            let last = lines.len().saturating_sub(1);
+            let rows = lines
+                .iter()
+                .enumerate()
+                .map(|(index, row)| console_row(row, index == last))
+                .collect::<Vec<_>>()
+                .join("\n");
+            let footer =
+                classic_template::expand(include_str!("../../../templates/console/footer.txt"));
+            println!(
+                "{rows}\n{}",
+                console_color(footer.trim_end_matches('\n'), "1;96")
+            );
         }
     }
 
@@ -510,9 +552,16 @@ fn matter_ping_message(socket: Duration, process: Duration) -> String {
     let socket_ms = socket.as_secs_f64() * 1000.0;
     let process_ms = process.as_secs_f64() * 1000.0;
     let total_ms = (socket + process).as_secs_f64() * 1000.0;
-    format!(
-        "╭─💠 𝐏𝐨𝐧𝐠\n│·♪·╠[ ⴵ · 𝐒𝐨𝐜𝐤𝐞𝐭 ···· *{socket_ms:.3} ms*\n│·♪·╠[ ⚙︎  𝐏𝐫𝐨𝐜𝐞𝐬𝐬 · *{process_ms:.3} ms*\n│·♪·╚[ ✧  𝐓𝐨𝐭𝐚𝐥 ········ *{total_ms:.3} ms*\n╰───────────⟨ 🌀"
+    classic_template::render(
+        include_str!("../../../templates/pong.txt"),
+        &[
+            ("SOCKET", &format!("{socket_ms:.3}")),
+            ("PROCESS", &format!("{process_ms:.3}")),
+            ("TOTAL", &format!("{total_ms:.3}")),
+        ],
     )
+    .trim_end_matches('\n')
+    .to_owned()
 }
 
 async fn deliver(
@@ -1621,11 +1670,21 @@ mod readiness_tests {
     use super::*;
 
     #[test]
+    fn console_rows_use_classic_branches_without_reinterpreting_body() {
+        assert_eq!(console_row("CMD =/>ping", false), "│·♪·╠[ CMD =/>ping");
+        assert_eq!(console_row("TX: OK", true), "│·♪·╚[ TX: OK");
+        assert_eq!(
+            console_row("{{CLASSIC_HEADER}}", false),
+            "│·♪·╠[ {{CLASSIC_HEADER}}"
+        );
+    }
+
+    #[test]
     fn official_ping_uses_measured_durations_and_one_frame() {
         let pong = matter_ping_message(Duration::from_micros(12_345), Duration::from_micros(678));
         assert_eq!(
             pong,
-            "╭─💠 𝐏𝐨𝐧𝐠\n│·♪·╠[ ⴵ · 𝐒𝐨𝐜𝐤𝐞𝐭 ···· *12.345 ms*\n│·♪·╠[ ⚙︎  𝐏𝐫𝐨𝐜𝐞𝐬𝐬 · *0.678 ms*\n│·♪·╚[ ✧  𝐓𝐨𝐭𝐚𝐥 ········ *13.023 ms*\n╰───────────⟨ 🌀"
+            "╭─ 💠 𝐏𝐨𝐧𝐠\n│·♪·╠[ ⴵ · 𝐒𝐨𝐜𝐤𝐞𝐭 ···· *12.345 ms*\n│·♪·╠[ ⚙︎  𝐏𝐫𝐨𝐜𝐞𝐬𝐬 · *0.678 ms*\n│·♪·╚[ ✧  𝐓𝐨𝐭𝐚𝐥 ········ *13.023 ms*\n╰───────────⟨ 🌀"
         );
         assert_eq!(pong.lines().count(), 5);
     }

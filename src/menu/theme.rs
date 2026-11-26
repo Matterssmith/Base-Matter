@@ -174,6 +174,7 @@ fn validated(value: String, limit: usize) -> Result<String> {
 
 /// Single-pass replacement. Data that happens to contain @Tokens is never expanded.
 fn fill(source: &str, values: &Vars) -> Result<String> {
+    let source = crate::classic_template::expand(source);
     let mut output = String::new();
     let bytes = source.as_bytes();
     let mut i = 0;
@@ -399,7 +400,10 @@ pub fn render_root(options: Preferences, viewer: MenuViewer<'_>) -> Result<Strin
     v.insert(
         "OwnerBlock",
         if viewer.socket_owner && options.style == Style::Classic {
-            format!("{}\n\n", Theme::layout(options.style, "owner")?.trim_end())
+            format!(
+                "{}\n\n",
+                crate::classic_template::expand(Theme::layout(options.style, "owner")?).trim_end()
+            )
         } else {
             String::new()
         },

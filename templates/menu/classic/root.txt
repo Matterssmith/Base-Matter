@@ -2,10 +2,10 @@
 
 💬 @Title
 
-╭─ 💠 @CategoriesTitle
+{{CLASSIC_HEADER}} @CategoriesTitle
 @CategoryRows
-╰─╮╭────────⟨ 🌀
-       ││
+{{CLASSIC_JOINED_CLOSE}}
+{{CLASSIC_CONNECTOR}}
 @Information
 
 ✧☽︎╦[ @LabelUser: *@User* 🌀 ]═☾︎✧
@@ -17,8 +17,8 @@
      ╠[ ◉ @LabelStatus: *@Status*
 ✧☽︎╩[ ♧ @LabelSocket: *@Socket*
 
-@OwnerBlock@SystemBlock╭─ 💠 @InstructionsTitle
+@OwnerBlock@SystemBlock{{CLASSIC_HEADER}} @InstructionsTitle
 @Instructions
-╰───────────⟨ 🌀
+{{CLASSIC_CLOSE}}
 
 *꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*

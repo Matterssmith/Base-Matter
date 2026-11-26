@@ -21,6 +21,7 @@ pub mod bot_factory;
 pub mod bot_setup;
 pub mod bots;
 pub mod capabilities;
+pub mod classic_template;
 pub mod command_audit;
 pub mod commands;
 pub mod connections;

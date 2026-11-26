@@ -92,5 +92,16 @@
       "◈ Isolated sockets · audited changes."
     ],
     "root_title": "Global control menu"
+  },
+  "classic_frame": {
+    "header": "╭─ 💠",
+    "emblem": "💠",
+    "row": "│·♪·",
+    "command_row": "│♪",
+    "line": "│",
+    "close": "╰───────────⟨ 🌀",
+    "joined_close": "╰──╮╭───────⟨ 🌀",
+    "connector": "   ││",
+    "control_close": "╰──────────⟨ ✦"
   }
 }

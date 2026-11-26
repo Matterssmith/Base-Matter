@@ -1,13 +1,13 @@
-╭─ 💠 @InformationTitle
-│ @LabelBot: @Bot
-│ @LabelVersion: @Version
-│ @LabelProject: @Project
-│ @LabelOwner: @Owner
-│ @LabelPrefix: @Prefix
-│ @LabelDate: @Date
-│ @LabelCommands: @Commands
-│ @LabelCategoriesActive: @CategoriesActive
-│ @LabelSubBots: @SubBots
-│ @LabelPremiumBots: @PremiumBots
-│ @LabelURL: @URL
-╰───────────⟨ 🌀
+{{CLASSIC_HEADER}} @InformationTitle
+{{CLASSIC_LINE}} @LabelBot: @Bot
+{{CLASSIC_LINE}} @LabelVersion: @Version
+{{CLASSIC_LINE}} @LabelProject: @Project
+{{CLASSIC_LINE}} @LabelOwner: @Owner
+{{CLASSIC_LINE}} @LabelPrefix: @Prefix
+{{CLASSIC_LINE}} @LabelDate: @Date
+{{CLASSIC_LINE}} @LabelCommands: @Commands
+{{CLASSIC_LINE}} @LabelCategoriesActive: @CategoriesActive
+{{CLASSIC_LINE}} @LabelSubBots: @SubBots
+{{CLASSIC_LINE}} @LabelPremiumBots: @PremiumBots
+{{CLASSIC_LINE}} @LabelURL: @URL
+{{CLASSIC_CLOSE}}

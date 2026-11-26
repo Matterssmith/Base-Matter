@@ -1008,7 +1008,7 @@ mod tests {
         assert!(menu.starts_with("*꒦꒷✰꒷꒦︶"));
         assert!(menu.contains("│·♪·╠[ *ⴵ ·· 𝙸𝙰* `[menu ia]`"));
         assert!(menu.contains("│·♪·╚[ *✧ ·· 𝚄𝚝𝚒𝚕𝚒𝚍𝚊𝚍𝚎𝚜* `[menu utils]`"));
-        assert!(menu.contains("╰─╮╭────────⟨ 🌀"));
+        assert!(menu.contains(&crate::classic_template::expand("{{CLASSIC_JOINED_CLOSE}}")));
         assert!(menu.contains("menu all"));
         assert!(menu.contains("menu anti"));
         assert!(menu.contains("menu mode"));

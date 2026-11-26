@@ -4,6 +4,8 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
+#[path = "../../../src/classic_template.rs"]
+pub mod classic_template;
 pub mod help_reply;
 pub mod menu_sound;
 pub mod recovery;

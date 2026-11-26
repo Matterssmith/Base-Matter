@@ -9,9 +9,9 @@ pub fn decorate(body: &str) -> Result<String> {
         bail!("Invalid control response");
     }
     let template =
-        include_str!("../../../templates/matterssmith-control.txt").replace("\r\n", "\n");
+        crate::classic_template::expand(include_str!("../../../templates/matterssmith-control.txt"));
     let legacy_menu =
-        include_str!("../../../templates/matterssmith-menu.txt").replace("\r\n", "\n");
+        crate::classic_template::expand(include_str!("../../../templates/matterssmith-menu.txt"));
     if body.trim_end_matches('\n') == legacy_menu.trim_end_matches('\n') {
         return Ok(legacy_menu.trim_end_matches('\n').to_owned());
     }

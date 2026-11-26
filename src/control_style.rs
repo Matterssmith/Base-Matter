@@ -28,7 +28,9 @@ impl ControlTheme {
             title: title.to_owned(),
             bot_id: bot_id.to_owned(),
             accent: accent.to_owned(),
-            template: include_str!("../templates/matterssmith-control.txt").replace("\r\n", "\n"),
+            template: crate::classic_template::expand(include_str!(
+                "../templates/matterssmith-control.txt"
+            )),
         })
     }
 
@@ -54,9 +56,9 @@ impl ControlTheme {
         // WhatsApp message, including its banner and one credit footer.
         // Keep it idempotent; other replies still use their scoped frame.
         let default_frame =
-            include_str!("../templates/matterssmith-control.txt").replace("\r\n", "\n");
+            crate::classic_template::expand(include_str!("../templates/matterssmith-control.txt"));
         let original_menu =
-            include_str!("../templates/matterssmith-menu.txt").replace("\r\n", "\n");
+            crate::classic_template::expand(include_str!("../templates/matterssmith-menu.txt"));
         if self.template == default_frame
             && body.trim_end_matches('\n') == original_menu.trim_end_matches('\n')
         {
@@ -100,7 +102,9 @@ impl ControlTheme {
         }
         // Git working trees on Windows may use CRLF. Normalize trusted
         // static templates before enforcing WhatsApp's control-char bounds.
-        self.decorate(&include_str!("../templates/matterssmith-menu.txt").replace("\r\n", "\n"))
+        self.decorate(&crate::classic_template::expand(include_str!(
+            "../templates/matterssmith-menu.txt"
+        )))
     }
 }
 
@@ -270,7 +274,7 @@ impl ControlThemes {
             crate::menu::render(section, preferences.get()?)?
         };
         let default_template =
-            include_str!("../templates/matterssmith-control.txt").replace("\r\n", "\n");
+            crate::classic_template::expand(include_str!("../templates/matterssmith-control.txt"));
         if theme.template == default_template {
             Ok(body)
         } else {

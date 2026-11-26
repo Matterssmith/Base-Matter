@@ -271,7 +271,7 @@ fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
     // an IPC contract. Still validate frame, content, and actual newlines.
     // The runtime normalizes checked-out templates to LF on Windows.
     // Compare with the same canonical newlines in this integration test.
-    let template = include_str!("../templates/matterssmith-control.txt").replace("\r\n", "\n");
+    let template = matter_base::classic_template::expand(include_str!("../templates/matterssmith-control.txt"));
     let (frame_prefix, frame_suffix) = template.split_once("{{BODY}}").unwrap();
     for (frame, outcome) in frames {
         let mut client = TcpStream::connect(addr).unwrap();

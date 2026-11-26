@@ -1,8 +1,14 @@
 # Motor de plantillas de menú Matter — contrato oficial
 
+## 2026-11-26 — Plantilla clásica compartida y centrado del emblema
+
+El propietario exige que los cambios de plantilla se propaguen a los consumidores del diseño clásico. La fuente común de adornos es templates/menu/theme.json (classic_frame y decoration); src/classic_template.rs la expande antes de insertar datos y se comparte con el proveedor autónomo. Menú Classic dinámico, menú de control heredado, marco de control, marco de mensajes, Pong y consola consumen esos componentes. Los layouts propios declaran contenido y estructura; los datos no se reinterpretan como adornos. El cierre conectado y el conector se centran en columnas 4–5, contando desde 1, suponiendo un emoji de dos celdas. Se añade el mismo patrón de ramas del menú a la consola. El menú plain y temas personalizados no se modifican. Los binarios deben recompilarse al modificar la plantilla; no hay hot reload. No se cambian permisos, Vault, MSEL ni sesión. El CI del SHA 53687dc aprobó ambos workflows; el nuevo cambio requiere verificación de formato, compilación y render real en SSH/WhatsApp. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-23 — Orden exacto del menú clásico
 
-La vista clásica pública conserva obligatoriamente: (1) título + Categorías, (2) Información Matter inmediatamente después del conector «││», (3) ficha del usuario y socket, (4) Instrucciones. Los tres encabezados usan «╭─ 💠» (espacio U+0020 antes de 💠); el cierre de categorías usa «╰─╮╭────────⟨ 🌀» (espacio antes de 🌀). Hay una línea vacía entre Información Matter y la ficha de usuario, y otra entre la ficha y las Instrucciones, sin líneas triples. El propietario autenticado conserva sus bloques adicionales entre la ficha y las Instrucciones; los visitantes públicos nunca los reciben. No fijar datos dinámicos en la plantilla ni cambiar style none.
+La vista clásica pública conserva obligatoriamente: (1) título + Categorías, (2) Información Matter inmediatamente después del conector «││», (3) ficha del usuario y socket, (4) Instrucciones. Los tres encabezados usan «╭─ 💠» (espacio U+0020 antes de 💠); el cierre de categorías usa la variante centrada compartida «╰──╮╭───────⟨ 🌀» (espacio antes de 🌀). Hay una línea vacía entre Información Matter y la ficha de usuario, y otra entre la ficha y las Instrucciones, sin líneas triples. El propietario autenticado conserva sus bloques adicionales entre la ficha y las Instrucciones; los visitantes públicos nunca los reciben. No fijar datos dinámicos en la plantilla ni cambiar style none.
 
 Estado: implementación en Base-Matter/alpha, sin despliegue de binarios. La fuente de verdad de las vistas dinámicas es templates/menu/, no el diseño copiado de un tercero ni cadenas decorativas dentro de src/menu.rs.
 

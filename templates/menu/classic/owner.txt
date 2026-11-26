@@ -1,4 +1,4 @@
-╭─ 💠 Control del socket
-│ Propietario del socket autenticado
-│ Permisos: solo los verificados por el transporte y Vault
-╰───────────⟨ 🌀
+{{CLASSIC_HEADER}} Control del socket
+{{CLASSIC_LINE}} Propietario del socket autenticado
+{{CLASSIC_LINE}} Permisos: solo los verificados por el transporte y Vault
+{{CLASSIC_CLOSE}}

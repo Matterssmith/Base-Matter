@@ -1,8 +1,8 @@
-╭─ 💠 @SystemTitle
-│ @LabelHost: @Host
-│ @LabelOS: @OS
-│ @LabelUptime: @Uptime
-│ @LabelServerRAM: @ServerRAM
-│ @LabelControllerRAM: @ControllerRAM
-│ @LabelProviderRAM: @ProviderRAM
-╰───────────⟨ 🌀
+{{CLASSIC_HEADER}} @SystemTitle
+{{CLASSIC_LINE}} @LabelHost: @Host
+{{CLASSIC_LINE}} @LabelOS: @OS
+{{CLASSIC_LINE}} @LabelUptime: @Uptime
+{{CLASSIC_LINE}} @LabelServerRAM: @ServerRAM
+{{CLASSIC_LINE}} @LabelControllerRAM: @ControllerRAM
+{{CLASSIC_LINE}} @LabelProviderRAM: @ProviderRAM
+{{CLASSIC_CLOSE}}
