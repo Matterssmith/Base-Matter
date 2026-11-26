@@ -62,7 +62,14 @@ fn console_identity(value: &str) -> String {
     let account = console_field(account, 96);
     let short = if account.chars().count() > 10 {
         let first: String = account.chars().take(5).collect();
-        let last: String = account.chars().rev().take(4).collect::<Vec<_>>().into_iter().rev().collect();
+        let last: String = account
+            .chars()
+            .rev()
+            .take(4)
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
         format!("{first}…{last}")
     } else {
         account
@@ -82,12 +89,36 @@ fn console_command(text: &str) -> String {
     let verb = parts.next().unwrap_or_default();
     if !matches!(
         verb,
-        "=/>menu" | "=/>menú" | "=/>status" | "=/>estado" | "=/>vault"
-            | "=/>register" | "=/>help" | "=/>ayuda" | "=/>h" | "=/>set"
-            | "=/>unset" | "=/>role" | "=/>roles" | "=/>audit" | "=/>start"
-            | "=/>add" | "=/>add++" | "=/>test" | "=/>matter" | "=/>update"
-            | "=/>restart" | "=/>reload" | "=/>anti" | "=/>ping" | "=/>bot"
-            | "=/>group" | "=/>grupo" | "=/>credits" | "=/>creditos" | "=/>créditos"
+        "=/>menu"
+            | "=/>menú"
+            | "=/>status"
+            | "=/>estado"
+            | "=/>vault"
+            | "=/>register"
+            | "=/>help"
+            | "=/>ayuda"
+            | "=/>h"
+            | "=/>set"
+            | "=/>unset"
+            | "=/>role"
+            | "=/>roles"
+            | "=/>audit"
+            | "=/>start"
+            | "=/>add"
+            | "=/>add++"
+            | "=/>test"
+            | "=/>matter"
+            | "=/>update"
+            | "=/>restart"
+            | "=/>reload"
+            | "=/>anti"
+            | "=/>ping"
+            | "=/>bot"
+            | "=/>group"
+            | "=/>grupo"
+            | "=/>credits"
+            | "=/>creditos"
+            | "=/>créditos"
     ) {
         return "=/>[otro]".to_owned();
     }
@@ -98,30 +129,103 @@ fn console_command(text: &str) -> String {
         let safe = match verb {
             "=/>menu" | "=/>menú" | "=/>help" | "=/>ayuda" | "=/>h" => matches!(
                 arg,
-                "classic" | "web" | "buttons" | "all" | "todo" | "anti" | "control"
-                    | "system" | "config" | "owner" | "help" | "ia" | "admin"
-                    | "economy" | "downloads" | "fun" | "gacha" | "games" | "group"
-                    | "info" | "links" | "main" | "mode" | "profile" | "reactions"
-                    | "search" | "sockets" | "utils" | "page" | "1" | "2" | "3"
-                    | "4" | "5" | "6" | "7" | "8" | "status" | "ping" | "set" | "role"
+                "classic"
+                    | "web"
+                    | "buttons"
+                    | "all"
+                    | "todo"
+                    | "anti"
+                    | "control"
+                    | "system"
+                    | "config"
+                    | "owner"
+                    | "help"
+                    | "ia"
+                    | "admin"
+                    | "economy"
+                    | "downloads"
+                    | "fun"
+                    | "gacha"
+                    | "games"
+                    | "group"
+                    | "info"
+                    | "links"
+                    | "main"
+                    | "mode"
+                    | "profile"
+                    | "reactions"
+                    | "search"
+                    | "sockets"
+                    | "utils"
+                    | "page"
+                    | "1"
+                    | "2"
+                    | "3"
+                    | "4"
+                    | "5"
+                    | "6"
+                    | "7"
+                    | "8"
+                    | "status"
+                    | "ping"
+                    | "set"
+                    | "role"
             ),
             "=/>bot" | "=/>group" | "=/>grupo" | "=/>status" | "=/>estado" => matches!(
                 arg,
-                "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"
-                    | "group" | "private" | "channel" | "community" | "--mod" | "--global"
-                    | "--debug" | "status" | "estado"
+                "on" | "off"
+                    | "inherit"
+                    | "encender"
+                    | "apagar"
+                    | "heredar"
+                    | "group"
+                    | "private"
+                    | "channel"
+                    | "community"
+                    | "--mod"
+                    | "--global"
+                    | "--debug"
+                    | "status"
+                    | "estado"
             ),
             "=/>set" | "=/>unset" | "=/>anti" => matches!(
                 arg,
-                "role" | "owner" | "admin" | "anti" | "link" | "on" | "off" | "inherit"
-                    | "--mod" | "--global" | "--debug" | "menu" | "style" | "lang"
-                    | "language" | "classic" | "web" | "buttons" | "es" | "en" | "audit"
-                    | "--except" | "--include"
+                "role"
+                    | "owner"
+                    | "admin"
+                    | "anti"
+                    | "link"
+                    | "on"
+                    | "off"
+                    | "inherit"
+                    | "--mod"
+                    | "--global"
+                    | "--debug"
+                    | "menu"
+                    | "style"
+                    | "lang"
+                    | "language"
+                    | "classic"
+                    | "web"
+                    | "buttons"
+                    | "es"
+                    | "en"
+                    | "audit"
+                    | "--except"
+                    | "--include"
             ),
             "=/>test" => matches!(
                 arg,
-                "ui" | "row" | "html" | "ack" | "a" | "b" | "one" | "two" | "audio"
-                    | "mp4" | "link"
+                "ui" | "row"
+                    | "html"
+                    | "ack"
+                    | "a"
+                    | "b"
+                    | "one"
+                    | "two"
+                    | "audio"
+                    | "mp4"
+                    | "link"
             ),
             "=/>vault" => matches!(arg, "status" | "test"),
             "=/>register" => arg == "start",
@@ -214,12 +318,7 @@ async fn console_metadata(
                 Some(_) => "Miembro WA",
                 None => "Sin verificar",
             };
-            (
-                console_field(&metadata.subject, 20),
-                username,
-                lid,
-                role,
-            )
+            (console_field(&metadata.subject, 20), username, lid, role)
         }
         _ => fallback,
     };
@@ -298,8 +397,8 @@ impl CommandTrace {
                 format!("{name} @{username}")
             };
             println!(
-                "{} #{:04} {h:02}:{m:02}:{s:02}Z · {origin}\n│ CMD {command}\n│ {} {} · {}\n│ ID {} · {}",
-                console_color("╭─ Matter", "1;96"),
+                "{} #{:04} {h:02}:{m:02}:{s:02}Z · {origin}\n│·♪· CMD {command}\n│·♪· {} {}\n│·♪· Rango: {} · ID {}\n│·♪· {}",
+                console_color("╭─ 💠 𝗠𝗮𝘁𝘁𝗲𝗿", "1;96"),
                 trace.id,
                 console_color("USR", "95"),
                 console_color(&user, "97"),
@@ -353,26 +452,26 @@ impl CommandTrace {
                 _ => &ipc,
             };
             let mut lines = vec![format!(
-                "{} #{:04} IPC:{} · {} · {}ms",
-                console_color("╰─", "96"),
+                "│·♪· #{:04} IPC:{} · {} · {}ms",
                 self.id,
                 console_color(ipc_short, ipc_color),
                 console_color(label, color),
                 self.started.elapsed().as_millis()
             )];
             if tx.is_empty() {
-                lines.push("   TX: -".to_owned());
+                lines.push("│·♪· TX: -".to_owned());
             } else {
                 for item in tx.iter().take(4) {
-                    lines.push(format!("   TX: {item}"));
+                    lines.push(format!("│·♪· TX: {item}"));
                 }
                 if tx.len() > 4 {
-                    lines.push(format!("   TX: +{} etapas", tx.len() - 4));
+                    lines.push(format!("│·♪· TX: +{} etapas", tx.len() - 4));
                 }
             }
             if label == "ACEPTADO" {
-                lines.push("   Cliente: visualización no verificada".to_owned());
+                lines.push("│·♪· Cliente: visualización no verificada".to_owned());
             }
+            lines.push(console_color("╰─╮╭────⟨ ✦", "1;96"));
             println!("{}", lines.join("\n"));
         }
     }
@@ -1507,8 +1606,12 @@ mod readiness_tests {
         assert_eq!(console_command("=/>vault token=SECRET"), "=/>vault …");
         assert_eq!(console_identity("123456789012345@lid"), "12345…2345@lid");
         assert_eq!(console_field("abcdefghij", 5), "abcd…");
-        assert!(console_command("=/>menu downloads downloads downloads").chars().count()
-            <= "=/>menu ".chars().count() + CONSOLE_ARGS_LIMIT);
+        assert!(
+            console_command("=/>menu downloads downloads downloads")
+                .chars()
+                .count()
+                <= "=/>menu ".chars().count() + CONSOLE_ARGS_LIMIT
+        );
         assert_eq!(console_command("=/>unknown-secret"), "=/>[otro]");
         assert_eq!(console_field("a\n\u{001b}\u{202e}b", 8), "ab");
     }
