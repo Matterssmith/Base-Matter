@@ -73,6 +73,13 @@ fn signed(id: &str, text: &str) -> Vec<u8> {
 #[test]
 fn authenticated_wire_changes_socket_only_once() {
     let (service, activation) = make();
+    assert_eq!(
+        service.dispatch(&signed("disabled-on", "=/>bot on")),
+        ControlIpcOutcome::Ignored
+    );
+    activation
+        .set_live_bot_policy("socket-a", "alice", Some("kind:self"), Some(true))
+        .unwrap();
     let message = signed("one", "=/>bot on");
     assert_eq!(service.dispatch(&message), ControlIpcOutcome::Applied);
     assert_eq!(service.dispatch(&message), ControlIpcOutcome::Duplicate);
@@ -93,7 +100,14 @@ fn authenticated_wire_changes_socket_only_once() {
 }
 #[test]
 fn invalid_frames_are_denied_and_authenticated_ping_is_readonly() {
-    let (service, _) = make();
+    let (service, activation) = make();
+    assert_eq!(
+        service.dispatch(&signed("disabled-ping", "=/>ping")),
+        ControlIpcOutcome::Ignored
+    );
+    activation
+        .set_live_bot_policy("socket-a", "alice", Some("kind:self"), Some(true))
+        .unwrap();
     assert_eq!(service.dispatch(b"{"), ControlIpcOutcome::Denied);
     assert_eq!(
         service.dispatch(&vec![b'a'; 16385]),
@@ -171,6 +185,9 @@ fn external_private_default_does_not_disable_owner_self_chat_and_self_off_is_sil
         service.dispatch(&signed("s-1", "=/>status")),
         ControlIpcOutcome::Applied
     );
+    activation
+        .set_live_bot_policy("socket-a", "alice", None, Some(true))
+        .unwrap();
     assert_eq!(
         service.dispatch(&signed("b-1", "=/>bot --mod on")),
         ControlIpcOutcome::Applied
@@ -203,15 +220,18 @@ fn external_private_default_does_not_disable_owner_self_chat_and_self_off_is_sil
         service.dispatch(&signed("m-4", "=/>menu")),
         ControlIpcOutcome::Ignored
     );
-    // Status and inherited recovery stay reachable while self-chat is off.
+    // Status alone stays reachable while self-chat is off.
     assert_eq!(
         service.dispatch(&signed("s-3", "=/>status")),
         ControlIpcOutcome::Applied
     );
     assert_eq!(
         service.dispatch(&signed("b-4", "=/>bot inherit")),
-        ControlIpcOutcome::Applied
+        ControlIpcOutcome::Ignored
     );
+    activation
+        .set_live_bot_policy("socket-a", "alice", Some("kind:self"), None)
+        .unwrap();
     assert_eq!(
         service.dispatch(&signed("m-5", "=/>menu")),
         ControlIpcOutcome::Applied
@@ -230,6 +250,9 @@ fn local_tcp_loopback_roundtrip_rejects_replay_before_second_effect() {
     use std::io::{Read, Write};
     use std::net::{Shutdown, TcpListener, TcpStream};
     let (service, activation) = make();
+    activation
+        .set_live_bot_policy("socket-a", "alice", Some("kind:self"), Some(true))
+        .unwrap();
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let addr = listener.local_addr().unwrap();
     let server = std::thread::spawn(move || {

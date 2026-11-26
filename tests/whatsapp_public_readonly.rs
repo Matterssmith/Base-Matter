@@ -30,7 +30,7 @@ impl CommandAuthorizer for DenyBot {
     }
 }
 
-fn fixture() -> WhatsAppControlBridge {
+fn fixture() -> (WhatsAppControlBridge, Arc<SocketActivationStore>) {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket-1", "owner").unwrap();
     let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
@@ -38,13 +38,18 @@ fn fixture() -> WhatsAppControlBridge {
         ControlTheme::new("Matterssmith", "base-matter", "✦").unwrap(),
     ));
     let controller = Arc::new(
-        ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
+        ControlDispatcher::new(
+            Arc::clone(&activation),
+            Arc::new(BotRegistry::in_memory()),
+            router,
+            None,
+        )
             .with_public_menu(themes)
             .with_group_antis(Arc::new(AntiStore::open(":memory:").unwrap()))
             .with_silent_bot_commands()
             .with_unified_live_controls(),
     );
-    WhatsAppControlBridge::new(
+    let bridge = WhatsAppControlBridge::new(
         WhatsAppBridgeConfig {
             socket_id: "socket-1".into(),
             owner_actor_id: "owner".into(),
@@ -54,7 +59,8 @@ fn fixture() -> WhatsAppControlBridge {
         Arc::new(InboundReplayStore::in_memory([9u8; 32]).unwrap()),
         controller,
     )
-    .unwrap()
+    .unwrap();
+    (bridge, activation)
 }
 
 fn sign(frame: &mut WhatsAppControlFrame) {
@@ -96,7 +102,7 @@ fn frame(id: &str, text: &str, actor: &str, chat: &str, from_me: bool) -> WhatsA
 
 #[test]
 fn other_group_members_read_status_and_menu_only_when_enabled() {
-    let bridge = fixture();
+    let (bridge, activation) = fixture();
     let pending = frame("pub-1", "=/>status", READER, GROUP, false);
     assert_eq!(
         bridge.ingest(&pending).unwrap(),
@@ -121,6 +127,9 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
             .unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive),
     );
+    activation
+        .set_live_bot_policy("socket-1", "owner", Some("kind:self"), Some(true))
+        .unwrap();
     bridge
         .ingest(&frame("own-1", "=/>bot on", "owner", OWNER_JID, true))
         .unwrap();
@@ -191,7 +200,10 @@ fn other_group_members_read_status_and_menu_only_when_enabled() {
 
 #[test]
 fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
-    let bridge = fixture();
+    let (bridge, activation) = fixture();
+    activation
+        .set_live_bot_policy("socket-1", "owner", Some("kind:self"), Some(true))
+        .unwrap();
     bridge
         .ingest(&frame("own-1", "=/>bot on", "owner", OWNER_JID, true))
         .unwrap();
@@ -257,6 +269,9 @@ fn incoming_private_chat_can_read_but_cannot_change_any_policy() {
 fn all_21_canonical_categories_and_three_pages_have_real_dynamic_menu_routing() {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket-1", "owner").unwrap();
+    activation
+        .set_live_bot_policy("socket-1", "owner", Some("kind:self"), Some(true))
+        .unwrap();
     let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot)).unwrap());
     let themes = Arc::new(
         ControlThemes::new(ControlTheme::new("Matterssmith", "base-matter", "✦").unwrap())
@@ -358,45 +373,44 @@ fn all_21_canonical_categories_and_three_pages_have_real_dynamic_menu_routing() 
 }
 
 #[test]
-fn guest_can_read_registration_info_without_enrollment_or_active_bot() {
-    let bridge = fixture();
+fn guest_registration_requires_enabled_chat_but_not_enrollment() {
+    let (bridge, activation) = fixture();
+    for (index, command) in ["=/>register", "=/>register start", "=/>menu", "=/>set role 123 admin"]
+        .iter()
+        .enumerate()
+    {
+        assert_eq!(
+            bridge.ingest(&frame(&format!("guest-off-{index}"), command, READER, READER, false)).unwrap(),
+            WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
+        );
+    }
+    activation
+        .set_live_bot_policy("socket-1", "owner", Some("kind:private"), Some(true))
+        .unwrap();
     assert!(matches!(
         bridge.ingest(&frame("guest-register-1", "=/>register", READER, READER, false)).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
-            if command == "register"
-                && output.contains("Modo invitado")
-                && output.contains("No necesitas registrarte")
+            if command == "register" && output.contains("Modo invitado")
     ));
     assert!(matches!(
         bridge.ingest(&frame("guest-register-2", "=/>register start", READER, READER, false)).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, output })
-            if command == "register"
-                && output.contains("No se guardó")
+            if command == "register" && output.contains("No se guardó")
     ));
-    assert_eq!(
-        bridge
-            .ingest(&frame("guest-menu-off", "=/>menu", READER, READER, false))
-            .unwrap(),
-        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
-    );
-    assert!(bridge
-        .ingest(&frame(
-            "guest-mutation-denied",
-            "=/>set role 123 admin",
-            READER,
-            READER,
-            false
-        ))
-        .is_err());
 }
 
 #[test]
 fn guest_capability_contract_does_not_require_identity_enrollment() {
     use matter_base::guest::{can_use_without_registration, GuestCapability as G};
-    for capability in [G::Status, G::RegistrationInfo] {
-        assert!(can_use_without_registration(capability, false));
-    }
-    for capability in [G::Menu, G::Help, G::UiDiagnostic, G::Credits, G::BotInfo] {
+    assert!(can_use_without_registration(G::Status, false));
+    for capability in [
+        G::RegistrationInfo,
+        G::Menu,
+        G::Help,
+        G::UiDiagnostic,
+        G::Credits,
+        G::BotInfo,
+    ] {
         assert!(!can_use_without_registration(capability, false));
         assert!(can_use_without_registration(capability, true));
     }
@@ -484,7 +498,10 @@ fn incoming_group_anti_events_are_verified_audited_and_never_executed() {
 
 #[test]
 fn public_anti_inspections_are_read_only_and_scoped_to_enabled_chat() {
-    let bridge = fixture();
+    let (bridge, activation) = fixture();
+    activation
+        .set_live_bot_policy("socket-1", "owner", Some("kind:self"), Some(true))
+        .unwrap();
     bridge
         .ingest(&frame(
             "owner-enable",

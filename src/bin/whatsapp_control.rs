@@ -145,10 +145,13 @@ fn private_database(name: &str) -> Result<PathBuf> {
 fn main() -> Result<()> {
     let action = env::args().nth(1).unwrap_or_else(|| "--help".into());
     if action == "--help" {
-        println!("Base-Matter WhatsApp control: --check, --init once, then --serve on loopback. No QR or Bot-Matter runtime. =/>ping is an authenticated read-only control.");
+        println!("Base-Matter WhatsApp control: --check, --init once, then --serve on loopback. No QR or Bot-Matter runtime. Only status responds in disabled chats. Local recovery: --set-chat-policy self|group|private|channel|community|--mod|GROUP_JID on|off|inherit.");
         return Ok(());
     }
-    if action != "--init" && action != "--serve" && action != "--check" {
+    if !matches!(
+        action.as_str(),
+        "--init" | "--serve" | "--check" | "--set-chat-policy"
+    ) {
         bail!("Unknown controller operation");
     }
     let socket = required("MATTER_WA_SOCKET_ID")?.to_string();
@@ -210,6 +213,35 @@ fn main() -> Result<()> {
     // has been published remotely.
     let lock = activation_path.with_extension("controller.lock");
     let _lease = ExclusiveLock::acquire(lock)?;
+    if action == "--set-chat-policy" {
+        let arguments: Vec<_> = env::args().skip(2).collect();
+        let [scope, value] = arguments.as_slice() else {
+            bail!("Usage: --set-chat-policy SCOPE on|off|inherit");
+        };
+        let policy = match value.as_str() {
+            "on" => Some(true),
+            "off" => Some(false),
+            "inherit" => None,
+            _ => bail!("Unknown chat policy"),
+        };
+        let key = match scope.as_str() {
+            "--mod" => None,
+            "self" | "group" | "private" | "channel" | "community" => Some(format!("kind:{scope}")),
+            jid if jid.ends_with("@g.us")
+                && jid.len() <= 128
+                && !jid.starts_with('@')
+                && jid
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"@._:-".contains(&b)) =>
+            {
+                Some(jid.to_owned())
+            }
+            _ => bail!("Invalid local chat scope"),
+        };
+        activation.set_live_bot_policy(&socket, &owner, key.as_deref(), policy)?;
+        println!("Local chat policy updated; no WhatsApp session opened.");
+        return Ok(());
+    }
     let replay = Arc::new(InboundReplayStore::open(&replay_path, replay_key)?);
     let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot))?);
     // Isolated from activation, replay and WhatsApp session SQLite databases.

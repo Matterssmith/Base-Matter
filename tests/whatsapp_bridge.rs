@@ -95,8 +95,15 @@ fn frame(message_id: &str, text: &str) -> WhatsAppControlFrame {
 }
 
 #[test]
-fn owner_enables_current_chat_with_one_bot_command_without_binding() {
+fn owner_cannot_enable_disabled_chat_from_whatsapp_without_local_recovery() {
     let (bridge, activation) = fixture();
+    assert_eq!(
+        bridge.ingest(&frame("off-on", "=/>bot on")).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
+    );
+    activation
+        .set_live_bot_policy("socket-1", "owner", Some("kind:self"), Some(true))
+        .unwrap();
     assert_eq!(
         bridge.ingest(&frame("id1", "=/>bot on")).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::BotPolicyChanged {
@@ -139,7 +146,16 @@ fn owner_enables_current_chat_with_one_bot_command_without_binding() {
 
 #[test]
 fn no_normal_bot_dispatch_ping_qr_or_legacy_global_aliases() {
-    let (bridge, _activation) = fixture();
+    let (bridge, activation) = fixture();
+    assert_eq!(
+        bridge.ingest(&frame("normal4", "=/>ping")).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
+    );
+    for scope in ["kind:self", "kind:group", "kind:private"] {
+        activation
+            .set_live_bot_policy("socket-1", "owner", Some(scope), Some(true))
+            .unwrap();
+    }
     assert_eq!(
         bridge.ingest(&frame("normal1", "#ping")).unwrap(),
         WhatsAppBridgeOutcome::Ignored
@@ -152,7 +168,11 @@ fn no_normal_bot_dispatch_ping_qr_or_legacy_global_aliases() {
         bridge.ingest(&frame("normal3", "/>on")).unwrap(),
         WhatsAppBridgeOutcome::Ignored
     );
-    assert!(bridge.ingest(&frame("normal4", "=/>ping")).is_err());
+    assert!(matches!(
+        bridge.ingest(&frame("normal-ping-enabled", "=/>ping")).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, .. })
+            if command == "ping"
+    ));
     assert!(bridge.ingest(&frame("normal5", "=/>on")).is_err());
     assert!(bridge.ingest(&frame("normal6", "=/>off")).is_err());
     // Vault must never become a group-scoped control.
@@ -192,6 +212,9 @@ fn signed_owner_group_bot_controls_are_scoped_and_replayed_once() {
     let (bridge, activation) = fixture();
     let mut group = frame("group-1", "=/>bot on");
     group.chat_jid = "12036312345@g.us".into();
+    activation
+        .set_live_bot_policy("socket-1", "owner", Some(&group.chat_jid), Some(true))
+        .unwrap();
     sign(&mut group, &SECRET);
     assert_eq!(
         bridge.ingest(&group).unwrap(),
@@ -235,7 +258,10 @@ fn signed_owner_group_bot_controls_are_scoped_and_replayed_once() {
     global_on.chat_jid = group.chat_jid.clone();
     sign(&mut global_on, &SECRET);
     assert!(bridge.ingest(&global_on).is_err());
-    assert!(bridge.ingest(&frame("private-menu", "=/>menu")).is_err());
+    assert_eq!(
+        bridge.ingest(&frame("private-menu", "=/>menu")).unwrap(),
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
+    );
     let mut unknown = frame("group-4", "=/>bot on");
     unknown.chat_jid = "foreign@s.whatsapp.net".into();
     sign(&mut unknown, &SECRET);
@@ -248,7 +274,7 @@ fn signed_owner_group_bot_controls_are_scoped_and_replayed_once() {
 
 #[test]
 fn signed_group_status_tracks_global_defaults_and_exact_group_override() {
-    let (bridge, _) = fixture();
+    let (bridge, activation) = fixture();
     let group = "120363555@g.us";
     let mut status = frame("chat-status-1", "=/>status");
     status.chat_jid = group.into();
@@ -262,6 +288,9 @@ fn signed_group_status_tracks_global_defaults_and_exact_group_override() {
         })
     );
 
+    activation
+        .set_live_bot_policy("socket-1", "owner", None, Some(true))
+        .unwrap();
     assert_eq!(
         bridge
             .ingest(&frame("chat-global-1", "=/>bot --mod on"))
@@ -366,7 +395,7 @@ fn rejects_forged_signatures_cross_socket_and_sender() {
 fn replay_and_timeout_fail_before_mutating_socket() {
     let (bridge, activation) = fixture();
     activation
-        .set_socket_policy("socket-1", "owner", Some(true))
+        .set_live_bot_policy("socket-1", "owner", None, Some(true))
         .unwrap();
     let value = frame("id1", "=/>bot on");
     assert!(matches!(
@@ -426,7 +455,10 @@ fn signature_encoding_matches_hmac_sha256_protocol_vector() {
 
 #[test]
 fn test_command_responds_in_owner_private_and_verified_group() {
-    let (bridge, _) = fixture();
+    let (bridge, activation) = fixture();
+    activation
+        .set_live_bot_policy("socket-1", "owner", Some("kind:self"), Some(true))
+        .unwrap();
     for (id, cmd) in [
         ("visual-private-help", "=/>test"),
         ("visual-private-ui", "=/>test ui"),
@@ -445,12 +477,14 @@ fn test_command_responds_in_owner_private_and_verified_group() {
     sign(&mut group, &SECRET);
 
     // A valid owner signature alone does not turn on an inactive group.
-    // The actual group must first be enabled through the regular owner
-    // control, and every request (including visual diagnostics) is gated.
+    // The actual group must first be enabled from trusted local administration.
     assert_eq!(
         bridge.ingest(&group).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
     );
+    activation
+        .set_live_bot_policy("socket-1", "owner", Some(&group.chat_jid), Some(true))
+        .unwrap();
     let mut activate_group = frame("visual-enable-group", "=/>bot on");
     activate_group.chat_jid = group.chat_jid.clone();
     sign(&mut activate_group, &SECRET);
@@ -521,19 +555,16 @@ fn test_command_responds_in_owner_private_and_verified_group() {
 
 #[test]
 fn public_test_is_readonly_and_obeys_chat_activation() {
-    let (bridge, _) = fixture();
+    let (bridge, activation) = fixture();
     let mut public = frame("visual-public-off", "=/>test");
     public.actor_id = "987654321012346@lid".into();
     public.chat_jid = public.actor_id.clone();
     public.from_me = false;
     sign(&mut public, &SECRET);
-    assert!(matches!(
+    assert_eq!(
         bridge.ingest(&public).unwrap(),
-        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
-            command,
-            output
-        }) if command == "test" && output.contains("BOT APAGADO")
-    ));
+        WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
+    );
     public.message_id = "visual-public-ui-off".into();
     public.text = "=/>test ui".into();
     sign(&mut public, &SECRET);
@@ -541,9 +572,12 @@ fn public_test_is_readonly_and_obeys_chat_activation() {
         bridge.ingest(&public).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
     );
-    // Only a verified socket owner can turn on the chat. Test probes never do.
+    // Trusted local administration enables the chat. Test probes never do.
     let mut owner_group = frame("visual-enable", "=/>bot on");
     owner_group.chat_jid = "12036312345@g.us".into();
+    activation
+        .set_live_bot_policy("socket-1", "owner", Some(&owner_group.chat_jid), Some(true))
+        .unwrap();
     sign(&mut owner_group, &SECRET);
     assert!(matches!(
         bridge.ingest(&owner_group).unwrap(),
@@ -568,3 +602,51 @@ fn public_test_is_readonly_and_obeys_chat_activation() {
 
 // Créditos:
 // Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+#[test]
+fn disabled_chat_consumes_every_nonstatus_command_before_vault_or_dispatch() {
+    let (bridge, activation) = fixture();
+    for (index, command) in [
+        "=/>ping",
+        "=/>register",
+        "=/>test",
+        "=/>menu",
+        "=/>help",
+        "=/>bot on",
+        "=/>bot",
+        "=/>vault test",
+        "=/>set role owner --global 5551234567",
+        "=/>credits",
+    ]
+    .iter()
+    .enumerate()
+    {
+        let mut owner = frame(&format!("disabled-owner-{index}"), command);
+        let mut guest = frame(&format!("disabled-guest-{index}"), command);
+        guest.actor_id = "987654321012346@lid".into();
+        guest.chat_jid = guest.actor_id.clone();
+        guest.from_me = false;
+        sign(&mut guest, &SECRET);
+        for request in [&owner, &guest] {
+            assert_eq!(
+                bridge.ingest(request).unwrap(),
+                WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
+            );
+            assert_eq!(
+                bridge.ingest(request).unwrap(),
+                WhatsAppBridgeOutcome::Duplicate
+            );
+        }
+        owner.message_id = format!("disabled-group-{index}");
+        owner.chat_jid = "12036312345@g.us".into();
+        sign(&mut owner, &SECRET);
+        assert_eq!(
+            bridge.ingest(&owner).unwrap(),
+            WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive)
+        );
+    }
+    assert!(!activation
+        .inspect_bot_defaults("socket-1", "owner")
+        .unwrap()
+        .socket_powered);
+}

@@ -1,3 +1,9 @@
+## 2026-11-25 — Solo status en chats desactivados
+
+Política del propietario: el estado efectivo de cada chat se comprueba antes de ejecutar cualquier comando de WhatsApp, incluso si el remitente es owner global. Solo `=/>status` (y su alias `=/>estado`, incluidas sus variantes de consulta sujetas a permisos) permanece disponible. Ping, registro, menús, pruebas, cambios de activación y operaciones Vault quedan silenciados al estar apagado; las solicitudes descartadas no pueden reproducirse tras activar el chat. La administración local autorizada conserva una vía de recuperación separada: detener el controlador y ejecutar `whatsapp-matter-control --set-chat-policy self on` con el entorno privado existente; admite también group/private/channel/community, --mod y un JID de grupo. No se modifica la sesión de WhatsApp ni las claves. Los canales y avisos sin metadatos de plataforma autenticados continúan sin ingreso verificable; no se concede acceso por un JID declarado. CI y pruebas reales pendientes.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-25 — Consola compacta y ping de control
 
 `MATTER_WA_DIAG=1`: cuatro líneas estilo Matter, colores ANSI solo en TTY (NO_COLOR desactiva), nombre de perfil, username/LID si WhatsApp los facilita, nombre y JID del grupo, IPC y TX juntos con latencias y resultados. Consulta de metadatos de grupo limitada a 500 ms, caché de 256 entradas durante cinco minutos, sin efecto sobre permisos; sin dato se muestra `-`. `=/>ping` es control de lectura autenticado, disponible incluso con bot OFF, mide RTT local del puente HMAC en milisegundos; no mide latencia del teléfono. Añadido a Información, ayuda y botón. `#ping` sigue fuera del control. No se cambian sesiones ni Vault. CI y formato pendientes; probar en dispositivo antes de declarar estable.

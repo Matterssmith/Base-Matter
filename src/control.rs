@@ -279,6 +279,23 @@ impl ControlDispatcher {
         }
     }
 
+    /// Chat ingress policy, independent of caller rank and command permissions.
+    /// Only the status command family may bypass disabled chat admission.
+    pub(crate) fn chat_command_allowed(
+        &self,
+        socket: &str,
+        group: Option<&str>,
+        kind: &str,
+        message: &str,
+    ) -> Result<bool> {
+        let admission = self.bot_admission(socket, group, kind)?;
+        let status = matches!(
+            message.split_whitespace().next(),
+            Some("=/>status" | "=/>estado")
+        );
+        Ok(status || admission.decision.enabled)
+    }
+
     fn change_bot_policy(
         &self,
         socket: &str,
@@ -376,11 +393,14 @@ impl ControlDispatcher {
         }
         let kind = if group.is_some() { "group" } else { "private" };
         let decision = self.bot_admission(socket, group, kind)?;
+        if !self.chat_command_allowed(socket, group, kind, message)? {
+            return Ok(DispatchResult::Inactive);
+        }
         let parts: Vec<_> = message.split_whitespace().collect();
         match parts.as_slice() {
             ["=/>register"] | ["=/>register", "start"] => {
                 let start_requested = parts.len() == 2;
-                // Safe even while disabled: this is public explanatory text.
+                // Registration is informational and requires an enabled chat.
                 Ok(DispatchResult::Extension {
                     command: "register".to_owned(),
                     output: crate::guest::registration_notice(start_requested).to_owned(),
@@ -448,18 +468,6 @@ impl ControlDispatcher {
             ["=/>test"]
             | ["=/>test", "ui" | "row"]
             | ["=/>test", "ack", "a" | "b" | "one" | "two" | "audio" | "mp4" | "link"] => {
-                // A no-argument diagnostic is intentionally available with
-                // the bot OFF (same read-only control exception as status).
-                // Visual or button action probes still require bot admission.
-                if !decision.decision.enabled {
-                    if parts.as_slice() == ["=/>test"] {
-                        return Ok(DispatchResult::Extension {
-                            command: "test".to_owned(),
-                            output: "🧪 Base-Matter responde: proveedor y control verificados. BOT APAGADO en este chat. Las pruebas de botones requieren que el propietario active el bot aquí; =/>status muestra el estado.".to_owned(),
-                        });
-                    }
-                    return Ok(DispatchResult::Inactive);
-                }
                 let output = match parts.as_slice() {
                     ["=/>test", "ui"] => "🧪 Prueba NativeFlow: botones y selector. Si aparecen, púlsalos. No se modifica ningún dato.".to_owned(),
                     ["=/>test", "row"] => "🧪 Prueba ButtonsRow: Audio, MP4 y Enlace. No se ejecutan descargas.".to_owned(),
@@ -993,6 +1001,9 @@ impl ControlDispatcher {
                     let admission = self.bot_admission(receiving_socket, group, kind)?;
                     if admission.owner_id != actor {
                         bail!("Socket owner authorization denied");
+                    }
+                    if !admission.decision.enabled {
+                        bail!("Bot is disabled in this chat");
                     }
                     return Ok(DispatchResult::Extension {
                         command: "ping".to_owned(),

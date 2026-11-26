@@ -27,8 +27,9 @@ pub enum GuestCapability {
 /// Commands requiring an activated chat must still pass bot admission.
 pub fn can_use_without_registration(capability: GuestCapability, chat_enabled: bool) -> bool {
     match capability {
-        GuestCapability::Status | GuestCapability::RegistrationInfo => true,
-        GuestCapability::Menu
+        GuestCapability::Status => true,
+        GuestCapability::RegistrationInfo
+        | GuestCapability::Menu
         | GuestCapability::Help
         | GuestCapability::UiDiagnostic
         | GuestCapability::Credits

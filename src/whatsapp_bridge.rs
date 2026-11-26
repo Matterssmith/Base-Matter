@@ -211,6 +211,30 @@ impl WhatsAppControlBridge {
         } else {
             None
         };
+        // Check the authenticated receiving surface before any command effect,
+        // including independent global Vault routes. A denied request is consumed
+        // so it cannot be replayed after the chat is enabled.
+        let kind = if group_id.is_some() {
+            "group"
+        } else if is_owner {
+            "self"
+        } else {
+            "private"
+        };
+        if !self.control.chat_command_allowed(
+            &self.config.socket_id,
+            group_id,
+            kind,
+            &frame.text,
+        )? {
+            if !self
+                .replay
+                .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
+            {
+                return Ok(WhatsAppBridgeOutcome::Duplicate);
+            }
+            return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive));
+        }
         // Exact global Vault health commands have their own HMAC-verified
         // path. Neither being the owner of this bot/socket nor typing an
         // owner claim in a message grants access: the private Vault authority
@@ -299,7 +323,12 @@ impl WhatsAppControlBridge {
                 .global_vault
                 .as_ref()
                 .is_some_and(|vault| vault.require_global_owner(&frame.actor_id).is_ok());
-            if globally_authorized {
+            if globally_authorized
+                && !matches!(
+                    frame.text.split_whitespace().next(),
+                    Some("=/>status" | "=/>estado")
+                )
+            {
                 if !self
                     .replay
                     .claim("whatsapp", &self.config.socket_id, &frame.message_id)?

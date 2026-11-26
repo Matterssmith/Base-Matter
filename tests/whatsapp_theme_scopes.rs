@@ -71,6 +71,9 @@ fn send(addr: std::net::SocketAddr, bytes: &[u8]) -> serde_json::Value {
 fn customized_group_template_formats_status_bot_on_and_off_without_copying_roles() {
     let activation = Arc::new(SocketActivationStore::open(":memory:").unwrap());
     activation.provision("socket-test", "owner").unwrap();
+    activation
+        .set_live_bot_policy("socket-test", "owner", Some(GROUP), Some(true))
+        .unwrap();
     let router = Arc::new(CommandRouter::new(vec!["#".to_owned()], Arc::new(DenyBot)).unwrap());
     let themes = Arc::new(ControlThemes::new(
         ControlTheme::new("Base-Matter", "base-matter", "✦").unwrap(),
