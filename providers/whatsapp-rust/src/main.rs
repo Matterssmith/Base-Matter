@@ -332,11 +332,12 @@ async fn console_metadata(
     value
 }
 
-fn console_color(value: &str, color: &str) -> String {
+fn console_color(value: &str, palette: &str) -> String {
     if std::io::stdout().is_terminal()
         && std::env::var_os("NO_COLOR").is_none()
         && !matches!(std::env::var("TERM").as_deref(), Ok("dumb"))
     {
+        let color = classic_template::console_palette(palette);
         format!("\x1b[{color}m{value}\x1b[0m")
     } else {
         value.to_owned()
@@ -387,7 +388,7 @@ impl CommandTrace {
             let name = console_field(&ctx.info.push_name, 18);
             let sender = console_identity(data.sender_jid);
             let chat = console_identity(data.chat_jid);
-            let command = console_color(&console_command(data.text), "1;97");
+            let command = console_color(&console_command(data.text), "command");
             let (group, username, lid, group_role) = console_metadata(ctx, data).await;
             let identity = if lid == "-" { sender } else { lid };
             let role = if socket_owner {
@@ -396,20 +397,42 @@ impl CommandTrace {
                 group_role
             };
             let role_color = match role {
-                "Owner socket" => "1;95",
-                "Admin WA" => "1;93",
-                "Miembro WA" => "92",
-                _ => "90",
+                "Owner socket" => "owner",
+                "Admin WA" => "admin",
+                "Miembro WA" => "member",
+                _ => "muted",
             };
             let scope = if data.is_group {
-                format!("{} {group} · {chat}", console_color("Grupo", "94"))
+                classic_template::console_layout(
+                    "group",
+                    &[
+                        (
+                            "LABEL",
+                            &console_color(classic_template::console_label("group"), "scope"),
+                        ),
+                        ("GROUP", &group),
+                        ("CHAT", &chat),
+                    ],
+                )
             } else {
-                format!("{} {chat}", console_color("Privado", "94"))
+                classic_template::console_layout(
+                    "private",
+                    &[
+                        (
+                            "LABEL",
+                            &console_color(classic_template::console_label("private"), "scope"),
+                        ),
+                        ("CHAT", &chat),
+                    ],
+                )
             };
             let user = if username == "-" {
                 name
             } else {
-                format!("{name} @{username}")
+                classic_template::console_layout(
+                    "username",
+                    &[("NAME", &name), ("USERNAME", &username)],
+                )
             };
             let header = classic_template::render(
                 include_str!("../../../templates/console/header.txt"),
@@ -420,18 +443,29 @@ impl CommandTrace {
                 ],
             );
             let rows = [
-                format!("CMD {command}"),
-                format!("{} {}", console_color("USR", "95"), console_color(&user, "97")),
-                format!(
-                    "Rango: {} · ID {}",
-                    console_color(role, role_color),
-                    console_color(&identity, "96")
+                classic_template::console_layout("command", &[("COMMAND", &command)]),
+                classic_template::console_layout(
+                    "user",
+                    &[
+                        (
+                            "LABEL",
+                            &console_color(classic_template::console_label("user"), "label"),
+                        ),
+                        ("USER", &console_color(&user, "value")),
+                    ],
+                ),
+                classic_template::console_layout(
+                    "rank",
+                    &[
+                        ("RANK", &console_color(role, role_color)),
+                        ("ID", &console_color(&identity, "identity")),
+                    ],
                 ),
                 scope,
             ];
             println!(
                 "{}\n{}",
-                console_color(header.trim_end_matches('\n'), "1;96"),
+                console_color(header.trim_end_matches('\n'), "frame"),
                 rows.iter()
                     .map(|row| console_row(row, false))
                     .collect::<Vec<_>>()
@@ -462,45 +496,50 @@ impl CommandTrace {
                 || state.starts_with("ENVIADO")
                 || state.starts_with("HTML ENVIADO")
             {
-                ("ACEPTADO", "1;92")
+                ("ACEPTADO", "success")
             } else if state == "IGNORADO" || state == "DUPLICADO" {
-                (state, "90")
+                (state, "muted")
             } else if state.starts_with("TIMEOUT") || state.starts_with("SIN ENVÍO") {
-                ("INCIERTO", "1;93")
+                ("INCIERTO", "warning")
             } else {
-                ("FALLO", "1;91")
+                ("FALLO", "error")
             };
             let ipc_color = if ipc.starts_with("OK") {
-                "92"
+                "tx_ok"
             } else if ipc == "IGNORADO" || ipc == "DUPLICADO" {
-                "90"
+                "muted"
             } else {
-                "91"
+                "tx_error"
             };
             let ipc_short = match ipc.as_str() {
                 "DENEGADO O NO DISPONIBLE" => "DENEG./NO DISP.",
                 "NO ADMITIDO" => "NO ADMITIDO",
                 _ => &ipc,
             };
-            let mut lines = vec![format!(
-                "#{:04} IPC:{} · {} · {}ms",
-                self.id,
-                console_color(ipc_short, ipc_color),
-                console_color(label, color),
-                self.started.elapsed().as_millis()
+            let mut lines = vec![classic_template::console_layout(
+                "ipc",
+                &[
+                    ("EVENT", &format!("#{:04}", self.id)),
+                    ("IPC", &console_color(ipc_short, ipc_color)),
+                    ("STATE", &console_color(label, color)),
+                    ("ELAPSED", &self.started.elapsed().as_millis().to_string()),
+                ],
             )];
             if tx.is_empty() {
-                lines.push("TX: -".to_owned());
+                lines.push(classic_template::console_layout("tx", &[("STAGE", "-")]));
             } else {
                 for item in tx.iter().take(4) {
-                    lines.push(format!("TX: {item}"));
+                    lines.push(classic_template::console_layout("tx", &[("STAGE", item)]));
                 }
                 if tx.len() > 4 {
-                    lines.push(format!("TX: +{} etapas", tx.len() - 4));
+                    lines.push(classic_template::console_layout(
+                        "tx_more",
+                        &[("COUNT", &(tx.len() - 4).to_string())],
+                    ));
                 }
             }
             if label == "ACEPTADO" {
-                lines.push("Cliente: visualización no verificada".to_owned());
+                lines.push(classic_template::console_layout("client", &[]));
             }
             let last = lines.len().saturating_sub(1);
             let rows = lines
@@ -513,7 +552,7 @@ impl CommandTrace {
                 classic_template::expand(include_str!("../../../templates/console/footer.txt"));
             println!(
                 "{rows}\n{}",
-                console_color(footer.trim_end_matches('\n'), "1;96")
+                console_color(footer.trim_end_matches('\n'), "frame")
             );
         }
     }
@@ -526,9 +565,9 @@ impl CommandTrace {
         let start = Instant::now();
         let result = timeout(Duration::from_secs(8), future).await;
         let (status, color) = match &result {
-            Ok(Ok(_)) => ("OK", "92"),
-            Ok(Err(_)) => ("ERROR", "91"),
-            Err(_) => ("TIMEOUT?", "93"),
+            Ok(Ok(_)) => ("OK", "tx_ok"),
+            Ok(Err(_)) => ("ERROR", "tx_error"),
+            Err(_) => ("TIMEOUT?", "tx_timeout"),
         };
         if self.enabled {
             let kind = match kind {

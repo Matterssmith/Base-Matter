@@ -17,16 +17,21 @@ fn theme() -> &'static Value {
 pub fn expand(source: &str) -> String {
     let mut result = source.replace("\r\n", "\n");
     let theme = theme();
+    let frame = &theme["classic_frame"];
+    let prefix = frame["header_prefix"]
+        .as_str()
+        .expect("Classic header prefix");
+    let emblem = frame["emblem"].as_str().expect("Classic emblem");
+    result = result.replace("{{CLASSIC_HEADER}}", &format!("{prefix}{emblem}"));
     for (token, key) in [
-        ("HEADER", "header"),
         ("EMBLEM", "emblem"),
         ("ROW", "row"),
-        ("COMMAND_ROW", "command_row"),
+        ("COMMAND_ROW", "row"),
         ("LINE", "line"),
         ("CLOSE", "close"),
         ("JOINED_CLOSE", "joined_close"),
         ("CONNECTOR", "connector"),
-        ("CONTROL_CLOSE", "control_close"),
+        ("CONTROL_CLOSE", "joined_close"),
     ] {
         let value = theme["classic_frame"][key]
             .as_str()
@@ -40,6 +45,26 @@ pub fn expand(source: &str) -> String {
         result = result.replace(&format!("{{{{CLASSIC_{token}}}}}"), value);
     }
     result
+}
+
+/// Terminal presentation uses the same versioned theme as the classic menu.
+pub fn console_palette(name: &str) -> &'static str {
+    theme()["console"]["palette"][name]
+        .as_str()
+        .expect("Bundled console palette")
+}
+
+pub fn console_label(name: &str) -> &'static str {
+    theme()["console"]["labels"][name]
+        .as_str()
+        .expect("Bundled console label")
+}
+
+pub fn console_layout(name: &str, fields: &[(&str, &str)]) -> String {
+    let source = theme()["console"]["rows"][name]
+        .as_str()
+        .expect("Bundled console layout");
+    render(source, fields)
 }
 
 /// Insert fields in one pass; inserted values are never reinterpreted.
@@ -72,6 +97,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn console_layout_is_data_only() {
+        assert_eq!(
+            console_layout("command", &[("COMMAND", "{{CLASSIC_HEADER}}")]),
+            "CMD {{CLASSIC_HEADER}}"
+        );
+        assert_eq!(console_palette("frame"), "1;96");
+    }
+
+    #[test]
     fn shared_connector_matches_two_cell_emblem() {
         let header = expand("{{CLASSIC_HEADER}}");
         let close = expand("{{CLASSIC_JOINED_CLOSE}}");
@@ -80,8 +114,14 @@ mod tests {
         assert_eq!(close.chars().position(|c| c == '╮'), Some(3));
         assert_eq!(close.chars().position(|c| c == '╭'), Some(4));
         assert_eq!(connector.chars().position(|c| c == '│'), Some(3));
+        assert!(close.ends_with("⟨ ✦"));
+        assert_eq!(expand("{{CLASSIC_CONTROL_CLOSE}}"), close);
+        assert_eq!(expand("{{CLASSIC_COMMAND_ROW}}"), expand("{{CLASSIC_ROW}}"));
         assert_eq!(
-            render("{{CLASSIC_ROW}} {{BODY}}", &[("BODY", "{{CLASSIC_HEADER}}")]),
+            render(
+                "{{CLASSIC_ROW}} {{BODY}}",
+                &[("BODY", "{{CLASSIC_HEADER}}")]
+            ),
             "│·♪· {{CLASSIC_HEADER}}"
         );
     }

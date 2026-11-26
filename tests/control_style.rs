@@ -21,7 +21,8 @@ fn global_menu_restores_owner_original_frame_and_single_credit_footer() {
     assert!(menu.ends_with("Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx]."));
     assert_eq!(menu.matches("Créditos: Hecho por").count(), 1);
     // Preserve the canonical original menu, not a stale hardcoded frame.
-    let canonical = matter_base::classic_template::expand(include_str!("../templates/matterssmith-menu.txt"));
+    let canonical =
+        matter_base::classic_template::expand(include_str!("../templates/matterssmith-menu.txt"));
     assert_eq!(menu, canonical.trim_end_matches('\n'));
     assert_eq!(menu.matches("╭─ 💠 𝗖𝗼𝗻𝘁𝗿𝗼𝗹").count(), 1);
     assert!(menu.contains('\n'));

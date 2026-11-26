@@ -219,8 +219,16 @@ impl ControlThemes {
     pub fn decorate(&self, community_id: Option<&str>, body: &str) -> Result<String> {
         // Dynamic menus are self-contained. The same verified IPC response
         // passes through this renderer twice; never add another frame.
+        let classic_header = crate::classic_template::expand("{{CLASSIC_HEADER}}");
+        let classic_emblem = crate::classic_template::expand("{{CLASSIC_EMBLEM}}");
         if self.dynamic_menu.is_some()
-            && (body.starts_with("╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀")
+            && (body.starts_with(&format!("{classic_header} 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀"))
+                || body.starts_with(&format!("{classic_header} 𝗔𝘆𝘂𝗱𝗮"))
+                || body.starts_with(&format!("{classic_header} Categories"))
+                || body.starts_with(&format!("{classic_header} Help"))
+                || body.starts_with(&format!("{classic_emblem} Todo"))
+                || body.starts_with(&format!("{classic_emblem} All commands"))
+                || body.starts_with("╭─💠 𝗖𝗮𝘁𝗲𝗴𝗼𝗿í𝗮𝘀")
                 || body.starts_with("╭─💠 𝗔𝘆𝘂𝗱𝗮")
                 || body.starts_with("╭─💠 Categories")
                 || body.starts_with("╭─💠 Help")

@@ -1,1 +1,1 @@
-{{CLASSIC_COMMAND_ROW}}@Branch[ `@Prefix@Usage`
+{{CLASSIC_ROW}}@Branch[ `@Prefix@Usage`

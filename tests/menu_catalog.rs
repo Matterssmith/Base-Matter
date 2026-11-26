@@ -10,7 +10,7 @@ fn live_menu_registry_builds_categories_with_project_info_without_footer_credits
     let root = control.render(None, "menu").unwrap();
     assert!(root.starts_with("*꒦꒷✰꒷꒦︶"));
     assert!(root.contains("│·♪·╠[ *ⴵ ·· 𝙸𝙰* `[menu ia]`"));
-    assert!(root.contains("╰─╮╭────────⟨ 🌀"));
+    assert!(root.contains(&matter_base::classic_template::expand("{{CLASSIC_JOINED_CLOSE}}")));
     assert!(root.contains("menu config"));
     assert!(root.contains("menu anti"));
     assert!(root.contains("menu mode"));
@@ -258,7 +258,10 @@ fn global_menu_full_frame_and_plain_style_have_verified_safe_fields() {
     let user = public.find("✧☽︎╦[ Usuario: *@usuario* 🌀 ]═☾︎✧").unwrap();
     let instructions = public.find("╭─ 💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀").unwrap();
     assert!(categories < information && information < user && user < instructions);
-    assert!(public.contains("╰─╮╭────────⟨ 🌀\n       ││\n╭─ 💠 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝗰𝗶ó𝗻 𝗠𝗮𝘁𝘁𝗲𝗿"));
+    let connection = matter_base::classic_template::expand(
+        "{{CLASSIC_JOINED_CLOSE}}\n{{CLASSIC_CONNECTOR}}\n{{CLASSIC_HEADER}} 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝗰𝗶ó𝗻 𝗠𝗮𝘁𝘁𝗲𝗿",
+    );
+    assert!(public.contains(&connection));
     assert!(public.contains("╰───────────⟨ 🌀\n\n✧☽︎╦[ Usuario:"));
     assert!(public.contains("✧☽︎╩[ ♧ Socket: *Privado*\n\n╭─ 💠 𝗜𝗻𝘀𝘁𝗿𝘂𝗰𝗰𝗶𝗼𝗻𝗲𝘀"));
     assert!(!public.contains("\n\n\n"));

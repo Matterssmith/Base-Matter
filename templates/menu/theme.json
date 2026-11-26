@@ -94,14 +94,49 @@
     "root_title": "Global control menu"
   },
   "classic_frame": {
-    "header": "╭─ 💠",
     "emblem": "💠",
     "row": "│·♪·",
-    "command_row": "│♪",
     "line": "│",
     "close": "╰───────────⟨ 🌀",
-    "joined_close": "╰──╮╭───────⟨ 🌀",
+    "joined_close": "╰──╮╭───────⟨ ✦",
     "connector": "   ││",
-    "control_close": "╰──────────⟨ ✦"
+    "header_prefix": "╭─ "
+  },
+  "console": {
+    "palette": {
+      "frame": "1;96",
+      "command": "1;97",
+      "owner": "1;95",
+      "admin": "1;93",
+      "member": "92",
+      "muted": "90",
+      "scope": "94",
+      "label": "95",
+      "value": "97",
+      "identity": "96",
+      "success": "1;92",
+      "warning": "1;93",
+      "error": "1;91",
+      "tx_ok": "92",
+      "tx_error": "91",
+      "tx_timeout": "93"
+    },
+    "rows": {
+      "command": "CMD {{COMMAND}}",
+      "user": "{{LABEL}} {{USER}}",
+      "rank": "Rango: {{RANK}} · ID {{ID}}",
+      "group": "{{LABEL}} {{GROUP}} · {{CHAT}}",
+      "private": "{{LABEL}} {{CHAT}}",
+      "username": "{{NAME}} @{{USERNAME}}",
+      "ipc": "{{EVENT}} IPC:{{IPC}} · {{STATE}} · {{ELAPSED}}ms",
+      "tx": "TX: {{STAGE}}",
+      "tx_more": "TX: +{{COUNT}} etapas",
+      "client": "Cliente: visualización no verificada"
+    },
+    "labels": {
+      "user": "USR",
+      "group": "Grupo",
+      "private": "Privado"
+    }
   }
 }
