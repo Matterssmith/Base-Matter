@@ -1,3 +1,9 @@
+## 2026-11-26 — Pong oficial Matter-Bot en el control WhatsApp
+
+Solicitud del propietario: utilizar la plantilla exacta de docs/MATTER_BOT_PING.md en =/>ping. El proveedor muestra un solo Pong con Socket (RTT IPC local autenticado), Process (verificación local más procesamiento posterior al ACK, sin consulta diagnóstica) y Total (suma), medidos con reloj monotónico y tres decimales; excluye el formateo y envío posteriores. No equivale a RTT remoto de WhatsApp. Se evita el marco Control adicional únicamente para este Pong; otros comandos conservan sus temas. Solo un ACK aplicado permite responder; en chat apagado ping permanece silenciado, sin modificar admisión, permisos, Vault ni sesión. El futuro #ping del bot sigue separado. Prueba exacta del marco y valores añadida. CI del SHA 9eb25de aprobado en núcleo y proveedor; CI nuevo y prueba real pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Identidad visual Matter y formato del proveedor
 
 El propietario solicita conservar el símbolo 💠, la tipografía 𝗠𝗮𝘁𝘁𝗲𝗿 y el marco original de consola. Se restauran el encabezado, las líneas │·♪· y el cierre ╰─╮╭────⟨ ✦, manteniendo los límites, rangos verificados y colores de la consola compacta. Se separa el rango del nombre para reducir desbordamientos. Aplicadas las ocho diferencias exactas de rustfmt del CI del proveedor para a6c52e3, incluida la aserción reportada en idkbot. CI del núcleo de ese SHA aprobado; proveedor bloqueado en formato antes de compilar. Nuevo CI pendiente; no se modifica la admisión, las sesiones ni Vault. README revisados: 2/2.

@@ -504,6 +504,17 @@ impl CommandTrace {
     }
 }
 
+/// The official Matter-Bot Pong frame, with measured values only.
+/// Socket is the local authenticated controller RTT, not WhatsApp network RTT.
+fn matter_ping_message(socket: Duration, process: Duration) -> String {
+    let socket_ms = socket.as_secs_f64() * 1000.0;
+    let process_ms = process.as_secs_f64() * 1000.0;
+    let total_ms = (socket + process).as_secs_f64() * 1000.0;
+    format!(
+        "╭─💠 𝐏𝐨𝐧𝐠\n│·♪·╠[ ⴵ · 𝐒𝐨𝐜𝐤𝐞𝐭 ···· *{socket_ms:.3} ms*\n│·♪·╠[ ⚙︎  𝐏𝐫𝐨𝐜𝐞𝐬𝐬 · *{process_ms:.3} ms*\n│·♪·╚[ ✧  𝐓𝐨𝐭𝐚𝐥 ········ *{total_ms:.3} ms*\n╰───────────⟨ 🌀"
+    )
+}
+
 async fn deliver(
     address: std::net::SocketAddrV4,
     frame: &whatsapp_matter_rust_provider::SignedFrame,
@@ -1194,6 +1205,7 @@ async fn main() -> Result<()> {
                 } else {
                     "texto"
                 };
+                let local_started = Instant::now();
                 let verified = if data.from_me {
                     config.signed_verified_control(
                         &data, own_pn.as_deref(), own_lid.as_deref(),
@@ -1206,6 +1218,7 @@ async fn main() -> Result<()> {
                         &data, own_pn.as_deref(), own_lid.as_deref(),
                     )
                 };
+                let local_before_ipc = local_started.elapsed();
                 let socket_owner = matches!(&verified, Ok(Some(frame)) if frame.from_me);
                 let trace = CommandTrace::begin(
                     diagnostic_messages, &ctx, &data, origin, socket_owner,
@@ -1220,10 +1233,28 @@ async fn main() -> Result<()> {
                             | ControlAck::AppliedWithMenuMode { .. }
                             | ControlAck::AppliedWithMenuItems { .. }
                         )) => {
-                            let ipc_ms = ipc_started.elapsed().as_millis();
+                            let ipc_elapsed = ipc_started.elapsed();
+                            let local_after_ipc = Instant::now();
+                            let ipc_ms = ipc_elapsed.as_millis();
                             trace.stage(&format!("IPC: OK {ipc_ms}ms"));
                             if !diagnostic_messages {
                                 println!("Base-Matter: comando aceptado");
+                            }
+                            // Only an applied ACK can produce a Pong. Send the official
+                            // frame directly, with no extra Control wrapper or reply.
+                            if frame.text.split_whitespace().eq(["=/>ping"]) {
+                                let process = local_before_ipc + local_after_ipc.elapsed();
+                                let pong = matter_ping_message(ipc_elapsed, process);
+                                let sent = matches!(
+                                    trace.send("PING", ctx.reply(&pong)).await,
+                                    Ok(Ok(_))
+                                );
+                                trace.finish(if sent {
+                                    "ENVÍO ACEPTADO (render no verificado)"
+                                } else {
+                                    "SIN ENVÍO CONFIRMADO"
+                                });
+                                return;
                             }
                             // Only an authorized signed control may receive a
                             // response. External senders require independent
@@ -1288,11 +1319,6 @@ async fn main() -> Result<()> {
                                     | ControlAck::AppliedWithMenuItems { message, .. } => message,
                                     _ => "Base-Matter: solicitud procesada.".to_owned(),
                                 }
-                            };
-                            let response = if actual_command == "=/>ping" {
-                                response.replace("Latencia IPC: pendiente", &format!("Latencia IPC: {ipc_ms} ms"))
-                            } else {
-                                response
                             };
                             // Never mistake a typed ACK for a real button click.
                             // The controller already verified this callback.
@@ -1593,6 +1619,16 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod readiness_tests {
     use super::*;
+
+    #[test]
+    fn official_ping_uses_measured_durations_and_one_frame() {
+        let pong = matter_ping_message(Duration::from_micros(12_345), Duration::from_micros(678));
+        assert_eq!(
+            pong,
+            "╭─💠 𝐏𝐨𝐧𝐠\n│·♪·╠[ ⴵ · 𝐒𝐨𝐜𝐤𝐞𝐭 ···· *12.345 ms*\n│·♪·╠[ ⚙︎  𝐏𝐫𝐨𝐜𝐞𝐬𝐬 · *0.678 ms*\n│·♪·╚[ ✧  𝐓𝐨𝐭𝐚𝐥 ········ *13.023 ms*\n╰───────────⟨ 🌀"
+        );
+        assert_eq!(pong.lines().count(), 5);
+    }
 
     #[test]
     fn console_diagnostics_redact_arguments_and_control_characters() {
