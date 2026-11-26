@@ -36,12 +36,18 @@ use whatsapp_matter_rust_provider::{
 use whatsapp_rust::{pair_code::PairCodeOptions, prelude::*, types::events::ConnectFailureReason};
 
 // Command-only diagnostics; identity metadata stays in the local operator console.
+const CONSOLE_ARGS_LIMIT: usize = 24;
+
 fn console_field(value: &str, limit: usize) -> String {
-    let cleaned: String = value
-        .chars()
-        .filter(|c| !c.is_control() && !matches!(*c, '\u{061c}' | '\u{200b}'..='\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2060}'..='\u{206f}'))
-        .take(limit)
-        .collect();
+    let mut chars = value.chars().filter(|c| {
+        !c.is_control()
+            && !matches!(*c, '\u{061c}' | '\u{200b}'..='\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2060}'..='\u{206f}')
+    });
+    let mut cleaned: String = chars.by_ref().take(limit).collect();
+    if chars.next().is_some() && limit > 0 {
+        cleaned.pop();
+        cleaned.push('…');
+    }
     if cleaned.trim().is_empty() {
         "-".to_owned()
     } else {
@@ -49,43 +55,99 @@ fn console_field(value: &str, limit: usize) -> String {
     }
 }
 
+fn console_identity(value: &str) -> String {
+    let Some((account, domain)) = value.split_once('@') else {
+        return console_field(value, 14);
+    };
+    let account = console_field(account, 96);
+    let short = if account.chars().count() > 10 {
+        let first: String = account.chars().take(5).collect();
+        let last: String = account.chars().rev().take(4).collect::<Vec<_>>().into_iter().rev().collect();
+        format!("{first}…{last}")
+    } else {
+        account
+    };
+    let domain = match domain {
+        "s.whatsapp.net" => "pn",
+        "g.us" => "g.us",
+        "lid" => "lid",
+        "newsletter" => "canal",
+        _ => "?",
+    };
+    format!("{short}@{domain}")
+}
+
 fn console_command(text: &str) -> String {
     let mut parts = text.split_whitespace();
     let verb = parts.next().unwrap_or_default();
-    match verb {
-        "=/>menu" | "=/>menú" => {
-            let category = parts.next().unwrap_or_default();
-            if matches!(
-                category,
-                "classic"
-                    | "web"
-                    | "buttons"
-                    | "all"
-                    | "todo"
-                    | "anti"
-                    | "control"
-                    | "system"
-                    | "config"
-                    | "owner"
-                    | "help"
-                    | "ia"
-                    | "admin"
-                    | "economy"
-                    | "downloads"
-            ) {
-                format!("{verb} {category}")
-            } else {
-                verb.to_owned()
-            }
+    if !matches!(
+        verb,
+        "=/>menu" | "=/>menú" | "=/>status" | "=/>estado" | "=/>vault"
+            | "=/>register" | "=/>help" | "=/>ayuda" | "=/>h" | "=/>set"
+            | "=/>unset" | "=/>role" | "=/>roles" | "=/>audit" | "=/>start"
+            | "=/>add" | "=/>add++" | "=/>test" | "=/>matter" | "=/>update"
+            | "=/>restart" | "=/>reload" | "=/>anti" | "=/>ping" | "=/>bot"
+            | "=/>group" | "=/>grupo" | "=/>credits" | "=/>creditos" | "=/>créditos"
+    ) {
+        return "=/>[otro]".to_owned();
+    }
+    // Never print arbitrary tokens, quoted payloads, targets or credentials.
+    // Only a finite vocabulary of public command syntax is eligible.
+    let mut preview = String::new();
+    for arg in parts {
+        let safe = match verb {
+            "=/>menu" | "=/>menú" | "=/>help" | "=/>ayuda" | "=/>h" => matches!(
+                arg,
+                "classic" | "web" | "buttons" | "all" | "todo" | "anti" | "control"
+                    | "system" | "config" | "owner" | "help" | "ia" | "admin"
+                    | "economy" | "downloads" | "fun" | "gacha" | "games" | "group"
+                    | "info" | "links" | "main" | "mode" | "profile" | "reactions"
+                    | "search" | "sockets" | "utils" | "page" | "1" | "2" | "3"
+                    | "4" | "5" | "6" | "7" | "8" | "status" | "ping" | "set" | "role"
+            ),
+            "=/>bot" | "=/>group" | "=/>grupo" | "=/>status" | "=/>estado" => matches!(
+                arg,
+                "on" | "off" | "inherit" | "encender" | "apagar" | "heredar"
+                    | "group" | "private" | "channel" | "community" | "--mod" | "--global"
+                    | "--debug" | "status" | "estado"
+            ),
+            "=/>set" | "=/>unset" | "=/>anti" => matches!(
+                arg,
+                "role" | "owner" | "admin" | "anti" | "link" | "on" | "off" | "inherit"
+                    | "--mod" | "--global" | "--debug" | "menu" | "style" | "lang"
+                    | "language" | "classic" | "web" | "buttons" | "es" | "en" | "audit"
+                    | "--except" | "--include"
+            ),
+            "=/>test" => matches!(
+                arg,
+                "ui" | "row" | "html" | "ack" | "a" | "b" | "one" | "two" | "audio"
+                    | "mp4" | "link"
+            ),
+            "=/>vault" => matches!(arg, "status" | "test"),
+            "=/>register" => arg == "start",
+            "=/>add++" => arg == "snapshot",
+            _ => false,
+        };
+        if !preview.is_empty() {
+            preview.push(' ');
         }
-        "=/>status" | "=/>vault" | "=/>register" | "=/>help" | "=/>h" | "=/>set" | "=/>role"
-        | "=/>start" | "=/>add" | "=/>add++" | "=/>test" | "=/>matter" | "=/>update"
-        | "=/>restart" | "=/>reload" | "=/>anti" | "=/>ping" => verb.to_owned(),
-        _ => "=/>[otro]".to_owned(),
+        if !safe {
+            preview.push('…');
+            break;
+        }
+        preview.push_str(arg);
+        if preview.chars().count() > CONSOLE_ARGS_LIMIT {
+            break;
+        }
+    }
+    if preview.is_empty() {
+        verb.to_owned()
+    } else {
+        format!("{verb} {}", console_field(&preview, CONSOLE_ARGS_LIMIT))
     }
 }
 
-type ConsoleMetadata = (String, String, String);
+type ConsoleMetadata = (String, String, String, &'static str);
 type ConsoleCache = HashMap<(String, String), (Instant, ConsoleMetadata)>;
 
 async fn console_metadata(
@@ -103,7 +165,12 @@ async fn console_metadata(
         .flatten()
         .find(|j| j.ends_with("@lid"))
         .unwrap_or("-");
-    let fallback = ("-".to_owned(), "-".to_owned(), console_field(lid, 96));
+    let fallback = (
+        "-".to_owned(),
+        "-".to_owned(),
+        console_identity(lid),
+        "Sin verificar",
+    );
     if !data.is_group {
         return fallback;
     }
@@ -136,16 +203,22 @@ async fn console_metadata(
             });
             let username = participant
                 .and_then(|p| p.username.as_ref())
-                .map(|u| console_field(u.as_str(), 32))
+                .map(|u| console_field(u.as_str(), 12))
                 .unwrap_or_else(|| "-".to_owned());
             let lid = participant
                 .and_then(|p| p.lid.as_ref())
-                .map(|j| j.to_non_ad_string())
+                .map(|j| console_identity(&j.to_non_ad_string()))
                 .unwrap_or_else(|| fallback.2.clone());
+            let role = match participant {
+                Some(p) if p.is_admin() => "Admin WA",
+                Some(_) => "Miembro WA",
+                None => "Sin verificar",
+            };
             (
-                console_field(&metadata.subject, 40),
+                console_field(&metadata.subject, 20),
                 username,
-                console_field(&lid, 96),
+                lid,
+                role,
             )
         }
         _ => fallback,
@@ -160,7 +233,10 @@ async fn console_metadata(
 }
 
 fn console_color(value: &str, color: &str) -> String {
-    if std::io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none() {
+    if std::io::stdout().is_terminal()
+        && std::env::var_os("NO_COLOR").is_none()
+        && !matches!(std::env::var("TERM").as_deref(), Ok("dumb"))
+    {
         format!("\x1b[{color}m{value}\x1b[0m")
     } else {
         value.to_owned()
@@ -181,6 +257,7 @@ impl CommandTrace {
         ctx: &whatsapp_rust::bot::MessageContext,
         data: &Event<'_>,
         origin: &str,
+        socket_owner: bool,
     ) -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(1);
         let trace = Self {
@@ -193,24 +270,43 @@ impl CommandTrace {
         if enabled {
             let clock = data.timestamp.rem_euclid(86400);
             let (h, m, s) = (clock / 3600, clock / 60 % 60, clock % 60);
-            let name = console_field(&ctx.info.push_name, 32);
-            let sender = console_field(data.sender_jid, 96);
-            let chat = console_field(data.chat_jid, 96);
-            let command = console_color(&console_command(data.text), "1;36");
-            let (group, username, lid) = console_metadata(ctx, data).await;
-            let identity = if lid == "-" {
-                format!("JID:{sender}")
+            let name = console_field(&ctx.info.push_name, 18);
+            let sender = console_identity(data.sender_jid);
+            let chat = console_identity(data.chat_jid);
+            let command = console_color(&console_command(data.text), "1;97");
+            let (group, username, lid, group_role) = console_metadata(ctx, data).await;
+            let identity = if lid == "-" { sender } else { lid };
+            let role = if socket_owner {
+                "Owner socket"
             } else {
-                format!("LID:{lid}")
+                group_role
+            };
+            let role_color = match role {
+                "Owner socket" => "1;95",
+                "Admin WA" => "1;93",
+                "Miembro WA" => "92",
+                _ => "90",
             };
             let scope = if data.is_group {
-                format!("Grupo: {group} · {chat}")
+                format!("{} {group} · {chat}", console_color("Grupo", "94"))
             } else {
-                format!("Privado: {chat}")
+                format!("{} {chat}", console_color("Privado", "94"))
             };
-            println!("{} #{:04} {h:02}:{m:02}:{s:02} UTC · {command} [{origin}]\n│·♪· Usuario: {} · @{} · {}\n│·♪· {}",
-                console_color("╭─ 💠 𝗠𝗮𝘁𝘁𝗲𝗿", "1;35"), trace.id,
-                console_color(&name, "36"), username, identity, console_color(&scope, "34"));
+            let user = if username == "-" {
+                name
+            } else {
+                format!("{name} @{username}")
+            };
+            println!(
+                "{} #{:04} {h:02}:{m:02}:{s:02}Z · {origin}\n│ CMD {command}\n│ {} {} · {}\n│ ID {} · {}",
+                console_color("╭─ Matter", "1;96"),
+                trace.id,
+                console_color("USR", "95"),
+                console_color(&user, "97"),
+                console_color(role, role_color),
+                console_color(&identity, "96"),
+                scope,
+            );
         }
         trace
     }
@@ -231,34 +327,53 @@ impl CommandTrace {
     fn finish(&self, state: &str) {
         if self.enabled {
             let ipc = self.ipc.lock().map(|v| v.clone()).unwrap_or_default();
-            let tx = self
-                .tx
-                .lock()
-                .map(|v| {
-                    if v.is_empty() {
-                        "-".to_owned()
-                    } else {
-                        v.join(" / ")
-                    }
-                })
-                .unwrap_or_default();
-            let color = if state.starts_with("ENVÍO ACEPTADO")
+            let tx = self.tx.lock().map(|v| v.clone()).unwrap_or_default();
+            let (label, color) = if state.starts_with("ENVÍO ACEPTADO")
                 || state.starts_with("ENVIADO")
                 || state.starts_with("HTML ENVIADO")
             {
-                "32"
+                ("ACEPTADO", "1;92")
+            } else if state == "IGNORADO" || state == "DUPLICADO" {
+                (state, "90")
+            } else if state.starts_with("TIMEOUT") || state.starts_with("SIN ENVÍO") {
+                ("INCIERTO", "1;93")
             } else {
-                "33"
+                ("FALLO", "1;91")
             };
-            println!(
-                "{} #{:04} IPC:{} · TX:{} · {} · {}ms",
-                console_color("╰─╮╭────⟨ ✦", "35"),
+            let ipc_color = if ipc.starts_with("OK") {
+                "92"
+            } else if ipc == "IGNORADO" || ipc == "DUPLICADO" {
+                "90"
+            } else {
+                "91"
+            };
+            let ipc_short = match ipc.as_str() {
+                "DENEGADO O NO DISPONIBLE" => "DENEG./NO DISP.",
+                "NO ADMITIDO" => "NO ADMITIDO",
+                _ => &ipc,
+            };
+            let mut lines = vec![format!(
+                "{} #{:04} IPC:{} · {} · {}ms",
+                console_color("╰─", "96"),
                 self.id,
-                console_color(&ipc, if ipc.starts_with("OK") { "32" } else { "33" }),
-                tx,
-                console_color(state, color),
+                console_color(ipc_short, ipc_color),
+                console_color(label, color),
                 self.started.elapsed().as_millis()
-            );
+            )];
+            if tx.is_empty() {
+                lines.push("   TX: -".to_owned());
+            } else {
+                for item in tx.iter().take(4) {
+                    lines.push(format!("   TX: {item}"));
+                }
+                if tx.len() > 4 {
+                    lines.push(format!("   TX: +{} etapas", tx.len() - 4));
+                }
+            }
+            if label == "ACEPTADO" {
+                lines.push("   Cliente: visualización no verificada".to_owned());
+            }
+            println!("{}", lines.join("\n"));
         }
     }
 
@@ -270,11 +385,16 @@ impl CommandTrace {
         let start = Instant::now();
         let result = timeout(Duration::from_secs(8), future).await;
         let (status, color) = match &result {
-            Ok(Ok(_)) => ("OK", "32"),
-            Ok(Err(_)) => ("ERROR", "31"),
-            Err(_) => ("TIMEOUT?", "33"),
+            Ok(Ok(_)) => ("OK", "92"),
+            Ok(Err(_)) => ("ERROR", "91"),
+            Err(_) => ("TIMEOUT?", "93"),
         };
         if self.enabled {
+            let kind = match kind {
+                "NAVEGACIÓN" => "NAV",
+                "TARJETA" => "CARD",
+                other => other,
+            };
             self.stage(&format!(
                 "{kind}:{} {}ms",
                 console_color(status, color),
@@ -975,7 +1095,6 @@ async fn main() -> Result<()> {
                 } else {
                     "texto"
                 };
-                let trace = CommandTrace::begin(diagnostic_messages, &ctx, &data, origin).await;
                 let verified = if data.from_me {
                     config.signed_verified_control(
                         &data, own_pn.as_deref(), own_lid.as_deref(),
@@ -988,6 +1107,10 @@ async fn main() -> Result<()> {
                         &data, own_pn.as_deref(), own_lid.as_deref(),
                     )
                 };
+                let socket_owner = matches!(&verified, Ok(Some(frame)) if frame.from_me);
+                let trace = CommandTrace::begin(
+                    diagnostic_messages, &ctx, &data, origin, socket_owner,
+                ).await;
                 if let Ok(Some(frame)) = verified {
                     trace.stage("IPC: ENVIANDO");
                     let ipc_started = Instant::now();
@@ -1319,7 +1442,9 @@ async fn main() -> Result<()> {
                         }
                         Err(_) => {
                             trace.stage("IPC: DENEGADO O NO DISPONIBLE");
-                            eprintln!("Base-Matter control denied or unreachable");
+                            if !diagnostic_messages {
+                                eprintln!("Base-Matter control denied or unreachable");
+                            }
                             // The verified owner receives a generic Vault error,
                             // without exposing IPC details, keys or private data.
                             if is_private_vault_command(&frame, &config.owner_jid) {
@@ -1374,9 +1499,16 @@ mod readiness_tests {
     fn console_diagnostics_redact_arguments_and_control_characters() {
         assert_eq!(
             console_command("=/>set role owner --global SECRET"),
-            "=/>set"
+            "=/>set role owner --global …"
         );
-        assert_eq!(console_command("=/>menu anti 2"), "=/>menu anti");
+        assert_eq!(console_command("=/>menu anti 2"), "=/>menu anti 2");
+        assert_eq!(console_command("=/>help --quoted SECRET"), "=/>help …");
+        assert_eq!(console_command("=/>bot group on"), "=/>bot group on");
+        assert_eq!(console_command("=/>vault token=SECRET"), "=/>vault …");
+        assert_eq!(console_identity("123456789012345@lid"), "12345…2345@lid");
+        assert_eq!(console_field("abcdefghij", 5), "abcd…");
+        assert!(console_command("=/>menu downloads downloads downloads").chars().count()
+            <= "=/>menu ".chars().count() + CONSOLE_ARGS_LIMIT);
         assert_eq!(console_command("=/>unknown-secret"), "=/>[otro]");
         assert_eq!(console_field("a\n\u{001b}\u{202e}b", 8), "ab");
     }

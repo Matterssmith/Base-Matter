@@ -1,3 +1,9 @@
+## 2026-11-26 — Consola compacta de comandos para SSH
+
+Por solicitud del propietario, MATTER_WA_DIAG=1 muestra encabezado con evento y hora UTC, origen, comando con argumentos de vocabulario permitido (máximo 24 caracteres), usuario hasta 18 caracteres, grupo hasta 20, identificadores abreviados, rango del socket verificado por el proveedor o administrador/miembro de WhatsApp según metadatos; el rango global Vault no se infiere y queda sin verificar cuando no hay dato. ANSI brillante por campo y resultado, sin ANSI con NO_COLOR, TERM=dumb o salida no TTY. IPC/TX separados y acotados; aceptación no confirma visualización en el teléfono. Tokens desconocidos y argumentos sensibles se ocultan; no se registran cuerpos ni secretos. No se cambian permisos, comandos, menús, sesiones ni Vault. El CI anterior 061908a pasó pruebas Linux/Windows y Clippy del núcleo y proveedor; falló exclusivamente el gate documental por no actualizar los cuatro registros obligatorios. Este commit los actualiza y conserva la política status-only. Nuevas pruebas y render real pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-25 — Rustfmt del catálogo compartido
 
 CI del SHA 0a2b1e6 y servidor idkbot detuvieron el arranque en formato. Aplicadas todas las diferencias exactas de rustfmt de los dos workflows Linux: src/menu.rs, src/control_ipc.rs y proveedor src/lib.rs y src/ui.rs. Sin cambios de comportamiento, permisos, sesión ni Vault. README revisados: 2/2. Nuevo CI pendiente; no declarar aprobación hasta comprobar resultados.

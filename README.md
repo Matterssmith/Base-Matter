@@ -1,3 +1,9 @@
+## 2026-11-26 — Consola compacta de comandos para SSH
+
+Por solicitud del propietario, MATTER_WA_DIAG=1 muestra encabezado con evento y hora UTC, origen, comando con argumentos de vocabulario permitido (máximo 24 caracteres), usuario hasta 18 caracteres, grupo hasta 20, identificadores abreviados, rango del socket verificado por el proveedor o administrador/miembro de WhatsApp según metadatos; el rango global Vault no se infiere y queda sin verificar cuando no hay dato. ANSI brillante por campo y resultado, sin ANSI con NO_COLOR, TERM=dumb o salida no TTY. IPC/TX separados y acotados; aceptación no confirma visualización en el teléfono. Tokens desconocidos y argumentos sensibles se ocultan; no se registran cuerpos ni secretos. No se cambian permisos, comandos, menús, sesiones ni Vault. El CI anterior 061908a pasó pruebas Linux/Windows y Clippy del núcleo y proveedor; falló exclusivamente el gate documental por no actualizar los cuatro registros obligatorios. Este commit los actualiza y conserva la política status-only. Nuevas pruebas y render real pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Regresiones de status único y recuperación local
 
 Se actualizan las pruebas de control_extensions, group_control y whatsapp_process para la política de admisión: ping falla si el socket está encendido pero el chat no tiene permiso; las solicitudes de chat apagado se ignoran sin respuesta; Vault sigue denegando solicitudes sin credenciales aun con el chat activo. La prueba de proceso verifica bloqueo de recuperación local mientras el controlador está vivo, activación local tras detenerlo y persistencia de replay después de reinicio. Se aplican las diferencias de rustfmt del CI anterior. No se omiten pruebas, no se cambia la implementación de activación ni la sesión. CI nuevo pendiente.
