@@ -106,15 +106,13 @@ mod tests {
     }
 
     #[test]
-    fn shared_connector_matches_two_cell_emblem() {
+    fn shared_frame_matches_owner_design() {
         let header = expand("{{CLASSIC_HEADER}}");
         let close = expand("{{CLASSIC_JOINED_CLOSE}}");
         let connector = expand("{{CLASSIC_CONNECTOR}}");
-        assert_eq!(header.chars().position(|c| c == '💠'), Some(3));
-        assert_eq!(close.chars().position(|c| c == '╮'), Some(3));
-        assert_eq!(close.chars().position(|c| c == '╭'), Some(4));
-        assert_eq!(connector.chars().position(|c| c == '│'), Some(3));
-        assert!(close.ends_with("⟨ ✦"));
+        assert_eq!(header, "╭─ 💠");
+        assert_eq!(close, "╰─╮╭────────⟨ 🌀");
+        assert_eq!(connector, "   ││");
         assert_eq!(expand("{{CLASSIC_CONTROL_CLOSE}}"), close);
         assert_eq!(expand("{{CLASSIC_COMMAND_ROW}}"), expand("{{CLASSIC_ROW}}"));
         assert_eq!(

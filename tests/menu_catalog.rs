@@ -10,7 +10,9 @@ fn live_menu_registry_builds_categories_with_project_info_without_footer_credits
     let root = control.render(None, "menu").unwrap();
     assert!(root.starts_with("*꒦꒷✰꒷꒦︶"));
     assert!(root.contains("│·♪·╠[ *ⴵ ·· 𝙸𝙰* `[menu ia]`"));
-    assert!(root.contains(&matter_base::classic_template::expand("{{CLASSIC_JOINED_CLOSE}}")));
+    assert!(root.contains(&matter_base::classic_template::expand(
+        "{{CLASSIC_JOINED_CLOSE}}"
+    )));
     assert!(root.contains("menu config"));
     assert!(root.contains("menu anti"));
     assert!(root.contains("menu mode"));
