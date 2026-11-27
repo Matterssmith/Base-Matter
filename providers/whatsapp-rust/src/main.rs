@@ -57,32 +57,53 @@ fn console_field(value: &str, limit: usize) -> String {
 }
 
 fn console_identity(value: &str) -> String {
+    // Only canonical routing identifiers, never arbitrary message content.
     let Some((account, domain)) = value.split_once('@') else {
-        return console_field(value, 14);
+        return "-".to_owned();
     };
-    let account = console_field(account, 96);
-    let short = if account.chars().count() > 10 {
-        let first: String = account.chars().take(5).collect();
-        let last: String = account
-            .chars()
-            .rev()
-            .take(4)
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-            .collect();
-        format!("{first}…{last}")
-    } else {
-        account
+    if account.is_empty()
+        || value.len() > 128
+        || !account
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"._:-".contains(&b))
+        || !matches!(domain, "s.whatsapp.net" | "g.us" | "lid" | "newsletter")
+    {
+        return "-".to_owned();
+    }
+    value.to_owned()
+}
+
+fn verified_group_sender_pn(
+    sender: &str,
+    alternate: Option<&str>,
+    participants: impl IntoIterator<Item = [String; 3]>,
+) -> Option<String> {
+    let valid_number = |account: &str| {
+        (8..=20).contains(&account.len()) && account.bytes().all(|b| b.is_ascii_digit())
     };
-    let domain = match domain {
-        "s.whatsapp.net" => "pn",
-        "g.us" => "g.us",
-        "lid" => "lid",
-        "newsletter" => "canal",
-        _ => "?",
-    };
-    format!("{short}@{domain}")
+    if !sender.strip_suffix("@lid").is_some_and(valid_number) {
+        return None;
+    }
+    // The exact event sender must occur in exactly one authenticated group
+    // participant row. Never infer a mapping from names, text or similar IDs.
+    let mut matching = participants
+        .into_iter()
+        .filter(|ids| ids.iter().any(|id| id == sender));
+    let ids = matching.next()?;
+    if matching.next().is_some() {
+        return None;
+    }
+    let mut phones = ids.iter().filter(|id| {
+        id.strip_suffix("@s.whatsapp.net")
+            .is_some_and(valid_number)
+    });
+    let phone = phones.next()?;
+    if phones.any(|id| id != phone)
+        || alternate.is_some_and(|id| id != sender && id != phone.as_str())
+    {
+        return None;
+    }
+    Some(phone.clone())
 }
 
 fn console_command(text: &str) -> String {
@@ -1364,6 +1385,49 @@ async fn main() -> Result<()> {
                         &data, own_pn.as_deref(), own_lid.as_deref(),
                     )
                 };
+                // For an incoming group command, resolve a LID to a PN only
+                // from the authenticated group's exact participant metadata.
+                // Preserve the original event/chat for routing and diagnostics;
+                // sign the resolved actor again before forwarding to Base.
+                if data.is_group && !data.from_me && data.sender_jid.ends_with("@lid") {
+                    if let Ok(Some(frame)) = &mut verified {
+                        if let Ok(Ok(metadata)) = timeout(
+                            Duration::from_secs(2),
+                            ctx.client.groups().get_metadata(&source.chat),
+                        )
+                        .await
+                        {
+                            let alternate = source
+                                .sender_alt
+                                .as_ref()
+                                .map(|jid| jid.to_non_ad_string());
+                            let participants = metadata.participants.iter().map(|p| {
+                                [
+                                    p.jid.to_non_ad_string(),
+                                    p.phone_number
+                                        .as_ref()
+                                        .map(|j| j.to_non_ad_string())
+                                        .unwrap_or_default(),
+                                    p.lid
+                                        .as_ref()
+                                        .map(|j| j.to_non_ad_string())
+                                        .unwrap_or_default(),
+                                ]
+                            });
+                            if let Some(pn) = verified_group_sender_pn(
+                                data.sender_jid,
+                                alternate.as_deref(),
+                                participants,
+                            ) {
+                                frame.actor_id = pn;
+                                match whatsapp_matter_rust_provider::sign_frame(frame, &config.bridge_key) {
+                                    Ok(signature) => frame.signature = signature,
+                                    Err(_) => return,
+                                }
+                            }
+                        }
+                    }
+                }
                 // Only an exact style write can carry a fresh group-admin
                 // attestation; never trust a cached console label or typed role.
                 if data.is_group && !data.from_me
@@ -1874,7 +1938,19 @@ mod readiness_tests {
         assert_eq!(console_command("=/>help --quoted SECRET"), "=/>help …");
         assert_eq!(console_command("=/>bot group on"), "=/>bot group on");
         assert_eq!(console_command("=/>vault token=SECRET"), "=/>vault …");
-        assert_eq!(console_identity("123456789012345@lid"), "12345…2345@lid");
+        assert_eq!(
+            console_identity("123456789012345@lid"),
+            "123456789012345@lid"
+        );
+        assert_eq!(
+            console_identity("120363123456789012@g.us"),
+            "120363123456789012@g.us"
+        );
+        assert_eq!(
+            console_identity("11111111111@s.whatsapp.net"),
+            "11111111111@s.whatsapp.net"
+        );
+        assert_eq!(console_identity("bad\n@lid"), "-");
         assert_eq!(console_field("abcdefghij", 5), "abcd…");
         assert!(
             console_command("=/>menu downloads downloads downloads")
@@ -1884,6 +1960,32 @@ mod readiness_tests {
         );
         assert_eq!(console_command("=/>unknown-secret"), "=/>[otro]");
         assert_eq!(console_field("a\n\u{001b}\u{202e}b", 8), "ab");
+    }
+
+    #[test]
+    fn group_pn_requires_exact_unambiguous_participant_binding() {
+        let lid = "123456789012345@lid";
+        let pn = "11111111111@s.whatsapp.net";
+        let other = "22222222222@s.whatsapp.net";
+        let row = |phone: &str| [lid.to_owned(), phone.to_owned(), lid.to_owned()];
+        assert_eq!(
+            verified_group_sender_pn(lid, Some(pn), [row(pn)]),
+            Some(pn.to_owned())
+        );
+        assert_eq!(
+            verified_group_sender_pn(lid, None, [row(pn)]),
+            Some(pn.to_owned())
+        );
+        assert!(verified_group_sender_pn(lid, Some(other), [row(pn)]).is_none());
+        assert!(verified_group_sender_pn(lid, None, [row(pn), row(other)]).is_none());
+        assert!(verified_group_sender_pn(lid, Some(pn), [row("")]).is_none());
+        assert!(verified_group_sender_pn("99999999999@lid", Some(pn), [row(pn)]).is_none());
+        assert!(verified_group_sender_pn(lid, None, [[
+            pn.to_owned(),
+            other.to_owned(),
+            lid.to_owned(),
+        ]])
+        .is_none());
     }
 
     #[test]
