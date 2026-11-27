@@ -77,6 +77,8 @@ pub struct AntiFinding {
 
 pub struct AntiStore {
     db: Mutex<Connection>,
+    vault: Option<crate::vault_ipc::VaultClient>,
+    require_vault: bool,
 }
 
 fn valid_socket(socket: &str) -> Result<()> {
@@ -277,13 +279,79 @@ impl AntiStore {
                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
              );",
         )?;
-        Ok(Self { db: Mutex::new(db) })
+        Ok(Self {
+            db: Mutex::new(db),
+            vault: None,
+            require_vault: false,
+        })
+    }
+
+    pub fn with_vault(mut self, client: Option<crate::vault_ipc::VaultClient>) -> Self {
+        self.vault = client;
+        self.require_vault = true;
+        self
+    }
+
+    fn vault_client(&self, socket: &str) -> Result<&crate::vault_ipc::VaultClient> {
+        self.vault
+            .as_ref()
+            .filter(|client| client.socket == socket)
+            .ok_or_else(|| anyhow!("Vault-Matter no disponible para este socket"))
+    }
+
+    fn config_record(group: Option<&str>, name: &str) -> String {
+        use sha2::{Digest, Sha256};
+        let hash = Sha256::digest(group.unwrap_or("@socket").as_bytes());
+        format!("anti-{name}-{}", hex::encode(&hash[..16]))
+    }
+
+    fn vault_rule(&self, socket: &str, group: Option<&str>, name: &str) -> Result<Option<AntiRule>> {
+        let vault = self.vault_client(socket)?;
+        let value = vault.config_get(&Self::config_record(group, name))?;
+        match value.as_deref() {
+            None | Some("inherit") => Ok(None),
+            Some(value) => {
+                let (enabled, action) = value
+                    .split_once(':')
+                    .ok_or_else(|| anyhow!("Configuración Anti inválida"))?;
+                let enabled = match enabled {
+                    "on" => true,
+                    "off" => false,
+                    _ => bail!("Configuración Anti inválida"),
+                };
+                Ok(Some(AntiRule {
+                    enabled,
+                    action: AntiAction::parse(action)?,
+                }))
+            }
+        }
+    }
+
+    fn vault_domains(&self, socket: &str, chat: Option<&str>) -> Result<Vec<String>> {
+        let vault = self.vault_client(socket)?;
+        let value = vault.config_get(&Self::config_record(chat, "domains"))?;
+        match value {
+            Some(value) => {
+                let domains: Vec<String> = serde_json::from_str(&value)?;
+                if domains.len() > 64 {
+                    bail!("Lista de dominios inválida");
+                }
+                domains.iter().map(|value| normalize_domain(value)).collect()
+            }
+            None => Ok(Vec::new()),
+        }
     }
 
     /// Effective setting: explicit group rule > socket default > disabled/warn.
     pub fn get(&self, socket: &str, group: &str, name: &str) -> Result<AntiRule> {
         valid_scope(socket, group)?;
         let rule = canonical_rule(name)?;
+        if self.require_vault {
+            return match self.vault_rule(socket, Some(group), rule)? {
+                Some(value) => Ok(value),
+                None => self.get_global(socket, rule),
+            };
+        }
         let group_value = {
             let db = self
                 .db
@@ -316,6 +384,12 @@ impl AntiStore {
     pub fn get_global(&self, socket: &str, name: &str) -> Result<AntiRule> {
         valid_socket(socket)?;
         let rule = canonical_rule(name)?;
+        if self.require_vault {
+            return Ok(self.vault_rule(socket, None, rule)?.unwrap_or(AntiRule {
+                enabled: false,
+                action: AntiAction::Warn,
+            }));
+        }
         let db = self
             .db
             .lock()
@@ -360,6 +434,16 @@ impl AntiStore {
             enabled: enabled.unwrap_or(previous.enabled),
             action: action.unwrap_or(previous.action),
         };
+        if self.require_vault {
+            let value = format!(
+                "{}:{}",
+                if selected.enabled { "on" } else { "off" },
+                selected.action.as_str()
+            );
+            self.vault_client(socket)?
+                .config_set(&Self::config_record(group, rule), &value)?;
+            return Ok(selected);
+        }
         let mut db = self
             .db
             .lock()
@@ -415,6 +499,12 @@ impl AntiStore {
     pub fn inherit(&self, socket: &str, group: &str, name: &str) -> Result<AntiRule> {
         valid_scope(socket, group)?;
         let rule = canonical_rule(name)?;
+        if self.require_vault {
+            let inherited = self.get_global(socket, rule)?;
+            self.vault_client(socket)?
+                .config_set(&Self::config_record(Some(group), rule), "inherit")?;
+            return Ok(inherited);
+        }
         let mut db = self
             .db
             .lock()
@@ -580,6 +670,14 @@ impl AntiStore {
         if let Some(chat) = chat {
             valid_link_chat(socket, chat)?;
         }
+        if self.require_vault {
+            let mut result: std::collections::BTreeSet<_> =
+                self.vault_domains(socket, None)?.into_iter().collect();
+            if chat.is_some() {
+                result.extend(self.vault_domains(socket, chat)?);
+            }
+            return Ok(result.into_iter().collect());
+        }
         let db = self
             .db
             .lock()
@@ -651,6 +749,29 @@ impl AntiStore {
             .iter()
             .map(|input| normalize_domain(input))
             .collect::<Result<std::collections::BTreeSet<_>>>()?;
+        if self.require_vault {
+            let mut selected: std::collections::BTreeSet<_> =
+                self.vault_domains(socket, chat)?.into_iter().collect();
+            let mut changes = 0;
+            for domain in domains {
+                changes += usize::from(if add {
+                    selected.insert(domain)
+                } else {
+                    selected.remove(&domain)
+                });
+            }
+            if selected.len() > 64 {
+                bail!("Máximo de 64 dominios en cada ámbito");
+            }
+            self.vault_client(socket)?.config_set(
+                &Self::config_record(chat, "domains"),
+                &serde_json::to_string(&selected)?,
+            )?;
+            return Ok(format!(
+                "AntiLink · {label}: {changes} dominio(s) {}. Guardado en Vault-Matter. Activación del filtro sin cambios.",
+                if add { "agregados" } else { "eliminados" }
+            ));
+        }
         let scope = chat.unwrap_or("@global");
         let mut db = self
             .db

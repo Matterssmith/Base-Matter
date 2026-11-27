@@ -8,7 +8,7 @@ pub const COMMAND: CommandSpec = CommandSpec {
     usages: &[
         "menu",
         "menu web",
-        "menu classic",
+        "menu matter",
         "menu buttons",
         "menu <categoria>",
         "menu <categoria> <pagina>",

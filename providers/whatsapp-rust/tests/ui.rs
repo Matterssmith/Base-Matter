@@ -85,14 +85,14 @@ fn root_menu_has_only_the_final_menu_format_selector() {
     assert_eq!(sections[0]["title"], "Otros menús");
     let modes = sections[0]["rows"].as_array().unwrap();
     assert_eq!(modes.len(), 3);
-    assert_eq!(modes[0]["id"], "matter.read.menu.classic");
+    assert_eq!(modes[0]["id"], "matter.read.menu.matter");
     assert_eq!(modes[1]["id"], "matter.read.menu.web");
     assert_eq!(modes[2]["id"], "matter.read.menu.buttons");
 }
 
 #[test]
 fn each_mode_links_only_to_the_other_two_and_roundtrips() {
-    for mode in ["classic", "web", "buttons"] {
+    for mode in ["matter", "web", "buttons"] {
         let request = format!("=/>menu {mode}");
         let message = native_navigation_message("Contenido", &request).unwrap();
         let interactive = message.interactive_message.as_option().unwrap();
@@ -128,8 +128,8 @@ fn native_selection_accepts_known_id_variants_but_not_mutation() {
         ),
         (
             None,
-            serde_json::json!({"selectedId": "matter.read.menu.classic"}),
-            Some("=/>menu classic"),
+            serde_json::json!({"selectedId": "matter.read.menu.matter"}),
+            Some("=/>menu matter"),
         ),
         (
             Some("single_select"),
@@ -186,7 +186,7 @@ fn category_menu_keeps_its_text_and_its_one_final_selector() {
 #[test]
 fn formats_are_readonly_and_selected_through_menu_picker() {
     for (id, command) in [
-        ("matter.read.menu.classic", "=/>menu classic"),
+        ("matter.read.menu.matter", "=/>menu matter"),
         ("matter.read.menu.web", "=/>menu web"),
         ("matter.read.menu.buttons", "=/>menu buttons"),
         ("matter.read.menu.all", "=/>menu all"),
@@ -224,7 +224,7 @@ fn web_navigation_has_no_classic_body_or_mode_heading() {
     let web = native_navigation_message(original, "=/>menu web").unwrap();
     let interactive = web.interactive_message.as_option().unwrap();
     assert!(interactive.body.as_option().is_none());
-    let classic = native_navigation_message(original, "=/>menu classic").unwrap();
+    let classic = native_navigation_message(original, "=/>menu matter").unwrap();
     assert_eq!(
         classic
             .interactive_message
@@ -243,7 +243,7 @@ fn web_navigation_has_no_classic_body_or_mode_heading() {
 fn native_navigation_has_one_visible_message_and_one_last_selector() {
     for (request, expected) in [
         ("=/>menu buttons", "*Menu Buttons*"),
-        ("=/>menu classic", "Categorías"),
+        ("=/>menu matter", "Categorías"),
         ("=/>menu all", "Categorías"),
     ] {
         let message = native_navigation_message("Categorías", request).unwrap();
@@ -502,7 +502,7 @@ fn buttons_use_catalog_descriptors_and_preserve_category_context() {
         Some(("=/>help matter".to_owned(), true))
     );
     assert!(ui::menu_button_selection(&native_click(
-        "matter.read.buttons.menu.classic",
+        "matter.read.buttons.menu.matter",
         "quick_reply"
     ))
     .is_none());

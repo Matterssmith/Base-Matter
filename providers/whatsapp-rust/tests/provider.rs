@@ -342,11 +342,11 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
         "=/>help antis",
         "=/>menu set",
         "=/>menu web",
-        "=/>menu classic",
+        "=/>menu matter",
         "=/>menu buttons",
         "=/>set menu",
         "=/>set menu web",
-        "=/>set menu classic",
+        "=/>set menu matter",
         "=/>set menu buttons",
         "=/>menu antis",
         "=/>menu antis 2",
@@ -387,7 +387,7 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>menu anti",
         "=/>menu all",
         "=/>menu web",
-        "=/>menu classic",
+        "=/>menu matter",
         "=/>menu config",
         "=/>menu downloads",
         "=/>menu economy",
@@ -684,7 +684,7 @@ fn controller_ack_distinguishes_applied_and_duplicate_without_false_success() {
 
 #[test]
 fn root_menu_mode_ack_accepts_only_authenticated_known_modes() {
-    for mode in ["web", "classic", "buttons"] {
+    for mode in ["web", "matter", "buttons"] {
         let wire = serde_json::json!({
             "ok": true,
             "outcome": "applied",

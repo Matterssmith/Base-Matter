@@ -141,7 +141,7 @@ pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
             || response
                 .menu_mode
                 .as_deref()
-                .is_some_and(|mode| !matches!(mode, "web" | "classic" | "buttons"))
+                .is_some_and(|mode| !matches!(mode, "web" | "matter" | "buttons"))
         {
             bail!("Invalid menu descriptor acknowledgment");
         }
@@ -167,7 +167,7 @@ pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
         }
         (true, "applied", Some(message), Some(mode))
             if valid_message(&message)
-                && matches!(mode.as_str(), "web" | "classic" | "buttons") =>
+                && matches!(mode.as_str(), "web" | "matter" | "buttons") =>
         {
             Ok(ControlAck::AppliedWithMenuMode { message, mode })
         }
@@ -497,7 +497,7 @@ impl Config {
             }
             ["=/>menu" | "=/>menú", category] => {
                 public_category(category)
-                    || matches!(*category, "all" | "classic" | "web" | "buttons")
+                    || matches!(*category, "all" | "matter" | "web" | "buttons")
             }
             ["=/>menu" | "=/>menú", "page", page] => matches!(*page, "1" | "2" | "3"),
             ["=/>menu" | "=/>menú", category, page] => {

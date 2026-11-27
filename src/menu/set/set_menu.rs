@@ -9,7 +9,7 @@ pub const COMMAND: CommandSpec = CommandSpec {
     usages: &[
         "set menu",
         "set menu web",
-        "set menu classic",
+        "set menu matter",
         "set menu buttons",
     ],
     implemented: true,

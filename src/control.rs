@@ -373,6 +373,39 @@ impl ControlDispatcher {
     /// The HMAC bridge must verify provider-origin sender and chat identities
     /// before invoking this method. This API never grants roles, runs bot
     /// handlers, invokes arbitrary extensions or edits activation policies.
+    pub(crate) fn scoped_style_reply(
+        &self,
+        scope: crate::control_scope::CommandScope,
+        chat: &str,
+        principal: &str,
+        value: Option<&str>,
+        can_change: bool,
+    ) -> Result<DispatchResult> {
+        use crate::control_scope::CommandScope;
+        let label = match scope {
+            CommandScope::Chat => "chat",
+            CommandScope::Socket => "socket (--mod)",
+            CommandScope::Global => "Matter (--global)",
+        };
+        let output = (|| -> Result<String> {
+            let themes = self.public_menu.as_ref().ok_or_else(|| anyhow!("Vault no disponible"))?;
+            if let Some(value) = value {
+                if !can_change {
+                    return Ok(format!("Permiso denegado para modificar el estilo de {label}."));
+                }
+                if !matches!(value, "matter" | "none" | "inherit")
+                    || (scope == CommandScope::Global && value == "inherit")
+                {
+                    return Ok("Estilo no válido. Usa matter o none; inherit solo por chat o --mod.".into());
+                }
+                themes.write_scoped_style(scope, chat, principal, value)?;
+                return Ok(format!("Estilo de {label}: {value}. Guardado en Vault-Matter."));
+            }
+            Ok(format!("Estilo de {label}: {}. Opciones: matter | none.", themes.scoped_style(scope, chat)?.as_str()))
+        })().unwrap_or_else(|_| "Vault-Matter: configuración no disponible o permiso denegado. No se confirmó ningún cambio.".into());
+        Ok(DispatchResult::Extension { command: "set".into(), output })
+    }
+
     pub fn dispatch_public_readonly(
         &self,
         socket: &str,
@@ -450,7 +483,7 @@ impl ControlDispatcher {
                 } else {
                     format!("menu {}", rest.join(" "))
                 };
-                let output = theme.render(group, &section)?;
+                let output = theme.render(Some(verified_chat), &section)?;
                 Ok(DispatchResult::Extension {
                     command: "menu".to_owned(),
                     output,
@@ -462,7 +495,7 @@ impl ControlDispatcher {
                     .ok_or_else(|| anyhow!("Read-only help is unavailable"))?;
                 let section = if rest.is_empty() { "help".to_owned() }
                     else { format!("help {}", rest.join(" ")) };
-                let output = theme.render(group, &section)?;
+                let output = theme.render(Some(verified_chat), &section)?;
                 Ok(DispatchResult::Extension { command: "help".to_owned(), output })
             }
             ["=/>test"]
@@ -1231,7 +1264,7 @@ impl ControlDispatcher {
                 ["set", "--global"] => {
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
-                        output: "Predeterminado general del menú (fábrica, sin configuración Vault): menú web; alternativas classic y buttons; estilo matter; idioma es.".to_owned(),
+                        output: "Predeterminado general del menú (fábrica, sin configuración Vault): menú web; alternativas matter y buttons; estilo matter; idioma es.".to_owned(),
                     });
                 }
                 ["set", "menu"] | ["set", "menu", "--mod"] | ["set", "--mod", "menu"] => {
@@ -1251,7 +1284,7 @@ impl ControlDispatcher {
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
                         output: format!(
-                            "Menú predeterminado: {} (web|classic|buttons).",
+                            "Menú predeterminado: {} (web|matter|buttons).",
                             themes.current_menu_mode()?.as_str()
                         ),
                     });

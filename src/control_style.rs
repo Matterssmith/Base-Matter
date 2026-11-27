@@ -130,6 +130,8 @@ pub struct ControlThemes {
     fallback: ControlTheme,
     communities: RwLock<HashMap<String, ControlTheme>>,
     dynamic_menu: Option<Arc<MenuPreferences>>,
+    vault_config: Option<crate::vault_ipc::VaultClient>,
+    require_vault_config: bool,
 }
 
 impl ControlThemes {
@@ -138,6 +140,8 @@ impl ControlThemes {
             fallback,
             communities: RwLock::new(HashMap::new()),
             dynamic_menu: None,
+            vault_config: None,
+            require_vault_config: false,
         }
     }
 
@@ -146,9 +150,127 @@ impl ControlThemes {
         self
     }
 
+    /// Production uses Vault for configuration writes and reads. The local
+    /// preferences backend remains available for isolated core tests.
+    pub fn with_vault_config(mut self, client: Option<crate::vault_ipc::VaultClient>) -> Self {
+        self.vault_config = client;
+        self.require_vault_config = true;
+        self
+    }
+
+    fn config_client(&self) -> Result<&crate::vault_ipc::VaultClient> {
+        self.vault_config
+            .as_ref()
+            .ok_or_else(|| anyhow!("Vault-Matter no disponible"))
+    }
+
+    fn style_record(chat: Option<&str>) -> String {
+        match chat {
+            None => "menu-style-v1".to_owned(),
+            Some(chat) => {
+                use sha2::{Digest, Sha256};
+                format!("menu-style-chat-{}", hex::encode(Sha256::digest(chat.as_bytes())))
+            }
+        }
+    }
+
+    pub fn scoped_style(
+        &self,
+        scope: crate::control_scope::CommandScope,
+        chat: &str,
+    ) -> Result<Style> {
+        use crate::control_scope::CommandScope;
+        let vault = self.config_client()?;
+        if scope == CommandScope::Chat {
+            validate_community_id(chat)?;
+            if let Some(value) = vault.config_get(&Self::style_record(Some(chat)))? {
+                if value != "inherit" {
+                    return Style::parse(&value);
+                }
+            }
+        }
+        if scope != CommandScope::Global {
+            if let Some(value) = vault.config_get(&Self::style_record(None))? {
+                if value != "inherit" {
+                    return Style::parse(&value);
+                }
+            }
+        }
+        vault.global_style()
+    }
+
+    pub fn write_scoped_style(
+        &self,
+        scope: crate::control_scope::CommandScope,
+        chat: &str,
+        principal: &str,
+        value: &str,
+    ) -> Result<()> {
+        use crate::control_scope::CommandScope;
+        let vault = self.config_client()?;
+        if scope == CommandScope::Global {
+            return vault.set_global_style(principal, Style::parse(value)?);
+        }
+        if value != "inherit" {
+            Style::parse(value)?;
+        }
+        let record = if scope == CommandScope::Chat {
+            validate_community_id(chat)?;
+            Self::style_record(Some(chat))
+        } else {
+            Self::style_record(None)
+        };
+        vault.config_set(&record, value)
+    }
+
+    pub fn effective_preferences(&self, chat: Option<&str>) -> Result<crate::menu::Preferences> {
+        if !self.require_vault_config {
+            return self.current_menu_preferences();
+        }
+        use crate::control_scope::CommandScope;
+        let scope = if chat.is_some() { CommandScope::Chat } else { CommandScope::Socket };
+        // Presentation falls back to factory defaults during Vault outages.
+        // Configuration commands use strict reads and never silently write locally.
+        let style = self.scoped_style(scope, chat.unwrap_or_default()).unwrap_or(Style::Classic);
+        let language = self.config_client().and_then(|vault| {
+            match vault.config_get("menu-language-v1")? {
+                Some(value) => Language::parse(&value),
+                None => Ok(Language::Es),
+            }
+        }).unwrap_or(Language::Es);
+        Ok(crate::menu::Preferences { style, language })
+    }
+
+    pub fn decorate_status(&self, chat: Option<&str>, body: &str) -> Result<String> {
+        let mut theme = self.selected(chat)?;
+        if self.dynamic_menu.is_some() && self.effective_preferences(chat)?.style == Style::None {
+            return Self::plain_response(body);
+        }
+        if theme.template == crate::classic_template::expanded_layout("control") {
+            theme.template = crate::classic_template::expanded_layout("status");
+        }
+        theme.decorate(body)
+    }
+
+    fn plain_response(body: &str) -> Result<String> {
+        if body.is_empty() || body.len() > 3800 || body.chars().any(|c| c.is_control() && c != '\n') {
+            bail!("Invalid control response");
+        }
+        Ok(body.to_owned())
+    }
+
     /// Read the effective local menu settings; no mutation or permissions.
     /// Callers must still be authenticated by the control dispatcher.
     pub fn current_menu_preferences(&self) -> Result<crate::menu::Preferences> {
+        if self.require_vault_config {
+            let vault = self.config_client()?;
+            let style = self.scoped_style(crate::control_scope::CommandScope::Socket, "")?;
+            let language = match vault.config_get("menu-language-v1")? {
+                Some(value) => Language::parse(&value)?,
+                None => Language::Es,
+            };
+            return Ok(crate::menu::Preferences { style, language });
+        }
         self.dynamic_menu
             .as_ref()
             .ok_or_else(|| anyhow!("Dynamic menu not configured"))?
@@ -156,6 +278,12 @@ impl ControlThemes {
     }
 
     pub fn current_menu_mode(&self) -> Result<MenuMode> {
+        if self.require_vault_config {
+            return match self.config_client()?.config_get("menu-mode-v1")? {
+                Some(value) => MenuMode::parse(&value),
+                None => Ok(MenuMode::Web),
+            };
+        }
         self.dynamic_menu
             .as_ref()
             .ok_or_else(|| anyhow!("Dynamic menu not configured"))?
@@ -163,6 +291,9 @@ impl ControlThemes {
     }
 
     pub fn set_menu_mode(&self, value: &str) -> Result<()> {
+        if self.require_vault_config {
+            return self.config_client()?.config_set("menu-mode-v1", MenuMode::parse(value)?.as_str());
+        }
         self.dynamic_menu
             .as_ref()
             .ok_or_else(|| anyhow!("Dynamic menu not configured"))?
@@ -170,6 +301,9 @@ impl ControlThemes {
     }
 
     pub fn set_menu_style(&self, value: &str) -> Result<()> {
+        if self.require_vault_config {
+            return self.config_client()?.config_set("menu-style-v1", Style::parse(value)?.as_str());
+        }
         let preferences = self
             .dynamic_menu
             .as_ref()
@@ -178,6 +312,9 @@ impl ControlThemes {
     }
 
     pub fn set_menu_language(&self, value: &str) -> Result<()> {
+        if self.require_vault_config {
+            return self.config_client()?.config_set("menu-language-v1", Language::parse(value)?.as_str());
+        }
         let preferences = self
             .dynamic_menu
             .as_ref()
@@ -211,6 +348,9 @@ impl ControlThemes {
     /// One theme selection for every successful command response,
     /// not only the menu. The caller must supply a VERIFIED chat scope.
     pub fn decorate(&self, community_id: Option<&str>, body: &str) -> Result<String> {
+        if self.dynamic_menu.is_some() && self.effective_preferences(community_id)?.style == Style::None {
+            return Self::plain_response(body);
+        }
         // Dynamic menus are self-contained. The same verified IPC response
         // passes through this renderer twice; never add another frame.
         let classic_header = crate::classic_template::expand("{{CLASSIC_HEADER}}");
@@ -258,23 +398,31 @@ impl ControlThemes {
     /// Use only after the WhatsApp bridge authenticates the frame and
     /// admits the read-only menu. Never infer a Vault global rank.
     pub fn render_verified_root(&self, viewer: MenuViewer<'_>) -> Result<String> {
-        let preferences = self
-            .dynamic_menu
-            .as_ref()
-            .ok_or_else(|| anyhow!("Dynamic menu not configured"))?;
-        crate::menu::render_root_with_viewer(preferences.get()?, viewer)
+        self.render_verified_chat_root(None, viewer)
+    }
+
+    pub fn render_verified_chat_root(
+        &self,
+        chat: Option<&str>,
+        viewer: MenuViewer<'_>,
+    ) -> Result<String> {
+        crate::menu::render_root_with_viewer(self.effective_preferences(chat)?, viewer)
     }
 
     pub fn render(&self, community_id: Option<&str>, section: &str) -> Result<String> {
         let theme = self.selected(community_id)?;
-        let Some(preferences) = &self.dynamic_menu else {
+        if self.dynamic_menu.is_none() {
             return theme.render(section);
-        };
+        }
+        let preferences = self.effective_preferences(community_id)?;
         let body = if let Some(query) = section.strip_prefix("help") {
-            crate::menu::render_help(query, preferences.get()?)?
+            crate::menu::render_help(query, preferences)?
         } else {
-            crate::menu::render(section, preferences.get()?)?
+            crate::menu::render(section, preferences)?
         };
+        if preferences.style == Style::None {
+            return Ok(body);
+        }
         let default_template = crate::classic_template::expanded_layout("control");
         if theme.template == default_template {
             Ok(body)

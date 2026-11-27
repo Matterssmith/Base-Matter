@@ -246,9 +246,11 @@ fn main() -> Result<()> {
     let router = Arc::new(CommandRouter::new(vec!["#".into()], Arc::new(DenyBot))?);
     // Isolated from activation, replay and WhatsApp session SQLite databases.
     // A missing anti database is created privately with every rule disabled.
-    let antis = Arc::new(AntiStore::open(
-        activation_path.with_extension("anti.sqlite"),
-    )?);
+    let vault_client = matter_base::vault_ipc::VaultClient::from_environment()?;
+    let antis = Arc::new(
+        AntiStore::open(activation_path.with_extension("anti.sqlite"))?
+            .with_vault(vault_client.clone()),
+    );
     let extensions = Arc::new(ControlExtensionRegistry::new());
     // A signed, socket-owner-authorized request for live provider discovery.
     // Mutations are intentionally unsupported in this alpha checkpoint.
@@ -320,11 +322,12 @@ fn main() -> Result<()> {
     })?;
     let default_theme = ControlTheme::new("Base-Matter", "base-matter", "✦")?;
     // Independent private SQLite store; never overwrite WhatsApp session DB.
-    let menu_preferences = Arc::new(MenuPreferences::open(
-        activation_path.with_extension("menu.sqlite"),
-    )?);
-    let style =
-        Arc::new(ControlThemes::new(default_theme.clone()).with_dynamic_menu(menu_preferences));
+    let menu_preferences = Arc::new(MenuPreferences::open(":memory:")?);
+    let style = Arc::new(
+        ControlThemes::new(default_theme.clone())
+            .with_dynamic_menu(menu_preferences)
+            .with_vault_config(vault_client.clone()),
+    );
     let help_theme = Arc::clone(&style);
     extensions.register("help", &["h", "ayuda"], move |context, args| {
         if args.len() > 3 {
@@ -335,7 +338,7 @@ fn main() -> Result<()> {
         } else {
             format!("help {}", args.join(" "))
         };
-        help_theme.render(context.group_id, &section)
+        help_theme.render(Some(context.source_id), &section)
     })?;
     let menu_theme = Arc::clone(&style);
     extensions.register("menu", &["menú"], move |context, args| {
@@ -347,12 +350,11 @@ fn main() -> Result<()> {
         } else {
             format!("menu {}", args.join(" "))
         };
-        menu_theme.render(context.group_id, &section)
+        menu_theme.render(Some(context.source_id), &section)
     })?;
     // Vault-Matter owns global identity authority, not this socket's owner.
     // The bridge verifies signed provider origin and authorizes each request
     // through encrypted Vault IPC; no standalone owner-local extension.
-    let vault_client = matter_base::vault_ipc::VaultClient::from_environment()?;
     let dispatcher = Arc::new(
         ControlDispatcher::new(activation, Arc::new(BotRegistry::in_memory()), router, None)
             .with_control_extensions(extensions)

@@ -92,3 +92,15 @@ fn custom_community_themes_remain_isolated_and_fail_closed() {
     assert!(ControlTheme::new("Unsafe\ncommand", "id", "*").is_err());
     assert!(registry.render(Some("../foreign"), "menu").is_err());
 }
+
+#[test]
+fn status_uses_closed_matter_footer_and_respects_plain_style() {
+    let preferences = std::sync::Arc::new(matter_base::menu::MenuPreferences::open(":memory:").unwrap());
+    let registry = ControlThemes::new(ControlTheme::new("Base", "default", "*").unwrap())
+        .with_dynamic_menu(preferences);
+    let status = registry.decorate_status(None, "BOT ACTIVADO").unwrap();
+    assert!(status.trim_end().ends_with("╰───────────⟨ 🌀"));
+    assert!(!status.contains("╰─╮╭"));
+    registry.set_menu_style("none").unwrap();
+    assert_eq!(registry.decorate_status(None, "BOT ACTIVADO").unwrap(), "BOT ACTIVADO");
+}

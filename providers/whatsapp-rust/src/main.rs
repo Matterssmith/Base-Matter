@@ -130,7 +130,7 @@ fn console_command(text: &str) -> String {
         let safe = match verb {
             "=/>menu" | "=/>menú" | "=/>help" | "=/>ayuda" | "=/>h" => matches!(
                 arg,
-                "classic"
+                "matter"
                     | "web"
                     | "buttons"
                     | "all"
@@ -207,7 +207,7 @@ fn console_command(text: &str) -> String {
                     | "lang"
                     | "language"
                     | "matter"
-                    | "classic"
+                    | "none"
                     | "web"
                     | "buttons"
                     | "es"
@@ -652,6 +652,10 @@ async fn deliver(
         // Both owner-linked and external verified-owner private messages
         // require a private Vault authority check before any command.
         Duration::from_secs(12)
+    } else if frame.text.starts_with("=/>set ")
+        || frame.text.starts_with("\u{001f}matter-group-style:")
+    {
+        Duration::from_secs(30)
     } else {
         Duration::from_secs(4)
     };
@@ -1311,7 +1315,7 @@ async fn main() -> Result<()> {
                     "texto"
                 };
                 let local_started = Instant::now();
-                let verified = if data.from_me {
+                let mut verified = if data.from_me {
                     config.signed_verified_control(
                         &data, own_pn.as_deref(), own_lid.as_deref(),
                     )
@@ -1323,6 +1327,30 @@ async fn main() -> Result<()> {
                         &data, own_pn.as_deref(), own_lid.as_deref(),
                     )
                 };
+                // Only an exact style write can carry a fresh group-admin
+                // attestation; never trust a cached console label or typed role.
+                if data.is_group && !data.from_me
+                    && matches!(data.text.split_whitespace().collect::<Vec<_>>().as_slice(),
+                        ["=/>set", "style", "matter" | "none" | "inherit"])
+                {
+                    if let Ok(Some(frame)) = &mut verified {
+                        let admin = matches!(
+                            timeout(Duration::from_secs(2), ctx.client.groups().get_metadata(&ctx.info.source.chat)).await,
+                            Ok(Ok(metadata)) if metadata.participants.iter().any(|p| {
+                                p.is_admin() && [&p.jid, p.phone_number.as_ref().unwrap_or(&p.jid),
+                                    p.lid.as_ref().unwrap_or(&p.jid)]
+                                    .iter().any(|jid| jid.to_non_ad_string() == data.sender_jid)
+                            })
+                        );
+                        if admin {
+                            frame.text = format!("\u{001f}matter-group-style:{}", data.text);
+                            match whatsapp_matter_rust_provider::sign_frame(frame, &config.bridge_key) {
+                                Ok(signature) => frame.signature = signature,
+                                Err(_) => return,
+                            }
+                        }
+                    }
+                }
                 let local_before_ipc = local_started.elapsed();
                 let socket_owner = matches!(&verified, Ok(Some(frame)) if frame.from_me);
                 let trace = CommandTrace::begin(
@@ -1382,9 +1410,12 @@ async fn main() -> Result<()> {
                                 _ => Vec::new(),
                             };
                             let debug_requested = frame.text.ends_with(" --debug");
-                            let actual_command = frame.text
-                                .strip_suffix(" --debug")
+                            let command_text = frame.text
+                                .strip_prefix("\u{001f}matter-group-style:")
                                 .unwrap_or(&frame.text);
+                            let actual_command = command_text
+                                .strip_suffix(" --debug")
+                                .unwrap_or(command_text);
                             let response = if actual_command == "=/>start" {
                                 match timeout(
                                     Duration::from_secs(20),
@@ -1527,7 +1558,7 @@ async fn main() -> Result<()> {
                             // Classic and buttons use one NativeFlow card.
                             // Web uses actual RichResponse plus independent native
                             // navigation; do not disguise classic text as HTML.
-                            let explicit_classic = matches!(actual_command, "=/>menu classic" | "=/>menú classic");
+                            let explicit_classic = matches!(actual_command, "=/>menu matter" | "=/>menú matter");
                             let explicit_web = matches!(actual_command, "=/>menu web" | "=/>menú web");
                             let explicit_buttons = matches!(actual_command, "=/>menu buttons" | "=/>menú buttons");
                             let view_key = (chat.clone(), sender.clone());
@@ -1554,7 +1585,7 @@ async fn main() -> Result<()> {
                                 }
                             }
                             let is_classic = explicit_classic
-                                || (is_root && preferred_menu_mode.as_deref() == Some("classic"));
+                                || (is_root && preferred_menu_mode.as_deref() == Some("matter"));
                             let mut web_submitted = false;
                             let mut web_uncertain = false;
                             if is_web {
@@ -1606,7 +1637,7 @@ async fn main() -> Result<()> {
                                 let navigation_request = if is_buttons {
                                     "=/>menu buttons"
                                 } else if is_classic && is_root {
-                                    "=/>menu classic"
+                                    "=/>menu matter"
                                 } else if is_web {
                                     "=/>menu web"
                                 } else {

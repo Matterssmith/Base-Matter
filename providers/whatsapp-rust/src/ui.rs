@@ -21,7 +21,7 @@ fn button_command(id: &str) -> Option<&'static str> {
         "matter.read.menu.ia" => Some("=/>menu ia"),
         "matter.read.menu.anti" => Some("=/>menu anti"),
         "matter.read.menu.all" => Some("=/>menu all"),
-        "matter.read.menu.classic" => Some("=/>menu classic"),
+        "matter.read.menu.matter" => Some("=/>menu matter"),
         "matter.read.menu.web" => Some("=/>menu web"),
         "matter.read.menu.buttons" => Some("=/>menu buttons"),
         "matter.read.menu.config" => Some("=/>menu config"),
@@ -183,7 +183,7 @@ pub fn native_navigation_message_with_web_fallback(
     // Categories stay in the controller catalog, not in the format picker.
     // Old category/page IDs remain readable for messages already delivered.
     let current = match request {
-        "=/>menu classic" | "=/>menú classic" => Some("classic"),
+        "=/>menu matter" | "=/>menú matter" => Some("matter"),
         "=/>menu web" | "=/>menú web" => Some("web"),
         "=/>menu buttons" | "=/>menú buttons" => Some("buttons"),
         _ => None,
@@ -201,7 +201,7 @@ pub fn native_navigation_message_with_web_fallback(
         bail!("Native menu body exceeds safe bounds");
     }
     let mode_rows: Vec<_> = [
-        ("classic", "Menu Classic", "matter.read.menu.classic"),
+        ("matter", "Menu Matter", "matter.read.menu.matter"),
         ("web", "Menu Web", "matter.read.menu.web"),
         ("buttons", "Menu Buttons", "matter.read.menu.buttons"),
     ]
@@ -545,7 +545,7 @@ pub fn menu_button_selection(message: &wa::Message) -> Option<(String, bool)> {
             .split_once('.')
             .map_or((category, None), |(category, page)| (category, Some(page)));
         let command = button_command(&format!("matter.read.menu.{category}"))?;
-        if !command.starts_with("=/>menu ") || matches!(category, "classic" | "web" | "buttons") {
+        if !command.starts_with("=/>menu ") || matches!(category, "matter" | "web" | "buttons") {
             return None;
         }
         let command = match page {

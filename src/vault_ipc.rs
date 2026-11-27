@@ -265,7 +265,13 @@ impl VaultClient {
             .all(|id| safe_id(id))
             || !matches!(
                 operation,
-                "ping" | "get" | "put" | "owner_check" | "owner_grant_secondary"
+                "ping"
+                    | "get"
+                    | "put"
+                    | "owner_check"
+                    | "owner_grant_secondary"
+                    | "global_style_get"
+                    | "global_style_set"
             )
             || value.is_some_and(|bytes| bytes.len() > MAX_VALUE)
         {
@@ -273,6 +279,34 @@ impl VaultClient {
         }
         Ok(())
     }
+    pub fn global_style(&self) -> Result<crate::menu::Style> {
+        let response = self.invoke("global_style_get", "global-menu-style-v1", None, None)?;
+        let value = response.value.ok_or_else(|| anyhow::anyhow!("Missing global style"))?;
+        crate::menu::Style::parse(std::str::from_utf8(&value)?)
+    }
+
+    pub fn set_global_style(&self, principal: &str, style: crate::menu::Style) -> Result<()> {
+        let payload = serde_json::to_vec(&serde_json::json!({
+            "requester": {"platform": "whatsapp", "subject_id": principal},
+            "style": style.as_str(),
+        }))?;
+        self.invoke("global_style_set", "global-menu-style-v1", None, Some(&payload))?;
+        Ok(())
+    }
+
+    pub fn config_get(&self, record: &str) -> Result<Option<String>> {
+        self.invoke("get", record, None, None)?
+            .value
+            .map(|value| Ok(std::str::from_utf8(&value)?.to_owned()))
+            .transpose()
+    }
+
+    pub fn config_set(&self, record: &str, value: &str) -> Result<()> {
+        let previous = self.invoke("get", record, None, None)?;
+        self.invoke("put", record, previous.revision, Some(value.as_bytes()))?;
+        Ok(())
+    }
+
     /// Verify a real encrypted read/write roundtrip on a reserved synthetic
     /// record. Does not grant roles or access to any other bot or socket.
     pub fn verify_roundtrip(&self) -> Result<u64> {
@@ -319,12 +353,17 @@ impl VaultClient {
         if (operation != "put"
             && operation != "owner_check"
             && operation != "owner_grant_secondary"
+            && operation != "global_style_set"
             && (expected_revision.is_some() || value.is_some()))
             || (operation == "put" && value.is_none())
             || (operation == "owner_check"
                 && (!matches!(record, "global-owner-check-v1" | "global-owner-check-v2")
                     || expected_revision.is_some()
                     || value.is_none_or(|identity| identity.len() > 256)))
+            || (operation == "global_style_set"
+                && (record != "global-menu-style-v1"
+                    || expected_revision.is_some()
+                    || value.is_none_or(|payload| payload.len() > 384)))
             || (operation == "owner_grant_secondary"
                 && (record != "global-owner-secondary-v1"
                     || expected_revision.is_some()

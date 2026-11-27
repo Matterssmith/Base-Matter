@@ -164,6 +164,7 @@
       "pagination": "@MenuCommand @CategoryId @NextPage (@Page/@Pages)\n",
       "root": "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*\n\n💬 @Title\n\n{{CLASSIC_HEADER}} @CategoriesTitle\n@CategoryRows\n{{CLASSIC_JOINED_CLOSE}}\n{{CLASSIC_CONNECTOR}}\n@Information\n\n✧☽︎╦[ @LabelUser: *@User* 🌀 ]═☾︎✧\n     ╠[ ◈ @LabelBot: *@Bot*\n     ╠[ ✦ @LabelPrefix: *[ @Prefix ]*\n     ╠[ ☷ @LabelCommands: *@Commands*\n     ╠[ ⴵ @LabelCategoriesActive: *@CategoriesActive*\n     ╠[ ♛ @LabelRole: *@Role*\n     ╠[ ◉ @LabelStatus: *@Status*\n✧☽︎╩[ ♧ @LabelSocket: *@Socket*\n\n@OwnerBlock@SystemBlock{{CLASSIC_HEADER}} @InstructionsTitle\n@Instructions\n{{CLASSIC_CLOSE}}\n\n*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*\n",
       "system": "{{CLASSIC_HEADER}} @SystemTitle\n{{CLASSIC_LINE}} @LabelHost: @Host\n{{CLASSIC_LINE}} @LabelOS: @OS\n{{CLASSIC_LINE}} @LabelUptime: @Uptime\n{{CLASSIC_LINE}} @LabelServerRAM: @ServerRAM\n{{CLASSIC_LINE}} @LabelControllerRAM: @ControllerRAM\n{{CLASSIC_LINE}} @LabelProviderRAM: @ProviderRAM\n{{CLASSIC_CLOSE}}\n"
-    }
+    },
+    "status": "{{CLASSIC_HEADER}} 𝗖𝗼𝗻𝘁𝗿𝗼𝗹\n{{BODY}}\n{{CLASSIC_CLOSE}}\n"
   }
 }

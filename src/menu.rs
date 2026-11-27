@@ -235,7 +235,7 @@ pub enum Style {
 impl Style {
     pub fn parse(value: &str) -> Result<Self> {
         match value {
-            "matter" | "classic" | "default" => Ok(Self::Classic),
+            "matter" => Ok(Self::Classic),
             "none" => Ok(Self::None),
             _ => bail!("Available styles: matter, none"),
         }
@@ -247,13 +247,6 @@ impl Style {
         }
     }
 
-    // Preserve the existing SQLite constraint and persisted preferences.
-    fn storage_key(self) -> &'static str {
-        match self {
-            Self::Classic => "classic",
-            Self::None => "none",
-        }
-    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Language {
@@ -298,15 +291,15 @@ impl MenuMode {
     pub fn parse(value: &str) -> Result<Self> {
         match value {
             "web" => Ok(Self::Web),
-            "classic" => Ok(Self::Classic),
+            "matter" => Ok(Self::Classic),
             "buttons" => Ok(Self::Buttons),
-            _ => bail!("Available menu modes: web, classic, buttons"),
+            _ => bail!("Available menu modes: web, matter, buttons"),
         }
     }
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Web => "web",
-            Self::Classic => "classic",
+            Self::Classic => "matter",
             Self::Buttons => "buttons",
         }
     }
@@ -350,9 +343,9 @@ impl MenuPreferences {
         db.execute_batch(
             "CREATE TABLE IF NOT EXISTS menu_preferences(
                 singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
-                style TEXT NOT NULL CHECK(style IN ('classic', 'none')),
+                style TEXT NOT NULL CHECK(style IN ('matter', 'none')),
                 language TEXT NOT NULL CHECK(language IN ('es', 'en')),
-                mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web', 'classic', 'buttons'))
+                mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web', 'matter', 'buttons'))
             )",
         )?;
         // SQLite CREATE TABLE IF NOT EXISTS does not migrate older stores.
@@ -382,17 +375,20 @@ impl MenuPreferences {
             [],
             |row| row.get(0),
         )?;
-        if !definition.contains("'buttons'") {
+        if !definition.contains("'buttons'") || definition.contains("'classic'") {
             let tx = db.transaction()?;
             tx.execute_batch(
                 "CREATE TABLE menu_preferences_next(
                     singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
-                    style TEXT NOT NULL CHECK(style IN ('classic', 'none')),
+                    style TEXT NOT NULL CHECK(style IN ('matter', 'none')),
                     language TEXT NOT NULL CHECK(language IN ('es', 'en')),
-                    mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web', 'classic', 'buttons'))
+                    mode TEXT NOT NULL DEFAULT 'web' CHECK(mode IN ('web', 'matter', 'buttons'))
                 );
                 INSERT INTO menu_preferences_next(singleton,style,language,mode)
-                    SELECT singleton,style,language,mode FROM menu_preferences;
+                    SELECT singleton,
+                        CASE style WHEN 'classic' THEN 'matter' ELSE style END,
+                        language, CASE mode WHEN 'classic' THEN 'matter' ELSE mode END
+                    FROM menu_preferences;
                 DROP TABLE menu_preferences;
                 ALTER TABLE menu_preferences_next RENAME TO menu_preferences;",
             )?;
@@ -445,7 +441,7 @@ impl MenuPreferences {
             .map_err(|_| anyhow!("Menu database locked"))?;
         db.execute(
             "INSERT INTO menu_preferences(singleton,style,language,mode)
-             VALUES(1,'classic','es',?1)
+             VALUES(1,'matter','es',?1)
              ON CONFLICT(singleton) DO UPDATE SET mode=excluded.mode",
             params![mode.as_str()],
         )?;
@@ -461,7 +457,7 @@ impl MenuPreferences {
             "INSERT INTO menu_preferences(singleton,style,language)
              VALUES(1,?1,COALESCE((SELECT language FROM menu_preferences WHERE singleton=1),'es'))
              ON CONFLICT(singleton) DO UPDATE SET style=excluded.style",
-            params![style.storage_key()],
+            params![style.as_str()],
         )?;
         Ok(())
     }
@@ -472,7 +468,7 @@ impl MenuPreferences {
             .map_err(|_| anyhow!("Menu database locked"))?;
         db.execute(
             "INSERT INTO menu_preferences(singleton,style,language)
-             VALUES(1,COALESCE((SELECT style FROM menu_preferences WHERE singleton=1),'classic'),?1)
+             VALUES(1,COALESCE((SELECT style FROM menu_preferences WHERE singleton=1),'matter'),?1)
              ON CONFLICT(singleton) DO UPDATE SET language=excluded.language",
             params![language.as_str()],
         )?;
@@ -501,7 +497,7 @@ pub fn button_menu_items(section: &str, language: Language) -> Vec<serde_json::V
     let root = matches!(
         parts.as_slice(),
         ["=/>menu" | "=/>menú"]
-            | ["=/>menu" | "=/>menú", "classic" | "web" | "buttons" | "all"]
+            | ["=/>menu" | "=/>menú", "matter" | "web" | "buttons" | "all"]
             | ["=/>menu" | "=/>menú", "page", _]
     );
     if root {
@@ -726,8 +722,8 @@ fn full_help_note(name: &str, language: Language) -> &'static str {
         ("set", false) => "No arguments show current style and language. --mod addresses this socket; --global only reports factory values.",
         ("set anti", true) => "Sin argumentos consulta los filtros actuales; --mod consulta o cambia este socket. --global solo consulta los valores de fábrica; no permite escritura.",
         ("set anti", false) => "No arguments inspect anti rules; --mod addresses this socket; --global reads factory defaults only.",
-        ("set style", true) => "Sin argumentos consulta el estilo actual del socket; --global no permite cambios.",
-        ("set style", false) => "No arguments read the current socket style; no shared global writes.",
+        ("set style", true) => "Consulta el estilo de chat, --mod del socket o --global de Matter.",
+        ("set style", false) => "Read chat style, --mod socket style or --global Matter style.",
         ("set lang", true) => "Sin argumentos consulta el idioma actual del socket; --global no permite cambios.",
         ("set lang", false) => "No arguments read the current socket language; no shared global writes.",
         (_, true) => "Esta ficha describe el catálogo; ejecutar acciones depende de activación, permisos y soporte real del proveedor.",
@@ -906,7 +902,7 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
         "menu buttons" | "menú buttons" => return concise_menu(options),
         // The original category overview, independent from the interactive
         // root and distinct from the verbose "menu all" command.
-        "menu classic" | "menú classic" => return concise_menu(options),
+        "menu matter" | "menú matter" => return concise_menu(options),
         "menu page 1" | "menu page 2" | "menu page 3" => return concise_menu(options),
         _ => {}
     }
@@ -1030,8 +1026,8 @@ mod tests {
     fn explicit_menu_classic_restores_original_category_overview() {
         let options = Preferences::default();
         let original = render("menu", options).unwrap();
-        let classic = render("menu classic", options).unwrap();
-        let spanish = render("menú classic", options).unwrap();
+        let classic = render("menu matter", options).unwrap();
+        let spanish = render("menú matter", options).unwrap();
         let all = render("menu all", options).unwrap();
         assert_eq!(classic, original);
         assert_eq!(spanish, original);
@@ -1094,7 +1090,7 @@ mod tests {
             }
         );
         assert_eq!(Style::parse("matter").unwrap(), Style::Classic);
-        assert_eq!(Style::parse("classic").unwrap().as_str(), "matter");
+        assert!(Style::parse("classic").is_err());
         store.set_style(Style::Classic).unwrap();
         assert_eq!(store.get().unwrap().language, Language::En);
         assert_eq!(store.get_mode().unwrap(), MenuMode::Web);
@@ -1106,7 +1102,7 @@ mod tests {
         let original = render("menu", options).unwrap();
         assert_eq!(render("menu web", options).unwrap(), original);
         assert_eq!(render("menu buttons", options).unwrap(), original);
-        assert_eq!(render("menu classic", options).unwrap(), original);
+        assert_eq!(render("menu matter", options).unwrap(), original);
         assert_ne!(render("menu all", options).unwrap(), original);
         assert!(render("menu unknown", options).is_err());
     }

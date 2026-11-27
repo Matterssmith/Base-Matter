@@ -185,11 +185,10 @@ impl WhatsAppControlIpc {
         let (outcome, message) = result;
         // We select a template from the chat identifier ONLY after the
         // bridge has accepted and authenticated the signed frame.
-        let authenticated_group = if matches!(&outcome, ControlIpcOutcome::Applied) {
+        let authenticated_chat = if matches!(&outcome, ControlIpcOutcome::Applied) {
             serde_json::from_str::<WhatsAppControlFrame>(text)
                 .ok()
                 .map(|frame| frame.chat_jid)
-                .filter(|chat| chat.ends_with("@g.us"))
         } else {
             None
         };
@@ -222,13 +221,16 @@ impl WhatsAppControlIpc {
                         "Privado".to_owned()
                     };
                     self.themes
-                        .render_verified_root(crate::menu::MenuViewer {
-                            user: &alias,
-                            role: if owner { "Owner del socket" } else { "Usuario" },
-                            status: "ACTIVADO",
-                            socket: &socket_alias,
-                            socket_owner: owner,
-                        })
+                        .render_verified_chat_root(
+                            authenticated_chat.as_deref(),
+                            crate::menu::MenuViewer {
+                                user: &alias,
+                                role: if owner { "Owner del socket" } else { "Usuario" },
+                                status: "ACTIVADO",
+                                socket: &socket_alias,
+                                socket_owner: owner,
+                            },
+                        )
                         .ok()
                 })
         } else {
@@ -239,9 +241,23 @@ impl WhatsAppControlIpc {
         let validated = verified_root
             .or(message)
             .and_then(|body| {
-                self.themes
-                    .decorate(authenticated_group.as_deref(), &body)
+                let status = serde_json::from_str::<WhatsAppControlFrame>(text)
                     .ok()
+                    .is_some_and(|frame| {
+                        matches!(
+                            frame.text.split_whitespace().next(),
+                            Some("=/>status" | "=/>estado")
+                        )
+                    });
+                if status {
+                    self.themes
+                        .decorate_status(authenticated_chat.as_deref(), &body)
+                        .ok()
+                } else {
+                    self.themes
+                        .decorate(authenticated_chat.as_deref(), &body)
+                        .ok()
+                }
             })
             .filter(|body| {
                 !body.is_empty()
@@ -296,7 +312,7 @@ impl WhatsAppControlIpc {
                     )
                 })
                 .and_then(|frame| {
-                    let options = self.themes.current_menu_preferences().ok()?;
+                    let options = self.themes.effective_preferences(Some(&frame.chat_jid)).ok()?;
                     Some(crate::menu::button_menu_items(
                         &frame.text,
                         options.language,
