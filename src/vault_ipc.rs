@@ -16,7 +16,6 @@ use chacha20poly1305::{
 #[cfg(unix)]
 use serde::Deserialize;
 use serde::Serialize;
-use std::{path::PathBuf, time::Duration};
 #[cfg(unix)]
 use std::{
     fs,
@@ -27,6 +26,7 @@ use std::{
         net::UnixStream,
     },
 };
+use std::{path::PathBuf, time::Duration};
 use zeroize::Zeroizing;
 #[cfg(unix)]
 const VERSION: u16 = 1;

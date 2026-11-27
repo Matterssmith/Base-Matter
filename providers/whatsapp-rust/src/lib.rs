@@ -199,39 +199,6 @@ fn parse_control_ack_wire(response: ControlAckWire) -> Result<ControlAck> {
     }
 }
 
-#[cfg(test)]
-mod console_rank_ack_tests {
-    use super::*;
-
-    #[test]
-    fn rank_does_not_change_command_authority() {
-        let (ack, rank) = parse_control_ack_with_rank(
-            br#"{"ok":true,"outcome":"applied","global_owner_verified":true}"#,
-        );
-        assert_eq!(ack.unwrap(), ControlAck::Applied);
-        assert!(rank);
-        let (ack, rank) = parse_control_ack_with_rank(
-            br#"{"ok":false,"outcome":"denied","global_owner_verified":true}"#,
-        );
-        assert!(ack.is_err());
-        assert!(rank);
-    }
-
-    #[test]
-    fn rank_is_not_inferred_from_success_or_invalid_ack() {
-        for payload in [
-            &br#"{"ok":true,"outcome":"applied"}"#[..],
-            &br#"{"ok":true,"outcome":"ignored","global_owner_verified":true}"#[..],
-            &br#"{"ok":true,"outcome":"duplicate","global_owner_verified":true}"#[..],
-            &br#"{"ok":true,"outcome":"applied","global_owner_verified":true,"message":""}"#[..],
-            &br#"{"ok":false,"outcome":"denied","global_owner_verified":true,"message":"unexpected"}"#[..],
-            &br#"{"ok":true,"outcome":"applied","global_owner_verified":"true"}"#[..],
-        ] {
-            assert!(!parse_control_ack_with_rank(payload).1);
-        }
-    }
-}
-
 impl Config {
     pub fn from_env() -> Result<Self> {
         Self::from_reader(|name| env::var(name).ok())
@@ -891,4 +858,37 @@ pub fn official_register_description(description: &str, community_jid: &str) -> 
     }
     let expected = format!("MATTER:OFFICIAL:register:{community_jid}");
     description.split('\n').next() == Some(expected.as_str())
+}
+
+#[cfg(test)]
+mod console_rank_ack_tests {
+    use super::*;
+
+    #[test]
+    fn rank_does_not_change_command_authority() {
+        let (ack, rank) = parse_control_ack_with_rank(
+            br#"{"ok":true,"outcome":"applied","global_owner_verified":true}"#,
+        );
+        assert_eq!(ack.unwrap(), ControlAck::Applied);
+        assert!(rank);
+        let (ack, rank) = parse_control_ack_with_rank(
+            br#"{"ok":false,"outcome":"denied","global_owner_verified":true}"#,
+        );
+        assert!(ack.is_err());
+        assert!(rank);
+    }
+
+    #[test]
+    fn rank_is_not_inferred_from_success_or_invalid_ack() {
+        for payload in [
+            &br#"{"ok":true,"outcome":"applied"}"#[..],
+            &br#"{"ok":true,"outcome":"ignored","global_owner_verified":true}"#[..],
+            &br#"{"ok":true,"outcome":"duplicate","global_owner_verified":true}"#[..],
+            &br#"{"ok":true,"outcome":"applied","global_owner_verified":true,"message":""}"#[..],
+            &br#"{"ok":false,"outcome":"denied","global_owner_verified":true,"message":"unexpected"}"#[..],
+            &br#"{"ok":true,"outcome":"applied","global_owner_verified":"true"}"#[..],
+        ] {
+            assert!(!parse_control_ack_with_rank(payload).1);
+        }
+    }
 }

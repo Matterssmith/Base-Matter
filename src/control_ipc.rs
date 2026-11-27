@@ -357,7 +357,10 @@ impl WhatsAppControlIpc {
         // owner. Do not infer rank from the dispatch result. Never check passive
         // observations, ignored chats or duplicate messages.
         if self.console_rank
-            && matches!(result, ControlIpcOutcome::Applied | ControlIpcOutcome::Denied)
+            && matches!(
+                result,
+                ControlIpcOutcome::Applied | ControlIpcOutcome::Denied
+            )
             && serde_json::from_slice::<WhatsAppControlFrame>(&request)
                 .is_ok_and(|frame| self.bridge.console_global_owner(&frame))
         {
