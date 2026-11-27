@@ -252,6 +252,16 @@ fn verified_owner_group_controls_are_signed_for_exact_group_jid() {
             .unwrap()
             .is_some());
     }
+    event.text = "=/>reload";
+    assert!(c
+        .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_some());
+    event.text = "=/>codex status";
+    assert!(c
+        .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .is_none());
     event.text = "=/>on";
     assert!(c
         .signed_verified_control(&event, Some(OWNER), Some(VERIFIED_LID))
@@ -361,6 +371,8 @@ fn verified_private_owner_chat_does_not_sign_group_only_commands() {
         "=/>bot off",
         "=/>estado",
         "=/>credits",
+        "=/>reload",
+        "=/>codex status",
     ] {
         assert!(c
             .signed_verified_control(&event(allowed), Some(OWNER), Some(VERIFIED_LID))
@@ -454,7 +466,12 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
     // Mutable requests may be signed as *unprivileged* incoming frames so
     // the controller can require encrypted Vault global-owner authority.
     // Signing alone must not impersonate the socket owner or grant a role.
-    for text in ["=/>group on", "=/>bot on", "=/>set role 12345678901 admin"] {
+    for text in [
+        "=/>group on",
+        "=/>bot on",
+        "=/>set role 12345678901 admin",
+        "=/>reload",
+    ] {
         incoming.text = text;
         let signed = config
             .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
@@ -480,6 +497,8 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         "=/>test html",
         "=/>test run",
         "=/>test ack invalid",
+        "=/>reload --global",
+        "=/>codex status",
         "#ping",
     ] {
         incoming.text = text;
@@ -512,6 +531,20 @@ fn incoming_readonly_commands_bind_real_sender_and_never_gain_owner_authority() 
         .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
         .unwrap()
         .is_some());
+    // The signed incoming private sender stays unprivileged. The controller
+    // independently checks the primary owner for Codex.
+    incoming.text = "=/>codex status";
+    let signed = config
+        .signed_public_readonly(&incoming, Some(OWNER), Some(VERIFIED_LID))
+        .unwrap()
+        .unwrap();
+    assert_eq!(signed.actor_id, public_id);
+    assert_eq!(signed.chat_jid, public_id);
+    assert!(!signed.from_me);
+    assert_eq!(
+        signed.signature,
+        sign_frame(&signed, &config.bridge_key).unwrap()
+    );
     // Rich HTML never becomes available to foreign private chats.
     incoming.text = "=/>test html";
     assert!(config

@@ -339,6 +339,7 @@ impl Config {
                     | "=/>register"
                     | "=/>update"
                     | "=/>restart"
+                    | "=/>reload"
             )
         } else {
             matches!(
@@ -367,6 +368,8 @@ impl Config {
                     | "=/>créditos"
                     | "=/>update"
                     | "=/>restart"
+                    | "=/>reload"
+                    | "=/>codex"
             )
         };
         if !allowed {
@@ -486,7 +489,10 @@ impl Config {
                     .all(|byte| byte.is_ascii_alphanumeric() || b"_-".contains(&byte))
         };
         let allowed = match parts.as_slice() {
-            ["=/>update" | "=/>restart"] => true,
+            ["=/>update" | "=/>restart" | "=/>reload"] => true,
+            // Sign the real private sender, not an owner claim. Vault must
+            // independently verify the primary owner before any Codex effect.
+            ["=/>codex", ..] => !event.is_group,
             ["=/>ping"]
             | ["=/>status" | "=/>estado"]
             | ["=/>status" | "=/>estado", "--mod"]

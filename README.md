@@ -1,3 +1,9 @@
+## 2026-11-27 — Admisión de Reload y Codex en el proveedor
+
+La prueba real de `=/>update` descargó f8a1cb2 sin detener el bot. `=/>reload` fue rechazado antes del IPC porque faltaba en el filtro de firma del proveedor. Se agrega la ruta de Reload en grupos y privados y la de Codex exclusivamente en privado, tanto para el socket verificado como para el remitente entrante. La firma no concede permisos: se mantienen la comprobación de Owner global/socket para Reload y slot 1 de Vault para Codex. Pruebas de admisión y rechazo agregadas. Requiere recompilar y reiniciar para activar el proveedor corregido.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Reload predeterminado en Update
 
 Cuando no existe una preferencia explícita, `=/>update` usa `reload`: descarga los cambios y renueva las vistas del socket si corresponde, sin reiniciar WhatsApp. Los comandos Rust compilados nuevos siguen pendientes de `=/>restart`. Las preferencias guardadas `manual`, `restart` o `reload` se conservan. Se ajusta la prueba de política predeterminada. Compilación y prueba real pendientes.
