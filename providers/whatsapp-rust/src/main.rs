@@ -1577,20 +1577,73 @@ async fn main() -> Result<ExitCode> {
                                 println!("Base-Matter: comando aceptado");
                             }
                             // The signed, admitted global-owner command is the only entry.
+                            if frame.text.split_whitespace().take(2).eq(["=/>set", "update"]) {
+                                let result = if maintenance.compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire).is_ok() {
+                                    let result = maintenance::set_update(&config.session_db, &frame.text);
+                                    maintenance.store(0, Ordering::Release);
+                                    result
+                                } else {
+                                    Err(anyhow::anyhow!("Maintenance busy"))
+                                };
+                                let (body, state) = match result {
+                                    Ok(body) => (body, "MANTENIMIENTO COMPLETADO"),
+                                    Err(_) => ("Estado: Bloqueado\nMotivo: mantenimiento en curso o configuración privada no disponible.".into(), "MANTENIMIENTO BLOQUEADO"),
+                                };
+                                if let Ok(body) = maintenance::styled("Set Update", &body, plain_style) {
+                                    let sent = matches!(trace.send("MANTENIMIENTO", ctx.reply(&body)).await, Ok(Ok(_)));
+                                    trace.finish(if sent { state } else { "SIN ENVÍO CONFIRMADO" });
+                                } else {
+                                    trace.finish("ERROR TEMA");
+                                }
+                                return;
+                            }
                             if let Some(code) = maintenance_code(&frame.text) {
+                                let mut action = "Estado: No ejecutado\nModo: manual".to_owned();
                                 let (body, state) = if !supervised {
                                     ("Estado: Bloqueado\nMotivo: supervisor local no disponible.".to_owned(), "MANTENIMIENTO BLOQUEADO")
                                 } else if maintenance.compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire).is_err() {
                                     ("Estado: Bloqueado\nMotivo: mantenimiento en curso.".to_owned(), "MANTENIMIENTO BLOQUEADO")
                                 } else if code == 76 {
-                                    let report = tokio::task::spawn_blocking(maintenance::update_source).await;
+                                    let policy = maintenance::update_policy(&config.session_db);
+                                    let report = if policy.is_ok() {
+                                        tokio::task::spawn_blocking(maintenance::update_source).await.ok()
+                                    } else {
+                                        None
+                                    };
+                                    let (body, state) = report.unwrap_or_else(|| ("Estado: Fallido\nMotivo: configuración o tarea de actualización no disponible.".into(), "MANTENIMIENTO FALLIDO"));
+                                    let eligible = matches!(state, "MANTENIMIENTO COMPLETADO" | "MANTENIMIENTO SIN CAMBIOS")
+                                        && maintenance::activation_pending();
+                                    action = match policy.as_deref() {
+                                        Ok("restart") if eligible => {
+                                            match maintenance::request_restart(&config.session_db, &frame.chat_jid, plain_style, Some(&body)) {
+                                                Ok(()) => {
+                                                    let action = "Estado: Autorizado\nModo: restart\nActivación: en proceso.";
+                                                    let sent = match maintenance::update_message(&body, "Estado: Pendiente", action, plain_style) {
+                                                        Ok(message) => matches!(trace.send("MANTENIMIENTO", ctx.reply(&message)).await, Ok(Ok(_))),
+                                                        Err(_) => false,
+                                                    };
+                                                    if sent {
+                                                        trace.finish("MANTENIMIENTO AUTORIZADO");
+                                                        maintenance.store(75, Ordering::Release);
+                                                    } else {
+                                                        maintenance::clear_restart(&config.session_db);
+                                                        maintenance.store(0, Ordering::Release);
+                                                        trace.finish("SIN ENVÍO CONFIRMADO");
+                                                    }
+                                                    return;
+                                                }
+                                                Err(_) => "Estado: Bloqueado\nModo: restart\nMotivo: informe pendiente o estado privado no disponible.".to_owned(),
+                                            }
+                                        }
+                                        Ok("reload") if eligible => "Estado: Pendiente\nModo: reload\nRecarga: no disponible para comandos Rust compilados.\nBot: sigue activo; usa =/>restart para activar.".to_owned(),
+                                        Ok(mode) if eligible => format!("Estado: Pendiente\nModo: {mode}\nActivación manual: =/>restart."),
+                                        Ok(mode) => format!("Estado: No ejecutado\nModo: {mode}\nSin activación autorizada o pendiente."),
+                                        Err(_) => "Estado: Bloqueado\nMotivo: política no disponible.".to_owned(),
+                                    };
                                     maintenance.store(0, Ordering::Release);
-                                    match report {
-                                        Ok(result) => result,
-                                        Err(_) => ("Estado: Fallido\nMotivo: tarea de actualización interrumpida.".into(), "MANTENIMIENTO FALLIDO"),
-                                    }
+                                    (body, state)
                                 } else {
-                                    match maintenance::request_restart(&config.session_db, &frame.chat_jid, plain_style) {
+                                    match maintenance::request_restart(&config.session_db, &frame.chat_jid, plain_style, None) {
                                         Ok(()) => {
                                             let body = maintenance::styled("Restart", "Estado: Autorizado\nSe verificará la versión pendiente y se conservará la sesión WA.", plain_style);
                                             let sent = match body {
@@ -1619,7 +1672,12 @@ async fn main() -> Result<ExitCode> {
                                         println!("{}", console_row(line, false));
                                     }
                                 }
-                                if let Ok(body) = maintenance::styled(title, &body, plain_style) {
+                                let message = if code == 76 {
+                                    maintenance::update_message(&body, "Estado: No ejecutada\nFormato, pruebas y compilación: pendientes si cambió la revisión.", &action, plain_style)
+                                } else {
+                                    maintenance::styled(title, &body, plain_style)
+                                };
+                                if let Ok(body) = message {
                                     let sent = matches!(trace.send("MANTENIMIENTO", ctx.reply(&body)).await, Ok(Ok(_)));
                                     trace.finish(if sent { state } else { "SIN ENVÍO CONFIRMADO" });
                                 } else {

@@ -25,34 +25,55 @@ pub fn expanded_layout(name: &str) -> String {
     expand(layout(name))
 }
 
-/// Maintenance shares the same rows and footer as the compact Matter console.
-/// Only the command's title is specific; all dynamic values remain literal.
+/// Maintenance sections use the shared Matter rows. Only the last frame is closed.
 pub fn maintenance_report(kind: &str, body: &str) -> Option<String> {
-    let name = match kind {
-        "Update" => "update",
-        "Restart" => "restart",
-        _ => return None,
-    };
-    if body.trim().is_empty() {
+    maintenance_reports(&[(kind, body)])
+}
+
+pub fn maintenance_reports(sections: &[(&str, &str)]) -> Option<String> {
+    if sections.is_empty() {
         return None;
     }
-    let mut lines = body.lines().peekable();
-    let mut rows = String::new();
-    while let Some(line) = lines.next() {
-        let row = if lines.peek().is_some() {
-            "row"
-        } else {
-            "last-row"
+    let mut output = String::new();
+    for (index, (kind, body)) in sections.iter().enumerate() {
+        let name = match *kind {
+            "Update" => "update",
+            "Restart" => "restart",
+            "Cambios" => "update-changes",
+            "Verificación" => "update-verification",
+            "Set Update" => "update-settings",
+            _ => return None,
         };
-        rows.push_str(&render(console_template(row), &[("BODY", line)]));
+        if body.trim().is_empty() {
+            return None;
+        }
+        let mut lines = body.lines().peekable();
+        let mut rows = String::new();
+        while let Some(line) = lines.next() {
+            let row = if lines.peek().is_some() {
+                "row"
+            } else {
+                "last-row"
+            };
+            rows.push_str(&render(console_template(row), &[("BODY", line)]));
+        }
+        let final_block = index + 1 == sections.len();
+        let footer = if final_block {
+            expand("{{CLASSIC_CLOSE}}")
+        } else {
+            expand("{{CLASSIC_JOINED_CLOSE}}")
+        };
+        output.push_str(&render(
+            layout(name),
+            &[("ROWS", &rows), ("FOOTER", &footer)],
+        ));
+        if !final_block {
+            output.push('\n');
+            output.push_str(&expand("{{CLASSIC_CONNECTOR}}"));
+            output.push('\n');
+        }
     }
-    Some(render(
-        layout(name),
-        &[
-            ("ROWS", &rows),
-            ("FOOTER", console_template("footer").trim_end()),
-        ],
-    ))
+    Some(output)
 }
 
 /// Dynamic menu layout; unknown sections are handled by the caller.
@@ -161,20 +182,20 @@ mod tests {
 
     #[test]
     fn maintenance_reports_use_the_compact_matter_design() {
-        let update = maintenance_report(
-            "Update",
-            "Estado: Código actualizado\nBot: sigue activo",
-        )
-        .unwrap();
+        let update =
+            maintenance_report("Update", "Estado: Código actualizado\nBot: sigue activo").unwrap();
         assert_eq!(
             update,
-            "╭─ 💠 𝗨𝗽𝗱𝗮𝘁𝗲\n│·♪·╠[ Estado: Código actualizado\n│·♪·╚[ Bot: sigue activo\n╰──╮╭───────⟨ 🌀"
+            "╭─ 💠 𝗨𝗽𝗱𝗮𝘁𝗲\n│·♪·╠[ Estado: Código actualizado\n│·♪·╚[ Bot: sigue activo\n╰───────────⟨ 🌀"
         );
         let restart = maintenance_report("Restart", "{{CLASSIC_HEADER}}").unwrap();
         assert_eq!(
             restart,
-            "╭─ 💠 𝗥𝗲𝘀𝘁𝗮𝗿𝘁\n│·♪·╚[ {{CLASSIC_HEADER}}\n╰──╮╭───────⟨ 🌀"
+            "╭─ 💠 𝗥𝗲𝘀𝘁𝗮𝗿𝘁\n│·♪·╚[ {{CLASSIC_HEADER}}\n╰───────────⟨ 🌀"
         );
+        let joined = maintenance_reports(&[("Update", "OK"), ("Restart", "Manual")]).unwrap();
+        assert!(joined.contains("╰─╮╭────────⟨ 🌀\n   ││\n╭─ 💠 𝗥𝗲𝘀𝘁𝗮𝗿𝘁"));
+        assert!(joined.ends_with("╰───────────⟨ 🌀"));
         assert!(maintenance_report("Update", "").is_none());
         assert!(maintenance_report("unknown", "Estado: OK").is_none());
     }

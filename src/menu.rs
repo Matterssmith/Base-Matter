@@ -86,6 +86,7 @@ pub static CATEGORIES: &[Category] = &[
             set::main_command::COMMAND,
             set::set_style::COMMAND,
             set::set_lang::COMMAND,
+            set::set_update::COMMAND,
         ],
     },
     Category {

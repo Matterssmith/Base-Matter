@@ -437,9 +437,16 @@ impl WhatsAppControlBridge {
         // Maintenance affects the entire local bot runtime. Only a fresh
         // Vault global-owner decision grants it, even for the socket owner.
         let maintenance: Vec<_> = frame.text.split_whitespace().collect();
-        if matches!(maintenance.first(), Some(&"=/>update" | &"=/>restart")) {
-            if maintenance.len() != 1 {
-                bail!("Maintenance commands accept no arguments");
+        if matches!(maintenance.first(), Some(&"=/>update" | &"=/>restart"))
+            || maintenance.starts_with(&["=/>set", "update"])
+        {
+            if !matches!(
+                maintenance.as_slice(),
+                ["=/>update" | "=/>restart"]
+                    | ["=/>set", "update"]
+                    | ["=/>set", "update", "manual" | "restart" | "reload" | "none"]
+            ) {
+                bail!("Invalid maintenance command");
             }
             let principal = if is_owner {
                 self.config.owner_jid.as_str()

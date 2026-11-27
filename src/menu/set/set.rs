@@ -14,6 +14,7 @@ pub const COMMAND: CommandSpec = CommandSpec {
         "set style classic|none",
         "set lang es|en",
         "set menu web|classic|buttons",
+        "set update manual|restart|reload",
     ],
     implemented: true,
 };

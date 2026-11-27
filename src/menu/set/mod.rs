@@ -8,6 +8,7 @@ pub mod set_lang;
 pub mod set_menu;
 pub mod set_role;
 pub mod set_style;
+pub mod set_update;
 
 pub const CATEGORY: Category = Category {
     id: "set",
@@ -17,6 +18,7 @@ pub const CATEGORY: Category = Category {
     commands: &[
         main_command::COMMAND,
         set_style::COMMAND,
+        set_update::COMMAND,
         set_lang::COMMAND,
         set_menu::COMMAND,
         set_role::COMMAND,

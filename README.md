@@ -1,3 +1,9 @@
+## 2026-11-27 — Informe Classic por bloques y política de Update
+
+`=/>set update` consulta la política privada de este runtime alpha; `manual` (alias `none`) conserva el comportamiento predeterminado sin reinicio, `restart` activa automáticamente tras descargar cambios, y `reload` deja pendiente la activación si no hay un cargador dinámico real (los comandos Rust compilados no se recargan en vivo). La configuración y sus cambios exigen Owner global comprobado por Vault, con firma y antirreplay. Se guarda una preferencia no secreta en el directorio privado del socket. El informe reúne Update, Cambios, Verificación y Restart en ese orden, con cierre unido intermedio y línea cerrada final; al reconectar se entrega el resultado combinado al chat original. Las pruebas y compilación sólo aparecen OK si existe construcción verificada. No se solicita pairing. CI y prueba real pendientes.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Plantilla Matter de Update y Restart
 
 Los informes de mantenimiento reutilizan las filas y cierre compactos de consola de `templates/menu/theme.json`, con encabezados propios `𝗨𝗽𝗱𝗮𝘁𝗲` y `𝗥𝗲𝘀𝘁𝗮𝗿𝘁` en la misma plantilla central. El renderizador compartido inserta los valores literalmente, utiliza una última fila diferenciada y conserva `style none` sin decoración. No se cambia la lógica de actualización sin reinicio, la autorización ni la sesión. Pruebas de diseño exacto añadidas; ejecución completa pendiente.
