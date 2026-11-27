@@ -331,6 +331,8 @@ impl Config {
                     | "=/>créditos"
                     | "=/>test"
                     | "=/>register"
+                    | "=/>update"
+                    | "=/>restart"
             )
         } else {
             matches!(
@@ -357,6 +359,8 @@ impl Config {
                     | "=/>credits"
                     | "=/>creditos"
                     | "=/>créditos"
+                    | "=/>update"
+                    | "=/>restart"
             )
         };
         if !allowed {
@@ -476,6 +480,7 @@ impl Config {
                     .all(|byte| byte.is_ascii_alphanumeric() || b"_-".contains(&byte))
         };
         let allowed = match parts.as_slice() {
+            ["=/>update" | "=/>restart"] => true,
             ["=/>ping"]
             | ["=/>status" | "=/>estado"]
             | ["=/>status" | "=/>estado", "--mod"]
@@ -538,7 +543,7 @@ impl Config {
             }
             ["=/>menu" | "=/>menú", category] => {
                 public_category(category)
-                    || matches!(*category, "all" | "matter" | "web" | "buttons")
+                    || matches!(*category, "all" | "classic" | "matter" | "modern" | "web" | "buttons")
             }
             ["=/>menu" | "=/>menú", "page", page] => matches!(*page, "1" | "2" | "3"),
             ["=/>menu" | "=/>menú", category, page] => {

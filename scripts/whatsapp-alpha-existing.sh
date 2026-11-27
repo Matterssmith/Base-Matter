@@ -65,6 +65,7 @@ main() {
   # Presentation flags passed on the command line must survive runtime.env.
   # Preserve ONLY these explicitly allowlisted 0/1 values; never override
   # private session, bridge, identity, enrollment or Vault configuration.
+  local supervised="${MATTER_WA_SUPERVISED:-0}"
   local ui_override_name
   local -a ui_override_keys=(
     MATTER_WA_RICH_HTML
@@ -82,6 +83,10 @@ main() {
   done
   # Source ONLY a pre-existing locally owned private file, never Git content.
   source "$config"
+  export MATTER_WA_SUPERVISED=0
+  if [[ "$supervised" == "1" ]]; then
+    export MATTER_WA_SUPERVISED=1
+  fi
   local ui_override_index
   for ui_override_index in "${!ui_override_keys[@]}"; do
     if [[ -n "${ui_override_values[$ui_override_index]}" ]]; then

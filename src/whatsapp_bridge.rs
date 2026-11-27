@@ -376,6 +376,31 @@ impl WhatsAppControlBridge {
             }
             return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive));
         }
+        // Maintenance affects the entire local bot runtime. Only a fresh
+        // Vault global-owner decision grants it, even for the socket owner.
+        let maintenance: Vec<_> = frame.text.split_whitespace().collect();
+        if matches!(maintenance.first(), Some(&"=/>update" | &"=/>restart")) {
+            if maintenance.len() != 1 {
+                bail!("Maintenance commands accept no arguments");
+            }
+            let principal = if is_owner {
+                self.config.owner_jid.as_str()
+            } else {
+                frame.actor_id.as_str()
+            };
+            self.global_vault
+                .as_ref()
+                .ok_or_else(|| anyhow!("Vault global authority unavailable"))?
+                .require_global_owner(principal)?;
+            if !self.replay.claim("whatsapp", &self.config.socket_id, &frame.message_id)? {
+                return Ok(WhatsAppBridgeOutcome::Duplicate);
+            }
+            let command = maintenance[0].trim_start_matches("=/>");
+            return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
+                command: command.to_owned(),
+                output: "Mantenimiento autorizado; el proveedor comprobará el supervisor local.".to_owned(),
+            }));
+        }
         // Exact global Vault health commands have their own HMAC-verified
         // path. Neither being the owner of this bot/socket nor typing an
         // owner claim in a message grants access: the private Vault authority

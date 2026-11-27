@@ -181,6 +181,20 @@ pub static CATEGORIES: &[Category] = &[
             roles::main_command::COMMAND,
             roles::audit::COMMAND,
             set::set_role::COMMAND,
+            CommandSpec {
+                name: "update",
+                es: "Actualizar alpha y reiniciar (owner global; supervisor local)",
+                en: "Update alpha and restart (global owner; local supervisor)",
+                usages: &["update"],
+                implemented: true,
+            },
+            CommandSpec {
+                name: "restart",
+                es: "Reiniciar el bot sin desvincular WhatsApp (owner global)",
+                en: "Restart the bot without unlinking WhatsApp (global owner)",
+                usages: &["restart"],
+                implemented: true,
+            },
         ],
     },
     Category {

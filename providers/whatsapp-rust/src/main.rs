@@ -8,8 +8,9 @@ use anyhow::{bail, Result};
 use std::{
     collections::{HashMap, HashSet},
     io::IsTerminal,
+    process::ExitCode,
     sync::{
-        atomic::{AtomicBool, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
         Arc, Mutex, OnceLock,
     },
     time::Instant,
@@ -1087,7 +1088,7 @@ fn pairing_options(resume_only: bool, phone: String) -> Option<PairCodeOptions> 
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<ExitCode> {
     let resume_only = matches!(std::env::args().nth(1).as_deref(), Some("--resume-only"));
     match std::env::args().nth(1).as_deref() {
         Some("--rich-preview-html") => {
@@ -1100,7 +1101,7 @@ async fn main() -> Result<()> {
                     whatsapp_matter_rust_provider::rich_preview::original_menu()
                 )?
             );
-            return Ok(());
+            return Ok(ExitCode::SUCCESS);
         }
         Some("--rich-preview-json") => {
             if std::env::args().nth(2).is_some() {
@@ -1114,17 +1115,17 @@ async fn main() -> Result<()> {
                     )?
                 )?
             );
-            return Ok(());
+            return Ok(ExitCode::SUCCESS);
         }
         Some("--help") => {
             println!("WhatsApp-Matter Rust provider: --check, --resume-only (restore stored identity; no pairing-code request), --rich-preview-html, --rich-preview-json, --recovery-verify <encrypted-filename>, or run for pairing code. Local Base-Matter IPC; no QR.");
-            return Ok(());
+            return Ok(ExitCode::SUCCESS);
         }
         Some("--check") => {
             let config = Config::from_env()?;
             SessionLease::check_available(&config.session_db)?;
             println!("whatsapp-rust pairing settings checked; no session was opened.");
-            return Ok(());
+            return Ok(ExitCode::SUCCESS);
         }
         Some("--recovery-verify") => {
             let filename = std::env::args()
@@ -1152,7 +1153,7 @@ async fn main() -> Result<()> {
                 "Recovery snapshot authenticated: {} member records; no session was opened.",
                 snapshot.members.len()
             );
-            return Ok(());
+            return Ok(ExitCode::SUCCESS);
         }
         Some("--resume-only") => {
             if std::env::args().nth(2).is_some() {
@@ -1182,6 +1183,9 @@ async fn main() -> Result<()> {
     let diagnostic_messages = matches!(std::env::var("MATTER_WA_DIAG").as_deref(), Ok("1"));
     // Presentation context only; scoped to authenticated chat and sender.
     let menu_views = Arc::new(Mutex::new(HashMap::<(String, String), bool>::new()));
+    let supervised = resume_only && std::env::var("MATTER_WA_SUPERVISED").as_deref() == Ok("1");
+    let maintenance = Arc::new(AtomicU8::new(0));
+    let maintenance_for_messages = Arc::clone(&maintenance);
     require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
     let database = config
@@ -1289,6 +1293,7 @@ async fn main() -> Result<()> {
         .on_message(move |ctx| {
             let config = Arc::clone(&config);
             let menu_views = Arc::clone(&menu_views);
+            let maintenance = Arc::clone(&maintenance_for_messages);
             async move {
                 let source = &ctx.info.source;
                 // Match across PN/LID with the linked client's verified
@@ -1542,6 +1547,28 @@ async fn main() -> Result<()> {
                             trace.stage(&format!("IPC: OK {ipc_ms}ms"));
                             if !diagnostic_messages {
                                 println!("Base-Matter: comando aceptado");
+                            }
+                            // Only an admitted, signed global-owner command can
+                            // hand a fixed maintenance code to the local supervisor.
+                            if let Some(code) = maintenance_code(&frame.text) {
+                                let notice = if !supervised {
+                                    "Mantenimiento no disponible: inicia el bot con el supervisor local."
+                                } else if maintenance.compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire).is_err() {
+                                    "Mantenimiento ya en curso."
+                                } else {
+                                    let notice = if code == 76 {
+                                        "Actualización de alpha iniciada. Se verificará el código antes de reconectar."
+                                    } else {
+                                        "Reiniciando el bot. Se conservará la sesión de WhatsApp."
+                                    };
+                                    let _ = trace.send("MANTENIMIENTO", ctx.reply(notice)).await;
+                                    trace.finish("MANTENIMIENTO AUTORIZADO");
+                                    maintenance.store(code, Ordering::Release);
+                                    return;
+                                };
+                                let _ = trace.send("AVISO", ctx.reply(notice)).await;
+                                trace.finish("MANTENIMIENTO NO INICIADO");
+                                return;
                             }
                             // Only an applied ACK can produce a Pong. Send the official
                             // frame directly, with no extra Control wrapper or reply.
@@ -1930,19 +1957,48 @@ async fn main() -> Result<()> {
     } else {
         println!("WhatsApp-Matter Rust session starting. Pairing code only.");
     }
-    bot.run().await;
+    let maintenance_exit = async {
+        loop {
+            let code = maintenance.load(Ordering::Acquire);
+            if matches!(code, 75 | 76) {
+                return code;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+    };
+    tokio::select! {
+        _ = bot.run() => {},
+        code = maintenance_exit => return Ok(ExitCode::from(code)),
+    }
     if resume_only {
         if connected_once.load(Ordering::Relaxed) {
             bail!("Resume-only: WhatsApp disconnected after authentication. No pairing was requested.");
         }
         bail!("Resume-only: WhatsApp stopped before authentication. Inspect the device identity locally and check phone linked devices. No pairing was requested.");
     }
-    Ok(())
+    Ok(ExitCode::SUCCESS)
+}
+
+fn maintenance_code(command: &str) -> Option<u8> {
+    match command.split_whitespace().collect::<Vec<_>>().as_slice() {
+        ["=/>restart"] => Some(75),
+        ["=/>update"] => Some(76),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
 mod readiness_tests {
     use super::*;
+
+    #[test]
+    fn maintenance_codes_accept_only_fixed_verbs() {
+        assert_eq!(maintenance_code("=/>restart"), Some(75));
+        assert_eq!(maintenance_code("=/>update"), Some(76));
+        assert_eq!(maintenance_code("=/>update beta"), None);
+        assert_eq!(maintenance_code("=/>restart --global"), None);
+        assert_eq!(maintenance_code("=/>help update"), None);
+    }
 
     #[test]
     fn console_rows_use_independent_templates_without_reinterpreting_body() {

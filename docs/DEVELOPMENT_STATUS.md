@@ -1,3 +1,9 @@
+## 2026-11-27 — Mantenimiento remoto supervisado
+
+`=/>update` y `=/>restart` admiten exclusivamente owners globales comprobados en Vault en cada comando, con firma, antirreplay y política de chat vigente. Sin argumentos, sin shell remoto ni URL elegible. El supervisor local `bash scripts/matter-supervised-run.sh` arranca desde la compilación verificada; `restart` reinicia controlador y proveedor con la misma sesión; `update` detiene ambos, actualiza solo alpha por fast-forward desde origin y ejecuta todos los gates antes de reanudar. Ante fallo queda detenido y no se solicita pairing. No reinicia Vault ni otros sockets/servidores. El proveedor confirma inicio de mantenimiento, no su finalización; un ACK de transporte no prueba visualización. Sin supervisor los comandos no detienen el proceso. CI y prueba real pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — HTML acotado y estilo efectivo del proveedor
 
 El IPC adjunta el estilo efectivo de Vault únicamente tras admitir comandos de menú/Pong y respuestas generadas por el proveedor; `none` elimina el marco de Pong y los informes del proveedor y conserva HTML sin decoración en Web. Se conserva Matter como fábrica, las mediciones reales y los permisos existentes. El JSON RichResponse mantiene su jerarquía experimental y usa HTML compacto cuando duplicar el layout completo excedería el presupuesto de 16 KiB; el aviso independiente no afirma que un timeout haya sido aceptado ni que el dispositivo haya renderizado. Se añaden pruebas de HTML largo, HTML sin tema, ACK y botones. No se activa pairing ni se publica un servidor web. Android, compilación y CI pendientes. README revisados: 2/2.
