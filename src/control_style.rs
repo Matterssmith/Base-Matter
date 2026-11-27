@@ -265,9 +265,56 @@ impl ControlThemes {
         Ok(crate::menu::Preferences { style, language })
     }
 
+    /// Resolve presentation for the authenticated actor in a single Vault call.
+    /// Do not reuse an offline personal preference if group policy is unavailable.
+    pub(crate) fn effective_preferences_for(
+        &self,
+        chat: Option<&str>,
+        actor: Option<&str>,
+    ) -> Result<crate::menu::Preferences> {
+        let (Some(chat), Some(actor)) = (chat, actor) else {
+            return self.effective_preferences(chat);
+        };
+        if !self.require_vault_config {
+            return self.effective_preferences(Some(chat));
+        }
+        let style = self
+            .config_client()
+            .and_then(|vault| {
+                let value = vault.presentation_config(&crate::vault_ipc::PresentationRequest {
+                    chat,
+                    actor,
+                    target: None,
+                    kind: "effective-style",
+                    admin: false,
+                    value: None,
+                })?;
+                Style::parse(value.as_deref().unwrap_or("matter"))
+            })
+            .unwrap_or(Style::Classic);
+        let language = self
+            .config_client()
+            .and_then(|vault| match vault.config_get("menu-language-v1")? {
+                Some(value) => Language::parse(&value),
+                None => Ok(Language::Es),
+            })
+            .unwrap_or(Language::Es);
+        Ok(crate::menu::Preferences { style, language })
+    }
+
     pub fn decorate_status(&self, chat: Option<&str>, body: &str) -> Result<String> {
+        self.decorate_status_for(chat, None, body)
+    }
+
+    pub(crate) fn decorate_status_for(
+        &self,
+        chat: Option<&str>,
+        actor: Option<&str>,
+        body: &str,
+    ) -> Result<String> {
         let mut theme = self.selected(chat)?;
-        if self.dynamic_menu.is_some() && self.effective_preferences(chat)?.style == Style::None {
+        if self.dynamic_menu.is_some()
+            && self.effective_preferences_for(chat, actor)?.style == Style::None {
             return Self::plain_response(body);
         }
         if theme.template == crate::classic_template::expanded_layout("control") {
@@ -379,8 +426,17 @@ impl ControlThemes {
     /// One theme selection for every successful command response,
     /// not only the menu. The caller must supply a VERIFIED chat scope.
     pub fn decorate(&self, community_id: Option<&str>, body: &str) -> Result<String> {
+        self.decorate_for(community_id, None, body)
+    }
+
+    pub(crate) fn decorate_for(
+        &self,
+        community_id: Option<&str>,
+        actor: Option<&str>,
+        body: &str,
+    ) -> Result<String> {
         if self.dynamic_menu.is_some()
-            && self.effective_preferences(community_id)?.style == Style::None
+            && self.effective_preferences_for(community_id, actor)?.style == Style::None
         {
             return Self::plain_response(body);
         }
@@ -439,15 +495,33 @@ impl ControlThemes {
         chat: Option<&str>,
         viewer: MenuViewer<'_>,
     ) -> Result<String> {
-        crate::menu::render_root_with_viewer(self.effective_preferences(chat)?, viewer)
+        self.render_verified_chat_root_for(chat, None, viewer)
+    }
+
+    pub(crate) fn render_verified_chat_root_for(
+        &self,
+        chat: Option<&str>,
+        actor: Option<&str>,
+        viewer: MenuViewer<'_>,
+    ) -> Result<String> {
+        crate::menu::render_root_with_viewer(self.effective_preferences_for(chat, actor)?, viewer)
     }
 
     pub fn render(&self, community_id: Option<&str>, section: &str) -> Result<String> {
+        self.render_for(community_id, None, section)
+    }
+
+    pub(crate) fn render_for(
+        &self,
+        community_id: Option<&str>,
+        actor: Option<&str>,
+        section: &str,
+    ) -> Result<String> {
         let theme = self.selected(community_id)?;
         if self.dynamic_menu.is_none() {
             return theme.render(section);
         }
-        let preferences = self.effective_preferences(community_id)?;
+        let preferences = self.effective_preferences_for(community_id, actor)?;
         let body = if let Some(query) = section.strip_prefix("help") {
             crate::menu::render_help(query, preferences)?
         } else {

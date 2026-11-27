@@ -1,3 +1,7 @@
+## 2026-11-26 — Resolución de presentación por usuario autenticado
+
+El IPC selecciona el actor real de la solicitud firmada y utiliza `effective-style` de Vault para decorar las respuestas y reconstruir menús y ayuda admitidos. Los adaptadores que no cuentan con actor verificado mantienen la API anterior. Ante indisponibilidad de Vault se usa el estilo de fábrica, sin reutilizar preferencias personales potencialmente revocadas. La consulta de anti acepta también `--chat` y `--socket`. Validación Rust y prueba integral en idkbot pendientes. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Ámbitos explícitos y preferencias de grupo
 
 Cliente IPC y control WhatsApp conectados a la operación de presentación cifrada de Vault-Matter. `set style` y `set style --chat` gestionan el chat actual; `--user` selecciona el remitente o un único participante por mención/cita con comprobación de pertenencia; `set priority --chat` consulta o escribe el orden de resolución del grupo. Los ámbitos no implementados se rechazan sin redirigir mutaciones. Falta conectar/verificar el renderizador de todas las respuestas, probar la compilación y validar en ejecución las menciones y citas. No promover a producción. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].

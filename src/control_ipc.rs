@@ -200,6 +200,13 @@ impl WhatsAppControlIpc {
         } else {
             None
         };
+        let authenticated_actor = if matches!(&outcome, ControlIpcOutcome::Applied) {
+            serde_json::from_str::<WhatsAppControlFrame>(text)
+                .ok()
+                .map(|frame| if frame.from_me { frame.owner_jid } else { frame.actor_id })
+        } else {
+            None
+        };
         // The HMAC bridge has already authenticated, replay-checked and
         // authorized the menu before we inspect this frame again.
         // Actor/JID are never derived from a message body or display name.
@@ -229,8 +236,9 @@ impl WhatsAppControlIpc {
                         "Privado".to_owned()
                     };
                     self.themes
-                        .render_verified_chat_root(
+                        .render_verified_chat_root_for(
                             authenticated_chat.as_deref(),
+                            authenticated_actor.as_deref(),
                             crate::menu::MenuViewer {
                                 user: &alias,
                                 role: if owner { "Owner del socket" } else { "Usuario" },
@@ -246,7 +254,29 @@ impl WhatsAppControlIpc {
         };
         // All successful replies use the same per-chat renderer.
         // A menu preformatted through that registry is idempotent.
+        // Re-render admitted menu/help with the verified caller's preferences.
+        // Explicitly unsupported user scopes must retain their denial text.
         let validated = verified_root
+            .or_else(|| {
+                if !matches!(&outcome, ControlIpcOutcome::Applied) || message.is_none() {
+                    return None;
+                }
+                let frame = serde_json::from_str::<WhatsAppControlFrame>(text).ok()?;
+                let mut words = frame.text.split_whitespace();
+                let kind = match words.next()? {
+                    "=/>menu" | "=/>menú" => "menu",
+                    "=/>help" | "=/>ayuda" | "=/>h" => "help",
+                    _ => return None,
+                };
+                let args: Vec<_> = words.collect();
+                if args.iter().any(|arg| matches!(*arg, "--user" | "--chat" | "--socket" | "--mod" | "--global" | "--quoted")) {
+                    return None;
+                }
+                let section = format!("{kind} {}", args.join(" "));
+                self.themes
+                    .render_for(authenticated_chat.as_deref(), authenticated_actor.as_deref(), section.trim_end())
+                    .ok()
+            })
             .or(message)
             .and_then(|body| {
                 let status = serde_json::from_str::<WhatsAppControlFrame>(text)
@@ -259,11 +289,11 @@ impl WhatsAppControlIpc {
                     });
                 if status {
                     self.themes
-                        .decorate_status(authenticated_chat.as_deref(), &body)
+                        .decorate_status_for(authenticated_chat.as_deref(), authenticated_actor.as_deref(), &body)
                         .ok()
                 } else {
                     self.themes
-                        .decorate(authenticated_chat.as_deref(), &body)
+                        .decorate_for(authenticated_chat.as_deref(), authenticated_actor.as_deref(), &body)
                         .ok()
                 }
             })

@@ -501,11 +501,11 @@ impl Config {
             ["=/>anti", arguments @ ..] if arguments.len() <= 2 => {
                 let scope_count = arguments
                     .iter()
-                    .filter(|argument| matches!(**argument, "--mod" | "--global"))
+                    .filter(|argument| matches!(**argument, "--chat" | "--mod" | "--socket" | "--global"))
                     .count();
                 let filters = arguments
                     .iter()
-                    .filter(|argument| !matches!(**argument, "--mod" | "--global"))
+                    .filter(|argument| !matches!(**argument, "--chat" | "--mod" | "--socket" | "--global"))
                     .copied()
                     .collect::<Vec<_>>();
                 scope_count <= 1
