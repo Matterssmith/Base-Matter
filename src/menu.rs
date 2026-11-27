@@ -518,7 +518,10 @@ pub fn button_menu_items(section: &str, language: Language) -> Vec<serde_json::V
     let root = matches!(
         parts.as_slice(),
         ["=/>menu" | "=/>menú"]
-            | ["=/>menu" | "=/>menú", "classic" | "matter" | "web" | "modern" | "buttons" | "all"]
+            | [
+                "=/>menu" | "=/>menú",
+                "classic" | "matter" | "web" | "modern" | "buttons" | "all"
+            ]
             | ["=/>menu" | "=/>menú", "page", _]
     );
     if root {

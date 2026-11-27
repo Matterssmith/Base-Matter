@@ -314,7 +314,8 @@ impl ControlThemes {
     ) -> Result<String> {
         let mut theme = self.selected(chat)?;
         if self.dynamic_menu.is_some()
-            && self.effective_preferences_for(chat, actor)?.style == Style::None {
+            && self.effective_preferences_for(chat, actor)?.style == Style::None
+        {
             return Self::plain_response(body);
         }
         if theme.template == crate::classic_template::expanded_layout("control") {

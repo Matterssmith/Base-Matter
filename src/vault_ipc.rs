@@ -573,10 +573,15 @@ impl VaultClient {
         request: &PresentationRequest<'_>,
     ) -> Result<Option<String>> {
         let payload = serde_json::to_vec(request)?;
-        self.invoke("presentation_config", "presentation-v1", None, Some(&payload))?
-            .value
-            .map(|value| Ok(std::str::from_utf8(&value)?.to_owned()))
-            .transpose()
+        self.invoke(
+            "presentation_config",
+            "presentation-v1",
+            None,
+            Some(&payload),
+        )?
+        .value
+        .map(|value| Ok(std::str::from_utf8(&value)?.to_owned()))
+        .transpose()
     }
 
     pub fn config_get_with_source(&self, record: &str) -> Result<(Option<String>, bool)> {

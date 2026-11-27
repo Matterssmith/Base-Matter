@@ -203,7 +203,13 @@ impl WhatsAppControlIpc {
         let authenticated_actor = if matches!(&outcome, ControlIpcOutcome::Applied) {
             serde_json::from_str::<WhatsAppControlFrame>(text)
                 .ok()
-                .map(|frame| if frame.from_me { frame.owner_jid } else { frame.actor_id })
+                .map(|frame| {
+                    if frame.from_me {
+                        frame.owner_jid
+                    } else {
+                        frame.actor_id
+                    }
+                })
         } else {
             None
         };
@@ -269,12 +275,21 @@ impl WhatsAppControlIpc {
                     _ => return None,
                 };
                 let args: Vec<_> = words.collect();
-                if args.iter().any(|arg| matches!(*arg, "--user" | "--chat" | "--socket" | "--mod" | "--global" | "--quoted")) {
+                if args.iter().any(|arg| {
+                    matches!(
+                        *arg,
+                        "--user" | "--chat" | "--socket" | "--mod" | "--global" | "--quoted"
+                    )
+                }) {
                     return None;
                 }
                 let section = format!("{kind} {}", args.join(" "));
                 self.themes
-                    .render_for(authenticated_chat.as_deref(), authenticated_actor.as_deref(), section.trim_end())
+                    .render_for(
+                        authenticated_chat.as_deref(),
+                        authenticated_actor.as_deref(),
+                        section.trim_end(),
+                    )
                     .ok()
             })
             .or(message)
@@ -289,11 +304,19 @@ impl WhatsAppControlIpc {
                     });
                 if status {
                     self.themes
-                        .decorate_status_for(authenticated_chat.as_deref(), authenticated_actor.as_deref(), &body)
+                        .decorate_status_for(
+                            authenticated_chat.as_deref(),
+                            authenticated_actor.as_deref(),
+                            &body,
+                        )
                         .ok()
                 } else {
                     self.themes
-                        .decorate_for(authenticated_chat.as_deref(), authenticated_actor.as_deref(), &body)
+                        .decorate_for(
+                            authenticated_chat.as_deref(),
+                            authenticated_actor.as_deref(),
+                            &body,
+                        )
                         .ok()
                 }
             })
