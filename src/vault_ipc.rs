@@ -298,10 +298,12 @@ impl VaultClient {
         match operation {
             "global_style_get" => record == "global-menu-style-v1",
             "get" => {
-                matches!(record, "menu-style-v1" | "menu-language-v1" | "menu-mode-v1")
-                    || record
-                        .strip_prefix("menu-style-chat-")
-                        .is_some_and(|value| hex_suffix(value, 64))
+                matches!(
+                    record,
+                    "menu-style-v1" | "menu-language-v1" | "menu-mode-v1"
+                ) || record
+                    .strip_prefix("menu-style-chat-")
+                    .is_some_and(|value| hex_suffix(value, 64))
                     || record.strip_prefix("anti-").is_some_and(|value| {
                         value.rsplit_once('-').is_some_and(|(name, hash)| {
                             (name == "domains" || crate::anti::RULES.contains(&name))
@@ -314,11 +316,7 @@ impl VaultClient {
     }
 
     #[cfg(unix)]
-    fn cache_material(
-        &self,
-        operation: &str,
-        record: &str,
-    ) -> Result<Option<CacheMaterial>> {
+    fn cache_material(&self, operation: &str, record: &str) -> Result<Option<CacheMaterial>> {
         let Some(directory) = std::env::var_os("MATTER_VAULT_READ_CACHE_DIR") else {
             return Ok(None);
         };
@@ -660,14 +658,13 @@ impl VaultClient {
         if payload.len() as u64 > MAX_WIRE {
             bail!("vault_request_too_large");
         }
-        let mut stream = UnixStream::connect(&self.socket_path).map_err(|error| {
-            match error.kind() {
+        let mut stream =
+            UnixStream::connect(&self.socket_path).map_err(|error| match error.kind() {
                 std::io::ErrorKind::NotFound | std::io::ErrorKind::ConnectionRefused => {
                     anyhow!("vault_unavailable")
                 }
                 _ => anyhow!("vault_connection_failed"),
-            }
-        })?;
+            })?;
         stream.set_read_timeout(Some(Duration::from_secs(5)))?;
         stream.set_write_timeout(Some(Duration::from_secs(5)))?;
         stream.write_all(&payload)?;
@@ -743,11 +740,23 @@ mod cache_tests {
     #[test]
     fn cache_is_configuration_only() {
         assert!(VaultClient::cacheable_config("get", "menu-style-v1"));
-        assert!(VaultClient::cacheable_config("global_style_get", "global-menu-style-v1"));
-        assert!(!VaultClient::cacheable_config("get", "global-owner-check-v2"));
-        assert!(!VaultClient::cacheable_config("owner_check", "global-owner-check-v2"));
+        assert!(VaultClient::cacheable_config(
+            "global_style_get",
+            "global-menu-style-v1"
+        ));
+        assert!(!VaultClient::cacheable_config(
+            "get",
+            "global-owner-check-v2"
+        ));
+        assert!(!VaultClient::cacheable_config(
+            "owner_check",
+            "global-owner-check-v2"
+        ));
         assert!(!VaultClient::cacheable_config("put", "menu-style-v1"));
-        assert!(!VaultClient::cacheable_config("get", "connection-health-v1"));
+        assert!(!VaultClient::cacheable_config(
+            "get",
+            "connection-health-v1"
+        ));
     }
 
     #[test]
@@ -759,7 +768,11 @@ mod cache_tests {
         fs::DirBuilder::new().mode(0o700).create(&directory)?;
         let result = (|| -> Result<()> {
             let key = directory.join("client.key");
-            let mut file = fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(&key)?;
+            let mut file = fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .mode(0o600)
+                .open(&key)?;
             file.write_all(&[9u8; 32])?;
             let client = VaultClient {
                 socket_path: directory.join("absent.sock"),
@@ -773,7 +786,8 @@ mod cache_tests {
             let path = material()?.path;
             VaultClient::write_snapshot(material()?, Some("none"))?;
             assert_eq!(client.read_snapshot(material()?)?, Some("none".into()));
-            let mut foreign = client.cache_material_in(directory.clone(), "get", "menu-language-v1")?;
+            let mut foreign =
+                client.cache_material_in(directory.clone(), "get", "menu-language-v1")?;
             foreign.path = path.clone();
             assert!(client.read_snapshot(foreign).is_err());
             let mut bytes = fs::read(&path)?;
@@ -784,7 +798,9 @@ mod cache_tests {
             VaultClient::write_snapshot(material()?, None)?;
             assert_eq!(client.read_snapshot(material()?)?, None);
             assert!(client.config_set("menu-style-v1", "matter").is_err());
-            assert!(client.set_global_style("12345678@lid", crate::menu::Style::None).is_err());
+            assert!(client
+                .set_global_style("12345678@lid", crate::menu::Style::None)
+                .is_err());
             Ok(())
         })();
         fs::remove_dir_all(directory)?;
