@@ -13,12 +13,19 @@ const REQUEST: &str = "maintenance-restart.pending.json";
 const RESULT: &str = "maintenance-restart.result";
 
 pub fn styled(title: &str, body: &str, plain: bool) -> Result<String> {
-    let text = format!("{title}\n{body}");
-    if plain {
-        Ok(text)
-    } else {
-        whatsapp_matter_rust_provider::render_provider_control(&text)
+    if body.is_empty() || body.chars().any(|c| c.is_control() && c != '\n') {
+        bail!("Invalid maintenance report");
     }
+    let text = if plain {
+        format!("{title}\n{body}")
+    } else {
+        whatsapp_matter_rust_provider::classic_template::maintenance_report(title, body)
+            .ok_or_else(|| anyhow::anyhow!("Invalid maintenance layout"))?
+    };
+    if text.len() > 3800 {
+        bail!("Maintenance report exceeds transport limit");
+    }
+    Ok(text)
 }
 
 fn root() -> PathBuf {
@@ -152,8 +159,14 @@ mod tests {
             "Update\nEstado: OK"
         );
         let matter = styled("Update", "Estado: OK", false).unwrap();
-        assert!(matter.contains("Estado: OK"));
-        assert!(matter.contains("╭"));
+        assert_eq!(
+            matter,
+            "╭─ 💠 𝗨𝗽𝗱𝗮𝘁𝗲\n│·♪·╚[ Estado: OK\n╰──╮╭───────⟨ 🌀"
+        );
+        assert!(styled("Restart", "Estado: OK", false)
+            .unwrap()
+            .starts_with("╭─ 💠 𝗥𝗲𝘀𝘁𝗮𝗿𝘁"));
+        assert!(styled("Update", "Estado:\u{0000}", false).is_err());
         assert!(valid_chat("12345-67890@g.us"));
         assert!(!valid_chat("123@newsletter"));
         assert!(!valid_chat("123@lid\n"));

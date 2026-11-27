@@ -25,6 +25,36 @@ pub fn expanded_layout(name: &str) -> String {
     expand(layout(name))
 }
 
+/// Maintenance shares the same rows and footer as the compact Matter console.
+/// Only the command's title is specific; all dynamic values remain literal.
+pub fn maintenance_report(kind: &str, body: &str) -> Option<String> {
+    let name = match kind {
+        "Update" => "update",
+        "Restart" => "restart",
+        _ => return None,
+    };
+    if body.trim().is_empty() {
+        return None;
+    }
+    let mut lines = body.lines().peekable();
+    let mut rows = String::new();
+    while let Some(line) = lines.next() {
+        let row = if lines.peek().is_some() {
+            "row"
+        } else {
+            "last-row"
+        };
+        rows.push_str(&render(console_template(row), &[("BODY", line)]));
+    }
+    Some(render(
+        layout(name),
+        &[
+            ("ROWS", &rows),
+            ("FOOTER", console_template("footer").trim_end()),
+        ],
+    ))
+}
+
 /// Dynamic menu layout; unknown sections are handled by the caller.
 pub fn menu_layout(name: &str) -> Option<&'static str> {
     theme()["matter_templates"]["menu"][name].as_str()
@@ -127,6 +157,26 @@ mod tests {
             "CMD {{CLASSIC_HEADER}}"
         );
         assert_eq!(console_palette("frame"), "1;96");
+    }
+
+    #[test]
+    fn maintenance_reports_use_the_compact_matter_design() {
+        let update = maintenance_report(
+            "Update",
+            "Estado: Código actualizado\nBot: sigue activo",
+        )
+        .unwrap();
+        assert_eq!(
+            update,
+            "╭─ 💠 𝗨𝗽𝗱𝗮𝘁𝗲\n│·♪·╠[ Estado: Código actualizado\n│·♪·╚[ Bot: sigue activo\n╰──╮╭───────⟨ 🌀"
+        );
+        let restart = maintenance_report("Restart", "{{CLASSIC_HEADER}}").unwrap();
+        assert_eq!(
+            restart,
+            "╭─ 💠 𝗥𝗲𝘀𝘁𝗮𝗿𝘁\n│·♪·╚[ {{CLASSIC_HEADER}}\n╰──╮╭───────⟨ 🌀"
+        );
+        assert!(maintenance_report("Update", "").is_none());
+        assert!(maintenance_report("unknown", "Estado: OK").is_none());
     }
 
     #[test]

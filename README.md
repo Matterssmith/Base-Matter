@@ -1,3 +1,9 @@
+## 2026-11-27 — Plantilla Matter de Update y Restart
+
+Los informes de mantenimiento reutilizan las filas y cierre compactos de consola de `templates/menu/theme.json`, con encabezados propios `𝗨𝗽𝗱𝗮𝘁𝗲` y `𝗥𝗲𝘀𝘁𝗮𝗿𝘁` en la misma plantilla central. El renderizador compartido inserta los valores literalmente, utiliza una última fila diferenciada y conserva `style none` sin decoración. No se cambia la lógica de actualización sin reinicio, la autorización ni la sesión. Pruebas de diseño exacto añadidas; ejecución completa pendiente.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Update sin reinicio y supervisor por defecto
 
 `cargo run` sin argumentos usa el supervisor local; `--check-only` conserva el preflight sin conexión. `=/>update` aplica únicamente fast-forward del código alpha mientras sigue activo el bot, informa commits locales/remotos, archivos y hasta cinco cambios; no compila ni reinicia. `=/>restart` verifica y construye si cambió el SHA en ejecución y activa la revisión con la sesión existente. Los informes usan el estilo efectivo Matter/none del ACK autenticado; se guarda una solicitud privada de reinicio y se entrega el resultado al chat original tras conectar. Si falla la verificación queda detenido y el informe se conserva para una conexión posterior. No se cambian permisos, Vault ni pairing. CI y prueba real pendientes. README revisados: 2/2.
