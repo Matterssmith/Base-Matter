@@ -13,9 +13,10 @@ const REQUEST: &str = "maintenance-restart.pending.json";
 const RESULT: &str = "maintenance-restart.result";
 
 fn styled_sections(sections: &[(&str, &str)], plain: bool) -> Result<String> {
-    if sections.iter().any(|(_, body)| {
-        body.is_empty() || body.chars().any(|c| c.is_control() && c != '\n')
-    }) {
+    if sections
+        .iter()
+        .any(|(_, body)| body.is_empty() || body.chars().any(|c| c.is_control() && c != '\n'))
+    {
         bail!("Invalid maintenance report");
     }
     let text = if plain {
@@ -280,7 +281,10 @@ pub fn restart_report(session: &Path) -> Result<Option<(String, String)>> {
                 .join("\n");
             update_message(&update, verification, body, pending.plain)?
         }
-        None => styled_sections(&[("Verificación", verification), ("Restart", body)], pending.plain)?,
+        None => styled_sections(
+            &[("Verificación", verification), ("Restart", body)],
+            pending.plain,
+        )?,
     };
     Ok(Some((pending.chat, message)))
 }
@@ -298,10 +302,8 @@ mod tests {
 
     #[test]
     fn update_policy_persists_without_implicit_restart() {
-        let directory = std::env::temp_dir().join(format!(
-            "matter-update-policy-test-{}",
-            std::process::id()
-        ));
+        let directory =
+            std::env::temp_dir().join(format!("matter-update-policy-test-{}", std::process::id()));
         fs::create_dir(&directory).unwrap();
         let session = directory.join("session.db");
         assert_eq!(update_policy(&session).unwrap(), "manual");
@@ -322,10 +324,7 @@ mod tests {
             "Update\nEstado: OK"
         );
         let matter = styled("Update", "Estado: OK", false).unwrap();
-        assert_eq!(
-            matter,
-            "╭─ 💠 𝗨𝗽𝗱𝗮𝘁𝗲\n│·♪·╚[ Estado: OK\n╰───────────⟨ 🌀"
-        );
+        assert_eq!(matter, "╭─ 💠 𝗨𝗽𝗱𝗮𝘁𝗲\n│·♪·╚[ Estado: OK\n╰───────────⟨ 🌀");
         assert!(styled("Restart", "Estado: OK", false)
             .unwrap()
             .starts_with("╭─ 💠 𝗥𝗲𝘀𝘁𝗮𝗿𝘁"));

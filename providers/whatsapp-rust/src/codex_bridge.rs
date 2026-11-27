@@ -124,9 +124,11 @@ fn report(reply: &Reply) -> Result<String> {
         _ => bail!("Unknown Codex status"),
     };
     let mut body = format!("Estado: {description}\nRepositorio: Base-Matter\nRama objetivo: alpha");
-    if let Some(commit) = reply.commit.as_deref().filter(|value| {
-        value.len() == 40 && value.bytes().all(|b| b.is_ascii_hexdigit())
-    }) {
+    if let Some(commit) = reply
+        .commit
+        .as_deref()
+        .filter(|value| value.len() == 40 && value.bytes().all(|b| b.is_ascii_hexdigit()))
+    {
         body.push_str(&format!("\nCommit: {}", &commit[..12]));
     }
     for file in reply.files.iter().take(5) {
@@ -136,7 +138,9 @@ fn report(reply: &Reply) -> Result<String> {
         }
     }
     if let Some(pr) = reply.pr.filter(|pr| *pr > 0) {
-        body.push_str(&format!("\nPR: https://github.com/Matterssmith/Base-Matter/pull/{pr}"));
+        body.push_str(&format!(
+            "\nPR: https://github.com/Matterssmith/Base-Matter/pull/{pr}"
+        ));
     }
     Ok(body)
 }
@@ -152,7 +156,9 @@ pub fn command(session: &Path, chat: &str, instruction: &str, plain: bool) -> Re
         if instruction != "status" {
             return Ok("Estado: Tarea pendiente\nConsulta: =/>codex status".into());
         }
-        return report(&request(serde_json::json!({"op":"status","id":pending.id}))?);
+        return report(&request(
+            serde_json::json!({"op":"status","id":pending.id}),
+        )?);
     }
     if instruction == "status" {
         return Ok("Estado: Sin tareas pendientes".into());
@@ -179,7 +185,10 @@ pub fn command(session: &Path, chat: &str, instruction: &str, plain: bool) -> Re
     }));
     match reply {
         Ok(reply) => report(&reply),
-        Err(_) => Ok("Estado: Envío no confirmado\nConsulta: =/>codex status\nNo se confirma ningún cambio.".into()),
+        Err(_) => Ok(
+            "Estado: Envío no confirmado\nConsulta: =/>codex status\nNo se confirma ningún cambio."
+                .into(),
+        ),
     }
 }
 
@@ -192,7 +201,11 @@ pub fn notice(session: &Path) -> Result<Option<(String, String, String)>> {
         return Ok(None);
     }
     let body = super::maintenance::styled("Codex", &report(&reply)?, pending.plain)?;
-    Ok(Some((pending.chat, body, format!("{}:{}", pending.id, reply.state))))
+    Ok(Some((
+        pending.chat,
+        body,
+        format!("{}:{}", pending.id, reply.state),
+    )))
 }
 
 pub fn ack_notice(session: &Path, marker: &str) -> Result<()> {
@@ -205,7 +218,10 @@ pub fn ack_notice(session: &Path, marker: &str) -> Result<()> {
     if pending.id != id {
         bail!("Codex task changed");
     }
-    if matches!(state, "ready" | "failed" | "no_changes" | "closed" | "missing") {
+    if matches!(
+        state,
+        "ready" | "failed" | "no_changes" | "closed" | "missing"
+    ) {
         fs::remove_file(path(session)?)?;
     } else {
         pending.seen = state.into();

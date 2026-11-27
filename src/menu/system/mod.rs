@@ -1,8 +1,8 @@
 // Category system: a Rust module per command.
 use crate::menu::Category;
+pub mod codex;
 #[path = "system.rs"]
 pub mod main_command;
-pub mod codex;
 pub mod reload;
 pub mod restart;
 pub mod update;
