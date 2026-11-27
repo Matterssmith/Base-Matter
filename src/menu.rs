@@ -246,7 +246,6 @@ impl Style {
             Self::None => "none",
         }
     }
-
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Language {

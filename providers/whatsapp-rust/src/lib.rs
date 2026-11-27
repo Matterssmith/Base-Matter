@@ -166,8 +166,7 @@ pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
             Ok(ControlAck::AppliedWithMessage(message))
         }
         (true, "applied", Some(message), Some(mode))
-            if valid_message(&message)
-                && matches!(mode.as_str(), "web" | "matter" | "buttons") =>
+            if valid_message(&message) && matches!(mode.as_str(), "web" | "matter" | "buttons") =>
         {
             Ok(ControlAck::AppliedWithMenuMode { message, mode })
         }

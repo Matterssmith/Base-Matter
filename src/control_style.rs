@@ -169,7 +169,10 @@ impl ControlThemes {
             None => "menu-style-v1".to_owned(),
             Some(chat) => {
                 use sha2::{Digest, Sha256};
-                format!("menu-style-chat-{}", hex::encode(Sha256::digest(chat.as_bytes())))
+                format!(
+                    "menu-style-chat-{}",
+                    hex::encode(Sha256::digest(chat.as_bytes()))
+                )
             }
         }
     }
@@ -228,16 +231,23 @@ impl ControlThemes {
             return self.current_menu_preferences();
         }
         use crate::control_scope::CommandScope;
-        let scope = if chat.is_some() { CommandScope::Chat } else { CommandScope::Socket };
+        let scope = if chat.is_some() {
+            CommandScope::Chat
+        } else {
+            CommandScope::Socket
+        };
         // Presentation falls back to factory defaults during Vault outages.
         // Configuration commands use strict reads and never silently write locally.
-        let style = self.scoped_style(scope, chat.unwrap_or_default()).unwrap_or(Style::Classic);
-        let language = self.config_client().and_then(|vault| {
-            match vault.config_get("menu-language-v1")? {
+        let style = self
+            .scoped_style(scope, chat.unwrap_or_default())
+            .unwrap_or(Style::Classic);
+        let language = self
+            .config_client()
+            .and_then(|vault| match vault.config_get("menu-language-v1")? {
                 Some(value) => Language::parse(&value),
                 None => Ok(Language::Es),
-            }
-        }).unwrap_or(Language::Es);
+            })
+            .unwrap_or(Language::Es);
         Ok(crate::menu::Preferences { style, language })
     }
 
@@ -253,7 +263,8 @@ impl ControlThemes {
     }
 
     fn plain_response(body: &str) -> Result<String> {
-        if body.is_empty() || body.len() > 3800 || body.chars().any(|c| c.is_control() && c != '\n') {
+        if body.is_empty() || body.len() > 3800 || body.chars().any(|c| c.is_control() && c != '\n')
+        {
             bail!("Invalid control response");
         }
         Ok(body.to_owned())
@@ -292,7 +303,9 @@ impl ControlThemes {
 
     pub fn set_menu_mode(&self, value: &str) -> Result<()> {
         if self.require_vault_config {
-            return self.config_client()?.config_set("menu-mode-v1", MenuMode::parse(value)?.as_str());
+            return self
+                .config_client()?
+                .config_set("menu-mode-v1", MenuMode::parse(value)?.as_str());
         }
         self.dynamic_menu
             .as_ref()
@@ -302,7 +315,9 @@ impl ControlThemes {
 
     pub fn set_menu_style(&self, value: &str) -> Result<()> {
         if self.require_vault_config {
-            return self.config_client()?.config_set("menu-style-v1", Style::parse(value)?.as_str());
+            return self
+                .config_client()?
+                .config_set("menu-style-v1", Style::parse(value)?.as_str());
         }
         let preferences = self
             .dynamic_menu
@@ -313,7 +328,9 @@ impl ControlThemes {
 
     pub fn set_menu_language(&self, value: &str) -> Result<()> {
         if self.require_vault_config {
-            return self.config_client()?.config_set("menu-language-v1", Language::parse(value)?.as_str());
+            return self
+                .config_client()?
+                .config_set("menu-language-v1", Language::parse(value)?.as_str());
         }
         let preferences = self
             .dynamic_menu
@@ -348,7 +365,9 @@ impl ControlThemes {
     /// One theme selection for every successful command response,
     /// not only the menu. The caller must supply a VERIFIED chat scope.
     pub fn decorate(&self, community_id: Option<&str>, body: &str) -> Result<String> {
-        if self.dynamic_menu.is_some() && self.effective_preferences(community_id)?.style == Style::None {
+        if self.dynamic_menu.is_some()
+            && self.effective_preferences(community_id)?.style == Style::None
+        {
             return Self::plain_response(body);
         }
         // Dynamic menus are self-contained. The same verified IPC response

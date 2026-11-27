@@ -312,7 +312,10 @@ impl WhatsAppControlIpc {
                     )
                 })
                 .and_then(|frame| {
-                    let options = self.themes.effective_preferences(Some(&frame.chat_jid)).ok()?;
+                    let options = self
+                        .themes
+                        .effective_preferences(Some(&frame.chat_jid))
+                        .ok()?;
                     Some(crate::menu::button_menu_items(
                         &frame.text,
                         options.language,

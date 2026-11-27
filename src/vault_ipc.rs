@@ -281,7 +281,9 @@ impl VaultClient {
     }
     pub fn global_style(&self) -> Result<crate::menu::Style> {
         let response = self.invoke("global_style_get", "global-menu-style-v1", None, None)?;
-        let value = response.value.ok_or_else(|| anyhow::anyhow!("Missing global style"))?;
+        let value = response
+            .value
+            .ok_or_else(|| anyhow::anyhow!("Missing global style"))?;
         crate::menu::Style::parse(std::str::from_utf8(&value)?)
     }
 
@@ -290,7 +292,12 @@ impl VaultClient {
             "requester": {"platform": "whatsapp", "subject_id": principal},
             "style": style.as_str(),
         }))?;
-        self.invoke("global_style_set", "global-menu-style-v1", None, Some(&payload))?;
+        self.invoke(
+            "global_style_set",
+            "global-menu-style-v1",
+            None,
+            Some(&payload),
+        )?;
         Ok(())
     }
 

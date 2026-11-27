@@ -403,7 +403,10 @@ impl ControlDispatcher {
             }
             Ok(format!("Estilo de {label}: {}. Opciones: matter | none.", themes.scoped_style(scope, chat)?.as_str()))
         })().unwrap_or_else(|_| "Vault-Matter: configuración no disponible o permiso denegado. No se confirmó ningún cambio.".into());
-        Ok(DispatchResult::Extension { command: "set".into(), output })
+        Ok(DispatchResult::Extension {
+            command: "set".into(),
+            output,
+        })
     }
 
     pub fn dispatch_public_readonly(

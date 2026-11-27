@@ -213,7 +213,10 @@ impl WhatsAppControlBridge {
         if admin_attested
             && (!is_public_reader
                 || !valid_group_jid(&frame.chat_jid)
-                || !matches!(style_parts.as_slice(), ["=/>set", "style", "matter" | "none" | "inherit"]))
+                || !matches!(
+                    style_parts.as_slice(),
+                    ["=/>set", "style", "matter" | "none" | "inherit"]
+                ))
         {
             bail!("Invalid group style attestation");
         }
@@ -221,15 +224,33 @@ impl WhatsAppControlBridge {
             use crate::control_scope::{parse_scope, CommandScope};
             let scoped = parse_scope(&style_parts[1..])?;
             if matches!(scoped.arguments.as_slice(), ["style"] | ["style", _]) {
-                if !self.replay.claim("whatsapp", &self.config.socket_id, &frame.message_id)? {
+                if !self
+                    .replay
+                    .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
+                {
                     return Ok(WhatsAppBridgeOutcome::Duplicate);
                 }
                 let group = valid_group_jid(&frame.chat_jid).then_some(frame.chat_jid.as_str());
-                let kind = if group.is_some() { "group" } else if is_owner { "self" } else { "private" };
-                if !self.control.chat_command_allowed(&self.config.socket_id, group, kind, style_text)? {
+                let kind = if group.is_some() {
+                    "group"
+                } else if is_owner {
+                    "self"
+                } else {
+                    "private"
+                };
+                if !self.control.chat_command_allowed(
+                    &self.config.socket_id,
+                    group,
+                    kind,
+                    style_text,
+                )? {
                     return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive));
                 }
-                let principal = if is_owner { self.config.owner_jid.as_str() } else { frame.actor_id.as_str() };
+                let principal = if is_owner {
+                    self.config.owner_jid.as_str()
+                } else {
+                    frame.actor_id.as_str()
+                };
                 let value = scoped.arguments.get(1).copied();
                 let needs_global = match scoped.scope {
                     CommandScope::Chat => !is_owner && !admin_attested && group.is_some(),
@@ -238,16 +259,23 @@ impl WhatsAppControlBridge {
                 };
                 let global_owner = value.is_some()
                     && needs_global
-                    && self.global_vault.as_ref().is_some_and(|vault| {
-                        vault.require_global_owner(principal).is_ok()
-                    });
+                    && self
+                        .global_vault
+                        .as_ref()
+                        .is_some_and(|vault| vault.require_global_owner(principal).is_ok());
                 let can_change = match scoped.scope {
-                    CommandScope::Chat => is_owner || admin_attested || group.is_none() || global_owner,
+                    CommandScope::Chat => {
+                        is_owner || admin_attested || group.is_none() || global_owner
+                    }
                     CommandScope::Socket => is_owner || global_owner,
                     CommandScope::Global => global_owner,
                 };
                 let outcome = self.control.scoped_style_reply(
-                    scoped.scope, &frame.chat_jid, principal, value, can_change,
+                    scoped.scope,
+                    &frame.chat_jid,
+                    principal,
+                    value,
+                    can_change,
                 )?;
                 return Ok(WhatsAppBridgeOutcome::Dispatched(outcome));
             }

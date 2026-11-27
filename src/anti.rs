@@ -305,7 +305,12 @@ impl AntiStore {
         format!("anti-{name}-{}", hex::encode(&hash[..16]))
     }
 
-    fn vault_rule(&self, socket: &str, group: Option<&str>, name: &str) -> Result<Option<AntiRule>> {
+    fn vault_rule(
+        &self,
+        socket: &str,
+        group: Option<&str>,
+        name: &str,
+    ) -> Result<Option<AntiRule>> {
         let vault = self.vault_client(socket)?;
         let value = vault.config_get(&Self::config_record(group, name))?;
         match value.as_deref() {
@@ -336,7 +341,10 @@ impl AntiStore {
                 if domains.len() > 64 {
                     bail!("Lista de dominios inválida");
                 }
-                domains.iter().map(|value| normalize_domain(value)).collect()
+                domains
+                    .iter()
+                    .map(|value| normalize_domain(value))
+                    .collect()
             }
             None => Ok(Vec::new()),
         }
