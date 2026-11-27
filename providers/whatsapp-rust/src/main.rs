@@ -405,14 +405,17 @@ struct ConsoleTraceHeader {
     rows: [String; 2],
     identity: String,
     scope: String,
-    local_role: &'static str,
+    wa_role: &'static str,
+    socket_owner: bool,
 }
 
-fn console_role(global_owner: bool, local_role: &'static str) -> &'static str {
+fn console_matter_role(global_owner: bool, socket_owner: bool) -> &'static str {
     if global_owner {
         "Owner global"
+    } else if socket_owner {
+        "Owner socket"
     } else {
-        local_role
+        "Sin verificar"
     }
 }
 
@@ -451,11 +454,6 @@ impl CommandTrace {
             let command = console_color(&console_command(data.text), "command");
             let (group, username, lid, group_role) = console_metadata(ctx, data).await;
             let identity = if lid == "-" { sender } else { lid };
-            let role = if socket_owner {
-                "Owner socket"
-            } else {
-                group_role
-            };
             let scope = if data.is_group {
                 classic_template::console_layout(
                     "group",
@@ -514,7 +512,8 @@ impl CommandTrace {
                 rows,
                 identity,
                 scope,
-                local_role: role,
+                wa_role: group_role,
+                socket_owner,
             });
         }
         trace
@@ -524,21 +523,37 @@ impl CommandTrace {
         let Some(header) = &self.header else {
             return;
         };
-        let role = console_role(global_owner, header.local_role);
-        let role_color = match role {
-            "Owner global" | "Owner socket" => "owner",
+        let matter_role = console_matter_role(global_owner, header.socket_owner);
+        let matter_color = if global_owner || header.socket_owner {
+            "owner"
+        } else {
+            "muted"
+        };
+        let wa_color = match header.wa_role {
             "Admin WA" => "admin",
             "Miembro WA" => "member",
             _ => "muted",
         };
-        let rank = classic_template::console_layout(
-            "rank",
-            &[
-                ("RANK", &console_color(role, role_color)),
-                ("ID", &console_color(&header.identity, "identity")),
-            ],
+        let wa_rank = classic_template::console_layout(
+            "wa_rank",
+            &[("RANK", &console_color(header.wa_role, wa_color))],
         );
-        let rows = [&header.rows[0], &header.rows[1], &rank, &header.scope];
+        let matter_rank = classic_template::console_layout(
+            "matter_rank",
+            &[("RANK", &console_color(matter_role, matter_color))],
+        );
+        let identity = classic_template::console_layout(
+            "identity",
+            &[("ID", &console_color(&header.identity, "identity"))],
+        );
+        let rows = [
+            &header.rows[0],
+            &header.rows[1],
+            &wa_rank,
+            &matter_rank,
+            &identity,
+            &header.scope,
+        ];
         println!(
             "{}\n{}",
             console_color(header.header.trim_end_matches('\n'), "frame"),
@@ -1966,13 +1981,24 @@ mod readiness_tests {
     }
 
     #[test]
-    fn verified_global_owner_precedes_local_whatsapp_rank() {
-        assert_eq!(console_role(true, "Admin WA"), "Owner global");
-        assert_eq!(console_role(true, "Miembro WA"), "Owner global");
-        assert_eq!(console_role(true, "Owner socket"), "Owner global");
-        assert_eq!(console_role(false, "Admin WA"), "Admin WA");
-        assert_eq!(console_role(false, "Owner socket"), "Owner socket");
-        assert_eq!(console_role(false, "Sin verificar"), "Sin verificar");
+    fn console_keeps_whatsapp_and_matter_ranks_independent() {
+        assert_eq!(console_matter_role(true, false), "Owner global");
+        assert_eq!(console_matter_role(true, true), "Owner global");
+        assert_eq!(console_matter_role(false, true), "Owner socket");
+        assert_eq!(console_matter_role(false, false), "Sin verificar");
+        for wa_role in ["Admin WA", "Miembro WA", "Sin verificar"] {
+            assert_eq!(
+                classic_template::console_layout("wa_rank", &[("RANK", wa_role)]),
+                format!("Rango WA: {wa_role}")
+            );
+            assert_eq!(
+                classic_template::console_layout(
+                    "matter_rank",
+                    &[("RANK", console_matter_role(true, false))]
+                ),
+                "Rango Matter: Owner global"
+            );
+        }
     }
 
     #[test]

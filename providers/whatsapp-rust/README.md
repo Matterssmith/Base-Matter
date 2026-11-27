@@ -1,3 +1,9 @@
+## 2026-11-26 — Rangos WA y Matter independientes en consola
+
+Por solicitud del propietario, la terminal muestra Rango WA, Rango Matter e ID en filas independientes de la plantilla compartida. El rango WA procede de metadatos del grupo; Matter muestra Owner global únicamente con ACK positivo del controlador, Owner socket cuando corresponde o Sin verificar si no hay confirmación. No se confunde ausencia de confirmación con ausencia de autoridad global. No se cambian permisos, resolución de identidad, autenticación, sesiones ni Vault. Prueba de regresión añadida; compilación, CI y comprobación de la identidad real en idkbot pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Resolución de presentación por usuario autenticado
 
 El IPC selecciona el actor real de la solicitud firmada y utiliza `effective-style` de Vault para decorar las respuestas y reconstruir menús y ayuda admitidos. Los adaptadores que no cuentan con actor verificado mantienen la API anterior. Ante indisponibilidad de Vault se usa el estilo de fábrica, sin reutilizar preferencias personales potencialmente revocadas. La consulta de anti acepta también `--chat` y `--socket`. Validación Rust y prueba integral en idkbot pendientes. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].

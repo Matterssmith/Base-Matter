@@ -1,3 +1,9 @@
+## 2026-11-26 — Rangos WA y Matter independientes en consola
+
+Por solicitud del propietario, la terminal muestra Rango WA, Rango Matter e ID en filas independientes de la plantilla compartida. El rango WA procede de metadatos del grupo; Matter muestra Owner global únicamente con ACK positivo del controlador, Owner socket cuando corresponde o Sin verificar si no hay confirmación. No se confunde ausencia de confirmación con ausencia de autoridad global. No se cambian permisos, resolución de identidad, autenticación, sesiones ni Vault. Prueba de regresión añadida; compilación, CI y comprobación de la identidad real en idkbot pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Rango global verificado en consola
 
 El proveedor ya no imprime el rango antes de recibir el resultado IPC. Con MATTER_WA_DIAG=1 el controlador comprueba nuevamente la firma HMAC del remitente de un comando admitido o denegado y pide a Vault una confirmación actual, con timeout de lectura/escritura diagnóstico de 250 ms. El ACK local opcional global_owner_verified=true solo cambia la etiqueta de consola a Owner global, con prioridad sobre Owner socket y Admin WA, sin alterar la aceptación o denegación del comando. Nunca se consulta para observaciones Anti, mensajes ignorados o duplicados, nunca se incluye el rango en la respuesta WhatsApp, no se cachean owners ni se confía en nombres. Los dos owners globales son pares. Si Vault no confirma el JID exacto, se conserva el rango local, no se afirma que el actor carezca de rango global. La resolución PN/LID de terceros y la mutación de roles no cambian en este checkpoint; verificar las identidades reales por separado. Pruebas de parsing de ACK y precedencia añadidas; CI/formato/compilación y prueba real pendientes. No se toca la sesión ni el servicio instalado. README revisados: 2/2.
