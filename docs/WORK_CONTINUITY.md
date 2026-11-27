@@ -1,3 +1,7 @@
+## 2026-11-26 — Ámbitos explícitos y preferencias de grupo
+
+Cliente IPC y control WhatsApp conectados a la operación de presentación cifrada de Vault-Matter. `set style` y `set style --chat` gestionan el chat actual; `--user` selecciona el remitente o un único participante por mención/cita con comprobación de pertenencia; `set priority --chat` consulta o escribe el orden de resolución del grupo. Los ámbitos no implementados se rechazan sin redirigir mutaciones. Falta conectar/verificar el renderizador de todas las respuestas, probar la compilación y validar en ejecución las menciones y citas. No promover a producción. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Ámbito explícito --chat
 
 El analizador común admite `--chat` como equivalente explícito al chat actual sin bandera, y `--socket` como alias de `--mod`. Los ámbitos son excluyentes. Se añadieron pruebas de equivalencia y rechazo de combinaciones. La integración de preferencias personales y prioridad de grupo continúa por separado; no se amplían permisos de comandos. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].

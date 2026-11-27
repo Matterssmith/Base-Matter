@@ -174,7 +174,8 @@ impl WhatsAppControlBridge {
     /// fresh, bounded Vault decision. Never grant access from this result.
     pub(crate) fn console_global_owner(&self, frame: &WhatsAppControlFrame) -> bool {
         if !(frame.text.starts_with("=/>")
-            || frame.text.starts_with("\u{001f}matter-group-style:=/>"))
+            || frame.text.starts_with("\u{001f}matter-group-style:=/>")
+            || frame.text.starts_with("\u{001f}matter-presentation:"))
         {
             return false;
         }
@@ -228,83 +229,119 @@ impl WhatsAppControlBridge {
             )?;
             return Ok(WhatsAppBridgeOutcome::AntiObserved);
         }
-        // Signed, exact style commands use the shared scope parser. A fresh
-        // group-admin attestation is scoped exclusively to chat style writes.
-        let (style_text, admin_attested) =
-            match frame.text.strip_prefix("\u{001f}matter-group-style:") {
-                Some(command) => (command, true),
-                None => (frame.text.as_str(), false),
+        // Only the authenticated adapter can attach fresh group/target metadata.
+        let (style_text, admin_attested, attested_target) =
+            if let Some(body) = frame.text.strip_prefix("\u{001f}matter-presentation:") {
+                let (admin, rest) = body.split_once(':').ok_or_else(|| anyhow!("Invalid presentation proof"))?;
+                let (target, command) = rest.split_once(':').ok_or_else(|| anyhow!("Invalid presentation target"))?;
+                if !matches!(admin, "0" | "1")
+                    || (admin == "1" && !valid_group_jid(&frame.chat_jid))
+                    || !command.starts_with("=/>set ")
+                {
+                    bail!("Invalid presentation attestation");
+                }
+                (command, admin == "1", Some(target))
+            } else if let Some(command) = frame.text.strip_prefix("\u{001f}matter-group-style:") {
+                if !is_public_reader || !valid_group_jid(&frame.chat_jid)
+                    || !matches!(command.split_whitespace().collect::<Vec<_>>().as_slice(),
+                        ["=/>set", "style", "matter" | "none" | "inherit"])
+                {
+                    bail!("Invalid group style attestation");
+                }
+                (command, true, None)
+            } else {
+                (frame.text.as_str(), false, None)
             };
         let style_parts: Vec<_> = style_text.split_whitespace().collect();
-        if admin_attested
-            && (!is_public_reader
-                || !valid_group_jid(&frame.chat_jid)
-                || !matches!(
-                    style_parts.as_slice(),
-                    ["=/>set", "style", "matter" | "none" | "inherit"]
-                ))
-        {
-            bail!("Invalid group style attestation");
-        }
-        if style_parts.first() == Some(&"=/>set") && style_parts.contains(&"style") {
+        let personal = style_parts.contains(&"--user");
+        let presentation = style_parts.first() == Some(&"=/>set")
+            && style_parts.iter().skip(1).any(|part| matches!(*part, "style" | "priority"));
+        if presentation || personal || attested_target.is_some() {
+            let group = valid_group_jid(&frame.chat_jid).then_some(frame.chat_jid.as_str());
+            let kind = if group.is_some() { "group" } else if is_owner { "self" } else { "private" };
+            if !self.replay.claim("whatsapp", &self.config.socket_id, &frame.message_id)? {
+                return Ok(WhatsAppBridgeOutcome::Duplicate);
+            }
+            if !self.control.chat_command_allowed(&self.config.socket_id, group, kind, style_text)? {
+                return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive));
+            }
+            let principal = if is_owner { self.config.owner_jid.as_str() } else { frame.actor_id.as_str() };
+            let reply = |output: String| -> Result<WhatsAppBridgeOutcome> {
+                Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
+                    command: "set".into(),
+                    output,
+                }))
+            };
+            if !presentation {
+                return reply("El ámbito --user aún no está disponible para este comando; no se realizó ningún cambio.".into());
+            }
             use crate::control_scope::{parse_scope, CommandScope};
-            let scoped = parse_scope(&style_parts[1..])?;
-            if matches!(scoped.arguments.as_slice(), ["style"] | ["style", _]) {
-                if !self
-                    .replay
-                    .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
-                {
-                    return Ok(WhatsAppBridgeOutcome::Duplicate);
-                }
-                let group = valid_group_jid(&frame.chat_jid).then_some(frame.chat_jid.as_str());
-                let kind = if group.is_some() {
-                    "group"
-                } else if is_owner {
-                    "self"
-                } else {
-                    "private"
-                };
-                if !self.control.chat_command_allowed(
-                    &self.config.socket_id,
-                    group,
-                    kind,
-                    style_text,
-                )? {
-                    return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive));
-                }
-                let principal = if is_owner {
-                    self.config.owner_jid.as_str()
-                } else {
-                    frame.actor_id.as_str()
-                };
-                let value = scoped.arguments.get(1).copied();
-                let needs_global = match scoped.scope {
-                    CommandScope::Chat => !is_owner && !admin_attested && group.is_some(),
-                    CommandScope::Socket => !is_owner,
-                    CommandScope::Global => true,
-                };
-                let global_owner = value.is_some()
-                    && needs_global
-                    && self
-                        .global_vault
-                        .as_ref()
-                        .is_some_and(|vault| vault.require_global_owner(principal).is_ok());
+            let user_count = style_parts.iter().filter(|part| **part == "--user").count();
+            let words: Vec<_> = style_parts[1..].iter().copied().filter(|part| *part != "--user").collect();
+            if user_count > 1 || (personal && words.iter().any(|word| matches!(*word, "--chat" | "--mod" | "--socket" | "--global"))) {
+                return reply("Solo se permite un ámbito por comando.".into());
+            }
+            let scoped = match parse_scope(&words) {
+                Ok(scoped) => scoped,
+                Err(_) => return reply("Ámbito inválido o repetido.".into()),
+            };
+            let [setting, tail @ ..] = scoped.arguments.as_slice() else {
+                return reply("Uso: =/>set style [ámbito] [matter|none|inherit]".into());
+            };
+            if tail.len() > 1 || !matches!(*setting, "style" | "priority") {
+                return reply("Argumentos inválidos. Selecciona un único usuario y valor.".into());
+            }
+            let value = tail.first().copied();
+            if !personal && attested_target.is_some_and(|target| target != "-") {
+                return reply("Objetivo de usuario inválido para este ámbito.".into());
+            }
+            if *setting == "style" && !personal && scoped.scope != CommandScope::Chat {
+                let global = value.is_some() && self.global_vault.as_ref()
+                    .is_some_and(|vault| vault.require_global_owner(principal).is_ok());
                 let can_change = match scoped.scope {
-                    CommandScope::Chat => {
-                        is_owner || admin_attested || group.is_none() || global_owner
-                    }
-                    CommandScope::Socket => is_owner || global_owner,
-                    CommandScope::Global => global_owner,
+                    CommandScope::Socket => is_owner || global,
+                    CommandScope::Global => global,
+                    CommandScope::Chat => unreachable!(),
                 };
                 let outcome = self.control.scoped_style_reply(
-                    scoped.scope,
-                    &frame.chat_jid,
-                    principal,
-                    value,
-                    can_change,
+                    scoped.scope, &frame.chat_jid, principal, value, can_change,
                 )?;
                 return Ok(WhatsAppBridgeOutcome::Dispatched(outcome));
             }
+            if *setting == "priority" && (personal || scoped.scope != CommandScope::Chat || group.is_none()) {
+                return reply("La prioridad de ámbitos se configura en el grupo con =/>set priority --chat.".into());
+            }
+            let target = if personal {
+                match attested_target.unwrap_or("-") {
+                    "-" => Some(principal),
+                    target if valid_user_jid(target) => Some(target),
+                    _ => return reply("Usuario no verificable. Usa una única mención o responde a un mensaje del chat.".into()),
+                }
+            } else { None };
+            let record_kind = if *setting == "priority" { "policy" }
+                else if personal { "user-style" } else { "chat-style" };
+            let Some(vault) = self.global_vault.as_ref() else {
+                return reply("Vault-Matter no disponible. No se confirmó ningún cambio.".into());
+            };
+            let request = crate::vault_ipc::PresentationRequest {
+                chat: &frame.chat_jid,
+                actor: principal,
+                target,
+                kind: record_kind,
+                admin: admin_attested,
+                value,
+            };
+            let label = match record_kind {
+                "policy" => "Prioridad del grupo",
+                "user-style" => "Estilo del usuario en este chat",
+                _ => "Estilo del chat",
+            };
+            let result = match vault.presentation_config(&request) {
+                Ok(value) => format!("{label}: {}. {}", value.as_deref().unwrap_or("inherit"),
+                    if request.value.is_some() { "Guardado en Vault-Matter." } else { "Lectura autenticada de Vault-Matter." }),
+                Err(_) => "Vault-Matter denegó la configuración o no está disponible. No se confirmó ningún cambio.".into(),
+            };
+            return reply(result);
         }
         // No bot commands, including historic #ping, are admitted here.
         if !frame.text.starts_with("=/>") {

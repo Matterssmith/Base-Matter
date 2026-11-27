@@ -36,6 +36,16 @@ const MAX_VALUE: usize = 1024 * 1024;
 #[cfg(unix)]
 const DOMAIN: &[u8] = b"matter-vault-ipc-aead-v1";
 
+#[derive(Serialize)]
+pub(crate) struct PresentationRequest<'a> {
+    pub chat: &'a str,
+    pub actor: &'a str,
+    pub target: Option<&'a str>,
+    pub kind: &'a str,
+    pub admin: bool,
+    pub value: Option<&'a str>,
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct RecordScope {
     pub vault: String,
@@ -301,6 +311,7 @@ impl VaultClient {
                     | "owner_grant_secondary"
                     | "global_style_get"
                     | "global_style_set"
+                    | "presentation_config"
             )
             || value.is_some_and(|bytes| bytes.len() > MAX_VALUE)
         {
@@ -557,6 +568,17 @@ impl VaultClient {
         Ok(())
     }
 
+    pub(crate) fn presentation_config(
+        &self,
+        request: &PresentationRequest<'_>,
+    ) -> Result<Option<String>> {
+        let payload = serde_json::to_vec(request)?;
+        self.invoke("presentation_config", "presentation-v1", None, Some(&payload))?
+            .value
+            .map(|value| Ok(std::str::from_utf8(&value)?.to_owned()))
+            .transpose()
+    }
+
     pub fn config_get_with_source(&self, record: &str) -> Result<(Option<String>, bool)> {
         self.read_config("get", record)
     }
@@ -636,12 +658,17 @@ impl VaultClient {
             && operation != "owner_check"
             && operation != "owner_grant_secondary"
             && operation != "global_style_set"
+            && operation != "presentation_config"
             && (expected_revision.is_some() || value.is_some()))
             || (operation == "put" && value.is_none())
             || (operation == "owner_check"
                 && (!matches!(record, "global-owner-check-v1" | "global-owner-check-v2")
                     || expected_revision.is_some()
                     || value.is_none_or(|identity| identity.len() > 256)))
+            || (operation == "presentation_config"
+                && (record != "presentation-v1"
+                    || expected_revision.is_some()
+                    || value.is_none_or(|payload| payload.len() > 1024)))
             || (operation == "global_style_set"
                 && (record != "global-menu-style-v1"
                     || expected_revision.is_some()

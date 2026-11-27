@@ -9,6 +9,9 @@ pub const COMMAND: CommandSpec = CommandSpec {
     en: "Inspect or change menu visual style",
     usages: &[
         "set style",
+        "set style --chat [matter|none|inherit]",
+        "set style --user [matter|none|inherit] [@usuario]",
+        "set priority --chat [user,chat,socket,global]",
         "set style --mod",
         "set style --global",
         "set style matter|none",

@@ -38,6 +38,7 @@ pub fn parse_scope<'a>(arguments: &[&'a str]) -> Result<ScopedArguments<'a>> {
     for &part in arguments {
         let selected = match part {
             "--chat" => Some(CommandScope::Chat),
+            "--user" => bail!("Este comando todavía no admite ámbito de usuario"),
             "--mod" | "--socket" => Some(CommandScope::Socket),
             "--global" => Some(CommandScope::Global),
             _ => None,

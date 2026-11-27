@@ -205,6 +205,9 @@ fn console_command(text: &str) -> String {
                     | "community"
                     | "--mod"
                     | "--global"
+                    | "--chat"
+                    | "--socket"
+                    | "--user"
                     | "--debug"
                     | "status"
                     | "estado"
@@ -1427,27 +1430,72 @@ async fn main() -> Result<()> {
                         }
                     }
                 }
-                // Only an exact style write can carry a fresh group-admin
-                // attestation; never trust a cached console label or typed role.
-                if data.is_group && !data.from_me
-                    && matches!(data.text.split_whitespace().collect::<Vec<_>>().as_slice(),
-                        ["=/>set", "style", "matter" | "none" | "inherit"])
-                {
+                // An explicit --user selects the sender, one actual mention,
+                // or a quoted participant. A failed resolution must never
+                // silently fall back to the sender.
+                let presentation_words: Vec<_> = data.text.split_whitespace().collect();
+                let presentation = presentation_words.first() == Some(&"=/>set")
+                    && presentation_words.iter().skip(1).any(|word| matches!(*word, "style" | "priority"));
+                if presentation {
                     if let Ok(Some(frame)) = &mut verified {
-                        let admin = matches!(
-                            timeout(Duration::from_secs(2), ctx.client.groups().get_metadata(&ctx.info.source.chat)).await,
-                            Ok(Ok(metadata)) if metadata.participants.iter().any(|p| {
-                                p.is_admin() && [&p.jid, p.phone_number.as_ref().unwrap_or(&p.jid),
-                                    p.lid.as_ref().unwrap_or(&p.jid)]
-                                    .iter().any(|jid| jid.to_non_ad_string() == data.sender_jid)
-                            })
-                        );
-                        if admin {
-                            frame.text = format!("\u{001f}matter-group-style:{}", data.text);
-                            match whatsapp_matter_rust_provider::sign_frame(frame, &config.bridge_key) {
-                                Ok(signature) => frame.signature = signature,
-                                Err(_) => return,
+                        let personal = presentation_words.contains(&"--user");
+                        let mut target = "-".to_owned();
+                        let mut admin = false;
+                        let mut cleaned = presentation_words.clone();
+                        let base = ctx.message.get_base_message();
+                        let context = base.extended_text_message.as_option().and_then(|message| message.context_info.as_option());
+                        let mentions: Vec<_> = context.map(|info| info.mentioned_jid.iter().map(String::as_str).collect()).unwrap_or_default();
+                        let quoted = context.filter(|info| info.quoted_message.as_option().is_some());
+                        let typed_mentions = cleaned.iter().filter(|word| word.starts_with('@')).count();
+                        let selected = if personal {
+                            match (mentions.as_slice(), quoted) {
+                                ([mention], None) if typed_mentions == 1 => {
+                                    cleaned.retain(|word| !word.starts_with('@'));
+                                    Some(*mention)
+                                }
+                                ([], Some(info)) if typed_mentions == 0
+                                    && info.remote_jid.as_deref().is_none_or(|chat| chat == data.chat_jid)
+                                    && info.stanza_id.as_deref().is_some_and(|id| !id.is_empty()) => {
+                                    Some(info.participant.as_deref().unwrap_or("!"))
+                                }
+                                ([], None) if typed_mentions == 0 => None,
+                                _ => Some("!"),
                             }
+                        } else { None };
+                        if let Some(selected) = selected { target = selected.to_owned(); }
+                        if data.is_group && (selected.is_some() || !personal) {
+                            match timeout(Duration::from_secs(2), ctx.client.groups().get_metadata(&source.chat)).await {
+                                Ok(Ok(metadata)) => {
+                                    let rows: Vec<_> = metadata.participants.iter().map(|p| {
+                                        [p.jid.to_non_ad_string(),
+                                            p.phone_number.as_ref().map(|j| j.to_non_ad_string()).unwrap_or_default(),
+                                            p.lid.as_ref().map(|j| j.to_non_ad_string()).unwrap_or_default()]
+                                    }).collect();
+                                    admin = metadata.participants.iter().zip(&rows).any(|(p, ids)| p.is_admin() && ids.iter().any(|id| id == data.sender_jid));
+                                    if let Some(selected) = selected {
+                                        let mut matches = rows.iter().filter(|ids| ids.iter().any(|id| id == selected));
+                                        target = match (matches.next(), matches.next()) {
+                                            (Some(ids), None) if selected != "!" && !selected.is_empty() => {
+                                                verified_group_sender_pn(selected, None, [(*ids).clone()]).unwrap_or_else(|| selected.to_owned())
+                                            }
+                                            _ => "!".into(),
+                                        };
+                                    }
+                                }
+                                _ => { if selected.is_some() { target = "!".into(); } }
+                            }
+                        } else if let Some(selected) = selected {
+                            let actor = if frame.from_me { &frame.owner_jid } else { &frame.actor_id };
+                            if selected != actor.as_str() { target = "!".into(); }
+                        }
+                        // Prevent delimiter injection even from malformed metadata.
+                        if target != "-" && target != "!" && !target.strip_suffix("@lid").or_else(|| target.strip_suffix("@s.whatsapp.net")).is_some_and(|id| (8..=20).contains(&id.len()) && id.bytes().all(|b| b.is_ascii_digit())) {
+                            target = "!".into();
+                        }
+                        frame.text = format!("\u{001f}matter-presentation:{}:{}:{}", u8::from(admin), target, cleaned.join(" "));
+                        match whatsapp_matter_rust_provider::sign_frame(frame, &config.bridge_key) {
+                            Ok(signature) => frame.signature = signature,
+                            Err(_) => return,
                         }
                     }
                 }
