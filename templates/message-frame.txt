@@ -1,4 +1,0 @@
-*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*
-{{CLASSIC_HEADER}} {{TITLE}}
-{{BODY}}
-{{CLASSIC_CLOSE}}

@@ -200,8 +200,6 @@ pub fn experimental_rich_schema(menu: &str) -> Result<Value> {
 
 pub fn original_menu() -> &'static str {
     static MENU: std::sync::OnceLock<String> = std::sync::OnceLock::new();
-    MENU.get_or_init(|| {
-        crate::classic_template::expand(include_str!("../../../templates/matterssmith-menu.txt"))
-    })
-    .trim_ascii_end()
+    MENU.get_or_init(|| crate::classic_template::expanded_layout("legacy-menu"))
+        .trim_ascii_end()
 }

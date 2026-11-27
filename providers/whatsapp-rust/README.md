@@ -1,3 +1,9 @@
+## 2026-11-26 — Classic unificado en un archivo
+
+`templates/menu/theme.json` es la única fuente de los diseños Classic: `classic_frame` conserva adornos de WhatsApp, `classic_templates` define control, menú heredado, marco de mensajes y Pong; `classic_templates.menu` contiene las doce secciones del menú dinámico; `console.templates` define los cuatro layouts independientes de la terminal, junto a su paleta y textos existentes. Se eliminan los veinte archivos TXT sustituidos. El núcleo, proveedor y pruebas usan los mismos accesos en `src/classic_template.rs`; las plantillas Plain y las configuraciones personalizadas no se modifican. La migración conserva saltos de línea, símbolos, campos y colores, y exige recompilar. Sin cambios en transporte HTML, permisos, sesiones, Vault o MSEL. CI y prueba visual pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Consola independiente y diagnóstico de menú HTML
 
 Alpha separa encabezado, filas normal/final y cierre de terminal en templates/console. Se conserva la paleta y se alinea el cierre de terminal `╰──╮╭───────⟨ 🌀` con el encabezado; el marco WhatsApp conserva `╰─╮╭────────⟨ 🌀`. Tras ACK aplicado, los menús web de grupos pueden intentar RichResponse aun si el remitente no es la cuenta vinculada; no se amplían comandos mutantes, pruebas HTML privadas ni permisos. La consola distingue desactivación, autosend, contexto privado, construcción, rechazo y timeout; no reintenta HTML incierto. Si HTML no se intenta o falla de forma definitiva, el selector nativo conserva el texto como alternativa; no se afirma render HTML. Se expande el menú de vista previa y se registra el flag autosend. La capacidad experimental depende del cliente WhatsApp; compilación, CI y prueba visual pendientes. README revisados: 2/2.

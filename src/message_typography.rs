@@ -98,7 +98,7 @@ pub fn render_message(title: &str, body: &str, font: &str) -> Result<String> {
     }
     let title = format_segment(&font_text(title, font)?, TextFormat::Bold)?;
     // Windows checkout may normalize tracked UTF-8 templates to CRLF.
-    let template = crate::classic_template::expand(include_str!("../templates/message-frame.txt"));
+    let template = crate::classic_template::expanded_layout("message-frame");
     let output = template
         .replace("{{TITLE}}", &title)
         .replace("{{BODY}}", body);

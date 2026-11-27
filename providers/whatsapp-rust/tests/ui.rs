@@ -60,7 +60,7 @@ fn legacy_click(id: &str) -> wa::Message {
 
 #[test]
 fn root_menu_has_only_the_final_menu_format_selector() {
-    let original = include_str!("../../../templates/matterssmith-menu.txt").trim_end();
+    let original = whatsapp_matter_rust_provider::classic_template::layout("legacy-menu").trim_end();
     let message = native_menu_message(original).unwrap();
     let interactive = message.interactive_message.as_option().unwrap();
     assert_eq!(

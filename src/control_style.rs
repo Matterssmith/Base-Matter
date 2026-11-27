@@ -28,9 +28,7 @@ impl ControlTheme {
             title: title.to_owned(),
             bot_id: bot_id.to_owned(),
             accent: accent.to_owned(),
-            template: crate::classic_template::expand(include_str!(
-                "../templates/matterssmith-control.txt"
-            )),
+            template: crate::classic_template::expanded_layout("control"),
         })
     }
 
@@ -55,10 +53,8 @@ impl ControlTheme {
         // The original Matterssmith menu is a complete owner-approved
         // WhatsApp message, including its banner and one credit footer.
         // Keep it idempotent; other replies still use their scoped frame.
-        let default_frame =
-            crate::classic_template::expand(include_str!("../templates/matterssmith-control.txt"));
-        let original_menu =
-            crate::classic_template::expand(include_str!("../templates/matterssmith-menu.txt"));
+        let default_frame = crate::classic_template::expanded_layout("control");
+        let original_menu = crate::classic_template::expanded_layout("legacy-menu");
         if self.template == default_frame
             && body.trim_end_matches('\n') == original_menu.trim_end_matches('\n')
         {
@@ -102,9 +98,7 @@ impl ControlTheme {
         }
         // Git working trees on Windows may use CRLF. Normalize trusted
         // static templates before enforcing WhatsApp's control-char bounds.
-        self.decorate(&crate::classic_template::expand(include_str!(
-            "../templates/matterssmith-menu.txt"
-        )))
+        self.decorate(&crate::classic_template::expanded_layout("legacy-menu"))
     }
 }
 
@@ -281,8 +275,7 @@ impl ControlThemes {
         } else {
             crate::menu::render(section, preferences.get()?)?
         };
-        let default_template =
-            crate::classic_template::expand(include_str!("../templates/matterssmith-control.txt"));
+        let default_template = crate::classic_template::expanded_layout("control");
         if theme.template == default_template {
             Ok(body)
         } else {

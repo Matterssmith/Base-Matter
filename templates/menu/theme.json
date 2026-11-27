@@ -137,6 +137,32 @@
       "user": "USR",
       "group": "Grupo",
       "private": "Privado"
+    },
+    "templates": {
+      "header": "╭─ 💠 𝗠𝗮𝘁𝘁𝗲𝗿 {{EVENT}} {{CLOCK}} · {{ORIGIN}}\n",
+      "row": "│·♪·╠[ {{BODY}}\n",
+      "last-row": "│·♪·╚[ {{BODY}}\n",
+      "footer": "╰──╮╭───────⟨ 🌀\n"
+    }
+  },
+  "classic_templates": {
+    "control": "{{CLASSIC_HEADER}} 𝗖𝗼𝗻𝘁𝗿𝗼𝗹\n{{BODY}}\n{{CLASSIC_JOINED_CLOSE}}\n",
+    "legacy-menu": "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*\n꧁✪⃢.✪ 𝐌𝐚𝐭𝐭𝐞𝐫𝐬𝐬𝐦𝐢𝐭𝐡 ۞₪»̶⟩\n\n*Base-Matter* · ✦\n\n{{CLASSIC_HEADER}} 𝗖𝗼𝗻𝘁𝗿𝗼𝗹\n💬 𝗖𝗼𝗺𝗮𝗻𝗱𝗼𝘀 𝗱𝗲 𝗰𝗼𝗻𝘁𝗿𝗼𝗹\n\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ◉ =/>status — Estado de este chat\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ⓘ =/>status --mod — Configuración del socket [propietario]\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ⊙ =/>status --global — Predeterminado general [consulta]\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ✦ =/>bot on/off — Activar o apagar este chat [propietario]\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ♧ =/>bot inherit — Restaurar herencia [propietario]\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ⚙︎ =/>bot --mod on/off — Predeterminado del socket [propietario]\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ♧ =/>bot group on/off — Grupos [propietario]\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ♙ =/>bot private on/off — Privados externos [propietario]\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ☷ =/>bot channel on/off — Canales [requiere identidad verificada]\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ♧ =/>bot community on/off — Avisos comunitarios [requiere metadatos]\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ♛ =/>set — Configuración [propietario]\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ◈ =/>roles — Vault-Matter [solo lectura]\n{{CLASSIC_ROW}}{{CLASSIC_LAST_BRANCH}}[ ⴵ =/>audit — Auditoría [propietario]\n\n{{CLASSIC_EMBLEM}} =/>status funciona incluso cuando el bot está apagado.\n{{CLASSIC_CLOSE}}\n\nCréditos: Hecho por Lournyx Matterssmith [Lou-Nyx].\n",
+    "message-frame": "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*\n{{CLASSIC_HEADER}} {{TITLE}}\n{{BODY}}\n{{CLASSIC_CLOSE}}\n",
+    "pong": "{{CLASSIC_HEADER}} 𝐏𝐨𝐧𝐠\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ⴵ · 𝐒𝐨𝐜𝐤𝐞𝐭 ···· *{{SOCKET}} ms*\n{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ⚙︎  𝐏𝐫𝐨𝐜𝐞𝐬𝐬 · *{{PROCESS}} ms*\n{{CLASSIC_ROW}}{{CLASSIC_LAST_BRANCH}}[ ✧  𝐓𝐨𝐭𝐚𝐥 ········ *{{TOTAL}} ms*\n{{CLASSIC_CLOSE}}\n",
+    "menu": {
+      "all": "{{CLASSIC_EMBLEM}} @AllTitle · @LabelCommands: @Commands\n@AllRows\n",
+      "all-category-row": "╞═╦═ @CategoryIcon *@CategoryName*\n@CommandRows\n",
+      "category-row": "{{CLASSIC_ROW}}@Branch[ *@CategoryIcon ·· @CategoryName* `[menu @CategoryId]`\n",
+      "category": "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*\n💬 @Title\n{{CLASSIC_HEADER}} @CategoryIcon @CategoryName\n{{CLASSIC_LINE}} @LabelCommands: @CategoryCommands · @Page/@Pages\n@CommandRows\n@Pagination\n{{CLASSIC_JOINED_CLOSE}}\n",
+      "command-row": "{{CLASSIC_ROW}}@Branch[ `@Prefix@Usage`\n",
+      "instruction-row": "> @Instruction\n",
+      "information": "{{CLASSIC_HEADER}} @InformationTitle\n{{CLASSIC_LINE}} @LabelBot: @Bot\n{{CLASSIC_LINE}} @LabelVersion: @Version\n{{CLASSIC_LINE}} @LabelProject: @Project\n{{CLASSIC_LINE}} @LabelOwner: @Owner\n{{CLASSIC_LINE}} @LabelPrefix: @Prefix\n{{CLASSIC_LINE}} @LabelDate: @Date\n{{CLASSIC_LINE}} @LabelCommands: @Commands\n{{CLASSIC_LINE}} @LabelCategoriesActive: @CategoriesActive\n{{CLASSIC_LINE}} @LabelSubBots: @SubBots\n{{CLASSIC_LINE}} @LabelPremiumBots: @PremiumBots\n{{CLASSIC_LINE}} @LabelURL: @URL\n{{CLASSIC_CLOSE}}\n",
+      "owner": "{{CLASSIC_HEADER}} Control del socket\n{{CLASSIC_LINE}} Propietario del socket autenticado\n{{CLASSIC_LINE}} Permisos: solo los verificados por el transporte y Vault\n{{CLASSIC_CLOSE}}\n",
+      "empty": "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*\n{{CLASSIC_JOINED_CLOSE}}\n",
+      "pagination": "@MenuCommand @CategoryId @NextPage (@Page/@Pages)\n",
+      "root": "*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*\n\n💬 @Title\n\n{{CLASSIC_HEADER}} @CategoriesTitle\n@CategoryRows\n{{CLASSIC_JOINED_CLOSE}}\n{{CLASSIC_CONNECTOR}}\n@Information\n\n✧☽︎╦[ @LabelUser: *@User* 🌀 ]═☾︎✧\n     ╠[ ◈ @LabelBot: *@Bot*\n     ╠[ ✦ @LabelPrefix: *[ @Prefix ]*\n     ╠[ ☷ @LabelCommands: *@Commands*\n     ╠[ ⴵ @LabelCategoriesActive: *@CategoriesActive*\n     ╠[ ♛ @LabelRole: *@Role*\n     ╠[ ◉ @LabelStatus: *@Status*\n✧☽︎╩[ ♧ @LabelSocket: *@Socket*\n\n@OwnerBlock@SystemBlock{{CLASSIC_HEADER}} @InstructionsTitle\n@Instructions\n{{CLASSIC_CLOSE}}\n\n*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*\n",
+      "system": "{{CLASSIC_HEADER}} @SystemTitle\n{{CLASSIC_LINE}} @LabelHost: @Host\n{{CLASSIC_LINE}} @LabelOS: @OS\n{{CLASSIC_LINE}} @LabelUptime: @Uptime\n{{CLASSIC_LINE}} @LabelServerRAM: @ServerRAM\n{{CLASSIC_LINE}} @LabelControllerRAM: @ControllerRAM\n{{CLASSIC_LINE}} @LabelProviderRAM: @ProviderRAM\n{{CLASSIC_CLOSE}}\n"
     }
   }
 }

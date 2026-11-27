@@ -1,5 +1,0 @@
-{{CLASSIC_HEADER}} 𝐏𝐨𝐧𝐠
-{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ⴵ · 𝐒𝐨𝐜𝐤𝐞𝐭 ···· *{{SOCKET}} ms*
-{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ ⚙︎  𝐏𝐫𝐨𝐜𝐞𝐬𝐬 · *{{PROCESS}} ms*
-{{CLASSIC_ROW}}{{CLASSIC_LAST_BRANCH}}[ ✧  𝐓𝐨𝐭𝐚𝐥 ········ *{{TOTAL}} ms*
-{{CLASSIC_CLOSE}}

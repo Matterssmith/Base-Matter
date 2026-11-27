@@ -67,9 +67,7 @@ fn standalone_provider_uses_exact_same_external_matterssmith_template() {
     .unwrap();
     // Compare the canonical external control template instead of duplicating
     // presentation whitespace in tests.
-    let template = whatsapp_matter_rust_provider::classic_template::expand(include_str!(
-        "../../../templates/matterssmith-control.txt"
-    ));
+    let template = whatsapp_matter_rust_provider::classic_template::expanded_layout("control");
     let (prefix, suffix) = template.split_once("{{BODY}}").unwrap();
     assert!(text.starts_with(prefix));
     assert!(text.ends_with(suffix));

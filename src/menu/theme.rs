@@ -106,32 +106,8 @@ impl Theme {
     }
     fn layout(style: Style, section: &str) -> Result<&'static str> {
         let source = match (style, section) {
-            (Style::Classic, "root") => include_str!("../../templates/menu/classic/root.txt"),
-            (Style::Classic, "category-row") => {
-                include_str!("../../templates/menu/classic/category-row.txt")
-            }
-            (Style::Classic, "category") => {
-                include_str!("../../templates/menu/classic/category.txt")
-            }
-            (Style::Classic, "command-row") => {
-                include_str!("../../templates/menu/classic/command-row.txt")
-            }
-            (Style::Classic, "all") => include_str!("../../templates/menu/classic/all.txt"),
-            (Style::Classic, "all-category-row") => {
-                include_str!("../../templates/menu/classic/all-category-row.txt")
-            }
-            (Style::Classic, "information") => {
-                include_str!("../../templates/menu/classic/information.txt")
-            }
-            (Style::Classic, "system") => include_str!("../../templates/menu/classic/system.txt"),
-            (Style::Classic, "owner") => include_str!("../../templates/menu/classic/owner.txt"),
-            (Style::Classic, "empty") => include_str!("../../templates/menu/classic/empty.txt"),
-            (Style::Classic, "instruction-row") => {
-                include_str!("../../templates/menu/classic/instruction-row.txt")
-            }
-            (Style::Classic, "pagination") => {
-                include_str!("../../templates/menu/classic/pagination.txt")
-            }
+            (Style::Classic, section) => crate::classic_template::menu_layout(section)
+                .ok_or_else(|| anyhow::anyhow!("Unknown menu layout"))?,
             (Style::None, "root") => include_str!("../../templates/menu/plain/root.txt"),
             (Style::None, "category-row") => {
                 include_str!("../../templates/menu/plain/category-row.txt")

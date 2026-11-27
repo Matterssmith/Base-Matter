@@ -346,9 +346,9 @@ fn console_color(value: &str, palette: &str) -> String {
 
 fn console_row(body: &str, last: bool) -> String {
     let template = if last {
-        include_str!("../../../templates/console/last-row.txt")
+        classic_template::console_template("last-row")
     } else {
-        include_str!("../../../templates/console/row.txt")
+        classic_template::console_template("row")
     };
     classic_template::render(template, &[("BODY", body)])
         .trim_end_matches('\n')
@@ -453,7 +453,7 @@ impl CommandTrace {
                 )
             };
             let header = classic_template::render(
-                include_str!("../../../templates/console/header.txt"),
+                classic_template::console_template("header"),
                 &[
                     ("EVENT", &format!("#{:04}", trace.id)),
                     ("CLOCK", &format!("{h:02}:{m:02}:{s:02}Z")),
@@ -567,7 +567,7 @@ impl CommandTrace {
                 .collect::<Vec<_>>()
                 .join("\n");
             let footer =
-                classic_template::expand(include_str!("../../../templates/console/footer.txt"));
+                classic_template::expand(classic_template::console_template("footer"));
             println!(
                 "{rows}\n{}",
                 console_color(footer.trim_end_matches('\n'), "frame")
@@ -610,7 +610,7 @@ fn matter_ping_message(socket: Duration, process: Duration) -> String {
     let process_ms = process.as_secs_f64() * 1000.0;
     let total_ms = (socket + process).as_secs_f64() * 1000.0;
     classic_template::render(
-        include_str!("../../../templates/pong.txt"),
+        classic_template::layout("pong"),
         &[
             ("SOCKET", &format!("{socket_ms:.3}")),
             ("PROCESS", &format!("{process_ms:.3}")),
@@ -1747,8 +1747,8 @@ mod readiness_tests {
 
     #[test]
     fn console_footer_aligns_with_header_without_changing_chat_frame() {
-        let header = include_str!("../../../templates/console/header.txt");
-        let footer = include_str!("../../../templates/console/footer.txt").trim_end();
+        let header = classic_template::console_template("header");
+        let footer = classic_template::console_template("footer").trim_end();
         assert_eq!(header.chars().position(|c| c == '💠'), Some(3));
         assert_eq!(footer, "╰──╮╭───────⟨ 🌀");
         assert_eq!(

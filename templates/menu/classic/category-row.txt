@@ -1,1 +1,0 @@
-{{CLASSIC_ROW}}@Branch[ *@CategoryIcon ·· @CategoryName* `[menu @CategoryId]`

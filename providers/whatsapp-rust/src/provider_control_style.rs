@@ -8,11 +8,8 @@ pub fn decorate(body: &str) -> Result<String> {
     {
         bail!("Invalid control response");
     }
-    let template = crate::classic_template::expand(include_str!(
-        "../../../templates/matterssmith-control.txt"
-    ));
-    let legacy_menu =
-        crate::classic_template::expand(include_str!("../../../templates/matterssmith-menu.txt"));
+    let template = crate::classic_template::expanded_layout("control");
+    let legacy_menu = crate::classic_template::expanded_layout("legacy-menu");
     if body.trim_end_matches('\n') == legacy_menu.trim_end_matches('\n') {
         return Ok(legacy_menu.trim_end_matches('\n').to_owned());
     }

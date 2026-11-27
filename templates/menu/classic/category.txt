@@ -1,7 +1,0 @@
-*꒦꒷✰꒷꒦︶꒦꒷✧꒷꒦︶꒦꒷✰꒷꒦*
-💬 @Title
-{{CLASSIC_HEADER}} @CategoryIcon @CategoryName
-{{CLASSIC_LINE}} @LabelCommands: @CategoryCommands · @Page/@Pages
-@CommandRows
-@Pagination
-{{CLASSIC_JOINED_CLOSE}}

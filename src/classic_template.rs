@@ -13,6 +13,30 @@ fn theme() -> &'static Value {
     })
 }
 
+/// Canonical Classic layout, shared by the core and standalone provider.
+pub fn layout(name: &str) -> &'static str {
+    theme()["classic_templates"][name]
+        .as_str()
+        .expect("Bundled Classic layout")
+}
+
+/// Expanded built-in Classic layout, before inserting dynamic values.
+pub fn expanded_layout(name: &str) -> String {
+    expand(layout(name))
+}
+
+/// Dynamic menu layout; unknown sections are handled by the caller.
+pub fn menu_layout(name: &str) -> Option<&'static str> {
+    theme()["classic_templates"]["menu"][name].as_str()
+}
+
+/// Terminal framing is independent of the WhatsApp frame.
+pub fn console_template(name: &str) -> &'static str {
+    theme()["console"]["templates"][name]
+        .as_str()
+        .expect("Bundled console template")
+}
+
 /// Expand trusted bundled template source before interpolating user data.
 pub fn expand(source: &str) -> String {
     let mut result = source.replace("\r\n", "\n");
