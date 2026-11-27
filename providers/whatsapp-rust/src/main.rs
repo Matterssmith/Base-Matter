@@ -351,8 +351,8 @@ fn console_row(body: &str, last: bool) -> String {
         include_str!("../../../templates/console/row.txt")
     };
     classic_template::render(template, &[("BODY", body)])
-    .trim_end_matches('\n')
-    .to_owned()
+        .trim_end_matches('\n')
+        .to_owned()
 }
 
 // Call only after an authenticated Applied ACK for a menu request.
@@ -1759,12 +1759,17 @@ mod readiness_tests {
 
     #[test]
     fn admitted_group_menu_can_attempt_html_for_non_socket_owner() {
-        assert_eq!(web_html_skip_reason(true, true, true, true, false, false), None);
-        assert_eq!(web_html_skip_reason(true, false, false, true, false, false), None);
-        assert_eq!(web_html_skip_reason(true, true, true, false, true, true), None);
-        assert!(web_html_skip_reason(true, true, true, false, false, false).is_some());
-        assert!(web_html_skip_reason(true, false, true, true, false, false).is_some());
-        assert!(web_html_skip_reason(false, true, false, true, false, false).is_some());
+        for (enabled, autosend, root, group, from_me, owner_chat, allowed) in [
+            (true, true, true, true, false, false, true),
+            (true, false, false, true, false, false, true),
+            (true, true, true, false, true, true, true),
+            (true, true, true, false, false, false, false),
+            (true, false, true, true, false, false, false),
+            (false, true, false, true, false, false, false),
+        ] {
+            let reason = web_html_skip_reason(enabled, autosend, root, group, from_me, owner_chat);
+            assert_eq!(reason.is_none(), allowed);
+        }
     }
 
     #[test]
