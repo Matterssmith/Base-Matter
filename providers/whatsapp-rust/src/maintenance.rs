@@ -423,7 +423,10 @@ pub fn restart_report(session: &Path) -> Result<Option<(String, String)>> {
                 })
                 .map(|line| {
                     if line == "Estado: Código actualizado"
-                        && matches!(status.trim(), "verified" | "verified-built" | "verified-reused")
+                        && matches!(
+                            status.trim(),
+                            "verified" | "verified-built" | "verified-reused"
+                        )
                     {
                         "Estado: Completado"
                     } else {
