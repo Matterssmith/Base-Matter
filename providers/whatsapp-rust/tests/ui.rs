@@ -85,14 +85,14 @@ fn root_menu_has_only_the_final_menu_format_selector() {
     assert_eq!(sections[0]["title"], "Otros menús");
     let modes = sections[0]["rows"].as_array().unwrap();
     assert_eq!(modes.len(), 3);
-    assert_eq!(modes[0]["id"], "matter.read.menu.matter");
+    assert_eq!(modes[0]["id"], "matter.read.menu.classic");
     assert_eq!(modes[1]["id"], "matter.read.menu.web");
     assert_eq!(modes[2]["id"], "matter.read.menu.buttons");
 }
 
 #[test]
 fn each_mode_links_only_to_the_other_two_and_roundtrips() {
-    for mode in ["matter", "web", "buttons"] {
+    for mode in ["classic", "web", "buttons"] {
         let request = format!("=/>menu {mode}");
         let message = native_navigation_message("Contenido", &request).unwrap();
         let interactive = message.interactive_message.as_option().unwrap();
@@ -128,8 +128,8 @@ fn native_selection_accepts_known_id_variants_but_not_mutation() {
         ),
         (
             None,
-            serde_json::json!({"selectedId": "matter.read.menu.matter"}),
-            Some("=/>menu matter"),
+            serde_json::json!({"selectedId": "matter.read.menu.classic"}),
+            Some("=/>menu classic"),
         ),
         (
             Some("single_select"),
@@ -186,7 +186,8 @@ fn category_menu_keeps_its_text_and_its_one_final_selector() {
 #[test]
 fn formats_are_readonly_and_selected_through_menu_picker() {
     for (id, command) in [
-        ("matter.read.menu.matter", "=/>menu matter"),
+        ("matter.read.menu.classic", "=/>menu classic"),
+        ("matter.read.menu.matter", "=/>menu classic"),
         ("matter.read.menu.web", "=/>menu web"),
         ("matter.read.menu.buttons", "=/>menu buttons"),
         ("matter.read.menu.all", "=/>menu all"),
@@ -214,17 +215,20 @@ fn web_navigation_can_show_text_after_definite_html_failure() {
     let interactive = message.interactive_message.as_option().unwrap();
     assert_eq!(
         interactive.body.as_option().unwrap().text.as_deref(),
-        Some("Contenido")
+        Some(whatsapp_matter_rust_provider::ui::web_navigation_notice(true))
     );
 }
 
 #[test]
-fn web_navigation_has_no_classic_body_or_mode_heading() {
+fn web_navigation_has_visible_notice_without_classic_body() {
     let original = "MARCO CLASICO\nCategorías\n=/>status";
     let web = native_navigation_message(original, "=/>menu web").unwrap();
     let interactive = web.interactive_message.as_option().unwrap();
-    assert!(interactive.body.as_option().is_none());
-    let classic = native_navigation_message(original, "=/>menu matter").unwrap();
+    assert_eq!(
+        interactive.body.as_option().unwrap().text.as_deref(),
+        Some(whatsapp_matter_rust_provider::ui::web_navigation_notice(false))
+    );
+    let classic = native_navigation_message(original, "=/>menu classic").unwrap();
     assert_eq!(
         classic
             .interactive_message
@@ -243,7 +247,7 @@ fn web_navigation_has_no_classic_body_or_mode_heading() {
 fn native_navigation_has_one_visible_message_and_one_last_selector() {
     for (request, expected) in [
         ("=/>menu buttons", "*Menu Buttons*"),
-        ("=/>menu matter", "Categorías"),
+        ("=/>menu classic", "Categorías"),
         ("=/>menu all", "Categorías"),
     ] {
         let message = native_navigation_message("Categorías", request).unwrap();

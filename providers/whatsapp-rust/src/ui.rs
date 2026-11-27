@@ -21,7 +21,7 @@ fn button_command(id: &str) -> Option<&'static str> {
         "matter.read.menu.ia" => Some("=/>menu ia"),
         "matter.read.menu.anti" => Some("=/>menu anti"),
         "matter.read.menu.all" => Some("=/>menu all"),
-        "matter.read.menu.matter" => Some("=/>menu matter"),
+        "matter.read.menu.classic" | "matter.read.menu.matter" => Some("=/>menu classic"),
         "matter.read.menu.web" => Some("=/>menu web"),
         "matter.read.menu.buttons" => Some("=/>menu buttons"),
         "matter.read.menu.config" => Some("=/>menu config"),
@@ -156,6 +156,14 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
     native_navigation_message_with_web_fallback(menu, request, false)
 }
 
+pub fn web_navigation_notice(unavailable: bool) -> &'static str {
+    if unavailable {
+        "Menú web no disponible. Usa =/>menu classic para verlo en texto."
+    } else {
+        "Menú web enviado; visualización sin verificar. Si no aparece, usa =/>menu classic."
+    }
+}
+
 pub fn native_navigation_message_with_web_fallback(
     menu: &str,
     request: &str,
@@ -183,14 +191,15 @@ pub fn native_navigation_message_with_web_fallback(
     // Categories stay in the controller catalog, not in the format picker.
     // Old category/page IDs remain readable for messages already delivered.
     let current = match request {
-        "=/>menu matter" | "=/>menú matter" => Some("matter"),
-        "=/>menu web" | "=/>menú web" => Some("web"),
+        "=/>menu classic" | "=/>menú classic" | "=/>menu matter" | "=/>menú matter" => {
+            Some("classic")
+        }
+        "=/>menu web" | "=/>menú web" | "=/>menu modern" | "=/>menú modern" => Some("web"),
         "=/>menu buttons" | "=/>menú buttons" => Some("buttons"),
         _ => None,
     };
     let body_text = match current {
-        Some("web") if !web_fallback => None,
-        Some("web") => Some(menu.to_owned()),
+        Some("web") => Some(web_navigation_notice(web_fallback).to_owned()),
         Some("buttons") => Some("*Menu Buttons*".to_owned()),
         _ => Some(menu.to_owned()),
     };
@@ -201,7 +210,7 @@ pub fn native_navigation_message_with_web_fallback(
         bail!("Native menu body exceeds safe bounds");
     }
     let mode_rows: Vec<_> = [
-        ("matter", "Menu Matter", "matter.read.menu.matter"),
+        ("classic", "Menu Classic", "matter.read.menu.classic"),
         ("web", "Menu Web", "matter.read.menu.web"),
         ("buttons", "Menu Buttons", "matter.read.menu.buttons"),
     ]
@@ -219,8 +228,7 @@ pub fn native_navigation_message_with_web_fallback(
             .to_string(),
         ),
     };
-    // Sole button, always last. Web has text only if the HTML attempt
-    // was skipped or definitively failed; successful HTML keeps navigation separate.
+    // Sole button, always last. Web keeps a visible notice independent of HTML.
     Ok(wa::Message {
         interactive_message: MessageField::some(wa::message::InteractiveMessage {
             body: match body_text {

@@ -366,7 +366,7 @@ impl ControlThemes {
         if self.require_vault_config {
             return self
                 .config_client()?
-                .config_set("menu-mode-v1", MenuMode::parse(value)?.as_str());
+                .config_set("menu-mode-v1", MenuMode::parse(value)?.storage_str());
         }
         self.dynamic_menu
             .as_ref()

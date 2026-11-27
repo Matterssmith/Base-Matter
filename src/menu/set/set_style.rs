@@ -5,8 +5,8 @@ use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
     name: "set style",
-    es: "Consultar o cambiar el estilo visual del menú",
-    en: "Inspect or change menu visual style",
+    es: "Consultar o cambiar el estilo visual del bot",
+    en: "Inspect or change bot visual style",
     usages: &[
         "set style",
         "set style --chat [matter|none|inherit]",

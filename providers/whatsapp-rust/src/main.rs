@@ -30,7 +30,7 @@ use whatsapp_matter_rust_provider::{
     rich_transport::experimental_self_chat_rich_message,
     ui::{
         button_menu_cards, legacy_row_probe_message, menu_button_selection,
-        native_navigation_message_with_web_fallback, native_ui_probe_message,
+        native_navigation_message_with_web_fallback, native_ui_probe_message, web_navigation_notice,
     },
     Config, ControlAck, Event, SessionLease,
 };
@@ -1710,8 +1710,8 @@ async fn main() -> Result<()> {
                             // Classic and buttons use one NativeFlow card.
                             // Web uses actual RichResponse plus independent native
                             // navigation; do not disguise classic text as HTML.
-                            let explicit_classic = matches!(actual_command, "=/>menu matter" | "=/>menú matter");
-                            let explicit_web = matches!(actual_command, "=/>menu web" | "=/>menú web");
+                            let explicit_classic = matches!(actual_command, "=/>menu classic" | "=/>menú classic" | "=/>menu matter" | "=/>menú matter");
+                            let explicit_web = matches!(actual_command, "=/>menu web" | "=/>menú web" | "=/>menu modern" | "=/>menú modern");
                             let explicit_buttons = matches!(actual_command, "=/>menu buttons" | "=/>menú buttons");
                             let view_key = (chat.clone(), sender.clone());
                             let prior_buttons = menu_views.lock().ok()
@@ -1737,7 +1737,7 @@ async fn main() -> Result<()> {
                                 }
                             }
                             let is_classic = explicit_classic
-                                || (is_root && preferred_menu_mode.as_deref() == Some("matter"));
+                                || (is_root && matches!(preferred_menu_mode.as_deref(), Some("classic" | "matter")));
                             let mut web_submitted = false;
                             let mut web_uncertain = false;
                             if is_web {
@@ -1789,13 +1789,13 @@ async fn main() -> Result<()> {
                                 let navigation_request = if is_buttons {
                                     "=/>menu buttons"
                                 } else if is_classic && is_root {
-                                    "=/>menu matter"
+                                    "=/>menu classic"
                                 } else if is_web {
                                     "=/>menu web"
                                 } else {
                                     actual_command
                                 };
-                                let navigation_body = if (is_web && !web_fallback) || is_buttons {
+                                let navigation_body = if is_web || is_buttons {
                                     "Matter"
                                 } else {
                                     &response
@@ -1827,8 +1827,11 @@ async fn main() -> Result<()> {
                                 false
                             };
                             let sent = if !sent {
-                                if is_web && !web_fallback {
-                                    web_submitted
+                                if is_web {
+                                    matches!(
+                                        trace.send("AVISO WEB", ctx.reply(web_navigation_notice(web_fallback))).await,
+                                        Ok(Ok(_))
+                                    ) || web_submitted
                                 } else {
                                     let fallback = if is_buttons {
                                         "Los botones no están disponibles en este cliente."
@@ -1844,7 +1847,7 @@ async fn main() -> Result<()> {
                                 true
                             };
                             if web_fallback && sent {
-                                trace.stage("WEB: ALTERNATIVA TEXTO");
+                                trace.stage("WEB: AVISO Y ACCESO A CLASSIC");
                             }
                             trace.finish(if sent {
                                 "ENVÍO ACEPTADO (render no verificado)"

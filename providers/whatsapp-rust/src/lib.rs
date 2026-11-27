@@ -164,7 +164,7 @@ fn parse_control_ack_wire(response: ControlAckWire) -> Result<ControlAck> {
             || response
                 .menu_mode
                 .as_deref()
-                .is_some_and(|mode| !matches!(mode, "web" | "matter" | "buttons"))
+                .is_some_and(|mode| !matches!(mode, "web" | "classic" | "matter" | "buttons"))
         {
             bail!("Invalid menu descriptor acknowledgment");
         }
@@ -189,7 +189,7 @@ fn parse_control_ack_wire(response: ControlAckWire) -> Result<ControlAck> {
             Ok(ControlAck::AppliedWithMessage(message))
         }
         (true, "applied", Some(message), Some(mode))
-            if valid_message(&message) && matches!(mode.as_str(), "web" | "matter" | "buttons") =>
+            if valid_message(&message) && matches!(mode.as_str(), "web" | "classic" | "matter" | "buttons") =>
         {
             Ok(ControlAck::AppliedWithMenuMode { message, mode })
         }

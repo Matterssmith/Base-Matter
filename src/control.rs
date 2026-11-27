@@ -1282,7 +1282,7 @@ impl ControlDispatcher {
                 ["set", "--global"] => {
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
-                        output: "Predeterminado general del menú (fábrica, sin configuración Vault): menú web; alternativas matter y buttons; estilo matter; idioma es.".to_owned(),
+                        output: "Predeterminado general del menú (fábrica, sin configuración Vault): menú web; alternativas classic y buttons; estilo matter; idioma es.".to_owned(),
                     });
                 }
                 ["set", "menu"] | ["set", "menu", "--mod"] | ["set", "--mod", "menu"] => {
@@ -1302,7 +1302,7 @@ impl ControlDispatcher {
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
                         output: format!(
-                            "Menú predeterminado: {} (web|matter|buttons).",
+                            "Menú predeterminado: {} (web|classic|buttons).",
                             themes.current_menu_mode()?.as_str()
                         ),
                     });
@@ -1325,6 +1325,7 @@ impl ControlDispatcher {
                         .as_ref()
                         .ok_or_else(|| anyhow!("Menu preferences are unavailable"))?;
                     themes.set_menu_mode(value)?;
+                    let value = crate::menu::MenuMode::parse(value)?.as_str();
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
                         output: format!(

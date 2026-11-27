@@ -289,17 +289,25 @@ pub enum MenuMode {
 impl MenuMode {
     pub fn parse(value: &str) -> Result<Self> {
         match value {
-            "web" => Ok(Self::Web),
-            "matter" => Ok(Self::Classic),
+            "web" | "modern" => Ok(Self::Web),
+            "classic" | "matter" => Ok(Self::Classic),
             "buttons" => Ok(Self::Buttons),
-            _ => bail!("Available menu modes: web, matter, buttons"),
+            _ => bail!("Available menu modes: web, classic, buttons"),
         }
     }
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Web => "web",
-            Self::Classic => "matter",
+            Self::Classic => "classic",
             Self::Buttons => "buttons",
+        }
+    }
+
+    // Preserve persisted SQLite/Vault values for existing installations.
+    pub(crate) fn storage_str(self) -> &'static str {
+        match self {
+            Self::Classic => "matter",
+            other => other.as_str(),
         }
     }
 }
@@ -442,7 +450,7 @@ impl MenuPreferences {
             "INSERT INTO menu_preferences(singleton,style,language,mode)
              VALUES(1,'matter','es',?1)
              ON CONFLICT(singleton) DO UPDATE SET mode=excluded.mode",
-            params![mode.as_str()],
+            params![mode.storage_str()],
         )?;
         Ok(())
     }
@@ -496,7 +504,7 @@ pub fn button_menu_items(section: &str, language: Language) -> Vec<serde_json::V
     let root = matches!(
         parts.as_slice(),
         ["=/>menu" | "=/>menú"]
-            | ["=/>menu" | "=/>menú", "matter" | "web" | "buttons" | "all"]
+            | ["=/>menu" | "=/>menú", "classic" | "matter" | "web" | "modern" | "buttons" | "all"]
             | ["=/>menu" | "=/>menú", "page", _]
     );
     if root {
@@ -897,11 +905,13 @@ pub fn render(section: &str, options: Preferences) -> Result<String> {
         "menu all" | "menú all" => return verbose_menu(options),
         // The web mode is a transport choice. A native/HTML-capable provider
         // renders it; the controller supplies a safe textual fallback.
-        "menu web" | "menú web" => return concise_menu(options),
+        "menu web" | "menú web" | "menu modern" | "menú modern" => return concise_menu(options),
         "menu buttons" | "menú buttons" => return concise_menu(options),
         // The original category overview, independent from the interactive
         // root and distinct from the verbose "menu all" command.
-        "menu matter" | "menú matter" => return concise_menu(options),
+        "menu classic" | "menú classic" | "menu matter" | "menú matter" => {
+            return concise_menu(options)
+        }
         "menu page 1" | "menu page 2" | "menu page 3" => return concise_menu(options),
         _ => {}
     }
@@ -1025,8 +1035,9 @@ mod tests {
     fn explicit_menu_classic_restores_original_category_overview() {
         let options = Preferences::default();
         let original = render("menu", options).unwrap();
-        let classic = render("menu matter", options).unwrap();
-        let spanish = render("menú matter", options).unwrap();
+        let classic = render("menu classic", options).unwrap();
+        let spanish = render("menú classic", options).unwrap();
+        assert_eq!(render("menu matter", options).unwrap(), classic);
         let all = render("menu all", options).unwrap();
         assert_eq!(classic, original);
         assert_eq!(spanish, original);
@@ -1074,6 +1085,10 @@ mod tests {
         assert_eq!(store.get_mode().unwrap(), MenuMode::Web);
         store.set_mode(MenuMode::Classic).unwrap();
         assert_eq!(store.get_mode().unwrap(), MenuMode::Classic);
+        assert_eq!(MenuMode::parse("classic").unwrap(), MenuMode::Classic);
+        assert_eq!(MenuMode::parse("matter").unwrap(), MenuMode::Classic);
+        assert_eq!(MenuMode::Classic.as_str(), "classic");
+        assert_eq!(MenuMode::parse("modern").unwrap(), MenuMode::Web);
         store.set_mode(MenuMode::Buttons).unwrap();
         assert_eq!(store.get_mode().unwrap(), MenuMode::Buttons);
         store.set_mode(MenuMode::Web).unwrap();
@@ -1100,6 +1115,7 @@ mod tests {
         let options = Preferences::default();
         let original = render("menu", options).unwrap();
         assert_eq!(render("menu web", options).unwrap(), original);
+        assert_eq!(render("menu modern", options).unwrap(), original);
         assert_eq!(render("menu buttons", options).unwrap(), original);
         assert_eq!(render("menu matter", options).unwrap(), original);
         assert_ne!(render("menu all", options).unwrap(), original);

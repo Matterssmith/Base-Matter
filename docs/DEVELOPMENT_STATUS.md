@@ -1,3 +1,9 @@
+## 2026-11-27 — Menú Classic, Web y estilo Matter independientes
+
+`menu classic` vuelve a identificar el menú textual; `menu web` (alias `modern`) identifica Rich HTML y `menu buttons` las tarjetas nativas. `menu matter` y las selecciones antiguas siguen funcionando como compatibilidad de solo lectura. `set menu classic|web|buttons` selecciona el formato predeterminado; las preferencias anteriores conservan sus valores de almacenamiento y `set style matter|none|inherit` sigue seleccionando el tema visual, no el transporte. El proveedor ofrece un selector de formatos con cuerpo visible para Web, sin presentar texto Classic como HTML; si el transporte falla o el cliente ignora RichResponse, el aviso ofrece `=/>menu classic`. No se considera verificada la visualización por un ACK. No se modifican permisos, Vault, sesiones ni claves. Compilación, CI y prueba real de Android pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Consola Matter compacta sin contador repetido
 
 Por solicitud del propietario, el evento correlativo aparece únicamente en el encabezado; usuario e ID comparten fila y WA/Matter comparten otra con colores semánticos independientes. IPC conserva latencia, resultado y duración; TX conserva sus etapas; Vista WA: sin verificar conserva la advertencia de entrega no visualmente comprobada. No se reducen ni amplían permisos ni se cambia identidad, Vault o sesión. Pruebas de filas compactas y rangos añadidas/ajustadas; CI, formato y ejecución real pendientes. README revisados: 2/2.
