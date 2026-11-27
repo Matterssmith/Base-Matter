@@ -1,3 +1,7 @@
+## 2026-11-26 — Formato Rustfmt de resolución PN/LID
+
+Aplicadas las diferencias reportadas por idkbot en el filtro de PN y la prueba de conflicto de identidades del proveedor WhatsApp. Sin cambios funcionales. Vault ya autorizó las cuatro identidades globales y confirmó respaldo remoto cifrado (722 objetos); compilación y prueba real del proveedor siguen pendientes. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Consola con JID íntegros y resolución PN de grupos
 
 La consola local muestra los JID completos (PN, LID, grupos y canales) sin abreviar; conserva el filtrado de IDs inválidos y la redacción de argumentos sensibles. Para comandos de un LID externo en un grupo, el proveedor resuelve el PN solo cuando el remitente exacto aparece en una única fila de metadatos del grupo y el PN es canónico e inequívoco; si sender_alt existe, debe ser consistente. Se vuelve a firmar el actor de control con HMAC antes de enviar a Base; el evento original y el chat real permanecen intactos. Si falta el mapeo o hay conflicto se conserva el LID y Vault decide con su registro exacto, sin otorgar rango por ser admin WA. No se cambia el enlace de terceros en chats privados ni se inscriben IDs reales. Añadidas pruebas sintéticas de resolución, conflictos y consola. CI, despliegue y comprobación de la identidad real pendientes. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].

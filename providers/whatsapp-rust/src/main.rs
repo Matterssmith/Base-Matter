@@ -93,10 +93,9 @@ fn verified_group_sender_pn(
     if matching.next().is_some() {
         return None;
     }
-    let mut phones = ids.iter().filter(|id| {
-        id.strip_suffix("@s.whatsapp.net")
-            .is_some_and(valid_number)
-    });
+    let mut phones = ids
+        .iter()
+        .filter(|id| id.strip_suffix("@s.whatsapp.net").is_some_and(valid_number));
     let phone = phones.next()?;
     if phones.any(|id| id != phone)
         || alternate.is_some_and(|id| id != sender && id != phone.as_str())
@@ -1980,11 +1979,11 @@ mod readiness_tests {
         assert!(verified_group_sender_pn(lid, None, [row(pn), row(other)]).is_none());
         assert!(verified_group_sender_pn(lid, Some(pn), [row("")]).is_none());
         assert!(verified_group_sender_pn("99999999999@lid", Some(pn), [row(pn)]).is_none());
-        assert!(verified_group_sender_pn(lid, None, [[
-            pn.to_owned(),
-            other.to_owned(),
-            lid.to_owned(),
-        ]])
+        assert!(verified_group_sender_pn(
+            lid,
+            None,
+            [[pn.to_owned(), other.to_owned(), lid.to_owned(),]]
+        )
         .is_none());
     }
 
