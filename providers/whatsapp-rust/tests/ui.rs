@@ -506,6 +506,11 @@ fn buttons_use_catalog_descriptors_and_preserve_category_context() {
         Some(("=/>help matter".to_owned(), true))
     );
     assert!(ui::menu_button_selection(&native_click(
+        "matter.read.buttons.menu.classic",
+        "quick_reply"
+    ))
+    .is_none());
+    assert!(ui::menu_button_selection(&native_click(
         "matter.read.buttons.menu.matter",
         "quick_reply"
     ))

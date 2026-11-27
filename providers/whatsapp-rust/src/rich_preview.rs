@@ -156,8 +156,52 @@ html,body{{margin:0;background:transparent;color:var(--matter-ink);font:14px/1.4
 /// In particular we never wrap the result in botForwardedMessage or assert
 /// that the sender is `0@bot`.
 pub fn experimental_rich_schema(menu: &str) -> Result<Value> {
-    let html = menu_inline_html(menu)?;
-    let output = json!({
+    experimental_rich_schema_with_style(menu, false)
+}
+
+pub(crate) fn experimental_rich_schema_with_style(menu: &str, plain: bool) -> Result<Value> {
+    const WIRE_BUDGET: usize = 16_384 - 128; // room for the fresh response ID
+    let html = if plain {
+        compact_menu_html(menu, true)?
+    } else {
+        menu_inline_html(menu)?
+    };
+    let output = rich_schema(&html);
+    if output.to_string().len() <= WIRE_BUDGET {
+        return Ok(output);
+    }
+    let output = rich_schema(&compact_menu_html(menu, plain)?);
+    if output.to_string().len() > WIRE_BUDGET {
+        bail!("Rich preview structure exceeds transport budget");
+    }
+    Ok(output)
+}
+
+fn compact_menu_html(menu: &str, plain: bool) -> Result<String> {
+    if menu.is_empty()
+        || menu.len() > MAX_TEXT_BYTES
+        || menu.chars().any(|c| c.is_control() && c != '\n')
+    {
+        bail!("Invalid menu for compact HTML");
+    }
+    let escaped = menu
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;");
+    if plain {
+        return Ok(format!(
+            "<section><h2>Menú</h2><pre style=\"white-space:pre-wrap;overflow-wrap:anywhere\">{escaped}</pre></section>"
+        ));
+    }
+    Ok(format!(
+        r#"<section style="background:#111827;color:#e8f8ff;padding:16px;border:1px solid #46e7ff;border-radius:18px;font:14px system-ui"><h2 style="color:#46e7ff">Matter<span>ssmith</span></h2><details class="matter-details"><summary>Mostrar menú de texto</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{escaped}</pre></details><small>Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].</small></section>"#
+    ))
+}
+
+fn rich_schema(html: &str) -> Value {
+    json!({
         "response_id": "matterssmith-preview-v1",
         "sections": [{
             "view_model": {
@@ -189,13 +233,7 @@ pub fn experimental_rich_schema(menu: &str) -> Result<Value> {
                 }]
             }]
         }]
-    });
-    // Defensive size bound for future local tooling that consumes the
-    // serializer; no external network, scripts or dynamic embeds.
-    if output.to_string().len() > MAX_HTML_BYTES * 2 {
-        bail!("Rich preview structure exceeds offline budget");
-    }
-    Ok(output)
+    })
 }
 
 pub fn original_menu() -> &'static str {

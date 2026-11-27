@@ -110,6 +110,8 @@ struct ControlAckWire {
     menu_items: Option<Vec<MenuItem>>,
     #[serde(default)]
     global_owner_verified: bool,
+    #[serde(default)]
+    response_style: Option<String>,
 }
 
 /// Interpret the signed-control IPC acknowledgment conservatively.
@@ -121,13 +123,29 @@ pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
 /// Rank is local diagnostic metadata only. Preserve all existing ACK semantics,
 /// including an error for denied commands, even when the sender is an owner.
 pub fn parse_control_ack_with_rank(input: &[u8]) -> (Result<ControlAck>, bool) {
-    let invalid = || (Err(anyhow!("Invalid controller acknowledgment")), false);
+    let (ack, rank, _) = parse_control_ack_with_presentation(input);
+    (ack, rank)
+}
+
+/// Style metadata is advisory presentation, accepted only on a valid applied ACK.
+pub fn parse_control_ack_with_presentation(input: &[u8]) -> (Result<ControlAck>, bool, bool) {
+    let invalid = || (Err(anyhow!("Invalid controller acknowledgment")), false, false);
     if input.is_empty() || input.len() > 8192 {
         return invalid();
     }
     let Ok(response) = serde_json::from_slice::<ControlAckWire>(input) else {
         return invalid();
     };
+    if response
+        .response_style
+        .as_deref()
+        .is_some_and(|style| !matches!(style, "matter" | "none"))
+        || (response.response_style.is_some()
+            && !(response.ok && response.outcome == "applied"))
+    {
+        return invalid();
+    }
+    let plain = response.response_style.as_deref() == Some("none");
     let verified = response.global_owner_verified;
     let applied = response.ok && response.outcome == "applied";
     let denied = !response.ok
@@ -137,7 +155,8 @@ pub fn parse_control_ack_with_rank(input: &[u8]) -> (Result<ControlAck>, bool) {
         && response.menu_items.is_none();
     let result = parse_control_ack_wire(response);
     let rank = verified && ((applied && result.is_ok()) || denied);
-    (result, rank)
+    let plain = plain && applied && result.is_ok();
+    (result, rank, plain)
 }
 
 fn parse_control_ack_wire(response: ControlAckWire) -> Result<ControlAck> {
@@ -890,5 +909,25 @@ mod console_rank_ack_tests {
         ] {
             assert!(!parse_control_ack_with_rank(payload).1);
         }
+    }
+}
+
+#[cfg(test)]
+mod presentation_ack_tests {
+    use super::*;
+
+    #[test]
+    fn only_valid_applied_ack_can_select_plain_presentation() {
+        let (ack, rank, plain) = parse_control_ack_with_presentation(
+            br#"{"ok":true,"outcome":"applied","response_style":"none"}"#,
+        );
+        assert!(ack.is_ok());
+        assert!(!rank);
+        assert!(plain);
+        let (ack, _, plain) = parse_control_ack_with_presentation(
+            br#"{"ok":true,"outcome":"ignored","response_style":"none"}"#,
+        );
+        assert!(ack.is_err());
+        assert!(!plain);
     }
 }

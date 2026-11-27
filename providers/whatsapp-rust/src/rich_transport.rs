@@ -9,7 +9,7 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
-use crate::rich_preview::experimental_rich_schema;
+use crate::rich_preview::experimental_rich_schema_with_style;
 use anyhow::{anyhow, bail, Result};
 use buffa::MessageField;
 use whatsapp_rust::prelude::wa;
@@ -20,7 +20,11 @@ const MAX_WIRE_BYTES: usize = 16_384;
 /// A client can ignore or discard these unsupported UI primitives even when
 /// the API reports a successful send. NativeFlow/text remain the fallback.
 pub fn experimental_self_chat_rich_message(menu: &str) -> Result<wa::Message> {
-    let mut payload = experimental_rich_schema(menu)?;
+    styled_rich_message(menu, false)
+}
+
+pub fn styled_rich_message(menu: &str, plain: bool) -> Result<wa::Message> {
+    let mut payload = experimental_rich_schema_with_style(menu, plain)?;
     let mut nonce = [0_u8; 16];
     getrandom::fill(&mut nonce).map_err(|_| anyhow!("Rich response ID unavailable"))?;
     payload["response_id"] = format!("matterssmith-{}", hex::encode(nonce)).into();

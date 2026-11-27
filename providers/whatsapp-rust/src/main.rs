@@ -22,12 +22,12 @@ use tokio::{
 use whatsapp_matter_rust_provider::{
     classic_template,
     help_reply::help_from_quoted_message,
-    parse_control_ack_with_rank,
+    parse_control_ack_with_presentation,
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
     render_provider_control,
-    rich_transport::experimental_self_chat_rich_message,
+    rich_transport::{experimental_self_chat_rich_message, styled_rich_message},
     ui::{
         button_menu_cards, legacy_row_probe_message, menu_button_selection,
         native_navigation_message_with_web_fallback, native_ui_probe_message, web_navigation_notice,
@@ -151,6 +151,8 @@ fn console_command(text: &str) -> String {
             "=/>menu" | "=/>menú" | "=/>help" | "=/>ayuda" | "=/>h" => matches!(
                 arg,
                 "matter"
+                    | "classic"
+                    | "modern"
                     | "web"
                     | "buttons"
                     | "all"
@@ -230,6 +232,8 @@ fn console_command(text: &str) -> String {
                     | "lang"
                     | "language"
                     | "matter"
+                    | "classic"
+                    | "modern"
                     | "none"
                     | "web"
                     | "buttons"
@@ -677,10 +681,20 @@ fn matter_ping_message(socket: Duration, process: Duration) -> String {
     .to_owned()
 }
 
+fn plain_ping_message(socket: Duration, process: Duration) -> String {
+    format!(
+        "Pong\nSocket: {:.3} ms\nProcess: {:.3} ms\nTotal: {:.3} ms",
+        socket.as_secs_f64() * 1000.0,
+        process.as_secs_f64() * 1000.0,
+        (socket + process).as_secs_f64() * 1000.0,
+    )
+}
+
 async fn deliver(
     address: std::net::SocketAddrV4,
     frame: &whatsapp_matter_rust_provider::SignedFrame,
     verified_rank: Option<&mut bool>,
+    plain_style: Option<&mut bool>,
 ) -> Result<ControlAck> {
     let body = serde_json::to_vec(frame)?;
     if body.len() >= 16 * 1024 {
@@ -695,7 +709,10 @@ async fn deliver(
         if response.len() > 8192 {
             bail!("Invalid bridge reply length");
         }
-        let (ack, rank) = parse_control_ack_with_rank(&response);
+        let (ack, rank, plain) = parse_control_ack_with_presentation(&response);
+        if let Some(plain_style) = plain_style {
+            *plain_style = plain;
+        }
         if let Some(verified_rank) = verified_rank {
             *verified_rank = rank;
         }
@@ -1334,7 +1351,7 @@ async fn main() -> Result<()> {
                     // Report a transport outage once until recovery.
                     static ANTI_TRANSPORT_WARNING: AtomicBool = AtomicBool::new(false);
                     if let Ok(Some(frame)) = config.signed_anti_observation(&observation, edit_state) {
-                        match deliver(config.bridge_addr, &frame, None).await {
+                        match deliver(config.bridge_addr, &frame, None, None).await {
                             Ok(_) => {
                                 ANTI_TRANSPORT_WARNING.store(false, Ordering::Relaxed);
                             }
@@ -1509,7 +1526,8 @@ async fn main() -> Result<()> {
                     trace.stage("IPC: ENVIANDO");
                     let ipc_started = Instant::now();
                     let mut global_owner = false;
-                    let ack = deliver(config.bridge_addr, &frame, Some(&mut global_owner)).await;
+                    let mut plain_style = false;
+                    let ack = deliver(config.bridge_addr, &frame, Some(&mut global_owner), Some(&mut plain_style)).await;
                     let ipc_elapsed = ipc_started.elapsed();
                     trace.print_header(global_owner);
                     match ack {
@@ -1529,7 +1547,11 @@ async fn main() -> Result<()> {
                             // frame directly, with no extra Control wrapper or reply.
                             if frame.text.split_whitespace().eq(["=/>ping"]) {
                                 let process = local_before_ipc + local_after_ipc.elapsed();
-                                let pong = matter_ping_message(ipc_elapsed, process);
+                                let pong = if plain_style {
+                                    plain_ping_message(ipc_elapsed, process)
+                                } else {
+                                    matter_ping_message(ipc_elapsed, process)
+                                };
                                 let sent = matches!(
                                     trace.send("PING", ctx.reply(&pong)).await,
                                     Ok(Ok(_))
@@ -1639,7 +1661,7 @@ async fn main() -> Result<()> {
                                 actual_command == "=/>start"
                                     || actual_command == "=/>add++"
                                     || actual_command.starts_with("=/>add++ snapshot ");
-                            let response = if ipc_already_templated && !provider_generated {
+                            let response = if plain_style || (ipc_already_templated && !provider_generated) {
                                 response
                             } else {
                                 match render_provider_control(&response) {
@@ -1751,7 +1773,7 @@ async fn main() -> Result<()> {
                                 ) {
                                     trace.stage(&format!("WEB: {reason}"));
                                 } else {
-                                    match experimental_self_chat_rich_message(&response) {
+                                    match styled_rich_message(&response, plain_style) {
                                         Ok(message) => match trace.send("HTML", ctx.send_message(message)).await {
                                             Ok(Ok(_)) => web_submitted = true,
                                             Ok(Err(_)) => trace.stage("WEB: HTML RECHAZADO"),
@@ -1957,6 +1979,14 @@ mod readiness_tests {
             let reason = web_html_skip_reason(enabled, autosend, root, group, from_me, owner_chat);
             assert_eq!(reason.is_none(), allowed);
         }
+    }
+
+    #[test]
+    fn plain_ping_keeps_all_measured_values() {
+        assert_eq!(
+            plain_ping_message(Duration::from_micros(12_345), Duration::from_micros(678)),
+            "Pong\nSocket: 12.345 ms\nProcess: 0.678 ms\nTotal: 13.023 ms"
+        );
     }
 
     #[test]

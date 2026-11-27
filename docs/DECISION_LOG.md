@@ -1,3 +1,9 @@
+## 2026-11-27 — HTML acotado y estilo efectivo del proveedor
+
+El IPC adjunta el estilo efectivo de Vault únicamente tras admitir comandos de menú/Pong y respuestas generadas por el proveedor; `none` elimina el marco de Pong y los informes del proveedor y conserva HTML sin decoración en Web. Se conserva Matter como fábrica, las mediciones reales y los permisos existentes. El JSON RichResponse mantiene su jerarquía experimental y usa HTML compacto cuando duplicar el layout completo excedería el presupuesto de 16 KiB; el aviso independiente no afirma que un timeout haya sido aceptado ni que el dispositivo haya renderizado. Se añaden pruebas de HTML largo, HTML sin tema, ACK y botones. No se activa pairing ni se publica un servidor web. Android, compilación y CI pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Menú Classic, Web y estilo Matter independientes
 
 `menu classic` vuelve a identificar el menú textual; `menu web` (alias `modern`) identifica Rich HTML y `menu buttons` las tarjetas nativas. `menu matter` y las selecciones antiguas siguen funcionando como compatibilidad de solo lectura. `set menu classic|web|buttons` selecciona el formato predeterminado; las preferencias anteriores conservan sus valores de almacenamiento y `set style matter|none|inherit` sigue seleccionando el tema visual, no el transporte. El proveedor ofrece un selector de formatos con cuerpo visible para Web, sin presentar texto Classic como HTML; si el transporte falla o el cliente ignora RichResponse, el aviso ofrece `=/>menu classic`. No se considera verificada la visualización por un ACK. No se modifican permisos, Vault, sesiones ni claves. Compilación, CI y prueba real de Android pendientes. README revisados: 2/2.

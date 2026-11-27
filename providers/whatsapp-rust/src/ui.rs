@@ -160,7 +160,7 @@ pub fn web_navigation_notice(unavailable: bool) -> &'static str {
     if unavailable {
         "Menú web no disponible. Usa =/>menu classic para verlo en texto."
     } else {
-        "Menú web enviado; visualización sin verificar. Si no aparece, usa =/>menu classic."
+        "Menú web: visualización sin verificar. Si no aparece, usa =/>menu classic."
     }
 }
 
@@ -553,7 +553,7 @@ pub fn menu_button_selection(message: &wa::Message) -> Option<(String, bool)> {
             .split_once('.')
             .map_or((category, None), |(category, page)| (category, Some(page)));
         let command = button_command(&format!("matter.read.menu.{category}"))?;
-        if !command.starts_with("=/>menu ") || matches!(category, "matter" | "web" | "buttons") {
+        if !command.starts_with("=/>menu ") || matches!(category, "classic" | "matter" | "web" | "buttons") {
             return None;
         }
         let command = match page {

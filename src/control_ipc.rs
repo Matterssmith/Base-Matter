@@ -383,6 +383,28 @@ impl WhatsAppControlIpc {
                 response["menu_items"] = serde_json::Value::Array(items);
             }
         }
+        // Only admitted commands whose presentation is built by the provider
+        // need the effective style as typed metadata; it grants no authority.
+        if matches!(result, ControlIpcOutcome::Applied) {
+            if let Ok(frame) = serde_json::from_slice::<WhatsAppControlFrame>(&request) {
+                if matches!(
+                    frame.text.split_whitespace().next(),
+                    Some("=/>menu" | "=/>menú" | "=/>ping" | "=/>start" | "=/>add++")
+                ) {
+                    let actor = if frame.from_me {
+                        &frame.owner_jid
+                    } else {
+                        &frame.actor_id
+                    };
+                    if let Ok(preferences) = self
+                        .themes
+                        .effective_preferences_for(Some(&frame.chat_jid), Some(actor))
+                    {
+                        response["response_style"] = preferences.style.as_str().into();
+                    }
+                }
+            }
+        }
         // A command denial can still originate from an authenticated global
         // owner. Do not infer rank from the dispatch result. Never check passive
         // observations, ignored chats or duplicate messages.

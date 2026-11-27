@@ -95,3 +95,21 @@ fn rich_transport_bounds_inputs_and_uses_fresh_message_ids() {
     };
     assert_ne!(get_id(first), get_id(second));
 }
+
+#[test]
+fn long_menu_uses_bounded_html_and_plain_style_keeps_html() {
+    use whatsapp_matter_rust_provider::rich_transport::styled_rich_message;
+    let text = "x".repeat(3800);
+    for plain in [false, true] {
+        let message = styled_rich_message(&text, plain).unwrap();
+        let nested = message.bot_forwarded_message.as_option().unwrap();
+        let rich = nested.message.as_option().unwrap().rich_response_message.as_option().unwrap();
+        let data = rich.unified_response.as_option().unwrap().data.as_deref().unwrap();
+        assert!(data.len() <= 16_384);
+        let json: serde_json::Value = serde_json::from_slice(data).unwrap();
+        let html = json["sections"][0]["view_model"]["primitive"]["payload"].as_str().unwrap();
+        assert!(html.contains(&text));
+        assert_eq!(html.contains("#46e7ff"), !plain);
+        assert!(!html.contains("<script"));
+    }
+}
