@@ -1,3 +1,9 @@
+## 2026-11-27 — Update Classic compacto y filas internas compartidas
+
+El informe de Update muestra un único marco cuando no hay novedades. Cambios y Verificación son filas internas alineadas con subramas de la plantilla central, sólo cuando hay cambios aplicados y comprobaciones realizadas. Restart aparece en el resultado de un intento real de reinicio; Reload sólo cuando se renovaron las vistas. La autorización previa no genera un bloque Restart. La descarga no detiene el bot en modo manual. Se distinguen compilación nueva y reutilizada, tiempos medidos y cierre final; `style none` conserva el texto sin marco. Se reutilizan los tokens de fila de Matter en la consola y el renderizador común; no se modifican permisos ni sesión. Pruebas de formato exacto, ausencia de bloques vacíos y ramas internas añadidas. CI y ejecución real pendientes.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Reload del socket y puente Codex del Owner principal
 
 `=/>reload` renueva las vistas del socket sin desconectar WhatsApp; no afirma recargar el código Rust compilado (requiere restart). `=/>codex <instrucción>` y `=/>codex status` requieren chat privado y comprobación fresca del slot 1 de Vault. El proveedor solo transmite la tarea por IPC Unix a un trabajador de desarrollo separado, nunca ejecuta instrucciones como shell ni recibe credenciales GitHub/OpenAI. El estado pendiente se conserva en el directorio privado y se notifican cambios con la plantilla Matter. La integración a alpha se confirma por PR; sin trabajador configurado no hay ejecución. Ver docs/CODEX_WORKER.md. Pruebas completas y despliegue pendientes.

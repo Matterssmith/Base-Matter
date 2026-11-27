@@ -143,16 +143,27 @@
     },
     "templates": {
       "header": "╭─ 💠 𝗠𝗮𝘁𝘁𝗲𝗿 {{EVENT}} {{CLOCK}} · {{ORIGIN}}\n",
-      "row": "│·♪·╠[ {{BODY}}\n",
-      "last-row": "│·♪·╚[ {{BODY}}\n",
+      "row": "{{CLASSIC_ROW}}{{CLASSIC_BRANCH}}[ {{BODY}}\n",
+      "last-row": "{{CLASSIC_ROW}}{{CLASSIC_LAST_BRANCH}}[ {{BODY}}\n",
+      "sub-row": "{{CLASSIC_ROW}}　 ├ {{BODY}}\n",
+      "last-sub-row": "{{CLASSIC_ROW}}　 └ {{BODY}}\n",
       "footer": "╰──╮╭───────⟨ 🌀\n"
     }
   },
   "matter_templates": {
     "update": "{{CLASSIC_HEADER}} 𝗨𝗽𝗱𝗮𝘁𝗲\n{{ROWS}}{{FOOTER}}",
     "restart": "{{CLASSIC_HEADER}} 𝗥𝗲𝘀𝘁𝗮𝗿𝘁\n{{ROWS}}{{FOOTER}}",
-    "update-changes": "{{CLASSIC_HEADER}} 𝗖𝗮𝗺𝗯𝗶𝗼𝘀\n{{ROWS}}{{FOOTER}}",
-    "update-verification": "{{CLASSIC_HEADER}} 𝗩𝗲𝗿𝗶𝗳𝗶𝗰𝗮𝗰𝗶ó𝗻\n{{ROWS}}{{FOOTER}}",
+    "report-states": {
+      "Estado: Actualizado": "Estado: ✅ Actualizado",
+      "Estado: Código actualizado": "Estado: ✅ Código actualizado",
+      "Estado: Completado": "Estado: ✅ Completado",
+      "Estado: Bloqueado": "Estado: ⚠️ Bloqueado",
+      "Estado: Fallido": "Estado: ❌ Fallido"
+    },
+    "update-sections": {
+      "changes": "𝗖𝗮𝗺𝗯𝗶𝗼𝘀",
+      "verification": "𝗩𝗲𝗿𝗶𝗳𝗶𝗰𝗮𝗰𝗶ó𝗻"
+    },
     "reload": "{{CLASSIC_HEADER}} 𝗥𝗲𝗹𝗼𝗮𝗱\n{{ROWS}}{{FOOTER}}",
     "codex": "{{CLASSIC_HEADER}} 𝗖𝗼𝗱𝗲𝘅\n{{ROWS}}{{FOOTER}}",
     "update-settings": "{{CLASSIC_HEADER}} 𝗦𝗲𝘁 𝗨𝗽𝗱𝗮𝘁𝗲\n{{ROWS}}{{FOOTER}}",

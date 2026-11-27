@@ -1636,7 +1636,7 @@ async fn main() -> Result<ExitCode> {
                                 return;
                             }
                             if let Some(code) = maintenance_code(&frame.text) {
-                                let mut action = "Estado: No ejecutado\nModo: manual".to_owned();
+                                let mut action = maintenance::UpdateAction::None;
                                 let (body, state) = if !supervised {
                                     ("Estado: Bloqueado\nMotivo: supervisor local no disponible.".to_owned(), "MANTENIMIENTO BLOQUEADO")
                                 } else if maintenance.compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire).is_err() {
@@ -1655,8 +1655,12 @@ async fn main() -> Result<ExitCode> {
                                         Ok("restart") if eligible => {
                                             match maintenance::request_restart(&config.session_db, &frame.chat_jid, plain_style, Some(&body)) {
                                                 Ok(()) => {
-                                                    let action = "Estado: Autorizado\nModo: restart\nActivación: en proceso.";
-                                                    let sent = match maintenance::update_message(&body, "Estado: Pendiente", action, plain_style) {
+                                                    let action = maintenance::UpdateAction::Note("Activación: Reinicio autorizado.".into());
+                                                    let verification = (state == "MANTENIMIENTO COMPLETADO").then_some("Integridad: OK");
+                                                    if diagnostic_messages {
+                                                        print!("{}", maintenance::update_console_rows(&body, verification, &action));
+                                                    }
+                                                    let sent = match maintenance::update_message(&body, verification, &action, plain_style) {
                                                         Ok(message) => matches!(trace.send("MANTENIMIENTO", ctx.reply(&message)).await, Ok(Ok(_))),
                                                         Err(_) => false,
                                                     };
@@ -1670,7 +1674,7 @@ async fn main() -> Result<ExitCode> {
                                                     }
                                                     return;
                                                 }
-                                                Err(_) => "Estado: Bloqueado\nModo: restart\nMotivo: informe pendiente o estado privado no disponible.".to_owned(),
+                                                Err(_) => maintenance::UpdateAction::Note("Activación: Bloqueada; informe pendiente o estado privado no disponible.".into()),
                                             }
                                         }
                                         Ok("reload") if eligible => {
@@ -1680,13 +1684,13 @@ async fn main() -> Result<ExitCode> {
                                                 count
                                             });
                                             match count {
-                                                Ok(count) => format!("Estado: Recarga parcial\nModo: reload\nVistas renovadas: {count}\nCódigo Rust: pendiente de =/>restart."),
-                                                Err(_) => "Estado: Fallido\nModo: reload\nNo se renovaron las vistas.".to_owned(),
+                                                Ok(count) => maintenance::UpdateAction::Reload(format!("Estado: Recarga parcial\nVistas renovadas: {count}\nCódigo Rust: pendiente de =/>restart.")),
+                                                Err(_) => maintenance::UpdateAction::Note("Recarga: Fallida; no se renovaron las vistas.".into()),
                                             }
                                         }
-                                        Ok(mode) if eligible => format!("Estado: Pendiente\nModo: {mode}\nActivación manual: =/>restart."),
-                                        Ok(mode) => format!("Estado: No ejecutado\nModo: {mode}\nSin activación autorizada o pendiente."),
-                                        Err(_) => "Estado: Bloqueado\nMotivo: política no disponible.".to_owned(),
+                                        Ok(_) if eligible => maintenance::UpdateAction::Note("Activar: =/>restart".into()),
+                                        Ok(_) => maintenance::UpdateAction::None,
+                                        Err(_) => maintenance::UpdateAction::Note("Activación: Bloqueada; política no disponible.".into()),
                                     };
                                     maintenance.store(0, Ordering::Release);
                                     (body, state)
@@ -1715,14 +1719,18 @@ async fn main() -> Result<ExitCode> {
                                     }
                                 };
                                 let title = if code == 76 { "Update" } else { "Restart" };
-                                if diagnostic_messages {
-                                    for line in body.lines() {
-                                        println!("{}", console_row(line, false));
-                                    }
-                                }
                                 let message = if code == 76 {
-                                    maintenance::update_message(&body, "Estado: No ejecutada\nFormato, pruebas y compilación: pendientes si cambió la revisión.", &action, plain_style)
+                                    let verification = (state == "MANTENIMIENTO COMPLETADO").then_some("Integridad: OK");
+                                    if diagnostic_messages {
+                                        print!("{}", maintenance::update_console_rows(&body, verification, &action));
+                                    }
+                                    maintenance::update_message(&body, verification, &action, plain_style)
                                 } else {
+                                    if diagnostic_messages {
+                                        for line in body.lines() {
+                                            println!("{}", console_row(line, false));
+                                        }
+                                    }
                                     maintenance::styled(title, &body, plain_style)
                                 };
                                 if let Ok(body) = message {

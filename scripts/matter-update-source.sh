@@ -26,11 +26,10 @@ main() {
     return 20
   fi
   if [[ "$before" == "$remote" ]]; then
-    printf 'Estado: Sin actualizaciones\nCódigo: %.12s\n' "$before"
     if [[ "$running" == "$before" ]]; then
-      printf '%s\n' 'Activación pendiente: no.'
+      printf 'Estado: Actualizado\nVersión: %.7s\nCambios pendientes: 0\n' "$before"
     else
-      printf '%s\n' 'Activación: requiere =/>restart o verificar versión en ejecución.'
+      printf 'Estado: Sin actualizaciones\nVersión: %.7s\nCambios pendientes: 0\nActivación: pendiente.\n' "$before"
     fi
     return 10
   fi
@@ -43,11 +42,10 @@ main() {
     printf '%s\n' 'Estado: Fallido' 'Motivo: revisión final no verificable.'
     return 1
   fi
-  printf 'Estado: Código actualizado\nAnterior: %.12s\nActual: %.12s\nCommits aplicados: %s\nArchivos modificados: %s\nCambios (máx. 5):\n' "$before" "$remote" "$remote_count" "$changed"
+  printf 'Estado: Código actualizado\nVersión: %.7s → %.7s\nCommits aplicados: %s\nArchivos modificados: %s\nCambios (máx. 5):\n' "$before" "$remote" "$remote_count" "$changed"
   git --no-pager log --format='%h %s' -n 5 "$before..$remote" | cut -c 1-100 | while IFS= read -r line; do
     printf '• %s\n' "$line"
   done
-  printf 'Versión en ejecución: %.12s\n' "$running"
-  printf '%s\n' 'Validación y activación pendientes.'
+  printf 'Versión en ejecución: %.7s\n' "$running"
 }
 main "$@"

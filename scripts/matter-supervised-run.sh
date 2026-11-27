@@ -5,7 +5,7 @@ set -u
 umask 077
 
 main() {
-  local root status branch revision next state result request
+  local root status branch revision next state result request verified
   root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)" || return 1
   cd "$root" || return 1
   branch="$(git symbolic-ref --quiet --short HEAD)" || return 1
@@ -31,19 +31,21 @@ main() {
           return 1
         fi
         next="$(git rev-parse HEAD)" || return 1
+        verified=verified-reused
         if [[ "$revision" != "$next" ]]; then
           if ! bash "$root/scripts/matter-verified-run.sh" --build-only; then
             printf '%s\n' 'build-failed' > "$result"
             printf '%s\n' 'MATTER_RESTART=FAILED_BUILD' >&2
             return 1
           fi
+          verified=verified-built
         fi
         if ! bash "$root/scripts/matter-verified-run.sh" --check-only; then
           printf '%s\n' 'start-failed' > "$result"
           printf '%s\n' 'MATTER_RESTART=FAILED_PREFLIGHT' >&2
           return 1
         fi
-        printf '%s\n' 'verified' > "$result"
+        printf '%s\n' "$verified" > "$result"
         printf '%s\n' 'MATTER_RESTART=VERIFIED_WAITING_CONNECTION'
         ;;
       76)
@@ -51,7 +53,7 @@ main() {
         return 1
         ;;
       *)
-        if [[ "$status" != 0 && -f "$request" && ! -L "$request" && ! -L "$result" && "$(cat "$result" 2>/dev/null)" == verified ]]; then
+        if [[ "$status" != 0 && -f "$request" && ! -L "$request" && ! -L "$result" && "$(cat "$result" 2>/dev/null)" == verified* ]]; then
           printf '%s\n' 'start-failed' > "$result"
         fi
         return "$status"
