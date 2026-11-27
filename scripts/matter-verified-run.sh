@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Base-Matter: fail-closed Cargo check/test/build gate before alpha WhatsApp.
+# Base-Matter: explicit verified build; start only from verified alpha binaries.
 # No pairing, no new sessions, no secrets, no Vault key generation.
 # Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
 set -Eeuo pipefail
@@ -12,19 +12,20 @@ fail() {
 
 main() {
   if (( $# > 1 )); then
-    fail 'Usage: cargo run [-- --check-only|--help]'
+    fail 'Usage: bash scripts/matter-verified-run.sh --build-only | cargo run [-- --check-only|--help]'
     return 1
   fi
   case "${1-}" in
     --help|-h)
-      printf '%s\n' 'cargo run: format -> check -> test -> build -> preflight -> resume existing WhatsApp alpha'
-      printf '%s\n' 'cargo run -- --check-only: run all gates and preflight without connecting WhatsApp'
+      printf '%s\n' 'bash scripts/matter-verified-run.sh --build-only: format, check, test, Clippy and cargo build; never connects'
+      printf '%s\n' 'cargo run: verify existing binaries and preflight, then resume alpha; no nested Cargo calls'
+      printf '%s\n' 'cargo run -- --check-only: verify existing binaries and preflight without connecting'
       printf '%s\n' 'Never pairs, creates a session, modifies Vault credentials or launches a second bot.'
       return 0
       ;;
-    ""|--check-only) ;;
+    ""|--check-only|--build-only) ;;
     *)
-      fail 'Only --check-only and --help are accepted'
+      fail 'Only --build-only, --check-only and --help are accepted'
       return 1
       ;;
   esac
@@ -43,8 +44,8 @@ main() {
     fail 'The required provider and resume-only launcher are absent'
     return 1
   fi
-  if ! command -v cargo >/dev/null 2>&1 || ! command -v python3 >/dev/null 2>&1; then
-    fail 'Cargo and Python 3 are required'
+  if ! command -v python3 >/dev/null 2>&1 || ! command -v sha256sum >/dev/null 2>&1; then
+    fail 'Python 3 and sha256sum are required'
     return 1
   fi
   if ! command -v pgrep >/dev/null 2>&1; then
@@ -57,7 +58,7 @@ main() {
     fail 'An existing WhatsApp controller/provider is running; use Ctrl+C in its tmux window first'
     return 1
   fi
-  if [[ ! -f /etc/base-matter/vault-alpha.env ]]; then
+  if [[ "${1-}" != "--build-only" && ! -f /etc/base-matter/vault-alpha.env ]]; then
     fail 'Dedicated alpha Vault enrollment is required; never downgrade silently'
     return 1
   fi
@@ -70,31 +71,60 @@ main() {
   export MATTER_WA_DIAG="${MATTER_WA_DIAG:-1}"
   export MATTER_WA_MENU_LAB="${MATTER_WA_MENU_LAB:-0}"
 
-  printf '%s\n' 'MATTER_GATE=FORMAT'
-  cargo fmt --all -- --check
-  cargo fmt --manifest-path providers/whatsapp-rust/Cargo.toml --all -- --check
-
-  printf '%s\n' 'MATTER_GATE=CHECK'
-  cargo check --all-targets
-  cargo check --manifest-path providers/whatsapp-rust/Cargo.toml --all-targets
-
-  printf '%s\n' 'MATTER_GATE=TEST'
-  cargo test --all-targets
-  cargo test --manifest-path providers/whatsapp-rust/Cargo.toml --all-targets
-
-  printf '%s\n' 'MATTER_GATE=BUILD'
-  cargo build --bin whatsapp-matter-control
-  cargo build --manifest-path providers/whatsapp-rust/Cargo.toml --bin whatsapp-matter-rust-provider
-
-  local target_dir provider_dir controller provider
-  target_dir="$(cargo metadata --no-deps --format-version 1 | python3 -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])')"
-  provider_dir="$(cargo metadata --manifest-path providers/whatsapp-rust/Cargo.toml --no-deps --format-version 1 | python3 -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])')"
+  # The two manifests are independent. Resolve paths without calling Cargo on start.
+  local target_dir provider_dir controller provider stamp revision actual
+  target_dir="$(realpath -m -- "${CARGO_TARGET_DIR:-$root/target}")"
+  provider_dir="$(realpath -m -- "${MATTER_PROVIDER_TARGET_DIR:-${CARGO_TARGET_DIR:-$root/providers/whatsapp-rust/target}}")"
   controller="$target_dir/debug/whatsapp-matter-control"
   provider="$provider_dir/debug/whatsapp-matter-rust-provider"
-  if [[ ! -x "$controller" || ! -x "$provider" || -L "$controller" || -L "$provider" ]]; then
-    fail 'The verified controller/provider binaries were not built safely'
+  stamp="$target_dir/.matter-alpha-verified-build"
+  revision="$(git rev-parse HEAD)"
+  if ! git diff --quiet HEAD --; then
+    fail 'Tracked source changes must be committed before building or starting'
     return 1
   fi
+  local -a base_cargo=(env "CARGO_TARGET_DIR=$target_dir" cargo)
+  local -a provider_cargo=(env "CARGO_TARGET_DIR=$provider_dir" cargo)
+  local -a manifest_files=("$controller" "$provider" "$root/Cargo.lock" "$root/providers/whatsapp-rust/Cargo.lock")
+  if [[ "${1-}" == "--build-only" ]]; then
+    mkdir -p -- "$target_dir"
+    rm -f -- "$stamp"
+    printf '%s\n' 'MATTER_GATE=FORMAT'
+    cargo fmt --all -- --check
+    cargo fmt --manifest-path providers/whatsapp-rust/Cargo.toml --all -- --check
+    printf '%s\n' 'MATTER_GATE=CHECK_TEST_CLIPPY'
+    "${base_cargo[@]}" check --locked --all-targets
+    "${base_cargo[@]}" test --locked --all-targets
+    "${base_cargo[@]}" clippy --locked --all-targets -- -D warnings
+    "${provider_cargo[@]}" check --manifest-path providers/whatsapp-rust/Cargo.toml --all-targets
+    "${provider_cargo[@]}" test --manifest-path providers/whatsapp-rust/Cargo.toml --all-targets
+    "${provider_cargo[@]}" clippy --manifest-path providers/whatsapp-rust/Cargo.toml --all-targets -- -D warnings
+    printf '%s\n' 'MATTER_GATE=BUILD'
+    "${base_cargo[@]}" build --locked --bins
+    "${provider_cargo[@]}" build --locked --manifest-path providers/whatsapp-rust/Cargo.toml --bin whatsapp-matter-rust-provider
+    if [[ "$(git rev-parse HEAD)" != "$revision" ]] || ! git diff --quiet HEAD --; then
+      fail 'Source changed during verification; no build stamp published'
+      return 1
+    fi
+  fi
+  if [[ ! -x "$controller" || ! -x "$provider" || -L "$controller" || -L "$provider" ]]; then
+    fail 'Verified binaries missing; run bash scripts/matter-verified-run.sh --build-only'
+    return 1
+  fi
+  actual="$(printf '%s\n' "$revision"; sha256sum -- "${manifest_files[@]}")" || return 1
+  if [[ "${1-}" == "--build-only" ]]; then
+    local temporary
+    temporary="$(mktemp "$target_dir/.matter-alpha-verified-build.XXXXXX")"
+    printf '%s\n' "$actual" > "$temporary"
+    mv -T -- "$temporary" "$stamp"
+    printf '%s\n' 'MATTER_BUILD=VERIFIED'
+    return 0
+  fi
+  if [[ ! -f "$stamp" || -L "$stamp" ]] || [[ "$(cat -- "$stamp")" != "$actual" ]]; then
+    fail 'Build missing, outdated or changed; run bash scripts/matter-verified-run.sh --build-only'
+    return 1
+  fi
+  printf '%s\n' 'MATTER_BUILD=REUSED_NO_NESTED_CARGO'
 
   local -a launcher=(bash "$root/scripts/whatsapp-alpha-existing.sh")
   local -a vault=(--vault-env /etc/base-matter/vault-alpha.env)
@@ -109,7 +139,7 @@ main() {
 
   # Fail closed if a second instance appeared while the gates were running.
   if pgrep -f '[w]hatsapp-matter-control.*--serve|[w]hatsapp-matter-rust-provider.*--resume-only' >/dev/null 2>&1; then
-    fail 'An instance started during the checks; refusing parallel WhatsApp runtime'
+    fail 'An instance started during preflight; refusing parallel WhatsApp runtime'
     return 1
   fi
 

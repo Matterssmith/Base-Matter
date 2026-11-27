@@ -8,7 +8,7 @@ use std::{env, error::Error, path::PathBuf, process::Command};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    // The default Cargo run must prove core/provider correctness before
+    // The default Cargo run reuses the explicitly verified build before
     // touching the existing WhatsApp alpha session. The legacy one-terminal
     // pairing launcher remains explicit and is never called implicitly.
     let script = root.join("scripts/matter-verified-run.sh");
