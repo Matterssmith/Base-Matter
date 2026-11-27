@@ -124,7 +124,7 @@ pub fn set_update(session: &Path, command: &str) -> Result<String> {
     }
     let policy = update_policy(session)?;
     Ok(format!(
-        "Modo: {policy}\nmanual: actualizar sin reiniciar.\nrestart: verificar y reiniciar automáticamente.\nreload: solo recarga dinámica; no disponible para comandos Rust compilados."
+        "Modo: {policy}\nmanual: actualizar sin reiniciar.\nrestart: verificar y reiniciar automáticamente.\nreload: recarga de vistas del socket; código Rust nuevo requiere restart."
     ))
 }
 

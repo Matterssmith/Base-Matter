@@ -3,8 +3,8 @@ use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
     name: "reload",
-    es: "Recarga supervisada; no implementada",
-    en: "Supervised reload; not implemented",
+    es: "Recargar vistas del socket; código Rust nuevo requiere reinicio",
+    en: "Refresh socket views; new compiled Rust code requires restart",
     usages: &["reload"],
-    implemented: false,
+    implemented: true,
 };

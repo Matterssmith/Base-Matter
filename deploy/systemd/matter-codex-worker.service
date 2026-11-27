@@ -1,0 +1,28 @@
+[Unit]
+Description=Isolated Matter Codex development worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=matter-codex
+Group=matter-codex-ipc
+Environment=HOME=/var/lib/matter-codex
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=/etc/matter-codex/worker.env
+ExecStart=/usr/bin/python3 /usr/local/libexec/matter-codex-worker.py
+StateDirectory=matter-codex
+StateDirectoryMode=0700
+RuntimeDirectory=matter-codex
+RuntimeDirectoryMode=0750
+UMask=0077
+ProtectHome=true
+ProtectSystem=strict
+InaccessiblePaths=-/run/matter-vault -/etc/base-matter -/etc/matter-vault
+PrivateTmp=true
+NoNewPrivileges=true
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

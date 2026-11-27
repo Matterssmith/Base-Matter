@@ -42,6 +42,8 @@ pub fn maintenance_reports(sections: &[(&str, &str)]) -> Option<String> {
             "Cambios" => "update-changes",
             "Verificación" => "update-verification",
             "Set Update" => "update-settings",
+            "Reload" => "reload",
+            "Codex" => "codex",
             _ => return None,
         };
         if body.trim().is_empty() {

@@ -224,7 +224,27 @@ impl VaultClient {
         Ok(())
     }
 
-    /// Both independently enrolled global owners have identical authority.
+    /// Development automation is intentionally restricted to the active slot 1
+    /// in Vault, not a socket owner or a secondary global owner.
+    pub fn require_primary_owner(&self, identity: &str) -> Result<()> {
+        let result = self.invoke_with_timeout(
+            "owner_check",
+            "primary-owner-check-v1",
+            None,
+            Some(identity.as_bytes()),
+            Duration::from_secs(5),
+        )?;
+        if !result
+            .value
+            .as_ref()
+            .is_some_and(|bytes| bytes.as_slice() == b"primary-owner:verified")
+        {
+            bail!("primary_owner_denied");
+        }
+        Ok(())
+    }
+
+    /// Both independently enrolled global owners have identical authority for ordinary controls.
     /// The bridge signs the platform principal; Vault independently enforces
     /// membership, regardless of which Matter bot/socket received it.
     pub fn grant_secondary_global_owner(&self, requester: &str, target_phone: &str) -> Result<()> {

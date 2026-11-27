@@ -2,6 +2,7 @@
 use crate::menu::Category;
 #[path = "system.rs"]
 pub mod main_command;
+pub mod codex;
 pub mod reload;
 pub mod restart;
 pub mod update;
@@ -18,5 +19,6 @@ pub const CATEGORY: Category = Category {
         restart::COMMAND,
         reload::COMMAND,
         vault::COMMAND,
+        codex::COMMAND,
     ],
 };

@@ -415,7 +415,7 @@ impl WhatsAppControlIpc {
                     Some("=/>menu" | "=/>menú" | "=/>ping" | "=/>start" | "=/>add++")
                 ) || matches!(
                     frame.text.split_whitespace().next(),
-                    Some("=/>update" | "=/>restart")
+                    Some("=/>update" | "=/>restart" | "=/>reload" | "=/>codex")
                 ) || frame
                     .text
                     .split_whitespace()

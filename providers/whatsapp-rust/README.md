@@ -1,3 +1,9 @@
+## 2026-11-27 — Reload del socket y puente Codex del Owner principal
+
+`=/>reload` renueva las vistas del socket sin desconectar WhatsApp; no afirma recargar el código Rust compilado (requiere restart). `=/>codex <instrucción>` y `=/>codex status` requieren chat privado y comprobación fresca del slot 1 de Vault. El proveedor solo transmite la tarea por IPC Unix a un trabajador de desarrollo separado, nunca ejecuta instrucciones como shell ni recibe credenciales GitHub/OpenAI. El estado pendiente se conserva en el directorio privado y se notifican cambios con la plantilla Matter. La integración a alpha se confirma por PR; sin trabajador configurado no hay ejecución. Ver docs/CODEX_WORKER.md. Pruebas completas y despliegue pendientes.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Informe Classic por bloques y política de Update
 
 `=/>set update` consulta la política privada de este runtime alpha; `manual` (alias `none`) conserva el comportamiento predeterminado sin reinicio, `restart` activa automáticamente tras descargar cambios, y `reload` deja pendiente la activación si no hay un cargador dinámico real (los comandos Rust compilados no se recargan en vivo). La configuración y sus cambios exigen Owner global comprobado por Vault, con firma y antirreplay. Se guarda una preferencia no secreta en el directorio privado del socket. El informe reúne Update, Cambios, Verificación y Restart en ese orden, con cierre unido intermedio y línea cerrada final; al reconectar se entrega el resultado combinado al chat original. Las pruebas y compilación sólo aparecen OK si existe construcción verificada. No se solicita pairing. CI y prueba real pendientes.

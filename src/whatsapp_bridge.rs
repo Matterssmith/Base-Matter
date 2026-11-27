@@ -434,6 +434,55 @@ impl WhatsAppControlBridge {
             }
             return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive));
         }
+        // Codex has a narrower authority than ordinary global maintenance.
+        // Private chat only: no prompt or repository report is sent to a group.
+        if frame.text.split_whitespace().next() == Some("=/>codex") {
+            if group_id.is_some() || !valid_user_jid(&frame.chat_jid) {
+                bail!("Codex is private-only");
+            }
+            let principal = if is_owner {
+                self.config.owner_jid.as_str()
+            } else {
+                frame.actor_id.as_str()
+            };
+            self.global_vault
+                .as_ref()
+                .ok_or_else(|| anyhow!("Vault primary authority unavailable"))?
+                .require_primary_owner(principal)?;
+            if !self
+                .replay
+                .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
+            {
+                return Ok(WhatsAppBridgeOutcome::Duplicate);
+            }
+            return Ok(WhatsAppBridgeOutcome::Dispatched(
+                DispatchResult::Extension {
+                    command: "codex".into(),
+                    output: "Codex autorizado para el Owner principal.".into(),
+                },
+            ));
+        }
+        // Reload is restricted to this socket; it cannot activate compiled code.
+        if frame.text.split_whitespace().eq(["=/>reload"]) {
+            if !is_owner {
+                self.global_vault
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("Vault authority unavailable"))?
+                    .require_global_owner(&frame.actor_id)?;
+            }
+            if !self
+                .replay
+                .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
+            {
+                return Ok(WhatsAppBridgeOutcome::Duplicate);
+            }
+            return Ok(WhatsAppBridgeOutcome::Dispatched(
+                DispatchResult::Extension {
+                    command: "reload".into(),
+                    output: "Recarga de vistas del socket autorizada.".into(),
+                },
+            ));
+        }
         // Maintenance affects the entire local bot runtime. Only a fresh
         // Vault global-owner decision grants it, even for the socket owner.
         let maintenance: Vec<_> = frame.text.split_whitespace().collect();

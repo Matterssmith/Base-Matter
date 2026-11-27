@@ -4,6 +4,7 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
+mod codex_bridge;
 mod maintenance;
 
 use anyhow::{bail, Result};
@@ -136,6 +137,7 @@ fn console_command(text: &str) -> String {
             | "=/>update"
             | "=/>restart"
             | "=/>reload"
+            | "=/>codex"
             | "=/>anti"
             | "=/>ping"
             | "=/>bot"
@@ -1197,6 +1199,7 @@ async fn main() -> Result<ExitCode> {
     let supervised = resume_only && std::env::var("MATTER_WA_SUPERVISED").as_deref() == Ok("1");
     let maintenance = Arc::new(AtomicU8::new(0));
     let maintenance_for_messages = Arc::clone(&maintenance);
+    let codex_session = config.session_db.clone();
     require_local_controller(config.bridge_addr).await?;
     let _lease = SessionLease::acquire(&config.session_db)?;
     let database = config
@@ -1576,6 +1579,41 @@ async fn main() -> Result<ExitCode> {
                             if !diagnostic_messages {
                                 println!("Base-Matter: comando aceptado");
                             }
+                            // Only the signed, admitted controller ACK authorizes these paths.
+                            if frame.text.split_whitespace().eq(["=/>reload"]) {
+                                let body = match menu_views.lock() {
+                                    Ok(mut views) => {
+                                        let count = views.len();
+                                        views.clear();
+                                        format!("Estado: Recarga parcial\nÁmbito: socket actual\nVistas de comandos renovadas: {count}\nCódigo Rust nuevo: requiere =/>restart\nSesión: sin reinicio.")
+                                    }
+                                    Err(_) => "Estado: Fallido\nMotivo: registro de vistas no disponible.".into(),
+                                };
+                                if let Ok(message) = maintenance::styled("Reload", &body, plain_style) {
+                                    let sent = matches!(trace.send("RELOAD", ctx.reply(&message)).await, Ok(Ok(_)));
+                                    trace.finish(if sent { "ENVÍO ACEPTADO" } else { "SIN ENVÍO CONFIRMADO" });
+                                }
+                                return;
+                            }
+                            if frame.text.split_whitespace().next() == Some("=/>codex") {
+                                let instruction = frame.text.strip_prefix("=/>codex").unwrap_or("").trim().to_owned();
+                                let path = config.session_db.clone();
+                                let chat = frame.chat_jid.clone();
+                                let body = if instruction.is_empty() {
+                                    "Uso: =/>codex <instrucción>\nConsultar: =/>codex status\nDestino: Base-Matter / alpha.".into()
+                                } else if resume_only {
+                                    tokio::task::spawn_blocking(move || codex_bridge::command(&path, &chat, &instruction, plain_style))
+                                        .await.ok().and_then(|result| result.ok())
+                                        .unwrap_or_else(|| "Estado: Bloqueado\nTrabajador aislado no disponible o tarea pendiente.\nNo se confirma ninguna modificación.".into())
+                                } else {
+                                    "Estado: Bloqueado\nRequiere el runtime alpha existente.".into()
+                                };
+                                if let Ok(message) = maintenance::styled("Codex", &body, plain_style) {
+                                    let sent = matches!(trace.send("CODEX", ctx.reply(&message)).await, Ok(Ok(_)));
+                                    trace.finish(if sent { "ENVÍO ACEPTADO" } else { "SIN ENVÍO CONFIRMADO" });
+                                }
+                                return;
+                            }
                             // The signed, admitted global-owner command is the only entry.
                             if frame.text.split_whitespace().take(2).eq(["=/>set", "update"]) {
                                 let result = if maintenance.compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire).is_ok() {
@@ -1635,7 +1673,17 @@ async fn main() -> Result<ExitCode> {
                                                 Err(_) => "Estado: Bloqueado\nModo: restart\nMotivo: informe pendiente o estado privado no disponible.".to_owned(),
                                             }
                                         }
-                                        Ok("reload") if eligible => "Estado: Pendiente\nModo: reload\nRecarga: no disponible para comandos Rust compilados.\nBot: sigue activo; usa =/>restart para activar.".to_owned(),
+                                        Ok("reload") if eligible => {
+                                            let count = menu_views.lock().map(|mut views| {
+                                                let count = views.len();
+                                                views.clear();
+                                                count
+                                            });
+                                            match count {
+                                                Ok(count) => format!("Estado: Recarga parcial\nModo: reload\nVistas renovadas: {count}\nCódigo Rust: pendiente de =/>restart."),
+                                                Err(_) => "Estado: Fallido\nModo: reload\nNo se renovaron las vistas.".to_owned(),
+                                            }
+                                        }
                                         Ok(mode) if eligible => format!("Estado: Pendiente\nModo: {mode}\nActivación manual: =/>restart."),
                                         Ok(mode) => format!("Estado: No ejecutado\nModo: {mode}\nSin activación autorizada o pendiente."),
                                         Err(_) => "Estado: Bloqueado\nMotivo: política no disponible.".to_owned(),
@@ -2081,9 +2129,35 @@ async fn main() -> Result<ExitCode> {
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
     };
+    let codex_client = bot.client();
+    let codex_notices = async {
+        loop {
+            tokio::time::sleep(Duration::from_secs(20)).await;
+            if !resume_only || !connected_once.load(Ordering::Relaxed) {
+                continue;
+            }
+            let path = codex_session.clone();
+            let notice = tokio::task::spawn_blocking(move || codex_bridge::notice(&path))
+                .await
+                .ok()
+                .and_then(|result| result.ok())
+                .flatten();
+            if let Some((chat, body, state)) = notice {
+                if let Ok(jid) = chat.parse::<whatsapp_rust::Jid>() {
+                    if matches!(
+                        timeout(Duration::from_secs(8), codex_client.send_text(jid, body)).await,
+                        Ok(Ok(_))
+                    ) {
+                        let _ = codex_bridge::ack_notice(&codex_session, &state);
+                    }
+                }
+            }
+        }
+    };
     tokio::select! {
         _ = bot.run() => {},
         code = maintenance_exit => return Ok(ExitCode::from(code)),
+        _ = codex_notices => {},
     }
     if resume_only {
         if connected_once.load(Ordering::Relaxed) {
