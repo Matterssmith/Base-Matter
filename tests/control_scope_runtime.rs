@@ -63,8 +63,8 @@ fn no_argument_commands_show_current_effective_state() {
         DispatchResult::Status { enabled: false, .. }
     ));
     assert!(text(call(&c, dm, None, "=/>anti").unwrap()).contains("link: off"));
-    assert!(text(call(&c, dm, None, "=/>set").unwrap()).contains("Estilo: classic"));
-    assert!(text(call(&c, dm, None, "=/>set style").unwrap()).contains("Estilo: classic"));
+    assert!(text(call(&c, dm, None, "=/>set").unwrap()).contains("Estilo: matter"));
+    assert!(text(call(&c, dm, None, "=/>set style").unwrap()).contains("Estilo: matter"));
     assert!(text(call(&c, dm, None, "=/>set lang").unwrap()).contains("Idioma: es"));
     assert!(text(call(&c, dm, None, "=/>set anti").unwrap()).contains("status: off"));
     assert!(text(call(&c, dm, None, "=/>set anti link").unwrap()).contains("(lista vacía)"));
@@ -118,7 +118,7 @@ fn preferences_are_queried_and_mutated_only_by_authenticated_owner() {
     call(&c, dm, None, "=/>set lang en").unwrap();
     assert!(text(call(&c, dm, None, "=/>set --mod").unwrap()).contains("Idioma: en"));
     assert!(text(call(&c, dm, None, "=/>set --global").unwrap()).contains("idioma es"));
-    assert!(text(call(&c, dm, None, "=/>set style --mod").unwrap()).contains("Estilo: classic"));
+    assert!(text(call(&c, dm, None, "=/>set style --mod").unwrap()).contains("Estilo: matter"));
     assert!(text(call(&c, dm, None, "=/>set --mod style none").unwrap()).contains("none"));
     assert!(text(call(&c, dm, None, "=/>set style").unwrap()).contains("Estilo: none"));
     assert!(c

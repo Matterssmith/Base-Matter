@@ -206,6 +206,7 @@ fn console_command(text: &str) -> String {
                     | "style"
                     | "lang"
                     | "language"
+                    | "matter"
                     | "classic"
                     | "web"
                     | "buttons"
@@ -566,8 +567,7 @@ impl CommandTrace {
                 .map(|(index, row)| console_row(row, index == last))
                 .collect::<Vec<_>>()
                 .join("\n");
-            let footer =
-                classic_template::expand(classic_template::console_template("footer"));
+            let footer = classic_template::expand(classic_template::console_template("footer"));
             println!(
                 "{rows}\n{}",
                 console_color(footer.trim_end_matches('\n'), "frame")

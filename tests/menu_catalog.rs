@@ -44,7 +44,7 @@ fn live_menu_registry_builds_categories_with_project_info_without_footer_credits
     assert_eq!(control.decorate(None, &root).unwrap(), root);
 
     let set = control.render(None, "menu set").unwrap();
-    assert!(set.contains("set style classic|none"));
+    assert!(set.contains("set style matter|none"));
     assert!(set.contains("set lang es|en"));
     assert_eq!(control.decorate(None, &set).unwrap(), set);
 }
@@ -65,7 +65,7 @@ fn style_none_removes_artwork_and_language_en_changes_descriptions() {
     );
     let menu = control.render(None, "menu set").unwrap();
     assert!(menu.starts_with("Global control menu"));
-    assert!(menu.contains("=/>set style classic|none"));
+    assert!(menu.contains("=/>set style matter|none"));
     assert!(!menu.contains("╞"));
     assert!(!menu.contains("│"));
     assert!(!menu.contains("♪"));

@@ -1,5 +1,5 @@
 /*
- * Shared Matter classic presentation for the core and standalone provider.
+ * Shared Matter visual presentation for the core and standalone provider.
  * Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 use serde_json::Value;
@@ -13,21 +13,21 @@ fn theme() -> &'static Value {
     })
 }
 
-/// Canonical Classic layout, shared by the core and standalone provider.
+/// Canonical Matter layout, shared by the core and standalone provider.
 pub fn layout(name: &str) -> &'static str {
-    theme()["classic_templates"][name]
+    theme()["matter_templates"][name]
         .as_str()
-        .expect("Bundled Classic layout")
+        .expect("Bundled Matter layout")
 }
 
-/// Expanded built-in Classic layout, before inserting dynamic values.
+/// Expanded built-in Matter layout, before inserting dynamic values.
 pub fn expanded_layout(name: &str) -> String {
     expand(layout(name))
 }
 
 /// Dynamic menu layout; unknown sections are handled by the caller.
 pub fn menu_layout(name: &str) -> Option<&'static str> {
-    theme()["classic_templates"]["menu"][name].as_str()
+    theme()["matter_templates"]["menu"][name].as_str()
 }
 
 /// Terminal framing is independent of the WhatsApp frame.
@@ -41,11 +41,11 @@ pub fn console_template(name: &str) -> &'static str {
 pub fn expand(source: &str) -> String {
     let mut result = source.replace("\r\n", "\n");
     let theme = theme();
-    let frame = &theme["classic_frame"];
+    let frame = &theme["matter_frame"];
     let prefix = frame["header_prefix"]
         .as_str()
-        .expect("Classic header prefix");
-    let emblem = frame["emblem"].as_str().expect("Classic emblem");
+        .expect("Matter header prefix");
+    let emblem = frame["emblem"].as_str().expect("Matter emblem");
     result = result.replace("{{CLASSIC_HEADER}}", &format!("{prefix}{emblem}"));
     for (token, key) in [
         ("EMBLEM", "emblem"),
@@ -57,21 +57,21 @@ pub fn expand(source: &str) -> String {
         ("CONNECTOR", "connector"),
         ("CONTROL_CLOSE", "joined_close"),
     ] {
-        let value = theme["classic_frame"][key]
+        let value = theme["matter_frame"][key]
             .as_str()
-            .expect("Bundled classic frame token");
+            .expect("Bundled Matter frame token");
         result = result.replace(&format!("{{{{CLASSIC_{token}}}}}"), value);
     }
     for (token, key) in [("BRANCH", "branch"), ("LAST_BRANCH", "last_branch")] {
         let value = theme["decoration"][key]
             .as_str()
-            .expect("Bundled classic branch token");
+            .expect("Bundled Matter branch token");
         result = result.replace(&format!("{{{{CLASSIC_{token}}}}}"), value);
     }
     result
 }
 
-/// Terminal presentation uses the same versioned theme as the classic menu.
+/// Terminal presentation uses the same versioned theme as the Matter menu.
 pub fn console_palette(name: &str) -> &'static str {
     theme()["console"]["palette"][name]
         .as_str()

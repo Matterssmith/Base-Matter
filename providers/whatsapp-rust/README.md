@@ -1,3 +1,9 @@
+## 2026-11-26 — Identidad oficial: estilo Matter
+
+El propietario corrige la nomenclatura: el estilo visual propio es Matter, no Classic. `templates/menu/theme.json` declara `theme: matter`, `matter_frame` y `matter_templates`, con consola independiente en el mismo archivo. `set style matter|none` es la interfaz oficial; `classic` y `default` siguen admitidos por compatibilidad y el valor histórico SQLite `classic` se conserva para no migrar preferencias innecesariamente. El modo de presentación `menu classic` permanece separado del nombre del estilo. Los veinte layouts unificados conservan contenido y símbolos. Se aplican exactamente los dos diffs de rustfmt del proveedor registrados por CI de fcf6f63; el CI de núcleo de ese SHA completó pruebas y Clippy pero falló por omisión de los cuatro documentos de continuidad, corregida aquí. Nuevos CI pendientes; no se omiten validaciones. HTML experimental, permisos, sesiones y Vault sin cambios. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Classic unificado en un archivo
 
 `templates/menu/theme.json` es la única fuente de los diseños Classic: `classic_frame` conserva adornos de WhatsApp, `classic_templates` define control, menú heredado, marco de mensajes y Pong; `classic_templates.menu` contiene las doce secciones del menú dinámico; `console.templates` define los cuatro layouts independientes de la terminal, junto a su paleta y textos existentes. Se eliminan los veinte archivos TXT sustituidos. El núcleo, proveedor y pruebas usan los mismos accesos en `src/classic_template.rs`; las plantillas Plain y las configuraciones personalizadas no se modifican. La migración conserva saltos de línea, símbolos, campos y colores, y exige recompilar. Sin cambios en transporte HTML, permisos, sesiones, Vault o MSEL. CI y prueba visual pendientes. README revisados: 2/2.

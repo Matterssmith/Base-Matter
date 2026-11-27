@@ -1231,7 +1231,7 @@ impl ControlDispatcher {
                 ["set", "--global"] => {
                     return Ok(DispatchResult::Extension {
                         command: "set".to_owned(),
-                        output: "Predeterminado general del menú (fábrica, sin configuración Vault): menú web; alternativas classic y buttons; estilo classic; idioma es.".to_owned(),
+                        output: "Predeterminado general del menú (fábrica, sin configuración Vault): menú web; alternativas classic y buttons; estilo matter; idioma es.".to_owned(),
                     });
                 }
                 ["set", "menu"] | ["set", "menu", "--mod"] | ["set", "--mod", "menu"] => {

@@ -10,8 +10,8 @@ pub const COMMAND: CommandSpec = CommandSpec {
     usages: &[
         "set style",
         "set style --mod",
-        "set style classic|none",
-        "set --mod style classic|none",
+        "set style matter|none",
+        "set --mod style matter|none",
     ],
     implemented: true,
 };

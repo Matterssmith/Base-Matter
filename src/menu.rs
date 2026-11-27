@@ -235,12 +235,20 @@ pub enum Style {
 impl Style {
     pub fn parse(value: &str) -> Result<Self> {
         match value {
-            "classic" | "default" => Ok(Self::Classic),
+            "matter" | "classic" | "default" => Ok(Self::Classic),
             "none" => Ok(Self::None),
-            _ => bail!("Available styles: classic, none"),
+            _ => bail!("Available styles: matter, none"),
         }
     }
     pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Classic => "matter",
+            Self::None => "none",
+        }
+    }
+
+    // Preserve the existing SQLite constraint and persisted preferences.
+    fn storage_key(self) -> &'static str {
         match self {
             Self::Classic => "classic",
             Self::None => "none",
@@ -453,7 +461,7 @@ impl MenuPreferences {
             "INSERT INTO menu_preferences(singleton,style,language)
              VALUES(1,?1,COALESCE((SELECT language FROM menu_preferences WHERE singleton=1),'es'))
              ON CONFLICT(singleton) DO UPDATE SET style=excluded.style",
-            params![style.as_str()],
+            params![style.storage_key()],
         )?;
         Ok(())
     }
@@ -1037,7 +1045,7 @@ mod tests {
     fn category_submenus_are_paginated_and_describe_commands() {
         let options = Preferences::default();
         let set = render("menu set", options).unwrap();
-        assert!(set.contains("set style classic|none"));
+        assert!(set.contains("set style matter|none"));
         assert!(set.contains("set lang es|en"));
         assert!(render("menu antis 4", options).is_ok());
         assert!(render("menu antis 9", options).is_err());
@@ -1058,7 +1066,7 @@ mod tests {
         };
         let plain = render("menu set", options).unwrap();
         assert!(plain.starts_with("Global control menu"));
-        assert!(plain.contains("=/>set style classic|none"));
+        assert!(plain.contains("=/>set style matter|none"));
         assert!(!plain.contains('╞'));
         assert!(!plain.contains('│'));
         assert!(!plain.contains('♪'));
@@ -1085,6 +1093,8 @@ mod tests {
                 language: Language::En
             }
         );
+        assert_eq!(Style::parse("matter").unwrap(), Style::Classic);
+        assert_eq!(Style::parse("classic").unwrap().as_str(), "matter");
         store.set_style(Style::Classic).unwrap();
         assert_eq!(store.get().unwrap().language, Language::En);
         assert_eq!(store.get_mode().unwrap(), MenuMode::Web);
