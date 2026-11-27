@@ -403,7 +403,6 @@ fn web_html_skip_reason(
 struct ConsoleTraceHeader {
     header: String,
     rows: [String; 2],
-    identity: String,
     scope: String,
     wa_role: &'static str,
     socket_owner: bool,
@@ -497,20 +496,20 @@ impl CommandTrace {
             let rows = [
                 classic_template::console_layout("command", &[("COMMAND", &command)]),
                 classic_template::console_layout(
-                    "user",
+                    "user_identity",
                     &[
                         (
                             "LABEL",
                             &console_color(classic_template::console_label("user"), "label"),
                         ),
                         ("USER", &console_color(&user, "value")),
+                        ("ID", &console_color(&identity, "identity")),
                     ],
                 ),
             ];
             trace.header = Some(ConsoleTraceHeader {
                 header,
                 rows,
-                identity,
                 scope,
                 wa_role: group_role,
                 socket_owner,
@@ -534,26 +533,14 @@ impl CommandTrace {
             "Miembro WA" => "member",
             _ => "muted",
         };
-        let wa_rank = classic_template::console_layout(
-            "wa_rank",
-            &[("RANK", &console_color(header.wa_role, wa_color))],
+        let ranks = classic_template::console_layout(
+            "ranks",
+            &[
+                ("WA", &console_color(header.wa_role, wa_color)),
+                ("MATTER", &console_color(matter_role, matter_color)),
+            ],
         );
-        let matter_rank = classic_template::console_layout(
-            "matter_rank",
-            &[("RANK", &console_color(matter_role, matter_color))],
-        );
-        let identity = classic_template::console_layout(
-            "identity",
-            &[("ID", &console_color(&header.identity, "identity"))],
-        );
-        let rows = [
-            &header.rows[0],
-            &header.rows[1],
-            &wa_rank,
-            &matter_rank,
-            &identity,
-            &header.scope,
-        ];
+        let rows = [&header.rows[0], &header.rows[1], &ranks, &header.scope];
         println!(
             "{}\n{}",
             console_color(header.header.trim_end_matches('\n'), "frame"),
@@ -608,7 +595,6 @@ impl CommandTrace {
             let mut lines = vec![classic_template::console_layout(
                 "ipc",
                 &[
-                    ("EVENT", &format!("#{:04}", self.id)),
                     ("IPC", &console_color(ipc_short, ipc_color)),
                     ("STATE", &console_color(label, color)),
                     ("ELAPSED", &self.started.elapsed().as_millis().to_string()),
@@ -1988,17 +1974,30 @@ mod readiness_tests {
         assert_eq!(console_matter_role(false, false), "Sin verificar");
         for wa_role in ["Admin WA", "Miembro WA", "Sin verificar"] {
             assert_eq!(
-                classic_template::console_layout("wa_rank", &[("RANK", wa_role)]),
-                format!("Rango WA: {wa_role}")
-            );
-            assert_eq!(
                 classic_template::console_layout(
-                    "matter_rank",
-                    &[("RANK", console_matter_role(true, false))]
+                    "ranks",
+                    &[("WA", wa_role), ("MATTER", console_matter_role(true, false))]
                 ),
-                "Rango Matter: Owner global"
+                format!("WA: {wa_role} · Matter: Owner global")
             );
         }
+    }
+
+    #[test]
+    fn console_compact_rows_do_not_repeat_event_id() {
+        let ipc = classic_template::console_layout(
+            "ipc",
+            &[("IPC", "OK 21ms"), ("STATE", "ACEPTADO"), ("ELAPSED", "175")],
+        );
+        assert_eq!(ipc, "IPC:OK 21ms · ACEPTADO · 175ms");
+        assert!(!ipc.contains("{{EVENT}}"));
+        assert_eq!(
+            classic_template::console_layout(
+                "user_identity",
+                &[("LABEL", "USR"), ("USER", "Test"), ("ID", "123@lid")]
+            ),
+            "USR Test · ID 123@lid"
+        );
     }
 
     #[test]

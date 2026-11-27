@@ -1,3 +1,9 @@
+## 2026-11-26 — Consola Matter compacta sin contador repetido
+
+Por solicitud del propietario, el evento correlativo aparece únicamente en el encabezado; usuario e ID comparten fila y WA/Matter comparten otra con colores semánticos independientes. IPC conserva latencia, resultado y duración; TX conserva sus etapas; Vista WA: sin verificar conserva la advertencia de entrega no visualmente comprobada. No se reducen ni amplían permisos ni se cambia identidad, Vault o sesión. Pruebas de filas compactas y rangos añadidas/ajustadas; CI, formato y ejecución real pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Rangos WA y Matter independientes en consola
 
 Por solicitud del propietario, la terminal muestra Rango WA, Rango Matter e ID en filas independientes de la plantilla compartida. El rango WA procede de metadatos del grupo; Matter muestra Owner global únicamente con ACK positivo del controlador, Owner socket cuando corresponde o Sin verificar si no hay confirmación. No se confunde ausencia de confirmación con ausencia de autoridad global. No se cambian permisos, resolución de identidad, autenticación, sesiones ni Vault. Prueba de regresión añadida; compilación, CI y comprobación de la identidad real en idkbot pendientes. README revisados: 2/2.
