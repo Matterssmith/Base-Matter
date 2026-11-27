@@ -40,6 +40,7 @@ impl ControlIpcOutcome {
 pub struct WhatsAppControlIpc {
     bridge: Arc<WhatsAppControlBridge>,
     themes: Arc<ControlThemes>,
+    console_rank: bool,
 }
 impl WhatsAppControlIpc {
     pub fn new(bridge: Arc<WhatsAppControlBridge>) -> Self {
@@ -49,6 +50,7 @@ impl WhatsAppControlIpc {
                 ControlTheme::new("Base-Matter", "base-matter", "✦")
                     .expect("Static Matterssmith theme must be valid"),
             )),
+            console_rank: false,
         }
     }
 
@@ -63,6 +65,12 @@ impl WhatsAppControlIpc {
     /// the same selected theme for their verified chat scope.
     pub fn with_themes(mut self, themes: Arc<ControlThemes>) -> Self {
         self.themes = themes;
+        self
+    }
+
+    /// Local diagnostic metadata; not part of any chat reply or permission.
+    pub fn with_console_rank(mut self, enabled: bool) -> Self {
+        self.console_rank = enabled;
         self
     }
 
@@ -344,6 +352,16 @@ impl WhatsAppControlIpc {
             if response.get("message").is_some() {
                 response["menu_items"] = serde_json::Value::Array(items);
             }
+        }
+        // A command denial can still originate from an authenticated global
+        // owner. Do not infer rank from the dispatch result. Never check passive
+        // observations, ignored chats or duplicate messages.
+        if self.console_rank
+            && matches!(result, ControlIpcOutcome::Applied | ControlIpcOutcome::Denied)
+            && serde_json::from_slice::<WhatsAppControlFrame>(&request)
+                .is_ok_and(|frame| self.bridge.console_global_owner(&frame))
+        {
+            response["global_owner_verified"] = serde_json::Value::Bool(true);
         }
         let encoded = serde_json::to_vec(&response)?;
         stream.write_all(&encoded)?;

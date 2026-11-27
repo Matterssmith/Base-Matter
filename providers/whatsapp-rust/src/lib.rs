@@ -108,16 +108,39 @@ struct ControlAckWire {
     menu_mode: Option<String>,
     #[serde(default)]
     menu_items: Option<Vec<MenuItem>>,
+    #[serde(default)]
+    global_owner_verified: bool,
 }
 
 /// Interpret the signed-control IPC acknowledgment conservatively.
 /// A duplicate is acknowledged as a replay without claiming another effect.
 pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
+    parse_control_ack_with_rank(input).0
+}
+
+/// Rank is local diagnostic metadata only. Preserve all existing ACK semantics,
+/// including an error for denied commands, even when the sender is an owner.
+pub fn parse_control_ack_with_rank(input: &[u8]) -> (Result<ControlAck>, bool) {
+    let invalid = || (Err(anyhow!("Invalid controller acknowledgment")), false);
     if input.is_empty() || input.len() > 8192 {
-        bail!("Invalid controller acknowledgment");
+        return invalid();
     }
-    let response: ControlAckWire =
-        serde_json::from_slice(input).map_err(|_| anyhow!("Invalid controller acknowledgment"))?;
+    let Ok(response) = serde_json::from_slice::<ControlAckWire>(input) else {
+        return invalid();
+    };
+    let verified = response.global_owner_verified;
+    let applied = response.ok && response.outcome == "applied";
+    let denied = !response.ok
+        && response.outcome == "denied"
+        && response.message.is_none()
+        && response.menu_mode.is_none()
+        && response.menu_items.is_none();
+    let result = parse_control_ack_wire(response);
+    let rank = verified && ((applied && result.is_ok()) || denied);
+    (result, rank)
+}
+
+fn parse_control_ack_wire(response: ControlAckWire) -> Result<ControlAck> {
     let valid_message = |message: &str| {
         !message.is_empty()
             && message.len() <= 3800
@@ -173,6 +196,39 @@ pub fn parse_control_ack(input: &[u8]) -> Result<ControlAck> {
         (true, "duplicate", None, None) => Ok(ControlAck::Duplicate),
         (true, "ignored", None, None) => Ok(ControlAck::Ignored),
         _ => bail!("Controller denied the operation"),
+    }
+}
+
+#[cfg(test)]
+mod console_rank_ack_tests {
+    use super::*;
+
+    #[test]
+    fn rank_does_not_change_command_authority() {
+        let (ack, rank) = parse_control_ack_with_rank(
+            br#"{"ok":true,"outcome":"applied","global_owner_verified":true}"#,
+        );
+        assert_eq!(ack.unwrap(), ControlAck::Applied);
+        assert!(rank);
+        let (ack, rank) = parse_control_ack_with_rank(
+            br#"{"ok":false,"outcome":"denied","global_owner_verified":true}"#,
+        );
+        assert!(ack.is_err());
+        assert!(rank);
+    }
+
+    #[test]
+    fn rank_is_not_inferred_from_success_or_invalid_ack() {
+        for payload in [
+            &br#"{"ok":true,"outcome":"applied"}"#[..],
+            &br#"{"ok":true,"outcome":"ignored","global_owner_verified":true}"#[..],
+            &br#"{"ok":true,"outcome":"duplicate","global_owner_verified":true}"#[..],
+            &br#"{"ok":true,"outcome":"applied","global_owner_verified":true,"message":""}"#[..],
+            &br#"{"ok":false,"outcome":"denied","global_owner_verified":true,"message":"unexpected"}"#[..],
+            &br#"{"ok":true,"outcome":"applied","global_owner_verified":"true"}"#[..],
+        ] {
+            assert!(!parse_control_ack_with_rank(payload).1);
+        }
     }
 }
 

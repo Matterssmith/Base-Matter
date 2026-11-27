@@ -376,7 +376,9 @@ fn main() -> Result<()> {
         )?
         .with_global_vault(vault_client)?,
     );
-    let service = WhatsAppControlIpc::new(bridge).with_themes(Arc::clone(&style));
+    let service = WhatsAppControlIpc::new(bridge)
+        .with_themes(Arc::clone(&style))
+        .with_console_rank(matches!(env::var("MATTER_WA_DIAG").as_deref(), Ok("1")));
     println!("Base-Matter owner control listening on local loopback.");
     service.serve(bind)
 }

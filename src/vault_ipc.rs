@@ -16,7 +16,7 @@ use chacha20poly1305::{
 #[cfg(unix)]
 use serde::Deserialize;
 use serde::Serialize;
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Duration};
 #[cfg(unix)]
 use std::{
     fs,
@@ -26,7 +26,6 @@ use std::{
         fs::{MetadataExt, OpenOptionsExt, PermissionsExt},
         net::UnixStream,
     },
-    time::Duration,
 };
 use zeroize::Zeroizing;
 #[cfg(unix)]
@@ -161,6 +160,21 @@ impl VaultClient {
         platform: &str,
         subject_id: &str,
     ) -> Result<()> {
+        self.require_global_owner_with_timeout(platform, subject_id, Duration::from_secs(5))
+    }
+
+    /// Best-effort console metadata, never an authorization cache.
+    pub(crate) fn console_global_owner(&self, identity: &str) -> bool {
+        self.require_global_owner_with_timeout("whatsapp", identity, Duration::from_millis(250))
+            .is_ok()
+    }
+
+    fn require_global_owner_with_timeout(
+        &self,
+        platform: &str,
+        subject_id: &str,
+        timeout: Duration,
+    ) -> Result<()> {
         let numeric = |value: &str, min: usize, max: usize| {
             (min..=max).contains(&value.len())
                 && value.bytes().all(|byte| byte.is_ascii_digit())
@@ -183,7 +197,13 @@ impl VaultClient {
             "subject_id": subject_id,
         });
         let encoded = serde_json::to_vec(&principal)?;
-        let result = self.invoke("owner_check", "global-owner-check-v2", None, Some(&encoded))?;
+        let result = self.invoke_with_timeout(
+            "owner_check",
+            "global-owner-check-v2",
+            None,
+            Some(&encoded),
+            timeout,
+        )?;
         if !result
             .value
             .as_ref()
@@ -586,13 +606,30 @@ impl VaultClient {
         }
         Ok(key)
     }
-    #[cfg(unix)]
     pub fn invoke(
         &self,
         operation: &str,
         record: &str,
         expected_revision: Option<u64>,
         value: Option<&[u8]>,
+    ) -> Result<VaultResponse> {
+        self.invoke_with_timeout(
+            operation,
+            record,
+            expected_revision,
+            value,
+            Duration::from_secs(5),
+        )
+    }
+
+    #[cfg(unix)]
+    fn invoke_with_timeout(
+        &self,
+        operation: &str,
+        record: &str,
+        expected_revision: Option<u64>,
+        value: Option<&[u8]>,
+        timeout: Duration,
     ) -> Result<VaultResponse> {
         self.validate(operation, record, value)?;
         if (operation != "put"
@@ -665,8 +702,8 @@ impl VaultClient {
                 }
                 _ => anyhow!("vault_connection_failed"),
             })?;
-        stream.set_read_timeout(Some(Duration::from_secs(5)))?;
-        stream.set_write_timeout(Some(Duration::from_secs(5)))?;
+        stream.set_read_timeout(Some(timeout))?;
+        stream.set_write_timeout(Some(timeout))?;
         stream.write_all(&payload)?;
         stream.shutdown(Shutdown::Write)?;
         let mut encoded = Vec::new();
@@ -718,12 +755,13 @@ impl VaultClient {
         })
     }
     #[cfg(not(unix))]
-    pub fn invoke(
+    fn invoke_with_timeout(
         &self,
         operation: &str,
         record: &str,
         expected_revision: Option<u64>,
         value: Option<&[u8]>,
+        _timeout: Duration,
     ) -> Result<VaultResponse> {
         self.validate(operation, record, value)?;
         let _ = expected_revision;

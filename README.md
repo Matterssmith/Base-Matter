@@ -1,3 +1,9 @@
+## 2026-11-26 — Rango global verificado en consola
+
+El proveedor ya no imprime el rango antes de recibir el resultado IPC. Con MATTER_WA_DIAG=1 el controlador comprueba nuevamente la firma HMAC del remitente de un comando admitido o denegado y pide a Vault una confirmación actual, con timeout de lectura/escritura diagnóstico de 250 ms. El ACK local opcional global_owner_verified=true solo cambia la etiqueta de consola a Owner global, con prioridad sobre Owner socket y Admin WA, sin alterar la aceptación o denegación del comando. Nunca se consulta para observaciones Anti, mensajes ignorados o duplicados, nunca se incluye el rango en la respuesta WhatsApp, no se cachean owners ni se confía en nombres. Los dos owners globales son pares. Si Vault no confirma el JID exacto, se conserva el rango local, no se afirma que el actor carezca de rango global. La resolución PN/LID de terceros y la mutación de roles no cambian en este checkpoint; verificar las identidades reales por separado. Pruebas de parsing de ACK y precedencia añadidas; CI/formato/compilación y prueba real pendientes. No se toca la sesión ni el servicio instalado. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Formato de la lectura offline de Vault
 
 Se aplican los ocho diffs exactos de rustfmt del job 140260885962 (badf5fe), sin omitir las pruebas. Nuevas comprobaciones pendientes. README revisados: 2/2.

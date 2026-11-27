@@ -112,7 +112,7 @@ impl WhatsAppControlBridge {
         self.ingest(&frame)
     }
 
-    pub fn ingest(&self, frame: &WhatsAppControlFrame) -> Result<WhatsAppBridgeOutcome> {
+    fn verify_frame(&self, frame: &WhatsAppControlFrame) -> Result<(bool, bool)> {
         // Two disjoint identities, both backed by the provider's HMAC:
         // (1) verified socket-owner controls; (2) incoming read-only
         // requests bound to a real WhatsApp group or sender's private chat.
@@ -167,6 +167,32 @@ impl WhatsAppControlBridge {
         mac.update(&frame.timestamp.to_be_bytes());
         mac.verify_slice(&supplied)
             .map_err(|_| anyhow!("Invalid WhatsApp control proof"))?;
+        Ok((is_owner, is_public_reader))
+    }
+
+    /// Diagnostic only: verify the actual signed sender before requesting a
+    /// fresh, bounded Vault decision. Never grant access from this result.
+    pub(crate) fn console_global_owner(&self, frame: &WhatsAppControlFrame) -> bool {
+        if !(frame.text.starts_with("=/>")
+            || frame.text.starts_with("\u{001f}matter-group-style:=/>"))
+        {
+            return false;
+        }
+        let Ok((is_owner, _)) = self.verify_frame(frame) else {
+            return false;
+        };
+        let principal = if is_owner {
+            self.config.owner_jid.as_str()
+        } else {
+            frame.actor_id.as_str()
+        };
+        self.global_vault
+            .as_ref()
+            .is_some_and(|vault| vault.console_global_owner(principal))
+    }
+
+    pub fn ingest(&self, frame: &WhatsAppControlFrame) -> Result<WhatsAppBridgeOutcome> {
+        let (is_owner, is_public_reader) = self.verify_frame(frame)?;
 
         // Anti observations have a separate signed, read-only path.
         // Do NOT call dispatch() here: an incoming group member cannot

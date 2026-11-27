@@ -22,7 +22,7 @@ use tokio::{
 use whatsapp_matter_rust_provider::{
     classic_template,
     help_reply::help_from_quoted_message,
-    parse_control_ack,
+    parse_control_ack_with_rank,
     recovery::{
         read_encrypted, recovery_key_from_env, save_encrypted, RecoveryMember, RecoverySnapshot,
     },
@@ -377,12 +377,29 @@ fn web_html_skip_reason(
     }
 }
 
+struct ConsoleTraceHeader {
+    header: String,
+    rows: [String; 2],
+    identity: String,
+    scope: String,
+    local_role: &'static str,
+}
+
+fn console_role(global_owner: bool, local_role: &'static str) -> &'static str {
+    if global_owner {
+        "Owner global"
+    } else {
+        local_role
+    }
+}
+
 struct CommandTrace {
     id: u64,
     started: Instant,
     enabled: bool,
     ipc: Mutex<String>,
     tx: Mutex<Vec<String>>,
+    header: Option<ConsoleTraceHeader>,
 }
 
 impl CommandTrace {
@@ -394,12 +411,13 @@ impl CommandTrace {
         socket_owner: bool,
     ) -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(1);
-        let trace = Self {
+        let mut trace = Self {
             id: NEXT.fetch_add(1, Ordering::Relaxed),
             started: Instant::now(),
             enabled,
             ipc: Mutex::new("PEND".to_owned()),
             tx: Mutex::new(Vec::new()),
+            header: None,
         };
         if enabled {
             let clock = data.timestamp.rem_euclid(86400);
@@ -414,12 +432,6 @@ impl CommandTrace {
                 "Owner socket"
             } else {
                 group_role
-            };
-            let role_color = match role {
-                "Owner socket" => "owner",
-                "Admin WA" => "admin",
-                "Miembro WA" => "member",
-                _ => "muted",
             };
             let scope = if data.is_group {
                 classic_template::console_layout(
@@ -473,25 +485,45 @@ impl CommandTrace {
                         ("USER", &console_color(&user, "value")),
                     ],
                 ),
-                classic_template::console_layout(
-                    "rank",
-                    &[
-                        ("RANK", &console_color(role, role_color)),
-                        ("ID", &console_color(&identity, "identity")),
-                    ],
-                ),
-                scope,
             ];
-            println!(
-                "{}\n{}",
-                console_color(header.trim_end_matches('\n'), "frame"),
-                rows.iter()
-                    .map(|row| console_row(row, false))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            );
+            trace.header = Some(ConsoleTraceHeader {
+                header,
+                rows,
+                identity,
+                scope,
+                local_role: role,
+            });
         }
         trace
+    }
+
+    fn print_header(&self, global_owner: bool) {
+        let Some(header) = &self.header else {
+            return;
+        };
+        let role = console_role(global_owner, header.local_role);
+        let role_color = match role {
+            "Owner global" | "Owner socket" => "owner",
+            "Admin WA" => "admin",
+            "Miembro WA" => "member",
+            _ => "muted",
+        };
+        let rank = classic_template::console_layout(
+            "rank",
+            &[
+                ("RANK", &console_color(role, role_color)),
+                ("ID", &console_color(&header.identity, "identity")),
+            ],
+        );
+        let rows = [&header.rows[0], &header.rows[1], &rank, &header.scope];
+        println!(
+            "{}\n{}",
+            console_color(header.header.trim_end_matches('\n'), "frame"),
+            rows.iter()
+                .map(|row| console_row(row, false))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
     }
 
     fn stage(&self, stage: &str) {
@@ -624,6 +656,7 @@ fn matter_ping_message(socket: Duration, process: Duration) -> String {
 async fn deliver(
     address: std::net::SocketAddrV4,
     frame: &whatsapp_matter_rust_provider::SignedFrame,
+    verified_rank: Option<&mut bool>,
 ) -> Result<ControlAck> {
     let body = serde_json::to_vec(frame)?;
     if body.len() >= 16 * 1024 {
@@ -638,7 +671,11 @@ async fn deliver(
         if response.len() > 8192 {
             bail!("Invalid bridge reply length");
         }
-        parse_control_ack(&response)
+        let (ack, rank) = parse_control_ack_with_rank(&response);
+        if let Some(verified_rank) = verified_rank {
+            *verified_rank = rank;
+        }
+        ack
     };
     let deadline = if frame.from_me
         && frame.text.starts_with("=/>matter ")
@@ -1273,7 +1310,7 @@ async fn main() -> Result<()> {
                     // Report a transport outage once until recovery.
                     static ANTI_TRANSPORT_WARNING: AtomicBool = AtomicBool::new(false);
                     if let Ok(Some(frame)) = config.signed_anti_observation(&observation, edit_state) {
-                        match deliver(config.bridge_addr, &frame).await {
+                        match deliver(config.bridge_addr, &frame, None).await {
                             Ok(_) => {
                                 ANTI_TRANSPORT_WARNING.store(false, Ordering::Relaxed);
                             }
@@ -1359,14 +1396,17 @@ async fn main() -> Result<()> {
                 if let Ok(Some(frame)) = verified {
                     trace.stage("IPC: ENVIANDO");
                     let ipc_started = Instant::now();
-                    match deliver(config.bridge_addr, &frame).await {
+                    let mut global_owner = false;
+                    let ack = deliver(config.bridge_addr, &frame, Some(&mut global_owner)).await;
+                    let ipc_elapsed = ipc_started.elapsed();
+                    trace.print_header(global_owner);
+                    match ack {
                         Ok(ack @ (
                             ControlAck::Applied
                             | ControlAck::AppliedWithMessage(_)
                             | ControlAck::AppliedWithMenuMode { .. }
                             | ControlAck::AppliedWithMenuItems { .. }
                         )) => {
-                            let ipc_elapsed = ipc_started.elapsed();
                             let local_after_ipc = Instant::now();
                             let ipc_ms = ipc_elapsed.as_millis();
                             trace.stage(&format!("IPC: OK {ipc_ms}ms"));
@@ -1732,6 +1772,7 @@ async fn main() -> Result<()> {
                         }
                     }
                 } else {
+                    trace.print_header(false);
                     trace.stage("IPC: NO ADMITIDO");
                     trace.finish("NO ADMITIDO (firma o política local)");
                 }
@@ -1811,6 +1852,16 @@ mod readiness_tests {
             "╭─ 💠 𝐏𝐨𝐧𝐠\n│·♪·╠[ ⴵ · 𝐒𝐨𝐜𝐤𝐞𝐭 ···· *12.345 ms*\n│·♪·╠[ ⚙︎  𝐏𝐫𝐨𝐜𝐞𝐬𝐬 · *0.678 ms*\n│·♪·╚[ ✧  𝐓𝐨𝐭𝐚𝐥 ········ *13.023 ms*\n╰───────────⟨ 🌀"
         );
         assert_eq!(pong.lines().count(), 5);
+    }
+
+    #[test]
+    fn verified_global_owner_precedes_local_whatsapp_rank() {
+        assert_eq!(console_role(true, "Admin WA"), "Owner global");
+        assert_eq!(console_role(true, "Miembro WA"), "Owner global");
+        assert_eq!(console_role(true, "Owner socket"), "Owner global");
+        assert_eq!(console_role(false, "Admin WA"), "Admin WA");
+        assert_eq!(console_role(false, "Owner socket"), "Owner socket");
+        assert_eq!(console_role(false, "Sin verificar"), "Sin verificar");
     }
 
     #[test]
