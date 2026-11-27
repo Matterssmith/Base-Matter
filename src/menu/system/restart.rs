@@ -1,10 +1,9 @@
-// Independent reusable command description: restart.
 use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
     name: "restart",
-    es: "Reinicio supervisado; no implementado",
-    en: "Supervised restart; not implemented",
+    es: "Reiniciar el bot sin desvincular WhatsApp (owner global)",
+    en: "Restart the bot without unlinking WhatsApp (global owner)",
     usages: &["restart"],
-    implemented: false,
+    implemented: true,
 };
