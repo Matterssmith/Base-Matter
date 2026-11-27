@@ -129,7 +129,13 @@ pub fn parse_control_ack_with_rank(input: &[u8]) -> (Result<ControlAck>, bool) {
 
 /// Style metadata is advisory presentation, accepted only on a valid applied ACK.
 pub fn parse_control_ack_with_presentation(input: &[u8]) -> (Result<ControlAck>, bool, bool) {
-    let invalid = || (Err(anyhow!("Invalid controller acknowledgment")), false, false);
+    let invalid = || {
+        (
+            Err(anyhow!("Invalid controller acknowledgment")),
+            false,
+            false,
+        )
+    };
     if input.is_empty() || input.len() > 8192 {
         return invalid();
     }
@@ -140,8 +146,7 @@ pub fn parse_control_ack_with_presentation(input: &[u8]) -> (Result<ControlAck>,
         .response_style
         .as_deref()
         .is_some_and(|style| !matches!(style, "matter" | "none"))
-        || (response.response_style.is_some()
-            && !(response.ok && response.outcome == "applied"))
+        || (response.response_style.is_some() && !(response.ok && response.outcome == "applied"))
     {
         return invalid();
     }
@@ -208,7 +213,8 @@ fn parse_control_ack_wire(response: ControlAckWire) -> Result<ControlAck> {
             Ok(ControlAck::AppliedWithMessage(message))
         }
         (true, "applied", Some(message), Some(mode))
-            if valid_message(&message) && matches!(mode.as_str(), "web" | "classic" | "matter" | "buttons") =>
+            if valid_message(&message)
+                && matches!(mode.as_str(), "web" | "classic" | "matter" | "buttons") =>
         {
             Ok(ControlAck::AppliedWithMenuMode { message, mode })
         }
@@ -525,11 +531,15 @@ impl Config {
             ["=/>anti", arguments @ ..] if arguments.len() <= 2 => {
                 let scope_count = arguments
                     .iter()
-                    .filter(|argument| matches!(**argument, "--chat" | "--mod" | "--socket" | "--global"))
+                    .filter(|argument| {
+                        matches!(**argument, "--chat" | "--mod" | "--socket" | "--global")
+                    })
                     .count();
                 let filters = arguments
                     .iter()
-                    .filter(|argument| !matches!(**argument, "--chat" | "--mod" | "--socket" | "--global"))
+                    .filter(|argument| {
+                        !matches!(**argument, "--chat" | "--mod" | "--socket" | "--global")
+                    })
                     .copied()
                     .collect::<Vec<_>>();
                 scope_count <= 1
@@ -543,7 +553,10 @@ impl Config {
             }
             ["=/>menu" | "=/>menú", category] => {
                 public_category(category)
-                    || matches!(*category, "all" | "classic" | "matter" | "modern" | "web" | "buttons")
+                    || matches!(
+                        *category,
+                        "all" | "classic" | "matter" | "modern" | "web" | "buttons"
+                    )
             }
             ["=/>menu" | "=/>menú", "page", page] => matches!(*page, "1" | "2" | "3"),
             ["=/>menu" | "=/>menú", category, page] => {

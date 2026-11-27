@@ -553,7 +553,9 @@ pub fn menu_button_selection(message: &wa::Message) -> Option<(String, bool)> {
             .split_once('.')
             .map_or((category, None), |(category, page)| (category, Some(page)));
         let command = button_command(&format!("matter.read.menu.{category}"))?;
-        if !command.starts_with("=/>menu ") || matches!(category, "classic" | "matter" | "web" | "buttons") {
+        if !command.starts_with("=/>menu ")
+            || matches!(category, "classic" | "matter" | "web" | "buttons")
+        {
             return None;
         }
         let command = match page {

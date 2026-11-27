@@ -31,7 +31,8 @@ use whatsapp_matter_rust_provider::{
     rich_transport::{experimental_self_chat_rich_message, styled_rich_message},
     ui::{
         button_menu_cards, legacy_row_probe_message, menu_button_selection,
-        native_navigation_message_with_web_fallback, native_ui_probe_message, web_navigation_notice,
+        native_navigation_message_with_web_fallback, native_ui_probe_message,
+        web_navigation_notice,
     },
     Config, ControlAck, Event, SessionLease,
 };
@@ -2065,7 +2066,10 @@ mod readiness_tests {
             assert_eq!(
                 classic_template::console_layout(
                     "ranks",
-                    &[("WA", wa_role), ("MATTER", console_matter_role(true, false))]
+                    &[
+                        ("WA", wa_role),
+                        ("MATTER", console_matter_role(true, false))
+                    ]
                 ),
                 format!("WA: {wa_role} · Matter: Owner global")
             );
@@ -2076,7 +2080,11 @@ mod readiness_tests {
     fn console_compact_rows_do_not_repeat_event_id() {
         let ipc = classic_template::console_layout(
             "ipc",
-            &[("IPC", "OK 21ms"), ("STATE", "ACEPTADO"), ("ELAPSED", "175")],
+            &[
+                ("IPC", "OK 21ms"),
+                ("STATE", "ACEPTADO"),
+                ("ELAPSED", "175"),
+            ],
         );
         assert_eq!(ipc, "IPC:OK 21ms · ACEPTADO · 175ms");
         assert!(!ipc.contains("{{EVENT}}"));

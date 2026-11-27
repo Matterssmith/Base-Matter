@@ -215,7 +215,9 @@ fn web_navigation_can_show_text_after_definite_html_failure() {
     let interactive = message.interactive_message.as_option().unwrap();
     assert_eq!(
         interactive.body.as_option().unwrap().text.as_deref(),
-        Some(whatsapp_matter_rust_provider::ui::web_navigation_notice(true))
+        Some(whatsapp_matter_rust_provider::ui::web_navigation_notice(
+            true
+        ))
     );
 }
 
@@ -226,7 +228,9 @@ fn web_navigation_has_visible_notice_without_classic_body() {
     let interactive = web.interactive_message.as_option().unwrap();
     assert_eq!(
         interactive.body.as_option().unwrap().text.as_deref(),
-        Some(whatsapp_matter_rust_provider::ui::web_navigation_notice(false))
+        Some(whatsapp_matter_rust_provider::ui::web_navigation_notice(
+            false
+        ))
     );
     let classic = native_navigation_message(original, "=/>menu classic").unwrap();
     assert_eq!(
