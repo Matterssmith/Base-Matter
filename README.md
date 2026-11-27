@@ -1,3 +1,9 @@
+## 2026-11-27 — Reload predeterminado en Update
+
+Cuando no existe una preferencia explícita, `=/>update` usa `reload`: descarga los cambios y renueva las vistas del socket si corresponde, sin reiniciar WhatsApp. Los comandos Rust compilados nuevos siguen pendientes de `=/>restart`. Las preferencias guardadas `manual`, `restart` o `reload` se conservan. Se ajusta la prueba de política predeterminada. Compilación y prueba real pendientes.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Update Classic compacto y filas internas compartidas
 
 El informe de Update muestra un único marco cuando no hay novedades. Cambios y Verificación son filas internas alineadas con subramas de la plantilla central, sólo cuando hay cambios aplicados y comprobaciones realizadas. Restart aparece en el resultado de un intento real de reinicio; Reload sólo cuando se renovaron las vistas. La autorización previa no genera un bloque Restart. La descarga no detiene el bot en modo manual. Se distinguen compilación nueva y reutilizada, tiempos medidos y cierre final; `style none` conserva el texto sin marco. Se reutilizan los tokens de fila de Matter en la consola y el renderizador común; no se modifican permisos ni sesión. Pruebas de formato exacto, ausencia de bloques vacíos y ramas internas añadidas. CI y ejecución real pendientes.

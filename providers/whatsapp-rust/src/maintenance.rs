@@ -185,7 +185,7 @@ fn policy_path(session: &Path) -> Result<PathBuf> {
 pub fn update_policy(session: &Path) -> Result<String> {
     let path = policy_path(session)?;
     match fs::symlink_metadata(&path) {
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok("manual".into()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok("reload".into()),
         Err(error) => Err(error.into()),
         Ok(meta) => {
             if !meta.is_file() || meta.len() > 16 {
@@ -230,7 +230,7 @@ pub fn set_update(session: &Path, command: &str) -> Result<String> {
     }
     let policy = update_policy(session)?;
     Ok(format!(
-        "Modo: {policy}\nmanual: actualizar sin reiniciar.\nrestart: verificar y reiniciar automáticamente.\nreload: recarga de vistas del socket; código Rust nuevo requiere restart."
+        "Modo: {policy}\nmanual: actualizar sin reiniciar.\nrestart: verificar y reiniciar automáticamente.\nreload (predeterminado): recarga de vistas del socket; código Rust nuevo requiere restart."
     ))
 }
 
@@ -470,7 +470,7 @@ mod tests {
             std::env::temp_dir().join(format!("matter-update-policy-test-{}", std::process::id()));
         fs::create_dir(&directory).unwrap();
         let session = directory.join("session.db");
-        assert_eq!(update_policy(&session).unwrap(), "manual");
+        assert_eq!(update_policy(&session).unwrap(), "reload");
         set_update(&session, "=/>set update restart").unwrap();
         assert_eq!(update_policy(&session).unwrap(), "restart");
         set_update(&session, "=/>set update reload").unwrap();
