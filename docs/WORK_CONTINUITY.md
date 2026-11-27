@@ -1,3 +1,9 @@
+## 2026-11-26 — Respuestas cerradas y lectura cifrada fuera de línea
+
+Por decisión del propietario, las respuestas individuales usan el cierre Matter completo; solo menús conectados y terminal conservan sus marcos independientes. El cliente de configuración Vault mantiene instantáneas XChaCha20-Poly1305 de las lecturas/ACK confirmados para estilo, idioma, modo y Anti, con clave derivada de la credencial local mediante HMAC, contexto vinculado al cliente/tenant/bot/socket/registro, ficheros privados y sustitución atómica. Solo se consultan ante socket ausente o conexión rechazada; no ante denegación, permisos, autenticación inválida ni corrupción. Las ausencias confirmadas también se registran. El comando de estilo identifica lecturas en caché y ausencia de copia; no se inventa un valor guardado. Las escrituras siempre usan get/put o global_style_set en vivo, sin cola offline. No se cachean owners, permisos, secretos, credenciales ni health. El arranque permite modo offline solo para servicio no alcanzable, conservando controles de identidad, sesión y archivos privados; un handshake denegado con socket alcanzable sigue bloqueando. Las lecturas offline pueden estar desactualizadas, y necesitan copia previa; CI y prueba de servidor pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Formato CI de configuración Vault
 
 Aplicados exactamente los diffs de rustfmt de los jobs 140247506586 y 140247505975 del SHA fd534ff. No se desactivan validaciones ni se modifica la política de configuración. Nuevos CI pendientes; README revisados: 2/2.

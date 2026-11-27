@@ -112,8 +112,8 @@ main() {
     fi
   done
 
-  # All inherited Vault settings were removed above. Enable only by explicit
-  # host-local opt-in, and verify the new grant before starting either binary.
+  # Verify the host-provisioned grant when reachable. Offline mode is
+  # configuration read-only and never uses a cached authorization decision.
   local vault_status='ALPHA_VAULT=ISOLATED_NOT_ENROLLED'
   if (( $# == 5 )); then
     local vault_env="/etc/base-matter/vault-alpha.env"
@@ -144,11 +144,37 @@ main() {
       fail 'Vault alpha identity or restricted scope mismatch'
       return 1
     fi
-    if ! "$client_bin" ping "$MATTER_VAULT_IPC_SOCKET" "$MATTER_VAULT_CLIENT_ID" "$MATTER_VAULT_CLIENT_KEY_FILE" "$MATTER_VAULT_TENANT" "$MATTER_VAULT_BOT" "$MATTER_VAULT_SOCKET_ID" >/dev/null 2>&1; then
-      fail 'Dedicated alpha Vault handshake denied'
+    if "$client_bin" ping "$MATTER_VAULT_IPC_SOCKET" "$MATTER_VAULT_CLIENT_ID" "$MATTER_VAULT_CLIENT_KEY_FILE" "$MATTER_VAULT_TENANT" "$MATTER_VAULT_BOT" "$MATTER_VAULT_SOCKET_ID" >/dev/null 2>&1; then
+      vault_status='ALPHA_VAULT=AUTHENTICATED_CONFIGURATION_ONLY'
+    elif python3 - "$MATTER_VAULT_IPC_SOCKET" <<'PY'
+import errno
+import socket
+import sys
+
+with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+    client.settimeout(2)
+    try:
+        client.connect(sys.argv[1])
+    except OSError as error:
+        raise SystemExit(0 if error.errno in (errno.ENOENT, errno.ECONNREFUSED) else 1)
+raise SystemExit(1)
+PY
+    then
+      vault_status='ALPHA_VAULT=OFFLINE_READ_ONLY'
+    else
+      fail 'Dedicated alpha Vault handshake denied or unsafe IPC permissions'
       return 1
     fi
-    vault_status='ALPHA_VAULT=AUTHENTICATED_CONFIGURATION_ONLY'
+    export MATTER_VAULT_READ_CACHE_DIR="$state/vault-read-cache"
+    if [[ -e "$MATTER_VAULT_READ_CACHE_DIR" || -L "$MATTER_VAULT_READ_CACHE_DIR" ]]; then
+      if [[ -L "$MATTER_VAULT_READ_CACHE_DIR" || ! -d "$MATTER_VAULT_READ_CACHE_DIR" ||
+            "$(stat -c '%a:%u' "$MATTER_VAULT_READ_CACHE_DIR")" != "700:$(id -u)" ]]; then
+        fail 'Unsafe Vault read cache directory'
+        return 1
+      fi
+    elif [[ "$mode" == "--resume-only" ]]; then
+      mkdir -m 700 "$MATTER_VAULT_READ_CACHE_DIR"
+    fi
   fi
 
   # Provider and controller checks are non-mutating and do not connect.

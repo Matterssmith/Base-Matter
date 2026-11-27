@@ -12,7 +12,7 @@ use zeroize::Zeroizing;
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
     if args.len() < 7 {
-        bail!("Usage: matter-vault-client ping|self-test|owner-check|owner-check-platform|read|write SOCKET_PATH CLIENT_ID KEY_FILE TENANT BOT SOCKET [RECORD] [FILE] [EXPECTED_REVISION|new]");
+        bail!("Usage: matter-vault-client ping|self-test|global-style|owner-check|owner-check-platform|read|write SOCKET_PATH CLIENT_ID KEY_FILE TENANT BOT SOCKET [RECORD] [FILE] [EXPECTED_REVISION|new]");
     }
     let client = VaultClient {
         socket_path: args[1].clone().into(),
@@ -26,6 +26,11 @@ fn main() -> Result<()> {
         "ping" if args.len() == 7 => {
             client.invoke("ping", "health", None, None)?;
             println!("vault_authenticated");
+        }
+        "global-style" if args.len() == 7 => {
+            // Operator diagnostics must contact the running service, not the cache.
+            client.invoke("global_style_get", "global-menu-style-v1", None, None)?;
+            println!("vault_global_style_authenticated");
         }
         "self-test" if args.len() == 7 => {
             let revision = client.verify_roundtrip()?;

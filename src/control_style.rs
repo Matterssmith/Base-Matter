@@ -182,24 +182,38 @@ impl ControlThemes {
         scope: crate::control_scope::CommandScope,
         chat: &str,
     ) -> Result<Style> {
+        Ok(self.scoped_style_read(scope, chat)?.0)
+    }
+
+    pub fn scoped_style_read(
+        &self,
+        scope: crate::control_scope::CommandScope,
+        chat: &str,
+    ) -> Result<(Style, bool)> {
         use crate::control_scope::CommandScope;
         let vault = self.config_client()?;
+        let mut offline = false;
         if scope == CommandScope::Chat {
             validate_community_id(chat)?;
-            if let Some(value) = vault.config_get(&Self::style_record(Some(chat)))? {
+            let (value, cached) = vault.config_get_with_source(&Self::style_record(Some(chat)))?;
+            offline |= cached;
+            if let Some(value) = value {
                 if value != "inherit" {
-                    return Style::parse(&value);
+                    return Ok((Style::parse(&value)?, offline));
                 }
             }
         }
         if scope != CommandScope::Global {
-            if let Some(value) = vault.config_get(&Self::style_record(None))? {
+            let (value, cached) = vault.config_get_with_source(&Self::style_record(None))?;
+            offline |= cached;
+            if let Some(value) = value {
                 if value != "inherit" {
-                    return Style::parse(&value);
+                    return Ok((Style::parse(&value)?, offline));
                 }
             }
         }
-        vault.global_style()
+        let (style, cached) = vault.global_style_read()?;
+        Ok((style, offline || cached))
     }
 
     pub fn write_scoped_style(

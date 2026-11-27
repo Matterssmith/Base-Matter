@@ -22,7 +22,10 @@ use std::{
     fs,
     io::{Read, Write},
     net::Shutdown,
-    os::unix::{fs::PermissionsExt, net::UnixStream},
+    os::unix::{
+        fs::{MetadataExt, OpenOptionsExt, PermissionsExt},
+        net::UnixStream,
+    },
     time::Duration,
 };
 use zeroize::Zeroizing;
@@ -75,6 +78,12 @@ struct Response {
 pub struct VaultResponse {
     pub revision: Option<u64>,
     pub value: Option<Zeroizing<Vec<u8>>>,
+}
+#[cfg(unix)]
+struct CacheMaterial {
+    path: PathBuf,
+    context: Vec<u8>,
+    cipher: XChaCha20Poly1305,
 }
 #[derive(Clone, Debug)]
 pub struct VaultClient {
@@ -279,12 +288,236 @@ impl VaultClient {
         }
         Ok(())
     }
+    /// Only presentation and Anti configuration may be read offline.
+    /// Identity, authority, enrollment, health and secrets never use this cache.
+    #[cfg(unix)]
+    fn cacheable_config(operation: &str, record: &str) -> bool {
+        let hex_suffix = |value: &str, length: usize| {
+            value.len() == length && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+        };
+        match operation {
+            "global_style_get" => record == "global-menu-style-v1",
+            "get" => {
+                matches!(record, "menu-style-v1" | "menu-language-v1" | "menu-mode-v1")
+                    || record
+                        .strip_prefix("menu-style-chat-")
+                        .is_some_and(|value| hex_suffix(value, 64))
+                    || record.strip_prefix("anti-").is_some_and(|value| {
+                        value.rsplit_once('-').is_some_and(|(name, hash)| {
+                            (name == "domains" || crate::anti::RULES.contains(&name))
+                                && hex_suffix(hash, 32)
+                        })
+                    })
+            }
+            _ => false,
+        }
+    }
+
+    #[cfg(unix)]
+    fn cache_material(
+        &self,
+        operation: &str,
+        record: &str,
+    ) -> Result<Option<CacheMaterial>> {
+        let Some(directory) = std::env::var_os("MATTER_VAULT_READ_CACHE_DIR") else {
+            return Ok(None);
+        };
+        self.cache_material_in(PathBuf::from(directory), operation, record)
+            .map(Some)
+    }
+
+    #[cfg(unix)]
+    fn cache_material_in(
+        &self,
+        directory: PathBuf,
+        operation: &str,
+        record: &str,
+    ) -> Result<CacheMaterial> {
+        use hmac::{Hmac, Mac};
+        use sha2::{Digest, Sha256};
+        let metadata = fs::symlink_metadata(&directory)?;
+        let key_metadata = fs::symlink_metadata(&self.client_key_file)?;
+        if !directory.is_absolute()
+            || !metadata.is_dir()
+            || metadata.file_type().is_symlink()
+            || metadata.permissions().mode() & 0o077 != 0
+            || metadata.uid() != key_metadata.uid()
+        {
+            bail!("unsafe_vault_read_cache");
+        }
+        let context = serde_json::to_vec(&[
+            "matter-vault-offline-read-v1",
+            self.client_id.as_str(),
+            self.tenant.as_str(),
+            self.bot.as_str(),
+            self.socket.as_str(),
+            operation,
+            record,
+        ])?;
+        let key = self.key()?;
+        let mut derivation = <Hmac<Sha256> as Mac>::new_from_slice(&key[..])
+            .map_err(|_| anyhow!("vault_cache_key_unavailable"))?;
+        derivation.update(b"matter-vault-offline-cache-key-v1");
+        let derived = Zeroizing::new(<[u8; 32]>::from(derivation.finalize().into_bytes()));
+        let cipher = XChaCha20Poly1305::new_from_slice(&derived[..])
+            .map_err(|_| anyhow!("vault_cache_cipher_unavailable"))?;
+        let path = directory.join(format!("{}.bin", hex::encode(Sha256::digest(&context))));
+        Ok(CacheMaterial {
+            path,
+            context,
+            cipher,
+        })
+    }
+
+    #[cfg(unix)]
+    fn save_config_snapshot(
+        &self,
+        operation: &str,
+        record: &str,
+        value: Option<&str>,
+    ) -> Result<()> {
+        if !Self::cacheable_config(operation, record) {
+            return Ok(());
+        }
+        let Some(material) = self.cache_material(operation, record)? else {
+            return Ok(());
+        };
+        Self::write_snapshot(material, value)
+    }
+
+    #[cfg(unix)]
+    fn write_snapshot(material: CacheMaterial, value: Option<&str>) -> Result<()> {
+        let CacheMaterial {
+            path,
+            context,
+            cipher,
+        } = material;
+        let clear = Zeroizing::new(serde_json::to_vec(&value)?);
+        let mut nonce = [0u8; 24];
+        getrandom::fill(&mut nonce).map_err(|_| anyhow!("random_unavailable"))?;
+        let ciphertext = cipher
+            .encrypt(
+                XNonce::from_slice(&nonce),
+                Payload {
+                    msg: &clear,
+                    aad: &context,
+                },
+            )
+            .map_err(|_| anyhow!("vault_cache_encryption_failed"))?;
+        let temporary = path.with_extension(format!("{}.tmp", hex::encode(nonce)));
+        let result = (|| -> Result<()> {
+            let mut file = fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .mode(0o600)
+                .open(&temporary)?;
+            file.write_all(&nonce)?;
+            file.write_all(&ciphertext)?;
+            file.sync_all()?;
+            fs::rename(&temporary, &path)?;
+            Ok(())
+        })();
+        if result.is_err() {
+            let _ = fs::remove_file(&temporary);
+        }
+        result
+    }
+
+    #[cfg(unix)]
+    fn load_config_snapshot(&self, operation: &str, record: &str) -> Result<Option<String>> {
+        let Some(material) = self.cache_material(operation, record)? else {
+            bail!("vault_offline_no_snapshot");
+        };
+        self.read_snapshot(material)
+    }
+
+    #[cfg(unix)]
+    fn read_snapshot(&self, material: CacheMaterial) -> Result<Option<String>> {
+        let CacheMaterial {
+            path,
+            context,
+            cipher,
+        } = material;
+        let metadata = match fs::symlink_metadata(&path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                bail!("vault_offline_no_snapshot");
+            }
+            Err(error) => return Err(error.into()),
+        };
+        if !metadata.is_file()
+            || metadata.file_type().is_symlink()
+            || metadata.permissions().mode() & 0o077 != 0
+            || metadata.uid() != fs::symlink_metadata(&self.client_key_file)?.uid()
+            || metadata.len() > MAX_WIRE
+        {
+            bail!("unsafe_vault_read_cache");
+        }
+        let bytes = fs::read(path)?;
+        if bytes.len() < 40 {
+            bail!("invalid_vault_read_cache");
+        }
+        let clear = Zeroizing::new(
+            cipher
+                .decrypt(
+                    XNonce::from_slice(&bytes[..24]),
+                    Payload {
+                        msg: &bytes[24..],
+                        aad: &context,
+                    },
+                )
+                .map_err(|_| anyhow!("vault_read_cache_unauthenticated"))?,
+        );
+        Ok(serde_json::from_slice(&clear)?)
+    }
+
+    fn refresh_snapshot(&self, operation: &str, record: &str, value: Option<&str>) {
+        #[cfg(unix)]
+        if self.save_config_snapshot(operation, record, value).is_err() {
+            eprintln!("Vault-Matter: encrypted read cache refresh failed");
+        }
+        #[cfg(not(unix))]
+        let _ = (operation, record, value);
+    }
+
+    fn read_config(&self, operation: &str, record: &str) -> Result<(Option<String>, bool)> {
+        match self.invoke(operation, record, None, None) {
+            Ok(response) => {
+                let value = response
+                    .value
+                    .map(|value| Ok::<_, anyhow::Error>(std::str::from_utf8(&value)?.to_owned()))
+                    .transpose()?;
+                self.refresh_snapshot(operation, record, value.as_deref());
+                Ok((value, false))
+            }
+            Err(error) => {
+                #[cfg(unix)]
+                if error.to_string() == "vault_unavailable"
+                    && Self::cacheable_config(operation, record)
+                {
+                    return Ok((self.load_config_snapshot(operation, record)?, true));
+                }
+                Err(error)
+            }
+        }
+    }
+
+    pub fn global_style_read(&self) -> Result<(crate::menu::Style, bool)> {
+        let (value, offline) = self
+            .read_config("global_style_get", "global-menu-style-v1")
+            .map_err(|error| {
+                if error.to_string() == "vault_operation_denied" {
+                    anyhow::anyhow!("vault_global_style_denied")
+                } else {
+                    error
+                }
+            })?;
+        let value = value.ok_or_else(|| anyhow::anyhow!("Missing global style"))?;
+        Ok((crate::menu::Style::parse(&value)?, offline))
+    }
+
     pub fn global_style(&self) -> Result<crate::menu::Style> {
-        let response = self.invoke("global_style_get", "global-menu-style-v1", None, None)?;
-        let value = response
-            .value
-            .ok_or_else(|| anyhow::anyhow!("Missing global style"))?;
-        crate::menu::Style::parse(std::str::from_utf8(&value)?)
+        Ok(self.global_style_read()?.0)
     }
 
     pub fn set_global_style(&self, principal: &str, style: crate::menu::Style) -> Result<()> {
@@ -292,25 +525,32 @@ impl VaultClient {
             "requester": {"platform": "whatsapp", "subject_id": principal},
             "style": style.as_str(),
         }))?;
-        self.invoke(
+        let response = self.invoke(
             "global_style_set",
             "global-menu-style-v1",
             None,
             Some(&payload),
         )?;
+        if let Some(value) = response.value.as_ref() {
+            let value = std::str::from_utf8(value)?;
+            crate::menu::Style::parse(value)?;
+            self.refresh_snapshot("global_style_get", "global-menu-style-v1", Some(value));
+        }
         Ok(())
     }
 
+    pub fn config_get_with_source(&self, record: &str) -> Result<(Option<String>, bool)> {
+        self.read_config("get", record)
+    }
+
     pub fn config_get(&self, record: &str) -> Result<Option<String>> {
-        self.invoke("get", record, None, None)?
-            .value
-            .map(|value| Ok(std::str::from_utf8(&value)?.to_owned()))
-            .transpose()
+        Ok(self.config_get_with_source(record)?.0)
     }
 
     pub fn config_set(&self, record: &str, value: &str) -> Result<()> {
         let previous = self.invoke("get", record, None, None)?;
         self.invoke("put", record, previous.revision, Some(value.as_bytes()))?;
+        self.refresh_snapshot("get", record, Some(value));
         Ok(())
     }
 
@@ -420,8 +660,14 @@ impl VaultClient {
         if payload.len() as u64 > MAX_WIRE {
             bail!("vault_request_too_large");
         }
-        let mut stream =
-            UnixStream::connect(&self.socket_path).map_err(|_| anyhow!("vault_unavailable"))?;
+        let mut stream = UnixStream::connect(&self.socket_path).map_err(|error| {
+            match error.kind() {
+                std::io::ErrorKind::NotFound | std::io::ErrorKind::ConnectionRefused => {
+                    anyhow!("vault_unavailable")
+                }
+                _ => anyhow!("vault_connection_failed"),
+            }
+        })?;
         stream.set_read_timeout(Some(Duration::from_secs(5)))?;
         stream.set_write_timeout(Some(Duration::from_secs(5)))?;
         stream.write_all(&payload)?;
@@ -489,3 +735,59 @@ impl VaultClient {
 }
 // Créditos:
 // Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+#[cfg(all(test, unix))]
+mod cache_tests {
+    use super::*;
+
+    #[test]
+    fn cache_is_configuration_only() {
+        assert!(VaultClient::cacheable_config("get", "menu-style-v1"));
+        assert!(VaultClient::cacheable_config("global_style_get", "global-menu-style-v1"));
+        assert!(!VaultClient::cacheable_config("get", "global-owner-check-v2"));
+        assert!(!VaultClient::cacheable_config("owner_check", "global-owner-check-v2"));
+        assert!(!VaultClient::cacheable_config("put", "menu-style-v1"));
+        assert!(!VaultClient::cacheable_config("get", "connection-health-v1"));
+    }
+
+    #[test]
+    fn encrypted_snapshot_is_scope_bound_and_offline_writes_fail() -> Result<()> {
+        let mut random = [0u8; 16];
+        getrandom::fill(&mut random).map_err(|_| anyhow!("random_unavailable"))?;
+        let directory = std::env::temp_dir().join(format!("matter-cache-{}", hex::encode(random)));
+        use std::os::unix::fs::DirBuilderExt;
+        fs::DirBuilder::new().mode(0o700).create(&directory)?;
+        let result = (|| -> Result<()> {
+            let key = directory.join("client.key");
+            let mut file = fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(&key)?;
+            file.write_all(&[9u8; 32])?;
+            let client = VaultClient {
+                socket_path: directory.join("absent.sock"),
+                client_id: "cache-test".into(),
+                client_key_file: key,
+                tenant: "test".into(),
+                bot: "test".into(),
+                socket: "test".into(),
+            };
+            let material = || client.cache_material_in(directory.clone(), "get", "menu-style-v1");
+            let path = material()?.path;
+            VaultClient::write_snapshot(material()?, Some("none"))?;
+            assert_eq!(client.read_snapshot(material()?)?, Some("none".into()));
+            let mut foreign = client.cache_material_in(directory.clone(), "get", "menu-language-v1")?;
+            foreign.path = path.clone();
+            assert!(client.read_snapshot(foreign).is_err());
+            let mut bytes = fs::read(&path)?;
+            let last = bytes.len() - 1;
+            bytes[last] ^= 1;
+            fs::write(&path, bytes)?;
+            assert!(client.read_snapshot(material()?).is_err());
+            VaultClient::write_snapshot(material()?, None)?;
+            assert_eq!(client.read_snapshot(material()?)?, None);
+            assert!(client.config_set("menu-style-v1", "matter").is_err());
+            assert!(client.set_global_style("12345678@lid", crate::menu::Style::None).is_err());
+            Ok(())
+        })();
+        fs::remove_dir_all(directory)?;
+        result
+    }
+}

@@ -401,8 +401,23 @@ impl ControlDispatcher {
                 themes.write_scoped_style(scope, chat, principal, value)?;
                 return Ok(format!("Estilo de {label}: {value}. Guardado en Vault-Matter."));
             }
-            Ok(format!("Estilo de {label}: {}. Opciones: matter | none.", themes.scoped_style(scope, chat)?.as_str()))
-        })().unwrap_or_else(|_| "Vault-Matter: configuración no disponible o permiso denegado. No se confirmó ningún cambio.".into());
+            let (style, offline) = themes.scoped_style_read(scope, chat)?;
+            let source = if offline {
+                "Copia cifrada de la última lectura confirmada; puede estar desactualizada."
+            } else {
+                "Lectura autenticada de Vault-Matter."
+            };
+            Ok(format!("Estilo de {label}: {}. Opciones: matter | none.\n{source}", style.as_str()))
+        })().unwrap_or_else(|error| {
+            match error.to_string().as_str() {
+                "vault_offline_no_snapshot" => "Vault-Matter fuera de línea. No existe una copia cifrada verificada para este ámbito. Estilo de fábrica: matter (no confirma el valor guardado).",
+                "vault_unavailable" => "Vault-Matter fuera de línea. Las escrituras requieren el servicio activo. No se confirmó ningún cambio.",
+                "vault_global_style_denied" => "Vault-Matter respondió, pero denegó la lectura del estilo global. Comprueba la versión del servicio y el permiso del cliente.",
+                "vault_operation_denied" => "Vault-Matter respondió, pero denegó la operación. Comprueba la vigencia del permiso del cliente. No se confirmó ningún cambio.",
+                "vault_connection_failed" => "No se pudo conectar a Vault-Matter. Comprueba el socket IPC y sus permisos.",
+                _ => "Vault-Matter: configuración no disponible o permiso denegado. No se confirmó ningún cambio.",
+            }.into()
+        });
         Ok(DispatchResult::Extension {
             command: "set".into(),
             output,

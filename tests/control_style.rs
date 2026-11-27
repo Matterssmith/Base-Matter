@@ -108,3 +108,11 @@ fn status_uses_closed_matter_footer_and_respects_plain_style() {
         "BOT ACTIVADO"
     );
 }
+
+#[test]
+fn standalone_control_replies_use_closed_footer() {
+    let registry = ControlThemes::new(ControlTheme::new("Base", "default", "*").unwrap());
+    let reply = registry.decorate(None, "Configuración guardada").unwrap();
+    assert!(reply.trim_end().ends_with("╰───────────⟨ 🌀"));
+    assert!(!reply.contains("╰─╮╭"));
+}
