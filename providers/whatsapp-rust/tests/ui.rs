@@ -203,6 +203,21 @@ fn formats_are_readonly_and_selected_through_menu_picker() {
 }
 
 #[test]
+fn web_navigation_can_show_text_after_definite_html_failure() {
+    let message = whatsapp_matter_rust_provider::ui::native_navigation_message_with_web_fallback(
+        "Contenido",
+        "=/>menu web",
+        true,
+    )
+    .unwrap();
+    let interactive = message.interactive_message.as_option().unwrap();
+    assert_eq!(
+        interactive.body.as_option().unwrap().text.as_deref(),
+        Some("Contenido")
+    );
+}
+
+#[test]
 fn web_navigation_has_no_classic_body_or_mode_heading() {
     let original = "MARCO CLASICO\nCategorías\n=/>status";
     let web = native_navigation_message(original, "=/>menu web").unwrap();

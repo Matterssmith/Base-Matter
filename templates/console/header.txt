@@ -1,1 +1,1 @@
-{{CLASSIC_HEADER}} 𝗠𝗮𝘁𝘁𝗲𝗿 {{EVENT}} {{CLOCK}} · {{ORIGIN}}
+╭─ 💠 𝗠𝗮𝘁𝘁𝗲𝗿 {{EVENT}} {{CLOCK}} · {{ORIGIN}}

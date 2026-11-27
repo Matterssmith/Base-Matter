@@ -30,7 +30,7 @@ use whatsapp_matter_rust_provider::{
     rich_transport::experimental_self_chat_rich_message,
     ui::{
         button_menu_cards, legacy_row_probe_message, menu_button_selection,
-        native_navigation_message, native_ui_probe_message,
+        native_navigation_message_with_web_fallback, native_ui_probe_message,
     },
     Config, ControlAck, Event, SessionLease,
 };
@@ -345,17 +345,35 @@ fn console_color(value: &str, palette: &str) -> String {
 }
 
 fn console_row(body: &str, last: bool) -> String {
-    let branch = classic_template::expand(if last {
-        "{{CLASSIC_LAST_BRANCH}}"
+    let template = if last {
+        include_str!("../../../templates/console/last-row.txt")
     } else {
-        "{{CLASSIC_BRANCH}}"
-    });
-    classic_template::render(
-        include_str!("../../../templates/console/row.txt"),
-        &[("BRANCH", &branch), ("BODY", body)],
-    )
+        include_str!("../../../templates/console/row.txt")
+    };
+    classic_template::render(template, &[("BODY", body)])
     .trim_end_matches('\n')
     .to_owned()
+}
+
+// Call only after an authenticated Applied ACK for a menu request.
+// Group menus are public read-only; external private chats stay excluded.
+fn web_html_skip_reason(
+    enabled: bool,
+    autosend: bool,
+    root: bool,
+    group: bool,
+    from_me: bool,
+    owner_chat: bool,
+) -> Option<&'static str> {
+    if !enabled {
+        Some("HTML DESACTIVADO")
+    } else if root && !autosend {
+        Some("HTML AUTOSEND DESACTIVADO")
+    } else if !group && !(from_me && owner_chat) {
+        Some("HTML PRIVADO NO AUTORIZADO")
+    } else {
+        None
+    }
 }
 
 struct CommandTrace {
@@ -1076,9 +1094,8 @@ async fn main() -> Result<()> {
     // No claims about phone rendering or Meta AI identity.
     let rich_html_trial = matches!(std::env::var("MATTER_WA_RICH_HTML").as_deref(), Ok("1"));
     let rich_html_autosend = matches!(std::env::var("MATTER_WA_HTML_AUTOSEND").as_deref(), Ok("1"));
-    // Menu web uses a single visible NativeFlow message. The unsupported
-    // experimental HTML transport is tested only with explicit =/>test html.
-    // Never send two messages for a single menu request.
+    // Web attempts experimental HTML after an admitted menu command,
+    // with independent NativeFlow navigation and explicit fallback.
     // Opt-in local command diagnostics: sender/chat JIDs, display name and stages; no raw bodies or secrets.
     let diagnostic_messages = matches!(std::env::var("MATTER_WA_DIAG").as_deref(), Ok("1"));
     // Presentation context only; scoped to authenticated chat and sender.
@@ -1539,26 +1556,32 @@ async fn main() -> Result<()> {
                             let is_classic = explicit_classic
                                 || (is_root && preferred_menu_mode.as_deref() == Some("classic"));
                             let mut web_submitted = false;
-                            if is_web
-                                && rich_html_trial
-                                && (!is_root || rich_html_autosend)
-                                && frame.from_me
-                                && (data.is_group || frame.chat_jid == config.owner_jid)
-                            {
-                                if let Ok(message) = experimental_self_chat_rich_message(&response) {
-                                    match trace.send("HTML", ctx.send_message(message)).await {
-                                        Ok(Ok(_)) => {
-                                            web_submitted = true;
-                                        }
-                                        Ok(Err(_)) => eprintln!("Base-Matter: HTML menu send rejected"),
-                                        Err(_) => {
-                                            eprintln!("Base-Matter: HTML menu send timed out; rendering unverified");
-                                        }
-                                    }
+                            let mut web_uncertain = false;
+                            if is_web {
+                                if let Some(reason) = web_html_skip_reason(
+                                    rich_html_trial,
+                                    rich_html_autosend,
+                                    is_root,
+                                    data.is_group,
+                                    frame.from_me,
+                                    frame.chat_jid == config.owner_jid,
+                                ) {
+                                    trace.stage(&format!("WEB: {reason}"));
                                 } else {
-                                    eprintln!("Base-Matter: HTML menu could not be constructed");
+                                    match experimental_self_chat_rich_message(&response) {
+                                        Ok(message) => match trace.send("HTML", ctx.send_message(message)).await {
+                                            Ok(Ok(_)) => web_submitted = true,
+                                            Ok(Err(_)) => trace.stage("WEB: HTML RECHAZADO"),
+                                            Err(_) => {
+                                                web_uncertain = true;
+                                                trace.stage("WEB: HTML TIMEOUT (sin reintento)");
+                                            }
+                                        },
+                                        Err(_) => trace.stage("WEB: HTML NO CONSTRUIDO (validación/tamaño)"),
+                                    }
                                 }
                             }
+                            let web_fallback = is_web && !web_submitted && !web_uncertain;
                             // Buttons never copy the classic body. The last card is
                             // the independent format selector, not another category list.
                             if is_buttons && native_buttons {
@@ -1589,12 +1612,16 @@ async fn main() -> Result<()> {
                                 } else {
                                     actual_command
                                 };
-                                let navigation_body = if is_web || is_buttons {
+                                let navigation_body = if (is_web && !web_fallback) || is_buttons {
                                     "Matter"
                                 } else {
                                     &response
                                 };
-                                match native_navigation_message(navigation_body, navigation_request) {
+                                match native_navigation_message_with_web_fallback(
+                                    navigation_body,
+                                    navigation_request,
+                                    web_fallback,
+                                ) {
                                     Ok(message) => match trace.send("NAVEGACIÓN", ctx.send_message(message)).await {
                                         Ok(Ok(_)) => true,
                                         Ok(Err(_)) => {
@@ -1617,7 +1644,7 @@ async fn main() -> Result<()> {
                                 false
                             };
                             let sent = if !sent {
-                                if is_web {
+                                if is_web && !web_fallback {
                                     web_submitted
                                 } else {
                                     let fallback = if is_buttons {
@@ -1633,8 +1660,8 @@ async fn main() -> Result<()> {
                             } else {
                                 true
                             };
-                            if is_web && !web_submitted {
-                                trace.stage("WEB: HTML NO ENVIADO");
+                            if web_fallback && sent {
+                                trace.stage("WEB: ALTERNATIVA TEXTO");
                             }
                             trace.finish(if sent {
                                 "ENVÍO ACEPTADO (render no verificado)"
@@ -1709,13 +1736,35 @@ mod readiness_tests {
     use super::*;
 
     #[test]
-    fn console_rows_use_classic_branches_without_reinterpreting_body() {
+    fn console_rows_use_independent_templates_without_reinterpreting_body() {
         assert_eq!(console_row("CMD =/>ping", false), "│·♪·╠[ CMD =/>ping");
         assert_eq!(console_row("TX: OK", true), "│·♪·╚[ TX: OK");
         assert_eq!(
             console_row("{{CLASSIC_HEADER}}", false),
             "│·♪·╠[ {{CLASSIC_HEADER}}"
         );
+    }
+
+    #[test]
+    fn console_footer_aligns_with_header_without_changing_chat_frame() {
+        let header = include_str!("../../../templates/console/header.txt");
+        let footer = include_str!("../../../templates/console/footer.txt").trim_end();
+        assert_eq!(header.chars().position(|c| c == '💠'), Some(3));
+        assert_eq!(footer, "╰──╮╭───────⟨ 🌀");
+        assert_eq!(
+            classic_template::expand("{{CLASSIC_JOINED_CLOSE}}"),
+            "╰─╮╭────────⟨ 🌀"
+        );
+    }
+
+    #[test]
+    fn admitted_group_menu_can_attempt_html_for_non_socket_owner() {
+        assert_eq!(web_html_skip_reason(true, true, true, true, false, false), None);
+        assert_eq!(web_html_skip_reason(true, false, false, true, false, false), None);
+        assert_eq!(web_html_skip_reason(true, true, true, false, true, true), None);
+        assert!(web_html_skip_reason(true, true, true, false, false, false).is_some());
+        assert!(web_html_skip_reason(true, false, true, true, false, false).is_some());
+        assert!(web_html_skip_reason(false, true, false, true, false, false).is_some());
     }
 
     #[test]

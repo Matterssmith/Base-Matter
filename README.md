@@ -1,3 +1,9 @@
+## 2026-11-26 — Consola independiente y diagnóstico de menú HTML
+
+Alpha separa encabezado, filas normal/final y cierre de terminal en templates/console. Se conserva la paleta y se alinea el cierre de terminal `╰──╮╭───────⟨ 🌀` con el encabezado; el marco WhatsApp conserva `╰─╮╭────────⟨ 🌀`. Tras ACK aplicado, los menús web de grupos pueden intentar RichResponse aun si el remitente no es la cuenta vinculada; no se amplían comandos mutantes, pruebas HTML privadas ni permisos. La consola distingue desactivación, autosend, contexto privado, construcción, rechazo y timeout; no reintenta HTML incierto. Si HTML no se intenta o falla de forma definitiva, el selector nativo conserva el texto como alternativa; no se afirma render HTML. Se expande el menú de vista previa y se registra el flag autosend. La capacidad experimental depende del cliente WhatsApp; compilación, CI y prueba visual pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Cierre conectado exacto solicitado por el propietario
 
 En alpha, el encabezado compartido conserva `╭─ 💠` y el cierre conectado de `templates/menu/theme.json` pasa a `╰─╮╭────────⟨ 🌀`. Se conserva el conector previo, cierre independiente, Pong, temas personalizados, paleta, ramas, filas, fuentes y layouts. El cierre conectado se propaga a consola, menú Classic y marco Control; su unión queda una columna a la izquierda respecto del conector anterior por el diseño exacto solicitado. La prueba del proveedor autónomo expande la plantilla antes de comparar sus extremos; se mantienen las aserciones de contenido, saltos de línea e idempotencia. Se aplica además el formato de menu_catalog.rs reportado por el servidor. No se cambian permisos, sesiones, Vault ni MSEL. Recompilación y CI pendientes de verificar. README revisados: 2/2.

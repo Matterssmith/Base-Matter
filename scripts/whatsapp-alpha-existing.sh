@@ -157,6 +157,7 @@ main() {
   printf '%s\n' 'ALPHA_PREFLIGHT=OK' "$vault_status" 'ALPHA_PAIRING=DISABLED'
   # Capability flags only. Never print bridge keys, JIDs or runtime.env.
   printf 'ALPHA_UI_HTML=%s\n' "${MATTER_WA_RICH_HTML:-0}"
+  printf 'ALPHA_UI_HTML_AUTOSEND=%s\n' "${MATTER_WA_HTML_AUTOSEND:-0}"
   printf 'ALPHA_UI_NATIVE_BUTTONS=%s\n' "${MATTER_WA_NATIVE_BUTTONS:-0}"
   printf 'ALPHA_UI_DIAG=%s\n' "${MATTER_WA_DIAG:-0}"
   printf '%s\n' 'ALPHA_HTML_CLIENT_RENDER=UNVERIFIED'

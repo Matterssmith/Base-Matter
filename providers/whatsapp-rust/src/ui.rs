@@ -153,6 +153,14 @@ pub fn native_menu_message(menu: &str) -> Result<wa::Message> {
 }
 
 pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Message> {
+    native_navigation_message_with_web_fallback(menu, request, false)
+}
+
+pub fn native_navigation_message_with_web_fallback(
+    menu: &str,
+    request: &str,
+    web_fallback: bool,
+) -> Result<wa::Message> {
     if menu.is_empty()
         || menu.len() > MAX_MENU_BYTES
         || menu.chars().any(|c| c.is_control() && c != '\n')
@@ -181,7 +189,8 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
         _ => None,
     };
     let body_text = match current {
-        Some("web") => None,
+        Some("web") if !web_fallback => None,
+        Some("web") => Some(menu.to_owned()),
         Some("buttons") => Some("*Menu Buttons*".to_owned()),
         _ => Some(menu.to_owned()),
     };
@@ -210,8 +219,8 @@ pub fn native_navigation_message(menu: &str, request: &str) -> Result<wa::Messag
             .to_string(),
         ),
     };
-    // Sole button, always last. For web this is navigation only;
-    // the actual HTML uses the separate experimental RichResponse transport.
+    // Sole button, always last. Web has text only if the HTML attempt
+    // was skipped or definitively failed; successful HTML keeps navigation separate.
     Ok(wa::Message {
         interactive_message: MessageField::some(wa::message::InteractiveMessage {
             body: match body_text {
