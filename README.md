@@ -1,3 +1,7 @@
+## 2026-11-26 — Ámbito explícito --chat
+
+El analizador común admite `--chat` como equivalente explícito al chat actual sin bandera, y `--socket` como alias de `--mod`. Los ámbitos son excluyentes. Se añadieron pruebas de equivalencia y rechazo de combinaciones. La integración de preferencias personales y prioridad de grupo continúa por separado; no se amplían permisos de comandos. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-26 — Formato Rustfmt de resolución PN/LID
 
 Aplicadas las diferencias reportadas por idkbot en el filtro de PN y la prueba de conflicto de identidades del proveedor WhatsApp. Sin cambios funcionales. Vault ya autorizó las cuatro identidades globales y confirmó respaldo remoto cifrado (722 objetos); compilación y prueba real del proveedor siguen pendientes. Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].

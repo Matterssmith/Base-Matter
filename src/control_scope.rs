@@ -37,13 +37,14 @@ pub fn parse_scope<'a>(arguments: &[&'a str]) -> Result<ScopedArguments<'a>> {
     let mut result = Vec::with_capacity(arguments.len());
     for &part in arguments {
         let selected = match part {
-            "--mod" => Some(CommandScope::Socket),
+            "--chat" => Some(CommandScope::Chat),
+            "--mod" | "--socket" => Some(CommandScope::Socket),
             "--global" => Some(CommandScope::Global),
             _ => None,
         };
         if let Some(value) = selected {
             if seen {
-                bail!("Solo se permite un ámbito: --mod o --global");
+                bail!("Solo se permite un ámbito: --chat, --mod/--socket o --global");
             }
             scope = value;
             seen = true;
@@ -134,6 +135,15 @@ mod tests {
                 arguments: vec!["link"]
             }
         );
+        assert_eq!(
+            parse_scope(&["--chat", "link"]).unwrap().scope,
+            CommandScope::Chat
+        );
+        assert_eq!(
+            parse_scope(&["--socket", "link"]).unwrap().scope,
+            CommandScope::Socket
+        );
+        assert!(parse_scope(&["--chat", "--global"]).is_err());
         for value in [vec!["--mod", "link", "on"], vec!["link", "on", "--mod"]] {
             let parsed = parse_scope(&value).unwrap();
             assert_eq!(parsed.scope, CommandScope::Socket);
