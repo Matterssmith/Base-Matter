@@ -11,7 +11,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     // The default Cargo run reuses the explicitly verified build before
     // touching the existing WhatsApp alpha session. The legacy one-terminal
     // pairing launcher remains explicit and is never called implicitly.
-    let script = root.join("scripts/matter-verified-run.sh");
+    let script = if env::args_os().nth(1).is_none() {
+        root.join("scripts/matter-supervised-run.sh")
+    } else {
+        root.join("scripts/matter-verified-run.sh")
+    };
     if !script.is_file() {
         return Err("Verified alpha launcher script is missing".into());
     }

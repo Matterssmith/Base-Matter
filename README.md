@@ -1,3 +1,9 @@
+## 2026-11-27 — Update sin reinicio y supervisor por defecto
+
+`cargo run` sin argumentos usa el supervisor local; `--check-only` conserva el preflight sin conexión. `=/>update` aplica únicamente fast-forward del código alpha mientras sigue activo el bot, informa commits locales/remotos, archivos y hasta cinco cambios; no compila ni reinicia. `=/>restart` verifica y construye si cambió el SHA en ejecución y activa la revisión con la sesión existente. Los informes usan el estilo efectivo Matter/none del ACK autenticado; se guarda una solicitud privada de reinicio y se entrega el resultado al chat original tras conectar. Si falla la verificación queda detenido y el informe se conserva para una conexión posterior. No se cambian permisos, Vault ni pairing. CI y prueba real pendientes. README revisados: 2/2.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Mantenimiento remoto supervisado
 
 `=/>update` y `=/>restart` admiten exclusivamente owners globales comprobados en Vault en cada comando, con firma, antirreplay y política de chat vigente. Sin argumentos, sin shell remoto ni URL elegible. El supervisor local `bash scripts/matter-supervised-run.sh` arranca desde la compilación verificada; `restart` reinicia controlador y proveedor con la misma sesión; `update` detiene ambos, actualiza solo alpha por fast-forward desde origin y ejecuta todos los gates antes de reanudar. Ante fallo queda detenido y no se solicita pairing. No reinicia Vault ni otros sockets/servidores. El proveedor confirma inicio de mantenimiento, no su finalización; un ACK de transporte no prueba visualización. Sin supervisor los comandos no detienen el proceso. CI y prueba real pendientes. README revisados: 2/2.

@@ -2,8 +2,8 @@ use crate::menu::CommandSpec;
 
 pub const COMMAND: CommandSpec = CommandSpec {
     name: "update",
-    es: "Actualizar alpha y reiniciar (owner global; supervisor local)",
-    en: "Update alpha and restart (global owner; local supervisor)",
+    es: "Actualizar código alpha sin reiniciar (owner global)",
+    en: "Update alpha source without restarting (global owner)",
     usages: &["update"],
     implemented: true,
 };

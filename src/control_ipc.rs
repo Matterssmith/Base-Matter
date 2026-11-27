@@ -413,6 +413,9 @@ impl WhatsAppControlIpc {
                 if matches!(
                     frame.text.split_whitespace().next(),
                     Some("=/>menu" | "=/>menú" | "=/>ping" | "=/>start" | "=/>add++")
+                ) || matches!(
+                    frame.text.split_whitespace().next(),
+                    Some("=/>update" | "=/>restart")
                 ) {
                     let actor = if frame.from_me {
                         &frame.owner_jid

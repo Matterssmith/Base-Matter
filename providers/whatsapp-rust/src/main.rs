@@ -4,6 +4,8 @@
  * Créditos:
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
+mod maintenance;
+
 use anyhow::{bail, Result};
 use std::{
     collections::{HashMap, HashSet},
@@ -574,7 +576,15 @@ impl CommandTrace {
         if self.enabled {
             let ipc = self.ipc.lock().map(|v| v.clone()).unwrap_or_default();
             let tx = self.tx.lock().map(|v| v.clone()).unwrap_or_default();
-            let (label, color) = if state.starts_with("ENVÍO ACEPTADO")
+            let (label, color) = if state == "MANTENIMIENTO AUTORIZADO" {
+                ("AUTORIZADO", "success")
+            } else if state == "MANTENIMIENTO COMPLETADO" {
+                ("COMPLETADO", "success")
+            } else if state == "MANTENIMIENTO BLOQUEADO" {
+                ("BLOQUEADO", "warning")
+            } else if state == "MANTENIMIENTO SIN CAMBIOS" {
+                ("SIN CAMBIOS", "muted")
+            } else if state.starts_with("ENVÍO ACEPTADO")
                 || state.starts_with("ENVIADO")
                 || state.starts_with("HTML ENVIADO")
             {
@@ -1197,6 +1207,8 @@ async fn main() -> Result<ExitCode> {
     let refresh_phone = config.phone.clone();
     let connected_once = Arc::new(AtomicBool::new(false));
     let connected_flag = Arc::clone(&connected_once);
+    let maintenance_config = Arc::clone(&config);
+    let report_in_flight = Arc::new(AtomicBool::new(false));
     let mut builder = Bot::builder().with_backend(backend).skip_history_sync();
     // Resume-only never starts the pair-code request. The server may still
     // reject stale session credentials; do not replace the original store.
@@ -1264,11 +1276,26 @@ async fn main() -> Result<ExitCode> {
                 }
             }
         })
-        .on_connected(move |_client| {
+        .on_connected(move |client| {
             let observed = Arc::clone(&connected_flag);
+            let config = Arc::clone(&maintenance_config);
+            let report_in_flight = Arc::clone(&report_in_flight);
             async move {
                 observed.store(true, Ordering::Relaxed);
                 println!("WhatsApp session connected. Base-Matter owner control available.");
+                if supervised && !report_in_flight.swap(true, Ordering::AcqRel) {
+                    if let Ok(Some((chat, body))) = maintenance::restart_report(&config.session_db) {
+                        if let Ok(jid) = chat.parse::<whatsapp_rust::Jid>() {
+                            if matches!(
+                                timeout(Duration::from_secs(8), client.send_text(jid, body)).await,
+                                Ok(Ok(_))
+                            ) {
+                                maintenance::clear_restart(&config.session_db);
+                            }
+                        }
+                    }
+                    report_in_flight.store(false, Ordering::Release);
+                }
             }
         })
         .on_logged_out(|info| async move {
@@ -1549,26 +1576,55 @@ async fn main() -> Result<ExitCode> {
                             if !diagnostic_messages {
                                 println!("Base-Matter: comando aceptado");
                             }
-                            // Only an admitted, signed global-owner command can
-                            // hand a fixed maintenance code to the local supervisor.
+                            // The signed, admitted global-owner command is the only entry.
                             if let Some(code) = maintenance_code(&frame.text) {
-                                let notice = if !supervised {
-                                    "Mantenimiento no disponible: inicia el bot con el supervisor local."
+                                let (body, state) = if !supervised {
+                                    ("Estado: Bloqueado\nMotivo: supervisor local no disponible.".to_owned(), "MANTENIMIENTO BLOQUEADO")
                                 } else if maintenance.compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire).is_err() {
-                                    "Mantenimiento ya en curso."
+                                    ("Estado: Bloqueado\nMotivo: mantenimiento en curso.".to_owned(), "MANTENIMIENTO BLOQUEADO")
+                                } else if code == 76 {
+                                    let report = tokio::task::spawn_blocking(maintenance::update_source).await;
+                                    maintenance.store(0, Ordering::Release);
+                                    match report {
+                                        Ok(result) => result,
+                                        Err(_) => ("Estado: Fallido\nMotivo: tarea de actualización interrumpida.".into(), "MANTENIMIENTO FALLIDO"),
+                                    }
                                 } else {
-                                    let notice = if code == 76 {
-                                        "Actualización de alpha iniciada. Se verificará el código antes de reconectar."
-                                    } else {
-                                        "Reiniciando el bot. Se conservará la sesión de WhatsApp."
-                                    };
-                                    let _ = trace.send("MANTENIMIENTO", ctx.reply(notice)).await;
-                                    trace.finish("MANTENIMIENTO AUTORIZADO");
-                                    maintenance.store(code, Ordering::Release);
-                                    return;
+                                    match maintenance::request_restart(&config.session_db, &frame.chat_jid, plain_style) {
+                                        Ok(()) => {
+                                            let body = maintenance::styled("Restart", "Estado: Autorizado\nSe verificará la versión pendiente y se conservará la sesión WA.", plain_style);
+                                            let sent = match body {
+                                                Ok(body) => matches!(trace.send("MANTENIMIENTO", ctx.reply(&body)).await, Ok(Ok(_))),
+                                                Err(_) => false,
+                                            };
+                                            if sent {
+                                                trace.finish("MANTENIMIENTO AUTORIZADO");
+                                                maintenance.store(75, Ordering::Release);
+                                            } else {
+                                                maintenance::clear_restart(&config.session_db);
+                                                maintenance.store(0, Ordering::Release);
+                                                trace.finish("SIN ENVÍO CONFIRMADO");
+                                            }
+                                            return;
+                                        }
+                                        Err(_) => {
+                                            maintenance.store(0, Ordering::Release);
+                                            ("Estado: Bloqueado\nMotivo: informe anterior pendiente o estado privado no disponible.".into(), "MANTENIMIENTO BLOQUEADO")
+                                        }
+                                    }
                                 };
-                                let _ = trace.send("AVISO", ctx.reply(notice)).await;
-                                trace.finish("MANTENIMIENTO NO INICIADO");
+                                let title = if code == 76 { "Update" } else { "Restart" };
+                                if diagnostic_messages {
+                                    for line in body.lines() {
+                                        println!("{}", console_row(line, false));
+                                    }
+                                }
+                                if let Ok(body) = maintenance::styled(title, &body, plain_style) {
+                                    let sent = matches!(trace.send("MANTENIMIENTO", ctx.reply(&body)).await, Ok(Ok(_)));
+                                    trace.finish(if sent { state } else { "SIN ENVÍO CONFIRMADO" });
+                                } else {
+                                    trace.finish("ERROR TEMA");
+                                }
                                 return;
                             }
                             // Only an applied ACK can produce a Pong. Send the official
