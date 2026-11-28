@@ -432,34 +432,12 @@ pub fn restart_report(session: &Path) -> Result<Option<RestartReport>> {
         body.push_str(&format!("\nDuración: {:.2}s", elapsed as f64 / 1000.0));
     }
     let message = match pending.update.as_deref() {
-        Some(update) => {
-            let update = update
-                .lines()
-                .filter(|line| {
-                    !line.starts_with("Validación y activación pendientes")
-                        && !line.starts_with("Versión en ejecución:")
-                        && !line.starts_with("Bot:")
-                })
-                .map(|line| {
-                    if line == "Estado: Código actualizado"
-                        && matches!(
-                            status.trim(),
-                            "verified" | "verified-built" | "verified-reused"
-                        )
-                    {
-                        "Estado: Completado"
-                    } else {
-                        line
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join("\n");
-            update_message(
-                &update,
-                verification,
-                &UpdateAction::Restart(body),
-                pending.plain,
-            )?
+        Some(_) => {
+            if let Some(verification) = verification {
+                body.push_str("\nVerificación:\n");
+                body.push_str(verification);
+            }
+            styled("Update", &body, pending.plain)?
         }
         None => {
             if let Some(verification) = verification {
