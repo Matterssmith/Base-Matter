@@ -157,8 +157,7 @@
       "processing": "💭",
       "success": "✅",
       "warning": "⚠️",
-      "error": "❌",
-      "inactive": "🔕"
+      "error": "❌"
     },
     "report-states": {
       "Estado: Actualizado": "Estado: ✅ Actualizado",

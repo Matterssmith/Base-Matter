@@ -1,3 +1,9 @@
+## 2026-11-27 — Silencio permanente en chats inactivos
+
+Se retira el tipo de alerta `inactive` de Set Alerts, ayuda, tema y configuración operativa. Un ACK ignorado no produce reacción ni aviso. Los estados restantes son procesamiento, éxito, advertencia de admisión/permisos y fallo. El lector conserva compatibilidad con archivos antiguos que contienen la preferencia retirada, sin utilizarla ni volver a escribirla. Se corrige el formato reportado de las reacciones diferidas y su clasificación. Pruebas de migración añadidas; compilación pendiente.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Reacciones diferidas sobre el mensaje original
 
 Restart y Codex conservan la clave de mensaje obtenida del callback autenticado junto a su estado pendiente privado. Tras reconexión o notificación de tarea, se aplica la reacción de resultado al mensaje original, no al informe nuevo. Se validan destino e identificador; los registros anteriores sin clave conservan el envío de informe. Un reinicio fallido que deja el bot desconectado sólo puede notificarse tras recuperar la conexión. Se conserva la configuración de alertas y no se declara éxito anticipado. Compilación e integración real pendientes.

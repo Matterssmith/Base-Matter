@@ -487,7 +487,7 @@ impl WhatsAppControlBridge {
                     | [
                         "=/>set",
                         "alerts",
-                        "processing" | "success" | "admission" | "denied" | "error" | "inactive",
+                        "processing" | "success" | "admission" | "denied" | "error",
                         "reaction" | "text" | "off"
                     ]
             ) {

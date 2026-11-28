@@ -1356,7 +1356,11 @@ async fn main() -> Result<ExitCode> {
                     if let Ok(Some(report)) = maintenance::restart_report(&config.session_db) {
                         if let Ok(jid) = report.chat.parse::<whatsapp_rust::Jid>() {
                             if matches!(
-                                timeout(Duration::from_secs(8), client.send_text(jid, report.body)).await,
+                                timeout(
+                                    Duration::from_secs(8),
+                                    client.send_text(jid, report.body)
+                                )
+                                .await,
                                 Ok(Ok(_))
                             ) {
                                 command_alerts::deliver_deferred(
@@ -2286,7 +2290,11 @@ async fn main() -> Result<ExitCode> {
             if let Some(notice) = notice {
                 if let Ok(jid) = notice.chat.parse::<whatsapp_rust::Jid>() {
                     if matches!(
-                        timeout(Duration::from_secs(8), codex_client.send_text(jid, notice.body)).await,
+                        timeout(
+                            Duration::from_secs(8),
+                            codex_client.send_text(jid, notice.body)
+                        )
+                        .await,
                         Ok(Ok(_))
                     ) {
                         if let Some(kind) = notice.kind {

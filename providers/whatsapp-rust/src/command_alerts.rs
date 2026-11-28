@@ -1,13 +1,13 @@
 // Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
-use whatsapp_rust::prelude::*;
 use std::{
     fs::{self, OpenOptions},
     io::Write,
     path::{Path, PathBuf},
     sync::Mutex,
 };
+use whatsapp_rust::prelude::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -43,7 +43,6 @@ pub enum Kind {
     Admission,
     Denied,
     Error,
-    Inactive,
 }
 
 impl Kind {
@@ -53,7 +52,6 @@ impl Kind {
             Self::Success => "success",
             Self::Admission | Self::Denied => "warning",
             Self::Error => "error",
-            Self::Inactive => "inactive",
         };
         whatsapp_matter_rust_provider::classic_template::alert_emoji(name)
     }
@@ -65,7 +63,6 @@ impl Kind {
             Self::Admission => "Comando reconocido, no disponible en este contexto.",
             Self::Denied => "Comando denegado o servicio no disponible.",
             Self::Error => "No se pudo completar el comando.",
-            Self::Inactive => "Bot inactivo en este chat.",
         }
     }
 }
@@ -80,7 +77,9 @@ struct Policy {
     admission: Mode,
     denied: Mode,
     error: Mode,
-    inactive: Mode,
+    // Read the previous preference without exposing or honoring it.
+    #[serde(default, rename = "inactive", skip_serializing)]
+    _legacy_inactive: Option<Mode>,
 }
 
 impl Default for Policy {
@@ -91,7 +90,7 @@ impl Default for Policy {
             admission: Mode::Reaction,
             denied: Mode::Reaction,
             error: Mode::Reaction,
-            inactive: Mode::Off,
+            _legacy_inactive: None,
         }
     }
 }
@@ -130,7 +129,6 @@ pub fn mode(session: &Path, kind: Kind) -> Mode {
         Kind::Admission => policy.admission,
         Kind::Denied => policy.denied,
         Kind::Error => policy.error,
-        Kind::Inactive => policy.inactive,
     }
 }
 
@@ -149,10 +147,6 @@ pub fn configure(session: &Path, command: &str) -> Result<String> {
             policy.admission = mode;
             policy.denied = mode;
             policy.error = mode;
-            // Never enable notifications in disabled chats implicitly.
-            if mode == Mode::Off {
-                policy.inactive = Mode::Off;
-            }
         }
         ["=/>set", "alerts", kind, value] => {
             let mode = Mode::parse(value)?;
@@ -162,7 +156,6 @@ pub fn configure(session: &Path, command: &str) -> Result<String> {
                 "admission" => policy.admission = mode,
                 "denied" => policy.denied = mode,
                 "error" => policy.error = mode,
-                "inactive" => policy.inactive = mode,
                 _ => bail!("Invalid alert type"),
             }
         }
@@ -190,13 +183,12 @@ pub fn configure(session: &Path, command: &str) -> Result<String> {
         }
     }
     Ok(format!(
-        "Ámbito: Socket\nProcesando: {}\nÉxito: {}\nAdmisión: {}\nPermisos: {}\nErrores: {}\nInactivo: {}\nModos: reaction | text | off",
+        "Ámbito: Socket\nProcesando: {}\nÉxito: {}\nAdmisión: {}\nPermisos: {}\nErrores: {}\nModos: reaction | text | off",
         policy.processing.unwrap_or(policy.error).label(),
         policy.success.unwrap_or(policy.error).label(),
         policy.admission.label(),
         policy.denied.label(),
-        policy.error.label(),
-        policy.inactive.label()
+        policy.error.label()
     ))
 }
 
@@ -288,10 +280,11 @@ pub async fn deliver_deferred(
 /// Deferred jobs keep their processing reaction until an explicit result report.
 pub fn completion(state: &str) -> Option<Kind> {
     match state {
-        "DUPLICADO" | "MANTENIMIENTO AUTORIZADO" | "CODEX EN CURSO" => None,
-        "IGNORADO" => Some(Kind::Inactive),
+        "DUPLICADO" | "IGNORADO" | "MANTENIMIENTO AUTORIZADO" | "CODEX EN CURSO" => None,
         "IPC FALLÓ" => Some(Kind::Denied),
-        "MANTENIMIENTO BLOQUEADO" | "RECARGA PARCIAL" | "CODEX EN REVISIÓN" => Some(Kind::Admission),
+        "MANTENIMIENTO BLOQUEADO" | "RECARGA PARCIAL" | "CODEX EN REVISIÓN" => {
+            Some(Kind::Admission)
+        }
         "MANTENIMIENTO COMPLETADO" | "MANTENIMIENTO SIN CAMBIOS" => Some(Kind::Success),
         _ if state.starts_with("NO ADMITIDO")
             || state.starts_with("TIMEOUT")
@@ -321,10 +314,8 @@ mod tests {
         assert_eq!(mode(&session, Kind::Processing), Mode::Reaction);
         assert_eq!(mode(&session, Kind::Success), Mode::Reaction);
         assert_eq!(mode(&session, Kind::Denied), Mode::Reaction);
-        assert_eq!(mode(&session, Kind::Inactive), Mode::Off);
         configure(&session, "=/>set alerts text").unwrap();
         assert_eq!(mode(&session, Kind::Admission), Mode::Text);
-        assert_eq!(mode(&session, Kind::Inactive), Mode::Off);
         configure(&session, "=/>set alerts error off").unwrap();
         assert_eq!(mode(&session, Kind::Error), Mode::Off);
         assert_eq!(mode(&session, Kind::Denied), Mode::Text);
@@ -337,6 +328,15 @@ mod tests {
         assert_eq!(mode(&session, Kind::Success), Mode::Reaction);
         assert_eq!(mode(&session, Kind::Error), Mode::Off);
         fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn legacy_inactive_preference_is_discarded() {
+        let raw = r#"{"admission":"reaction","denied":"text","error":"off","inactive":"reaction"}"#;
+        let policy: Policy = serde_json::from_str(raw).unwrap();
+        assert_eq!(policy.denied, Mode::Text);
+        assert_eq!(policy.error, Mode::Off);
+        assert!(!serde_json::to_string(&policy).unwrap().contains("inactive"));
     }
 
     #[test]
@@ -367,6 +367,7 @@ mod tests {
         assert_eq!(completion("MANTENIMIENTO AUTORIZADO"), None);
         assert_eq!(completion("CODEX EN CURSO"), None);
         assert_eq!(completion("DUPLICADO"), None);
+        assert_eq!(completion("IGNORADO"), None);
         assert_eq!(completion("RECARGA PARCIAL"), Some(Kind::Admission));
         assert_eq!(completion("MANTENIMIENTO COMPLETADO"), Some(Kind::Success));
         assert_eq!(completion("IPC ERROR TRANSPORTE"), Some(Kind::Error));

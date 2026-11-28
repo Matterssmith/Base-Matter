@@ -16,7 +16,7 @@ pub const COMMAND: CommandSpec = CommandSpec {
         "set menu web|classic|buttons",
         "set update manual|restart|reload",
         "set alerts reaction|text|off",
-        "set alerts processing|success|admission|denied|error|inactive reaction|text|off",
+        "set alerts processing|success|admission|denied|error reaction|text|off",
     ],
     implemented: true,
 };
