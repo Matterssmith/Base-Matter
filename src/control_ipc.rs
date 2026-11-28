@@ -93,9 +93,7 @@ impl WhatsAppControlIpc {
         let Some(frame) = ping_frame else {
             return (ControlIpcOutcome::Denied, None);
         };
-        if std::str::from_utf8(input).is_err() {
-            return (ControlIpcOutcome::Denied, None);
-        }
+
         // Rank probes are signed by the provider and are diagnostic only.
         // They do not dispatch commands, claim replay IDs or grant authority.
         if let Some(frame) = ping_frame {
