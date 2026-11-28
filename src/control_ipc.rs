@@ -370,19 +370,20 @@ impl WhatsAppControlIpc {
                 Err(_) => break (ControlIpcOutcome::Denied, None),
             }
         };
+        let response_frame = serde_json::from_slice::<WhatsAppControlFrame>(&request).ok();
         // Only the authenticated, replay-checked root menu receives
         // typed presentation metadata. Other IPC outcomes remain unchanged.
         let menu_mode = if matches!(&result, ControlIpcOutcome::Applied) {
-            serde_json::from_slice::<WhatsAppControlFrame>(&request)
-                .ok()
+            response_frame
+                .as_ref()
                 .filter(|frame| matches!(frame.text.as_str(), "=/>menu" | "=/>menú"))
                 .and_then(|_| self.themes.current_menu_mode().ok())
         } else {
             None
         };
         let menu_items = if matches!(&result, ControlIpcOutcome::Applied) {
-            serde_json::from_slice::<WhatsAppControlFrame>(&request)
-                .ok()
+            response_frame
+                .as_ref()
                 .filter(|frame| {
                     matches!(
                         frame.text.split_whitespace().next(),
@@ -426,7 +427,7 @@ impl WhatsAppControlIpc {
         // Only admitted commands whose presentation is built by the provider
         // need the effective style as typed metadata; it grants no authority.
         if matches!(result, ControlIpcOutcome::Applied) {
-            if let Ok(frame) = serde_json::from_slice::<WhatsAppControlFrame>(&request) {
+            if let Some(frame) = response_frame.as_ref() {
                 if matches!(
                     frame.text.split_whitespace().next(),
                     Some("=/>menu" | "=/>menú" | "=/>ping" | "=/>start" | "=/>add++")
@@ -466,9 +467,9 @@ impl WhatsAppControlIpc {
                 result,
                 ControlIpcOutcome::Applied | ControlIpcOutcome::Denied
             )
-            && serde_json::from_slice::<WhatsAppControlFrame>(&request).is_ok_and(|frame| {
+            && response_frame.as_ref().is_some_and(|frame| {
                 !frame.text.split_whitespace().eq(["=/>ping"])
-                    && self.bridge.console_global_owner(&frame)
+                    && self.bridge.console_global_owner(frame)
             })
         {
             response["global_owner_verified"] = serde_json::Value::Bool(true);
