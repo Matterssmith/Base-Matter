@@ -473,7 +473,12 @@ impl WhatsAppControlBridge {
             return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive));
         }
         // Socket-local alert settings never grant a role or alter admission.
-        if frame.text.split_whitespace().take(2).eq(["=/>set", "alerts"]) {
+        if frame
+            .text
+            .split_whitespace()
+            .take(2)
+            .eq(["=/>set", "alerts"])
+        {
             let words: Vec<_> = frame.text.split_whitespace().collect();
             if !matches!(
                 words.as_slice(),
