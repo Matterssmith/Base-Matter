@@ -449,24 +449,27 @@ struct CommandTrace {
 }
 
 impl CommandTrace {
-    async fn begin(
-        enabled: bool,
-        ctx: &whatsapp_rust::bot::MessageContext,
-        data: &Event<'_>,
-        origin: &str,
-        socket_owner: bool,
-    ) -> Self {
+    fn new(enabled: bool, started: Instant) -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(1);
-        let mut trace = Self {
+        Self {
             id: NEXT.fetch_add(1, Ordering::Relaxed),
-            started: Instant::now(),
+            started,
             enabled,
             ipc: Mutex::new("PEND".to_owned()),
             tx: Mutex::new(Vec::new()),
             processing_reaction: AtomicBool::new(false),
             header: None,
-        };
-        if enabled {
+        }
+    }
+
+    async fn populate_header(
+        &mut self,
+        ctx: &whatsapp_rust::bot::MessageContext,
+        data: &Event<'_>,
+        origin: &str,
+        socket_owner: bool,
+    ) {
+        if self.enabled {
             let clock = data.timestamp.rem_euclid(86400);
             let (h, m, s) = (clock / 3600, clock / 60 % 60, clock % 60);
             let name = console_field(&ctx.info.push_name, 18);
@@ -510,7 +513,7 @@ impl CommandTrace {
             let header = classic_template::render(
                 classic_template::console_template("header"),
                 &[
-                    ("EVENT", &format!("#{:04}", trace.id)),
+                    ("EVENT", &format!("#{:04}", self.id)),
                     ("CLOCK", &format!("{h:02}:{m:02}:{s:02}Z")),
                     ("ORIGIN", origin),
                 ],
@@ -529,7 +532,7 @@ impl CommandTrace {
                     ],
                 ),
             ];
-            trace.header = Some(ConsoleTraceHeader {
+            self.header = Some(ConsoleTraceHeader {
                 header,
                 rows,
                 scope,
@@ -537,7 +540,6 @@ impl CommandTrace {
                 socket_owner,
             });
         }
-        trace
     }
 
     fn print_header(&self, global_owner: bool) {
@@ -1404,6 +1406,7 @@ async fn main() -> Result<ExitCode> {
             let menu_views = Arc::clone(&menu_views);
             let maintenance = Arc::clone(&maintenance_for_messages);
             async move {
+                let received_at = Instant::now();
                 let source = &ctx.info.source;
                 // Match across PN/LID with the linked client's verified
                 // identities, stripping the per-device suffix on all JIDs.
@@ -1506,7 +1509,7 @@ async fn main() -> Result<ExitCode> {
                 } else {
                     "texto"
                 };
-                let local_started = Instant::now();
+                let fast_ping = data.text.split_whitespace().eq(["=/>ping"]);
                 let mut verified = if data.from_me {
                     config.signed_verified_control(
                         &data, own_pn.as_deref(), own_lid.as_deref(),
@@ -1523,7 +1526,10 @@ async fn main() -> Result<ExitCode> {
                 // from the authenticated group's exact participant metadata.
                 // Preserve the original event/chat for routing and diagnostics;
                 // sign the resolved actor again before forwarding to Base.
-                if data.is_group && !data.from_me && data.sender_jid.ends_with("@lid") {
+                // Ping is read-only for every admitted sender. Do not make
+                // its answer wait for a privileged identity alias lookup.
+                // Vault still verifies the signed LID directly for console rank.
+                if !fast_ping && data.is_group && !data.from_me && data.sender_jid.ends_with("@lid") {
                     if let Ok(Some(frame)) = &mut verified {
                         if let Ok(Ok(metadata)) = timeout(
                             Duration::from_secs(2),
@@ -1631,11 +1637,11 @@ async fn main() -> Result<ExitCode> {
                         }
                     }
                 }
-                let local_before_ipc = local_started.elapsed();
                 let socket_owner = matches!(&verified, Ok(Some(frame)) if frame.from_me);
-                let trace = CommandTrace::begin(
-                    diagnostic_messages, &ctx, &data, origin, socket_owner,
-                ).await;
+                let mut trace = CommandTrace::new(diagnostic_messages, received_at);
+                if !fast_ping {
+                    trace.populate_header(&ctx, &data, origin, socket_owner).await;
+                }
                 if let Ok(Some(frame)) = verified {
                     trace.stage("IPC: ENVIANDO");
                     let ipc_started = Instant::now();
@@ -1643,6 +1649,43 @@ async fn main() -> Result<ExitCode> {
                     let mut plain_style = false;
                     let ack = deliver(config.bridge_addr, &frame, Some(&mut global_owner), Some(&mut plain_style)).await;
                     let ipc_elapsed = ipc_started.elapsed();
+                    if fast_ping && matches!(
+                        &ack,
+                        Ok(ControlAck::Applied
+                            | ControlAck::AppliedWithMessage(_)
+                            | ControlAck::AppliedWithMenuMode { .. }
+                            | ControlAck::AppliedWithMenuItems { .. })
+                    ) {
+                        trace.stage(&format!("IPC: OK {}ms", ipc_elapsed.as_millis()));
+                        // Measure the entire callback up to response preparation,
+                        // including Anti observation, signing and controller RTT.
+                        // Diagnostic metadata and the reaction are sent afterward.
+                        let process = received_at.elapsed().saturating_sub(ipc_elapsed);
+                        let pong = if plain_style {
+                            plain_ping_message(ipc_elapsed, process)
+                        } else {
+                            matter_ping_message(ipc_elapsed, process)
+                        };
+                        let sent = matches!(
+                            trace.send("PING", ctx.reply(&pong)).await,
+                            Ok(Ok(_))
+                        );
+                        let state = if sent {
+                            "ENVÍO ACEPTADO (render no verificado)"
+                        } else {
+                            "SIN ENVÍO CONFIRMADO"
+                        };
+                        if let Some(kind) = command_alerts::completion(state) {
+                            command_alert(&trace, &ctx, &config.session_db, kind).await;
+                        }
+                        trace.populate_header(&ctx, &data, origin, socket_owner).await;
+                        trace.print_header(global_owner);
+                        trace.finish(state);
+                        return;
+                    }
+                    if fast_ping {
+                        trace.populate_header(&ctx, &data, origin, socket_owner).await;
+                    }
                     trace.print_header(global_owner);
                     match ack {
                         Ok(ack @ (
@@ -1651,7 +1694,6 @@ async fn main() -> Result<ExitCode> {
                             | ControlAck::AppliedWithMenuMode { .. }
                             | ControlAck::AppliedWithMenuItems { .. }
                         )) => {
-                            let local_after_ipc = Instant::now();
                             let ipc_ms = ipc_elapsed.as_millis();
                             trace.stage(&format!("IPC: OK {ipc_ms}ms"));
                             if !diagnostic_messages {
@@ -1876,26 +1918,6 @@ async fn main() -> Result<ExitCode> {
                                 } else {
                                     finish_command(&trace, &ctx, &config.session_db, "ERROR TEMA").await;
                                 }
-                                return;
-                            }
-                            // Only an applied ACK can produce a Pong. Send the official
-                            // frame directly, with no extra Control wrapper or reply.
-                            if frame.text.split_whitespace().eq(["=/>ping"]) {
-                                let process = local_before_ipc + local_after_ipc.elapsed();
-                                let pong = if plain_style {
-                                    plain_ping_message(ipc_elapsed, process)
-                                } else {
-                                    matter_ping_message(ipc_elapsed, process)
-                                };
-                                let sent = matches!(
-                                    trace.send("PING", ctx.reply(&pong)).await,
-                                    Ok(Ok(_))
-                                );
-                                finish_command(&trace, &ctx, &config.session_db, if sent {
-                                    "ENVÍO ACEPTADO (render no verificado)"
-                                } else {
-                                    "SIN ENVÍO CONFIRMADO"
-                                }).await;
                                 return;
                             }
                             // Only an authorized signed control may receive a
@@ -2241,6 +2263,9 @@ async fn main() -> Result<ExitCode> {
                         }
                     }
                 } else {
+                    if fast_ping {
+                        trace.populate_header(&ctx, &data, origin, socket_owner).await;
+                    }
                     trace.print_header(false);
                     trace.stage("IPC: NO ADMITIDO");
                     // Native reaction to the original callback; no command

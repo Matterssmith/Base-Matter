@@ -168,11 +168,16 @@ fn no_normal_bot_dispatch_ping_qr_or_legacy_global_aliases() {
         bridge.ingest(&frame("normal3", "/>on")).unwrap(),
         WhatsAppBridgeOutcome::Ignored
     );
+    let ping = frame("normal-ping-enabled", "=/>ping");
     assert!(matches!(
-        bridge.ingest(&frame("normal-ping-enabled", "=/>ping")).unwrap(),
+        bridge.ingest(&ping).unwrap(),
         WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension { command, .. })
             if command == "ping"
     ));
+    assert_eq!(
+        bridge.ingest(&ping).unwrap(),
+        WhatsAppBridgeOutcome::Duplicate
+    );
     assert!(bridge.ingest(&frame("normal5", "=/>on")).is_err());
     assert!(bridge.ingest(&frame("normal6", "=/>off")).is_err());
     // Vault must never become a group-scoped control.

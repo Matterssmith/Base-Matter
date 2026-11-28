@@ -472,6 +472,23 @@ impl WhatsAppControlBridge {
             }
             return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive));
         }
+        // Exact Ping is read-only. The signed frame, chat policy and replay
+        // protection still apply; no owner elevation or second dispatch is
+        // needed. The IPC diagnostic rank is independently checked by Vault.
+        if frame.text.split_whitespace().eq(["=/>ping"]) {
+            if !self
+                .replay
+                .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
+            {
+                return Ok(WhatsAppBridgeOutcome::Duplicate);
+            }
+            return Ok(WhatsAppBridgeOutcome::Dispatched(
+                DispatchResult::Extension {
+                    command: "ping".to_owned(),
+                    output: "Pong · Latencia IPC: pendiente".to_owned(),
+                },
+            ));
+        }
         // Socket-local alert settings never grant a role or alter admission.
         if frame
             .text
