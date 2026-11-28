@@ -364,15 +364,15 @@ impl WhatsAppControlIpc {
         stream.set_nodelay(true)?;
         stream.set_write_timeout(Some(Duration::from_secs(3)))?;
         let deadline = Instant::now() + Duration::from_secs(4);
-        let mut request = Vec::new();
+        let mut request = Vec::with_capacity(2048);
         let mut response_frame = None;
+        let mut chunk = [0_u8; 2048];
         let (result, message) = loop {
             let remaining = deadline.saturating_duration_since(Instant::now());
             if remaining.is_zero() {
                 break (ControlIpcOutcome::Denied, None);
             }
             stream.set_read_timeout(Some(remaining.min(Duration::from_secs(1))))?;
-            let mut chunk = [0_u8; 2048];
             match stream.read(&mut chunk) {
                 Ok(0) => {
                     response_frame = serde_json::from_slice::<WhatsAppControlFrame>(&request).ok();
@@ -445,22 +445,16 @@ impl WhatsAppControlIpc {
         // need the effective style as typed metadata; it grants no authority.
         if matches!(result, ControlIpcOutcome::Applied) {
             if let Some(frame) = response_frame.as_ref() {
+                let mut words = frame.text.split_whitespace();
+                let command = words.next();
                 if matches!(
-                    frame.text.split_whitespace().next(),
-                    Some("=/>menu" | "=/>menú" | "=/>ping" | "=/>start" | "=/>add++")
-                ) || matches!(
-                    frame.text.split_whitespace().next(),
-                    Some("=/>update" | "=/>restart" | "=/>reload" | "=/>codex")
-                ) || frame
-                    .text
-                    .split_whitespace()
-                    .take(2)
-                    .eq(["=/>set", "update"])
-                    || frame
-                        .text
-                        .split_whitespace()
-                        .take(2)
-                        .eq(["=/>set", "alerts"])
+                    command,
+                    Some(
+                        "=/>menu" | "=/>menú" | "=/>ping" | "=/>start" | "=/>add++"
+                            | "=/>update" | "=/>restart" | "=/>reload" | "=/>codex"
+                    )
+                ) || (command == Some("=/>set")
+                    && matches!(words.next(), Some("update" | "alerts")))
                 {
                     let actor = if frame.from_me {
                         &frame.owner_jid
