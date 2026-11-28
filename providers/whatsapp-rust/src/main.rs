@@ -734,6 +734,7 @@ async fn deliver(
     }
     let transport = async {
         let mut stream = TcpStream::connect(address).await?;
+        stream.set_nodelay(true)?;
         stream.write_all(&body).await?;
         stream.shutdown().await?;
         let mut response = Vec::new();
@@ -1677,6 +1678,16 @@ async fn main() -> Result<ExitCode> {
                         };
                         if let Some(kind) = command_alerts::completion(state) {
                             command_alert(&trace, &ctx, &config.session_db, kind).await;
+                        }
+                        // Fresh Vault rank only for local console diagnostics,
+                        // after Pong. The HMAC binds the original sender/chat.
+                        if diagnostic_messages {
+                            let mut rank_frame = frame.clone();
+                            rank_frame.text = "\u{001f}matter-ping-rank".to_owned();
+                            if let Ok(signature) = whatsapp_matter_rust_provider::sign_frame(&rank_frame, &config.bridge_key) {
+                                rank_frame.signature = signature;
+                                let _ = deliver(config.bridge_addr, &rank_frame, Some(&mut global_owner), None).await;
+                            }
                         }
                         trace.populate_header(&ctx, &data, origin, socket_owner).await;
                         trace.print_header(global_owner);

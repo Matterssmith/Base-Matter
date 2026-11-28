@@ -85,6 +85,18 @@ impl WhatsAppControlIpc {
         let Ok(text) = std::str::from_utf8(input) else {
             return (ControlIpcOutcome::Denied, None);
         };
+        // Rank probes are signed by the provider and are diagnostic only.
+        // They do not dispatch commands, claim replay IDs or grant authority.
+        let ping_frame = serde_json::from_str::<WhatsAppControlFrame>(text).ok();
+        if let Some(frame) = ping_frame.as_ref() {
+            if frame.text == "\u{001f}matter-ping-rank" {
+                return if self.console_rank && self.bridge.is_ping_rank_probe(frame) {
+                    (ControlIpcOutcome::Applied, None)
+                } else {
+                    (ControlIpcOutcome::Denied, None)
+                };
+            }
+        }
         let result = match self.bridge.ingest_json(text) {
             Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
                 output, ..
@@ -191,6 +203,14 @@ impl WhatsAppControlIpc {
             Err(_) => (ControlIpcOutcome::Denied, None),
         };
         let (outcome, message) = result;
+        // Ping's response is built by the provider using measured durations.
+        // Avoid a redundant message decoration and preference lookup here.
+        if ping_frame
+            .as_ref()
+            .is_some_and(|frame| frame.text.split_whitespace().eq(["=/>ping"]))
+        {
+            return (outcome, None);
+        }
         // We select a template from the chat identifier ONLY after the
         // bridge has accepted and authenticated the signed frame.
         let authenticated_chat = if matches!(&outcome, ControlIpcOutcome::Applied) {
@@ -331,6 +351,7 @@ impl WhatsAppControlIpc {
     /// The provider must close its write half after sending one JSON frame.
     /// No HTTP server or public network listener is ever created.
     pub fn accept(&self, mut stream: TcpStream) -> Result<()> {
+        stream.set_nodelay(true)?;
         stream.set_write_timeout(Some(Duration::from_secs(3)))?;
         let deadline = Instant::now() + Duration::from_secs(4);
         let mut request = Vec::new();
@@ -450,7 +471,10 @@ impl WhatsAppControlIpc {
                 ControlIpcOutcome::Applied | ControlIpcOutcome::Denied
             )
             && serde_json::from_slice::<WhatsAppControlFrame>(&request)
-                .is_ok_and(|frame| self.bridge.console_global_owner(&frame))
+                .is_ok_and(|frame| {
+                    !frame.text.split_whitespace().eq(["=/>ping"])
+                        && self.bridge.console_global_owner(&frame)
+                })
         {
             response["global_owner_verified"] = serde_json::Value::Bool(true);
         }

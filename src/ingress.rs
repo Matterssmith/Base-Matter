@@ -92,7 +92,12 @@ pub struct InboundReplayStore {
 
 impl InboundReplayStore {
     pub fn open(path: impl AsRef<Path>, key: [u8; 32]) -> Result<Self> {
-        Self::from_connection(Connection::open(path)?, key)
+        let connection = Connection::open(path)?;
+        connection.busy_timeout(Duration::from_secs(5))?;
+        // WAL avoids rollback-journal churn while FULL preserves durable
+        // replay claims across process crashes and power loss.
+        connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")?;
+        Self::from_connection(connection, key)
     }
 
     pub fn in_memory(key: [u8; 32]) -> Result<Self> {

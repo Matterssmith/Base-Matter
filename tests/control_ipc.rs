@@ -110,6 +110,10 @@ fn invalid_frames_are_denied_and_authenticated_ping_is_readonly() {
         .unwrap();
     assert_eq!(service.dispatch(b"{"), ControlIpcOutcome::Denied);
     assert_eq!(
+        service.dispatch(&signed("rank-disabled", "\u{001f}matter-ping-rank")),
+        ControlIpcOutcome::Denied
+    );
+    assert_eq!(
         service.dispatch(&vec![b'a'; 16385]),
         ControlIpcOutcome::Denied
     );

@@ -170,12 +170,19 @@ impl WhatsAppControlBridge {
         Ok((is_owner, is_public_reader))
     }
 
+    /// A separate, authenticated, read-only rank probe for completed Ping.
+    /// It is not an executable command or a permission grant.
+    pub(crate) fn is_ping_rank_probe(&self, frame: &WhatsAppControlFrame) -> bool {
+        frame.text == "\u{001f}matter-ping-rank" && self.verify_frame(frame).is_ok()
+    }
+
     /// Diagnostic only: verify the actual signed sender before requesting a
     /// fresh, bounded Vault decision. Never grant access from this result.
     pub(crate) fn console_global_owner(&self, frame: &WhatsAppControlFrame) -> bool {
         if !(frame.text.starts_with("=/>")
             || frame.text.starts_with("\u{001f}matter-group-style:=/>")
-            || frame.text.starts_with("\u{001f}matter-presentation:"))
+            || frame.text.starts_with("\u{001f}matter-presentation:")
+            || frame.text == "\u{001f}matter-ping-rank")
         {
             return false;
         }

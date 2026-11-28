@@ -1,3 +1,9 @@
+## 2026-11-27 — Ping: segunda optimización de latencia
+
+La medición real del servidor tras 446d159 fue 51–53 ms (IPC 32–34 ms y proceso 18–21 ms). Se evita renderizar en el controlador un Pong que el proveedor ya prepara con tiempos reales, se habilita TCP_NODELAY y se traslada la consulta de rango de Vault a un probe firmado, exclusivamente diagnóstico, después del envío. El registro antirreplay persistente usa SQLite WAL con synchronous=FULL; no se reduce la durabilidad ni se elimina la inspección Anti, HMAC, política de chat o protección de repetición. El probe no concede permisos y se deshabilita sin diagnósticos. El valor Total sigue midiendo desde el callback hasta preparar la respuesta; no es RTT de WhatsApp. Los backups SQLite deben incluir WAL mediante un backup consistente, no copiar sólo la base activa. Compilación y medición del nuevo SHA pendientes; no se promete 0,5 ms.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Ruta rápida de Ping
 
 `=/>ping` exacto conserva firma, política activa, Anti pasivo, antirreplay y estilo. Su respuesta no espera la reacción intermedia de procesamiento ni la consulta diagnóstica de participantes. La reacción final y los metadatos de consola se procesan después del envío de Pong. El controlador evita la elevación a Owner y el despacho duplicado en una operación de sólo lectura; el rango global de consola sigue verificándose de forma independiente en Vault, usando la identidad firmada (LID si corresponde) sin resolver aliases de grupo para Ping. Si el LID no está vinculado en Vault, el rango puede aparecer sin verificar. Socket mide el RTT IPC; Process incluye el tiempo real desde el callback, incluso la inspección Anti y firma, descontando el RTT; Total es su suma hasta preparar la respuesta, no el tiempo de transporte a la pantalla del usuario. Prueba antirreplay reforzada. Compilación y medición real pendientes.

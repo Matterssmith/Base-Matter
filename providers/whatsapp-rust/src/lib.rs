@@ -59,7 +59,7 @@ pub struct Event<'a> {
     pub timestamp: i64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct SignedFrame {
     pub version: u8,
     pub socket_id: String,
