@@ -153,6 +153,13 @@
   "matter_templates": {
     "update": "{{CLASSIC_HEADER}} 𝗨𝗽𝗱𝗮𝘁𝗲\n{{ROWS}}{{FOOTER}}",
     "restart": "{{CLASSIC_HEADER}} 𝗥𝗲𝘀𝘁𝗮𝗿𝘁\n{{ROWS}}{{FOOTER}}",
+    "alert-emojis": {
+      "processing": "💭",
+      "success": "✅",
+      "warning": "⚠️",
+      "error": "❌",
+      "inactive": "🔕"
+    },
     "report-states": {
       "Estado: Actualizado": "Estado: ✅ Actualizado",
       "Estado: Código actualizado": "Estado: ✅ Código actualizado",

@@ -8,7 +8,7 @@ pub const COMMAND: CommandSpec = CommandSpec {
     usages: &[
         "set alerts",
         "set alerts reaction|text|off",
-        "set alerts admission|denied|error|inactive reaction|text|off",
+        "set alerts processing|success|admission|denied|error|inactive reaction|text|off",
     ],
     implemented: true,
 };

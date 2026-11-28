@@ -1,3 +1,15 @@
+## 2026-11-27 — Reacciones diferidas sobre el mensaje original
+
+Restart y Codex conservan la clave de mensaje obtenida del callback autenticado junto a su estado pendiente privado. Tras reconexión o notificación de tarea, se aplica la reacción de resultado al mensaje original, no al informe nuevo. Se validan destino e identificador; los registros anteriores sin clave conservan el envío de informe. Un reinicio fallido que deja el bot desconectado sólo puede notificarse tras recuperar la conexión. Se conserva la configuración de alertas y no se declara éxito anticipado. Compilación e integración real pendientes.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
+## 2026-11-27 — Estados de comandos reconocidos y silencio para verbos desconocidos
+
+El proveedor filtra verbos desconocidos antes de firmar, registrar diagnósticos o enviar reacciones; la inspección Anti pasiva permanece independiente. El catálogo de verbos de consola y la admisión visual comparten una sola función. Los comandos reconocidos admitidos muestran 💭 al procesar y una reacción terminal ✅, ⚠️ o ❌ según el resultado, con el mismo mensaje de origen; permisos denegados o contextos incompatibles no son fallos críticos. `set alerts processing|success|admission|denied|error|inactive reaction|text|off` configura los estados del socket. La autorización de un reinicio o el encolado de Codex no se presenta como finalización exitosa; los informes diferidos existentes siguen siendo la fuente del resultado final. Las políticas antiguas se leen sin reactivar alertas explícitamente apagadas. Plantilla centralizada y pruebas añadidas; compilación y prueba real pendientes.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Alertas por reacción y diagnóstico de Codex
 
 `=/>set alerts` configura el socket; `reaction` predeterminado, `text` u `off`, con tipos `admission`, `denied`, `error`, `inactive`. Los chats inactivos permanecen silenciosos por defecto; se puede habilitar ese tipo expresamente. La reacción nativa apunta al mensaje original, sin texto de respaldo si falla. Las notificaciones de tareas Codex ya solicitadas y resultados normales no son alertas genéricas. La configuración exige Owner del socket u Owner global. Codex conserva slot 1 en Vault y chat privado; se permite el acceso privado de gestión del principal tras la comprobación, sin abrir los privados externos ni eludir el apagado del socket. Se amplía el tiempo de IPC de Codex para admitir la comprobación fresca de Vault y se verifica el trabajador al consultar status. Sin servicio instalado o autorizado no se confirma ejecución. Pruebas completas y despliegue pendientes.

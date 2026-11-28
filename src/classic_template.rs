@@ -45,6 +45,12 @@ pub struct ReportBlock<'a> {
     pub rows: Vec<ReportRow<'a>>,
 }
 
+pub fn alert_emoji(name: &str) -> &'static str {
+    theme()["matter_templates"]["alert-emojis"][name]
+        .as_str()
+        .expect("Bundled Matter alert emoji")
+}
+
 pub fn report_section_label(name: &str) -> Option<&'static str> {
     theme()["matter_templates"]["update-sections"][name].as_str()
 }

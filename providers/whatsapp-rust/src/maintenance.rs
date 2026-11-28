@@ -306,6 +306,8 @@ struct Pending {
     update: Option<String>,
     #[serde(default)]
     started_ms: Option<u64>,
+    #[serde(default)]
+    target: Option<super::command_alerts::DeferredTarget>,
 }
 
 fn paths(session: &Path) -> Result<(PathBuf, PathBuf)> {
@@ -330,6 +332,7 @@ pub fn request_restart(
     chat: &str,
     plain: bool,
     update: Option<&str>,
+    target: Option<super::command_alerts::DeferredTarget>,
 ) -> Result<()> {
     let (request, result) = paths(session)?;
     if !valid_chat(chat) || result.exists() {
@@ -340,6 +343,7 @@ pub fn request_restart(
         plain,
         update: update.map(str::to_owned),
         started_ms: unix_ms(),
+        target,
     })?;
     let mut options = OpenOptions::new();
     options.write(true).create_new(true);
@@ -366,7 +370,14 @@ fn unix_ms() -> Option<u64> {
     .ok()
 }
 
-pub fn restart_report(session: &Path) -> Result<Option<(String, String)>> {
+pub struct RestartReport {
+    pub chat: String,
+    pub body: String,
+    pub target: Option<super::command_alerts::DeferredTarget>,
+    pub kind: super::command_alerts::Kind,
+}
+
+pub fn restart_report(session: &Path) -> Result<Option<RestartReport>> {
     let (request, result) = paths(session)?;
     if !request.is_file() || !result.is_file() {
         return Ok(None);
@@ -450,7 +461,20 @@ pub fn restart_report(session: &Path) -> Result<Option<(String, String)>> {
             styled("Restart", &body, pending.plain)?
         }
     };
-    Ok(Some((pending.chat, message)))
+    let kind = if matches!(
+        status.trim(),
+        "verified" | "verified-built" | "verified-reused"
+    ) {
+        super::command_alerts::Kind::Success
+    } else {
+        super::command_alerts::Kind::Error
+    };
+    Ok(Some(RestartReport {
+        chat: pending.chat,
+        body: message,
+        target: pending.target,
+        kind,
+    }))
 }
 
 pub fn clear_restart(session: &Path) {

@@ -111,10 +111,13 @@ fn verified_group_sender_pn(
     Some(phone.clone())
 }
 
-fn console_command(text: &str) -> String {
-    let mut parts = text.split_whitespace();
-    let verb = parts.next().unwrap_or_default();
-    if !matches!(
+// Unknown verbs are not commands: no IPC, metadata lookup, trace or reaction.
+fn recognized_command(text: &str) -> bool {
+    if !text.starts_with("=/>") {
+        return false;
+    }
+    let verb = text.split_whitespace().next().unwrap_or_default();
+    matches!(
         verb,
         "=/>menu"
             | "=/>menú"
@@ -147,8 +150,14 @@ fn console_command(text: &str) -> String {
             | "=/>credits"
             | "=/>creditos"
             | "=/>créditos"
-    ) {
-        return "=/>[otro]".to_owned();
+    )
+}
+
+fn console_command(text: &str) -> String {
+    let mut parts = text.split_whitespace();
+    let verb = parts.next().unwrap_or_default();
+    if !recognized_command(text) {
+        return String::new();
     }
     // Never print arbitrary tokens, quoted payloads, targets or credentials.
     // Only a finite vocabulary of public command syntax is eligible.
@@ -435,6 +444,7 @@ struct CommandTrace {
     enabled: bool,
     ipc: Mutex<String>,
     tx: Mutex<Vec<String>>,
+    processing_reaction: AtomicBool,
     header: Option<ConsoleTraceHeader>,
 }
 
@@ -453,6 +463,7 @@ impl CommandTrace {
             enabled,
             ipc: Mutex::new("PEND".to_owned()),
             tx: Mutex::new(Vec::new()),
+            processing_reaction: AtomicBool::new(false),
             header: None,
         };
         if enabled {
@@ -583,6 +594,10 @@ impl CommandTrace {
                 ("AUTORIZADO", "success")
             } else if state == "MANTENIMIENTO COMPLETADO" {
                 ("COMPLETADO", "success")
+            } else if state == "CODEX EN CURSO" {
+                ("EN CURSO", "muted")
+            } else if matches!(state, "RECARGA PARCIAL" | "CODEX EN REVISIÓN") {
+                (state, "warning")
             } else if state == "MANTENIMIENTO BLOQUEADO" {
                 ("BLOQUEADO", "warning")
             } else if state == "MANTENIMIENTO SIN CAMBIOS" {
@@ -774,11 +789,27 @@ async fn command_alert(
     session: &std::path::Path,
     kind: command_alerts::Kind,
 ) {
-    match command_alerts::mode(session, kind) {
+    let mode = command_alerts::mode(session, kind);
+    if kind != command_alerts::Kind::Processing
+        && mode != command_alerts::Mode::Reaction
+        && trace.processing_reaction.swap(false, Ordering::Relaxed)
+    {
+        let _ = trace.send("REACCIÓN", ctx.react("")).await;
+    }
+    match mode {
         command_alerts::Mode::Off => {}
         command_alerts::Mode::Reaction => {
-            // No fallback to text: the selected transport is authoritative.
-            let _ = trace.send("REACCIÓN", ctx.react(kind.emoji())).await;
+            // Native reactions replace the previous reaction on the same message.
+            // Never fall back to text when a reaction cannot be sent.
+            let sent = matches!(
+                trace.send("REACCIÓN", ctx.react(kind.emoji())).await,
+                Ok(Ok(_))
+            );
+            if sent {
+                trace
+                    .processing_reaction
+                    .store(kind == command_alerts::Kind::Processing, Ordering::Relaxed);
+            }
         }
         command_alerts::Mode::Text => {
             if let Ok(body) = maintenance::styled("Alerta", kind.message(), false) {
@@ -786,6 +817,18 @@ async fn command_alert(
             }
         }
     }
+}
+
+async fn finish_command(
+    trace: &CommandTrace,
+    ctx: &whatsapp_rust::bot::MessageContext,
+    session: &std::path::Path,
+    state: &str,
+) {
+    if let Some(kind) = command_alerts::completion(state) {
+        command_alert(trace, ctx, session, kind).await;
+    }
+    trace.finish(state);
 }
 
 async fn require_local_controller(address: std::net::SocketAddrV4) -> Result<()> {
@@ -1310,12 +1353,20 @@ async fn main() -> Result<ExitCode> {
                 observed.store(true, Ordering::Relaxed);
                 println!("WhatsApp session connected. Base-Matter owner control available.");
                 if supervised && !report_in_flight.swap(true, Ordering::AcqRel) {
-                    if let Ok(Some((chat, body))) = maintenance::restart_report(&config.session_db) {
-                        if let Ok(jid) = chat.parse::<whatsapp_rust::Jid>() {
+                    if let Ok(Some(report)) = maintenance::restart_report(&config.session_db) {
+                        if let Ok(jid) = report.chat.parse::<whatsapp_rust::Jid>() {
                             if matches!(
-                                timeout(Duration::from_secs(8), client.send_text(jid, body)).await,
+                                timeout(Duration::from_secs(8), client.send_text(jid, report.body)).await,
                                 Ok(Ok(_))
                             ) {
+                                command_alerts::deliver_deferred(
+                                    &client,
+                                    &config.session_db,
+                                    &report.chat,
+                                    report.target.as_ref(),
+                                    report.kind,
+                                )
+                                .await;
                                 maintenance::clear_restart(&config.session_db);
                             }
                         }
@@ -1441,7 +1492,7 @@ async fn main() -> Result<ExitCode> {
                     is_group: source.is_group,
                     timestamp: ctx.info.timestamp.timestamp(),
                 };
-                if !data.text.starts_with("=/>") {
+                if !recognized_command(data.text) {
                     return;
                 }
                 let origin = if selected_button.is_some() {
@@ -1602,6 +1653,11 @@ async fn main() -> Result<ExitCode> {
                             if !diagnostic_messages {
                                 println!("Base-Matter: comando aceptado");
                             }
+                            // Begin only after a successful authenticated admission.
+                            // Alert settings themselves use the newly selected policy.
+                            if !frame.text.split_whitespace().take(2).eq(["=/>set", "alerts"]) {
+                                command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Processing).await;
+                            }
                             // Only the signed, admitted controller ACK authorizes these paths.
                             if frame.text.split_whitespace().take(2).eq(["=/>set", "alerts"]) {
                                 match command_alerts::configure(&config.session_db, &frame.text)
@@ -1609,11 +1665,11 @@ async fn main() -> Result<ExitCode> {
                                 {
                                     Ok(body) => {
                                         let sent = matches!(trace.send("TEXTO", ctx.reply(&body)).await, Ok(Ok(_)));
-                                        trace.finish(if sent { "ENVÍO ACEPTADO" } else { "SIN ENVÍO CONFIRMADO" });
+                                        finish_command(&trace, &ctx, &config.session_db, if sent { "ENVÍO ACEPTADO" } else { "SIN ENVÍO CONFIRMADO" }).await;
                                     }
                                     Err(_) => {
-                                        command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Error).await;
-                                        trace.finish("ERROR CONFIGURACIÓN");
+
+                                        finish_command(&trace, &ctx, &config.session_db, "ERROR CONFIGURACIÓN").await;
                                     }
                                 }
                                 return;
@@ -1628,13 +1684,15 @@ async fn main() -> Result<ExitCode> {
                                     Err(_) => "Estado: Fallido\nMotivo: registro de vistas no disponible.".into(),
                                 };
                                 if body.starts_with("Estado: Fallido") {
-                                    command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Error).await;
-                                    trace.finish("MANTENIMIENTO FALLIDO");
+
+                                    finish_command(&trace, &ctx, &config.session_db, "MANTENIMIENTO FALLIDO").await;
                                     return;
                                 }
                                 if let Ok(message) = maintenance::styled("Reload", &body, plain_style) {
                                     let sent = matches!(trace.send("RELOAD", ctx.reply(&message)).await, Ok(Ok(_)));
-                                    trace.finish(if sent { "ENVÍO ACEPTADO" } else { "SIN ENVÍO CONFIRMADO" });
+                                    finish_command(&trace, &ctx, &config.session_db, if sent { "RECARGA PARCIAL" } else { "SIN ENVÍO CONFIRMADO" }).await;
+                                } else {
+                                    finish_command(&trace, &ctx, &config.session_db, "ERROR TEMA").await;
                                 }
                                 return;
                             }
@@ -1645,7 +1703,8 @@ async fn main() -> Result<ExitCode> {
                                 let body = if instruction.is_empty() {
                                     "Uso: =/>codex <instrucción>\nConsultar: =/>codex status\nDestino: Base-Matter / alpha.".into()
                                 } else if resume_only {
-                                    tokio::task::spawn_blocking(move || codex_bridge::command(&path, &chat, &instruction, plain_style))
+                                    let target = command_alerts::DeferredTarget::capture(&ctx, trace.processing_reaction.load(Ordering::Relaxed));
+                                    tokio::task::spawn_blocking(move || codex_bridge::command(&path, &chat, &instruction, plain_style, target))
                                         .await.ok().and_then(|result| result.ok())
                                         .unwrap_or_else(|| "Estado: Bloqueado\nTrabajador aislado no disponible o tarea pendiente.\nNo se confirma ninguna modificación.".into())
                                 } else {
@@ -1653,13 +1712,22 @@ async fn main() -> Result<ExitCode> {
                                 };
                                 if body.starts_with("Estado: Bloqueado") || body.starts_with("Estado: Fallido") || body.starts_with("Estado: Envío no confirmado") {
                                     trace.stage("CODEX: TRABAJADOR NO DISPONIBLE O TAREA NO CONFIRMADA");
-                                    command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Error).await;
-                                    trace.finish("CODEX FALLÓ");
+
+                                    finish_command(&trace, &ctx, &config.session_db, "CODEX FALLÓ").await;
                                     return;
                                 }
                                 if let Ok(message) = maintenance::styled("Codex", &body, plain_style) {
+                                    let pending = data.text.split_whitespace().nth(1) != Some("status")
+                                        && (body.starts_with("Estado: En cola")
+                                            || body.starts_with("Estado: Codex trabajando"));
+                                    let warning = body.starts_with("Estado: Tarea pendiente")
+                                        || body.starts_with("Estado: Pull request cerrado")
+                                        || body.starts_with("Estado: Tarea no encontrada");
+                                    let review = body.starts_with("Estado: Pull request preparado");
                                     let sent = matches!(trace.send("CODEX", ctx.reply(&message)).await, Ok(Ok(_)));
-                                    trace.finish(if sent { "ENVÍO ACEPTADO" } else { "SIN ENVÍO CONFIRMADO" });
+                                    finish_command(&trace, &ctx, &config.session_db, if !sent { "SIN ENVÍO CONFIRMADO" } else if pending { "CODEX EN CURSO" } else if review || warning { "CODEX EN REVISIÓN" } else { "ENVÍO ACEPTADO" }).await;
+                                } else {
+                                    finish_command(&trace, &ctx, &config.session_db, "ERROR TEMA").await;
                                 }
                                 return;
                             }
@@ -1677,15 +1745,15 @@ async fn main() -> Result<ExitCode> {
                                     Err(_) => ("Estado: Bloqueado\nMotivo: mantenimiento en curso o configuración privada no disponible.".into(), "MANTENIMIENTO BLOQUEADO"),
                                 };
                                 if state == "MANTENIMIENTO BLOQUEADO" {
-                                    command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Error).await;
-                                    trace.finish(state);
+
+                                    finish_command(&trace, &ctx, &config.session_db, state).await;
                                     return;
                                 }
                                 if let Ok(body) = maintenance::styled("Set Update", &body, plain_style) {
                                     let sent = matches!(trace.send("MANTENIMIENTO", ctx.reply(&body)).await, Ok(Ok(_)));
-                                    trace.finish(if sent { state } else { "SIN ENVÍO CONFIRMADO" });
+                                    finish_command(&trace, &ctx, &config.session_db, if sent { state } else { "SIN ENVÍO CONFIRMADO" }).await;
                                 } else {
-                                    trace.finish("ERROR TEMA");
+                                    finish_command(&trace, &ctx, &config.session_db, "ERROR TEMA").await;
                                 }
                                 return;
                             }
@@ -1707,7 +1775,7 @@ async fn main() -> Result<ExitCode> {
                                         && maintenance::activation_pending();
                                     action = match policy.as_deref() {
                                         Ok("restart") if eligible => {
-                                            match maintenance::request_restart(&config.session_db, &frame.chat_jid, plain_style, Some(&body)) {
+                                            match maintenance::request_restart(&config.session_db, &frame.chat_jid, plain_style, Some(&body), command_alerts::DeferredTarget::capture(&ctx, trace.processing_reaction.load(Ordering::Relaxed))) {
                                                 Ok(()) => {
                                                     let action = maintenance::UpdateAction::Note("Activación: Reinicio autorizado.".into());
                                                     let verification = (state == "MANTENIMIENTO COMPLETADO").then_some("Integridad: OK");
@@ -1719,12 +1787,12 @@ async fn main() -> Result<ExitCode> {
                                                         Err(_) => false,
                                                     };
                                                     if sent {
-                                                        trace.finish("MANTENIMIENTO AUTORIZADO");
+                                                        finish_command(&trace, &ctx, &config.session_db, "MANTENIMIENTO AUTORIZADO").await;
                                                         maintenance.store(75, Ordering::Release);
                                                     } else {
                                                         maintenance::clear_restart(&config.session_db);
                                                         maintenance.store(0, Ordering::Release);
-                                                        trace.finish("SIN ENVÍO CONFIRMADO");
+                                                        finish_command(&trace, &ctx, &config.session_db, "SIN ENVÍO CONFIRMADO").await;
                                                     }
                                                     return;
                                                 }
@@ -1749,7 +1817,7 @@ async fn main() -> Result<ExitCode> {
                                     maintenance.store(0, Ordering::Release);
                                     (body, state)
                                 } else {
-                                    match maintenance::request_restart(&config.session_db, &frame.chat_jid, plain_style, None) {
+                                    match maintenance::request_restart(&config.session_db, &frame.chat_jid, plain_style, None, command_alerts::DeferredTarget::capture(&ctx, trace.processing_reaction.load(Ordering::Relaxed))) {
                                         Ok(()) => {
                                             let body = maintenance::styled("Restart", "Estado: Autorizado\nSe verificará la versión pendiente y se conservará la sesión WA.", plain_style);
                                             let sent = match body {
@@ -1757,12 +1825,12 @@ async fn main() -> Result<ExitCode> {
                                                 Err(_) => false,
                                             };
                                             if sent {
-                                                trace.finish("MANTENIMIENTO AUTORIZADO");
+                                                finish_command(&trace, &ctx, &config.session_db, "MANTENIMIENTO AUTORIZADO").await;
                                                 maintenance.store(75, Ordering::Release);
                                             } else {
                                                 maintenance::clear_restart(&config.session_db);
                                                 maintenance.store(0, Ordering::Release);
-                                                trace.finish("SIN ENVÍO CONFIRMADO");
+                                                finish_command(&trace, &ctx, &config.session_db, "SIN ENVÍO CONFIRMADO").await;
                                             }
                                             return;
                                         }
@@ -1778,10 +1846,11 @@ async fn main() -> Result<ExitCode> {
                                             println!("{}", console_row(line, false));
                                         }
                                     }
-                                    command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Error).await;
-                                    trace.finish(state);
+
+                                    finish_command(&trace, &ctx, &config.session_db, state).await;
                                     return;
                                 }
+                                let partial_reload = matches!(&action, maintenance::UpdateAction::Reload(_));
                                 let title = if code == 76 { "Update" } else { "Restart" };
                                 let message = if code == 76 {
                                     let verification = (state == "MANTENIMIENTO COMPLETADO").then_some("Integridad: OK");
@@ -1799,9 +1868,9 @@ async fn main() -> Result<ExitCode> {
                                 };
                                 if let Ok(body) = message {
                                     let sent = matches!(trace.send("MANTENIMIENTO", ctx.reply(&body)).await, Ok(Ok(_)));
-                                    trace.finish(if sent { state } else { "SIN ENVÍO CONFIRMADO" });
+                                    finish_command(&trace, &ctx, &config.session_db, if !sent { "SIN ENVÍO CONFIRMADO" } else if partial_reload { "RECARGA PARCIAL" } else { state }).await;
                                 } else {
-                                    trace.finish("ERROR TEMA");
+                                    finish_command(&trace, &ctx, &config.session_db, "ERROR TEMA").await;
                                 }
                                 return;
                             }
@@ -1818,11 +1887,11 @@ async fn main() -> Result<ExitCode> {
                                     trace.send("PING", ctx.reply(&pong)).await,
                                     Ok(Ok(_))
                                 );
-                                trace.finish(if sent {
+                                finish_command(&trace, &ctx, &config.session_db, if sent {
                                     "ENVÍO ACEPTADO (render no verificado)"
                                 } else {
                                     "SIN ENVÍO CONFIRMADO"
-                                });
+                                }).await;
                                 return;
                             }
                             // Only an authorized signed control may receive a
@@ -1930,7 +1999,7 @@ async fn main() -> Result<ExitCode> {
                                     Ok(formatted) => formatted,
                                     Err(_) => {
                                         eprintln!("Base-Matter: control response rejected by theme");
-                                        trace.finish("ERROR TEMA");
+                                        finish_command(&trace, &ctx, &config.session_db, "ERROR TEMA").await;
                                         return;
                                     }
                                 }
@@ -1943,7 +2012,7 @@ async fn main() -> Result<ExitCode> {
                                         trace.send("UI", ctx.send_message(probe)).await,
                                         Ok(Ok(_))
                                     ) {
-                                        trace.finish("ENVIADO (UI)");
+                                        finish_command(&trace, &ctx, &config.session_db, "ENVIADO (UI)").await;
                                         return;
                                     }
                                 }
@@ -1955,7 +2024,7 @@ async fn main() -> Result<ExitCode> {
                                     trace.send("ROW", ctx.send_message(legacy_row_probe_message())).await,
                                     Ok(Ok(_))
                                 ) {
-                                    trace.finish("ENVIADO (ROW)");
+                                    finish_command(&trace, &ctx, &config.session_db, "ENVIADO (ROW)").await;
                                     return;
                                 }
                                 eprintln!("Base-Matter: classic ButtonsRow test rejected; using text");
@@ -1978,7 +2047,7 @@ async fn main() -> Result<ExitCode> {
                                             // diagnostic, including enabled groups.
                                             println!("Base-Matter: Rich HTML test submitted; client rendering unverified");
                                             let _ = trace.send("AVISO HTML", ctx.reply("Matter HTML: envío aceptado por el proveedor. Confirma si ves la tarjeta HTML; WhatsApp puede ocultarla.")).await;
-                                            trace.finish("HTML ENVIADO (render no verificado)");
+                                            finish_command(&trace, &ctx, &config.session_db, "HTML ENVIADO (render no verificado)").await;
                                             return;
                                         }
                                         Ok(Err(_)) => eprintln!("Base-Matter: HTML test send rejected"),
@@ -2098,7 +2167,7 @@ async fn main() -> Result<ExitCode> {
                                         Err(_) => {
                                             eprintln!("Base-Matter: unified menu timed out; refusing duplicate reply");
                                             // A timed-out send may already have been accepted.
-                                            trace.finish("TIMEOUT NAVEGACIÓN (sin duplicar)");
+                                            finish_command(&trace, &ctx, &config.session_db, "TIMEOUT NAVEGACIÓN (sin duplicar)").await;
                                             return;
                                         }
                                     },
@@ -2133,25 +2202,25 @@ async fn main() -> Result<ExitCode> {
                             if web_fallback && sent {
                                 trace.stage("WEB: AVISO Y ACCESO A CLASSIC");
                             }
-                            trace.finish(if sent {
+                            finish_command(&trace, &ctx, &config.session_db, if sent {
                                 "ENVÍO ACEPTADO (render no verificado)"
                             } else {
                                 "SIN ENVÍO CONFIRMADO"
-                            });
+                            }).await;
                             if sent && is_private_vault_command(&frame, &config.owner_jid) {
                                 println!("Base-Matter: Vault owner response submitted to WhatsApp");
                             }
                         }
                         Ok(ControlAck::Duplicate) => {
                             trace.stage("IPC: DUPLICADO");
-                            trace.finish("DUPLICADO");
+                            finish_command(&trace, &ctx, &config.session_db, "DUPLICADO").await;
                         }
                         Ok(ControlAck::Ignored) => {
                             trace.stage("IPC: IGNORADO");
-                            command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Inactive).await;
-                            trace.finish("IGNORADO");
+
+                            finish_command(&trace, &ctx, &config.session_db, "IGNORADO").await;
                         }
-                        Err(_) => {
+                        Err(error) => {
                             trace.stage("IPC: DENEGADO O NO DISPONIBLE");
                             if !diagnostic_messages {
                                 eprintln!("Base-Matter control denied or unreachable");
@@ -2159,8 +2228,12 @@ async fn main() -> Result<ExitCode> {
                             if frame.text.split_whitespace().next() == Some("=/>codex") {
                                 trace.stage("CODEX: COMPROBAR OWNER PRINCIPAL Y VAULT ACTUALIZADO");
                             }
-                            command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Denied).await;
-                            trace.finish("IPC FALLÓ");
+
+                            finish_command(&trace, &ctx, &config.session_db, if error.downcast_ref::<std::io::Error>().is_some() {
+                                "IPC ERROR TRANSPORTE"
+                            } else {
+                                "IPC FALLÓ"
+                            }).await;
                         }
                     }
                 } else {
@@ -2168,8 +2241,8 @@ async fn main() -> Result<ExitCode> {
                     trace.stage("IPC: NO ADMITIDO");
                     // Native reaction to the original callback; no command
                     // execution, disclosure of permissions, or text fallback.
-                    command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Admission).await;
-                    trace.finish("NO ADMITIDO (firma o política local)");
+
+                    finish_command(&trace, &ctx, &config.session_db, "NO ADMITIDO (firma o política local)").await;
                 }
             }
         })
@@ -2210,13 +2283,23 @@ async fn main() -> Result<ExitCode> {
                 .ok()
                 .and_then(|result| result.ok())
                 .flatten();
-            if let Some((chat, body, state)) = notice {
-                if let Ok(jid) = chat.parse::<whatsapp_rust::Jid>() {
+            if let Some(notice) = notice {
+                if let Ok(jid) = notice.chat.parse::<whatsapp_rust::Jid>() {
                     if matches!(
-                        timeout(Duration::from_secs(8), codex_client.send_text(jid, body)).await,
+                        timeout(Duration::from_secs(8), codex_client.send_text(jid, notice.body)).await,
                         Ok(Ok(_))
                     ) {
-                        let _ = codex_bridge::ack_notice(&codex_session, &state);
+                        if let Some(kind) = notice.kind {
+                            command_alerts::deliver_deferred(
+                                &codex_client,
+                                &codex_session,
+                                &notice.chat,
+                                notice.target.as_ref(),
+                                kind,
+                            )
+                            .await;
+                        }
+                        let _ = codex_bridge::ack_notice(&codex_session, &notice.marker);
                     }
                 }
             }
@@ -2383,7 +2466,13 @@ mod readiness_tests {
                 .count()
                 <= "=/>menu ".chars().count() + CONSOLE_ARGS_LIMIT
         );
-        assert_eq!(console_command("=/>unknown-secret"), "=/>[otro]");
+        assert_eq!(console_command("=/>unknown-secret"), "");
+        assert!(!recognized_command("=/>comando-inexistente"));
+        assert!(!recognized_command("=/>"));
+        assert!(!recognized_command("texto =/>ping"));
+        assert!(recognized_command("=/>codex status"));
+        assert!(recognized_command("=/>set alerts"));
+        assert!(recognized_command("=/>menú"));
         assert_eq!(console_field("a\n\u{001b}\u{202e}b", 8), "ab");
     }
 

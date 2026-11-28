@@ -15,6 +15,8 @@ struct Pending {
     chat: String,
     plain: bool,
     seen: String,
+    #[serde(default)]
+    target: Option<super::command_alerts::DeferredTarget>,
 }
 
 #[derive(Deserialize)]
@@ -145,7 +147,13 @@ fn report(reply: &Reply) -> Result<String> {
     Ok(body)
 }
 
-pub fn command(session: &Path, chat: &str, instruction: &str, plain: bool) -> Result<String> {
+pub fn command(
+    session: &Path,
+    chat: &str,
+    instruction: &str,
+    plain: bool,
+    target: Option<super::command_alerts::DeferredTarget>,
+) -> Result<String> {
     if !valid_private(chat) {
         bail!("Codex requires private chat");
     }
@@ -182,6 +190,7 @@ pub fn command(session: &Path, chat: &str, instruction: &str, plain: bool) -> Re
         chat: chat.into(),
         plain,
         seen: String::new(),
+        target,
     };
     save(session, &pending, true)?;
     let reply = request(serde_json::json!({
@@ -196,7 +205,15 @@ pub fn command(session: &Path, chat: &str, instruction: &str, plain: bool) -> Re
     }
 }
 
-pub fn notice(session: &Path) -> Result<Option<(String, String, String)>> {
+pub struct Notice {
+    pub chat: String,
+    pub body: String,
+    pub marker: String,
+    pub target: Option<super::command_alerts::DeferredTarget>,
+    pub kind: Option<super::command_alerts::Kind>,
+}
+
+pub fn notice(session: &Path) -> Result<Option<Notice>> {
     let Some(pending) = read(session)? else {
         return Ok(None);
     };
@@ -205,11 +222,20 @@ pub fn notice(session: &Path) -> Result<Option<(String, String, String)>> {
         return Ok(None);
     }
     let body = super::maintenance::styled("Codex", &report(&reply)?, pending.plain)?;
-    Ok(Some((
-        pending.chat,
+    use super::command_alerts::Kind;
+    let kind = match reply.state.as_str() {
+        "ready" | "no_changes" => Some(Kind::Success),
+        "review" | "closed" => Some(Kind::Admission),
+        "failed" | "missing" => Some(Kind::Error),
+        _ => None,
+    };
+    Ok(Some(Notice {
+        chat: pending.chat,
         body,
-        format!("{}:{}", pending.id, reply.state),
-    )))
+        marker: format!("{}:{}", pending.id, reply.state),
+        target: pending.target,
+        kind,
+    }))
 }
 
 pub fn ack_notice(session: &Path, marker: &str) -> Result<()> {
