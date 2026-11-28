@@ -141,11 +141,9 @@ impl WhatsAppControlBridge {
         if now.abs_diff(frame.timestamp) > MAX_SKEW_SECONDS {
             bail!("Expired WhatsApp control frame");
         }
-        let supplied =
-            hex::decode(&frame.signature).map_err(|_| anyhow!("Invalid WhatsApp control proof"))?;
-        if supplied.len() != 32 {
-            bail!("Invalid WhatsApp control proof");
-        }
+        let mut supplied = [0_u8; 32];
+        hex::decode_to_slice(&frame.signature, &mut supplied)
+            .map_err(|_| anyhow!("Invalid WhatsApp control proof"))?;
         let mut mac = Hmac::<Sha256>::new_from_slice(&self.key[..])
             .map_err(|_| anyhow!("WhatsApp control verifier unavailable"))?;
         mac.update(DOMAIN);
