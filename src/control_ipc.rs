@@ -298,7 +298,7 @@ impl WhatsAppControlIpc {
                 if !matches!(&outcome, ControlIpcOutcome::Applied) || message.is_none() {
                     return None;
                 }
-                let frame = serde_json::from_str::<WhatsAppControlFrame>(text).ok()?;
+                let frame = ping_frame?;
                 let mut words = frame.text.split_whitespace();
                 let kind = match words.next()? {
                     "=/>menu" | "=/>menú" => "menu",
@@ -325,14 +325,12 @@ impl WhatsAppControlIpc {
             })
             .or(message)
             .and_then(|body| {
-                let status = serde_json::from_str::<WhatsAppControlFrame>(text)
-                    .ok()
-                    .is_some_and(|frame| {
+                let status = ping_frame.is_some_and(|frame| {
                         matches!(
                             frame.text.split_whitespace().next(),
                             Some("=/>status" | "=/>estado")
                         )
-                    });
+                });
                 if status {
                     self.themes
                         .decorate_status_for(
