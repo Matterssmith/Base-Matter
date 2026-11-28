@@ -75,8 +75,8 @@ main() {
   local target_dir provider_dir controller provider stamp revision actual
   target_dir="$(realpath -m -- "${CARGO_TARGET_DIR:-$root/target}")"
   provider_dir="$(realpath -m -- "${MATTER_PROVIDER_TARGET_DIR:-${CARGO_TARGET_DIR:-$root/providers/whatsapp-rust/target}}")"
-  controller="$target_dir/debug/whatsapp-matter-control"
-  provider="$provider_dir/debug/whatsapp-matter-rust-provider"
+  controller="$target_dir/release/whatsapp-matter-control"
+  provider="$provider_dir/release/whatsapp-matter-rust-provider"
   stamp="$target_dir/.matter-alpha-verified-build"
   revision="$(git rev-parse HEAD)"
   if ! git diff --quiet HEAD --; then
@@ -100,8 +100,8 @@ main() {
     "${provider_cargo[@]}" test --manifest-path providers/whatsapp-rust/Cargo.toml --all-targets
     "${provider_cargo[@]}" clippy --manifest-path providers/whatsapp-rust/Cargo.toml --all-targets -- -D warnings
     printf '%s\n' 'MATTER_GATE=BUILD'
-    "${base_cargo[@]}" build --locked --bins
-    "${provider_cargo[@]}" build --locked --manifest-path providers/whatsapp-rust/Cargo.toml --bin whatsapp-matter-rust-provider
+    "${base_cargo[@]}" build --release --locked --bins
+    "${provider_cargo[@]}" build --release --locked --manifest-path providers/whatsapp-rust/Cargo.toml --bin whatsapp-matter-rust-provider
     if [[ "$(git rev-parse HEAD)" != "$revision" ]] || ! git diff --quiet HEAD --; then
       fail 'Source changed during verification; no build stamp published'
       return 1
