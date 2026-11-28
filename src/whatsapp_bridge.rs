@@ -149,16 +149,17 @@ impl WhatsAppControlBridge {
         let mut mac = Hmac::<Sha256>::new_from_slice(&self.key[..])
             .map_err(|_| anyhow!("WhatsApp control verifier unavailable"))?;
         mac.update(DOMAIN);
+        let version = VERSION.to_string();
         let fields = [
-            VERSION.to_string(),
-            frame.socket_id.clone(),
-            frame.actor_id.clone(),
-            frame.owner_jid.clone(),
-            frame.chat_jid.clone(),
-            frame.message_id.clone(),
-            frame.text.clone(),
+            version.as_str(),
+            frame.socket_id.as_str(),
+            frame.actor_id.as_str(),
+            frame.owner_jid.as_str(),
+            frame.chat_jid.as_str(),
+            frame.message_id.as_str(),
+            frame.text.as_str(),
         ];
-        for field in &fields {
+        for field in fields {
             let bytes = field.as_bytes();
             mac.update(&(u32::try_from(bytes.len())?).to_be_bytes());
             mac.update(bytes);
