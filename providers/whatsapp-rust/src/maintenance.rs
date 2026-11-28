@@ -185,7 +185,7 @@ fn policy_path(session: &Path) -> Result<PathBuf> {
 pub fn update_policy(session: &Path) -> Result<String> {
     let path = policy_path(session)?;
     match fs::symlink_metadata(&path) {
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok("reload".into()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok("restart".into()),
         Err(error) => Err(error.into()),
         Ok(meta) => {
             if !meta.is_file() || meta.len() > 16 {
@@ -230,7 +230,7 @@ pub fn set_update(session: &Path, command: &str) -> Result<String> {
     }
     let policy = update_policy(session)?;
     Ok(format!(
-        "Modo: {policy}\nmanual: actualizar sin reiniciar.\nrestart: verificar y reiniciar automáticamente.\nreload (predeterminado): recarga de vistas del socket; código Rust nuevo requiere restart."
+        "Modo: {policy}\nmanual: actualizar sin reiniciar.\nrestart (predeterminado): verificar y reiniciar automáticamente.\nreload: recarga de vistas del socket; código Rust nuevo requiere restart."
     ))
 }
 
@@ -406,6 +406,14 @@ pub fn restart_report(session: &Path) -> Result<Option<RestartReport>> {
             Some("Compilación verificada: OK (reutilizada)"),
             "Estado: Completado\nControlador: activo\nWhatsApp: conectado\nSesión: conservada.",
         ),
+        "build-failed-recovered" => (
+            Some("Verificación o compilación nueva: Fallida"),
+            "Estado: Fallido\nRecuperación: versión anterior verificada\nWhatsApp: conectado\nSesión: conservada.",
+        ),
+        "start-failed-recovered" => (
+            Some("Arranque de versión nueva: Fallido"),
+            "Estado: Fallido\nRecuperación: versión anterior verificada\nWhatsApp: conectado\nSesión: conservada.",
+        ),
         "build-failed" => (
             Some("Verificación o compilación: Fallida"),
             "Estado: Fallido\nWhatsApp: conectado posteriormente.",
@@ -489,12 +497,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn update_policy_persists_without_implicit_restart() {
+    fn update_policy_defaults_to_restart_and_persists_explicit_modes() {
         let directory =
             std::env::temp_dir().join(format!("matter-update-policy-test-{}", std::process::id()));
         fs::create_dir(&directory).unwrap();
         let session = directory.join("session.db");
-        assert_eq!(update_policy(&session).unwrap(), "reload");
+        assert_eq!(update_policy(&session).unwrap(), "restart");
         set_update(&session, "=/>set update restart").unwrap();
         assert_eq!(update_policy(&session).unwrap(), "restart");
         set_update(&session, "=/>set update reload").unwrap();

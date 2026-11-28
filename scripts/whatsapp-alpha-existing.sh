@@ -42,7 +42,13 @@ main() {
   fi
 
   local root state config expected_port vault_var
-  root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+  # The supervisor may execute an independently hash-verified copy of this
+  # launcher from the private recovery directory. Source remains on alpha.
+  if [[ -n "${MATTER_WA_RECOVERY_ROOT:-}" ]]; then
+    root="$(cd -- "$MATTER_WA_RECOVERY_ROOT" && pwd -P)"
+  else
+    root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+  fi
   if [[ "$(git -C "$root" symbolic-ref --quiet --short HEAD)" != "alpha" ]]; then
     fail 'Only alpha branch is allowed'
     return 1
@@ -66,6 +72,7 @@ main() {
   # Preserve ONLY these explicitly allowlisted 0/1 values; never override
   # private session, bridge, identity, enrollment or Vault configuration.
   local supervised="${MATTER_WA_SUPERVISED:-0}"
+  local running_revision="${MATTER_WA_RUNNING_REVISION:-}"
   local ui_override_name
   local -a ui_override_keys=(
     MATTER_WA_RICH_HTML
@@ -86,6 +93,7 @@ main() {
   export MATTER_WA_SUPERVISED=0
   if [[ "$supervised" == "1" ]]; then
     export MATTER_WA_SUPERVISED=1
+    export MATTER_WA_RUNNING_REVISION="$running_revision"
   fi
   local ui_override_index
   for ui_override_index in "${!ui_override_keys[@]}"; do

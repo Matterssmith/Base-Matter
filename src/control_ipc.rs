@@ -470,11 +470,10 @@ impl WhatsAppControlIpc {
                 result,
                 ControlIpcOutcome::Applied | ControlIpcOutcome::Denied
             )
-            && serde_json::from_slice::<WhatsAppControlFrame>(&request)
-                .is_ok_and(|frame| {
-                    !frame.text.split_whitespace().eq(["=/>ping"])
-                        && self.bridge.console_global_owner(&frame)
-                })
+            && serde_json::from_slice::<WhatsAppControlFrame>(&request).is_ok_and(|frame| {
+                !frame.text.split_whitespace().eq(["=/>ping"])
+                    && self.bridge.console_global_owner(&frame)
+            })
         {
             response["global_owner_verified"] = serde_json::Value::Bool(true);
         }

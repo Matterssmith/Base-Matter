@@ -834,6 +834,30 @@ async fn finish_command(
     trace.finish(state);
 }
 
+fn mark_runtime_connected(session: &std::path::Path) {
+    let Some(parent) = session.parent() else {
+        return;
+    };
+    let Ok(revision) = std::env::var("MATTER_WA_RUNNING_REVISION") else {
+        return;
+    };
+    if revision.len() != 40 || !revision.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return;
+    }
+    let marker = parent.join("maintenance-runtime-connected");
+    let result = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&marker)
+        .and_then(|mut file| std::io::Write::write_all(&mut file, revision.as_bytes()));
+    match result {
+        Err(error) if error.kind() != std::io::ErrorKind::AlreadyExists => {
+            eprintln!("Matter: no se pudo registrar la conexión para recuperación");
+        }
+        _ => {}
+    }
+}
+
 async fn require_local_controller(address: std::net::SocketAddrV4) -> Result<()> {
     // No SQLite, pairing request, login or authenticated command is sent.
     // A successful TCP connection only proves that the local port listens.
@@ -1354,6 +1378,12 @@ async fn main() -> Result<ExitCode> {
             let report_in_flight = Arc::clone(&report_in_flight);
             async move {
                 observed.store(true, Ordering::Relaxed);
+                // The supervisor alone creates the private marker path.
+                // A real authenticated connection proves this runtime can be
+                // promoted as the last known good version.
+                if supervised {
+                    mark_runtime_connected(&config.session_db);
+                }
                 println!("WhatsApp session connected. Base-Matter owner control available.");
                 if supervised && !report_in_flight.swap(true, Ordering::AcqRel) {
                     if let Ok(Some(report)) = maintenance::restart_report(&config.session_db) {
