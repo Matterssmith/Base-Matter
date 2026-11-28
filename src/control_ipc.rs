@@ -108,8 +108,7 @@ impl WhatsAppControlIpc {
         // Ping uses the same authenticated bridge, but its reply is generated
         // by the provider. Avoid constructing discarded controller replies
         // or running presentation logic in the controller.
-        let is_ping = ping_frame
-            .is_some_and(|frame| frame.text.split_whitespace().eq(["=/>ping"]));
+        let is_ping = ping_frame.is_some_and(|frame| frame.text.split_whitespace().eq(["=/>ping"]));
         if is_ping {
             let outcome = match self.bridge.ingest(frame) {
                 Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive))
