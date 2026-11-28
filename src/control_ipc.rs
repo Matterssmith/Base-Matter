@@ -387,6 +387,32 @@ impl WhatsAppControlIpc {
                 Err(_) => break (ControlIpcOutcome::Denied, None),
             }
         };
+        // Ping has no controller message or menu metadata. Preserve the
+        // effective response style and the existing independent rank probe.
+        if let Some(frame) = response_frame.as_ref() {
+            if frame.text.split_whitespace().eq(["=/>ping"]) {
+                let mut response = serde_json::json!({
+                    "ok": result.permitted(),
+                    "outcome": result.as_str(),
+                });
+                if matches!(result, ControlIpcOutcome::Applied) {
+                    let actor = if frame.from_me {
+                        &frame.owner_jid
+                    } else {
+                        &frame.actor_id
+                    };
+                    if let Ok(preferences) = self
+                        .themes
+                        .effective_preferences_for(Some(&frame.chat_jid), Some(actor))
+                    {
+                        response["response_style"] = preferences.style.as_str().into();
+                    }
+                }
+                let encoded = serde_json::to_vec(&response)?;
+                stream.write_all(&encoded)?;
+                return Ok(());
+            }
+        }
         // Only the authenticated, replay-checked root menu receives
         // typed presentation metadata. Other IPC outcomes remain unchanged.
         let menu_mode = if matches!(&result, ControlIpcOutcome::Applied) {
