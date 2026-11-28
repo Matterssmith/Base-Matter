@@ -90,9 +90,12 @@ impl WhatsAppControlIpc {
         if input.is_empty() || input.len() > MAX_FRAME_BYTES {
             return (ControlIpcOutcome::Denied, None);
         }
-        let Ok(text) = std::str::from_utf8(input) else {
+        let Some(frame) = ping_frame else {
             return (ControlIpcOutcome::Denied, None);
         };
+        if std::str::from_utf8(input).is_err() {
+            return (ControlIpcOutcome::Denied, None);
+        }
         // Rank probes are signed by the provider and are diagnostic only.
         // They do not dispatch commands, claim replay IDs or grant authority.
         if let Some(frame) = ping_frame {
@@ -110,7 +113,7 @@ impl WhatsAppControlIpc {
         let is_ping = ping_frame
             .is_some_and(|frame| frame.text.split_whitespace().eq(["=/>ping"]));
         if is_ping {
-            let outcome = match self.bridge.ingest_json(text) {
+            let outcome = match self.bridge.ingest(frame) {
                 Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive))
                 | Ok(WhatsAppBridgeOutcome::Ignored) => ControlIpcOutcome::Ignored,
                 Ok(WhatsAppBridgeOutcome::Dispatched(_))
@@ -120,7 +123,7 @@ impl WhatsAppControlIpc {
             };
             return (outcome, None);
         }
-        let result = match self.bridge.ingest_json(text) {
+        let result = match self.bridge.ingest(frame) {
             Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
                 output, ..
             })) => (ControlIpcOutcome::Applied, Some(output)),
