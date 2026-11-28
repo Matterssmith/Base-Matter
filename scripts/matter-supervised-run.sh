@@ -61,20 +61,20 @@ save_snapshot() {
   stamp="$target/.matter-alpha-verified-build"
   safe_file "$stamp" || return 1
   temp="$(mktemp -d "$recovery/.snapshot.XXXXXX")" || return 1
-  if ! cp --reflink=auto -- "$target/debug/whatsapp-matter-control" "$temp/whatsapp-matter-control" ||
-     ! cp --reflink=auto -- "$provider/debug/whatsapp-matter-rust-provider" "$temp/whatsapp-matter-rust-provider" ||
+  if ! cp --reflink=auto -- "$target/release/whatsapp-matter-control" "$temp/whatsapp-matter-control" ||
+     ! cp --reflink=auto -- "$provider/release/whatsapp-matter-rust-provider" "$temp/whatsapp-matter-rust-provider" ||
      ! cp -- "$root/scripts/whatsapp-alpha-existing.sh" "$temp/launcher.sh" ||
      ! printf '%s\n' "$revision" > "$temp/revision"; then
     rm -rf -- "$temp"
     return 1
   fi
   # Check copies against the original verified stamp, not just their own hash.
-  actual="$(printf '%s\n' "$revision"; sha256sum -- "$target/debug/whatsapp-matter-control" "$provider/debug/whatsapp-matter-rust-provider" "$root/Cargo.lock" "$root/providers/whatsapp-rust/Cargo.lock")" || { rm -rf -- "$temp"; return 1; }
+  actual="$(printf '%s\n' "$revision"; sha256sum -- "$target/release/whatsapp-matter-control" "$provider/release/whatsapp-matter-rust-provider" "$root/Cargo.lock" "$root/providers/whatsapp-rust/Cargo.lock")" || { rm -rf -- "$temp"; return 1; }
   if [[ "$actual" != "$(cat "$stamp")" ]] ||
      [[ "$(git -C "$root" rev-parse HEAD)" != "$revision" ]] ||
      ! git -C "$root" diff --quiet HEAD -- ||
-     ! cmp -s "$target/debug/whatsapp-matter-control" "$temp/whatsapp-matter-control" ||
-     ! cmp -s "$provider/debug/whatsapp-matter-rust-provider" "$temp/whatsapp-matter-rust-provider" ||
+     ! cmp -s "$target/release/whatsapp-matter-control" "$temp/whatsapp-matter-control" ||
+     ! cmp -s "$provider/release/whatsapp-matter-rust-provider" "$temp/whatsapp-matter-rust-provider" ||
      ! cmp -s "$root/scripts/whatsapp-alpha-existing.sh" "$temp/launcher.sh"; then
     rm -rf -- "$temp"
     return 1
