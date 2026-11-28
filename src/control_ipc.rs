@@ -214,22 +214,18 @@ impl WhatsAppControlIpc {
         // We select a template from the chat identifier ONLY after the
         // bridge has accepted and authenticated the signed frame.
         let authenticated_chat = if matches!(&outcome, ControlIpcOutcome::Applied) {
-            serde_json::from_str::<WhatsAppControlFrame>(text)
-                .ok()
-                .map(|frame| frame.chat_jid)
+            ping_frame.as_ref().map(|frame| frame.chat_jid.clone())
         } else {
             None
         };
         let authenticated_actor = if matches!(&outcome, ControlIpcOutcome::Applied) {
-            serde_json::from_str::<WhatsAppControlFrame>(text)
-                .ok()
-                .map(|frame| {
-                    if frame.from_me {
-                        frame.owner_jid
-                    } else {
-                        frame.actor_id
-                    }
-                })
+            ping_frame.as_ref().map(|frame| {
+                if frame.from_me {
+                    frame.owner_jid.clone()
+                } else {
+                    frame.actor_id.clone()
+                }
+            })
         } else {
             None
         };
@@ -237,8 +233,8 @@ impl WhatsAppControlIpc {
         // authorized the menu before we inspect this frame again.
         // Actor/JID are never derived from a message body or display name.
         let verified_root = if matches!(&outcome, ControlIpcOutcome::Applied) {
-            serde_json::from_str::<WhatsAppControlFrame>(text)
-                .ok()
+            ping_frame
+                .as_ref()
                 .filter(|frame| {
                     matches!(
                         frame.text.as_str(),
