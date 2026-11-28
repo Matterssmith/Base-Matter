@@ -75,20 +75,28 @@ impl WhatsAppControlIpc {
     }
 
     pub fn dispatch(&self, input: &[u8]) -> ControlIpcOutcome {
-        self.dispatch_with_message(input).0
+        if input.is_empty() || input.len() > MAX_FRAME_BYTES {
+            return ControlIpcOutcome::Denied;
+        }
+        let frame = serde_json::from_slice::<WhatsAppControlFrame>(input).ok();
+        self.dispatch_with_message(input, frame.as_ref()).0
     }
 
-    fn dispatch_with_message(&self, input: &[u8]) -> (ControlIpcOutcome, Option<String>) {
+    fn dispatch_with_message(
+        &self,
+        input: &[u8],
+        ping_frame: Option<&WhatsAppControlFrame>,
+    ) -> (ControlIpcOutcome, Option<String>) {
         if input.is_empty() || input.len() > MAX_FRAME_BYTES {
             return (ControlIpcOutcome::Denied, None);
         }
-        let Ok(text) = std::str::from_utf8(input) else {
+        let Some(frame) = ping_frame else {
             return (ControlIpcOutcome::Denied, None);
         };
+
         // Rank probes are signed by the provider and are diagnostic only.
         // They do not dispatch commands, claim replay IDs or grant authority.
-        let ping_frame = serde_json::from_str::<WhatsAppControlFrame>(text).ok();
-        if let Some(frame) = ping_frame.as_ref() {
+        if let Some(frame) = ping_frame {
             if frame.text == "\u{001f}matter-ping-rank" {
                 return if self.console_rank && self.bridge.is_ping_rank_probe(frame) {
                     (ControlIpcOutcome::Applied, None)
@@ -97,7 +105,23 @@ impl WhatsAppControlIpc {
                 };
             }
         }
-        let result = match self.bridge.ingest_json(text) {
+        // Ping uses the same authenticated bridge, but its reply is generated
+        // by the provider. Avoid constructing discarded controller replies
+        // or running presentation logic in the controller.
+        let is_ping = ping_frame
+            .is_some_and(|frame| frame.text.split_whitespace().eq(["=/>ping"]));
+        if is_ping {
+            let outcome = match self.bridge.ingest(frame) {
+                Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive))
+                | Ok(WhatsAppBridgeOutcome::Ignored) => ControlIpcOutcome::Ignored,
+                Ok(WhatsAppBridgeOutcome::Dispatched(_))
+                | Ok(WhatsAppBridgeOutcome::AntiObserved) => ControlIpcOutcome::Applied,
+                Ok(WhatsAppBridgeOutcome::Duplicate) => ControlIpcOutcome::Duplicate,
+                Err(_) => ControlIpcOutcome::Denied,
+            };
+            return (outcome, None);
+        }
+        let result = match self.bridge.ingest(frame) {
             Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
                 output, ..
             })) => (ControlIpcOutcome::Applied, Some(output)),
@@ -203,33 +227,21 @@ impl WhatsAppControlIpc {
             Err(_) => (ControlIpcOutcome::Denied, None),
         };
         let (outcome, message) = result;
-        // Ping's response is built by the provider using measured durations.
-        // Avoid a redundant message decoration and preference lookup here.
-        if ping_frame
-            .as_ref()
-            .is_some_and(|frame| frame.text.split_whitespace().eq(["=/>ping"]))
-        {
-            return (outcome, None);
-        }
         // We select a template from the chat identifier ONLY after the
         // bridge has accepted and authenticated the signed frame.
         let authenticated_chat = if matches!(&outcome, ControlIpcOutcome::Applied) {
-            serde_json::from_str::<WhatsAppControlFrame>(text)
-                .ok()
-                .map(|frame| frame.chat_jid)
+            ping_frame.map(|frame| frame.chat_jid.clone())
         } else {
             None
         };
         let authenticated_actor = if matches!(&outcome, ControlIpcOutcome::Applied) {
-            serde_json::from_str::<WhatsAppControlFrame>(text)
-                .ok()
-                .map(|frame| {
-                    if frame.from_me {
-                        frame.owner_jid
-                    } else {
-                        frame.actor_id
-                    }
-                })
+            ping_frame.map(|frame| {
+                if frame.from_me {
+                    frame.owner_jid.clone()
+                } else {
+                    frame.actor_id.clone()
+                }
+            })
         } else {
             None
         };
@@ -237,8 +249,7 @@ impl WhatsAppControlIpc {
         // authorized the menu before we inspect this frame again.
         // Actor/JID are never derived from a message body or display name.
         let verified_root = if matches!(&outcome, ControlIpcOutcome::Applied) {
-            serde_json::from_str::<WhatsAppControlFrame>(text)
-                .ok()
+            ping_frame
                 .filter(|frame| {
                     matches!(
                         frame.text.as_str(),
@@ -287,7 +298,7 @@ impl WhatsAppControlIpc {
                 if !matches!(&outcome, ControlIpcOutcome::Applied) || message.is_none() {
                     return None;
                 }
-                let frame = serde_json::from_str::<WhatsAppControlFrame>(text).ok()?;
+                let frame = ping_frame?;
                 let mut words = frame.text.split_whitespace();
                 let kind = match words.next()? {
                     "=/>menu" | "=/>menú" => "menu",
@@ -314,14 +325,12 @@ impl WhatsAppControlIpc {
             })
             .or(message)
             .and_then(|body| {
-                let status = serde_json::from_str::<WhatsAppControlFrame>(text)
-                    .ok()
-                    .is_some_and(|frame| {
+                let status = ping_frame.is_some_and(|frame| {
                         matches!(
                             frame.text.split_whitespace().next(),
                             Some("=/>status" | "=/>estado")
                         )
-                    });
+                });
                 if status {
                     self.themes
                         .decorate_status_for(
@@ -354,16 +363,20 @@ impl WhatsAppControlIpc {
         stream.set_nodelay(true)?;
         stream.set_write_timeout(Some(Duration::from_secs(3)))?;
         let deadline = Instant::now() + Duration::from_secs(4);
-        let mut request = Vec::new();
+        let mut request = Vec::with_capacity(2048);
+        let mut response_frame = None;
+        let mut chunk = [0_u8; 2048];
         let (result, message) = loop {
             let remaining = deadline.saturating_duration_since(Instant::now());
             if remaining.is_zero() {
                 break (ControlIpcOutcome::Denied, None);
             }
             stream.set_read_timeout(Some(remaining.min(Duration::from_secs(1))))?;
-            let mut chunk = [0_u8; 2048];
             match stream.read(&mut chunk) {
-                Ok(0) => break self.dispatch_with_message(&request),
+                Ok(0) => {
+                    response_frame = serde_json::from_slice::<WhatsAppControlFrame>(&request).ok();
+                    break self.dispatch_with_message(&request, response_frame.as_ref());
+                }
                 Ok(n) => {
                     if request.len() + n > MAX_FRAME_BYTES {
                         break (ControlIpcOutcome::Denied, None);
@@ -374,19 +387,45 @@ impl WhatsAppControlIpc {
                 Err(_) => break (ControlIpcOutcome::Denied, None),
             }
         };
+        // Ping has no controller message or menu metadata. Preserve the
+        // effective response style and the existing independent rank probe.
+        if let Some(frame) = response_frame.as_ref() {
+            if frame.text.split_whitespace().eq(["=/>ping"]) {
+                let mut response = serde_json::json!({
+                    "ok": result.permitted(),
+                    "outcome": result.as_str(),
+                });
+                if matches!(result, ControlIpcOutcome::Applied) {
+                    let actor = if frame.from_me {
+                        &frame.owner_jid
+                    } else {
+                        &frame.actor_id
+                    };
+                    if let Ok(preferences) = self
+                        .themes
+                        .effective_preferences_for(Some(&frame.chat_jid), Some(actor))
+                    {
+                        response["response_style"] = preferences.style.as_str().into();
+                    }
+                }
+                let encoded = serde_json::to_vec(&response)?;
+                stream.write_all(&encoded)?;
+                return Ok(());
+            }
+        }
         // Only the authenticated, replay-checked root menu receives
         // typed presentation metadata. Other IPC outcomes remain unchanged.
         let menu_mode = if matches!(&result, ControlIpcOutcome::Applied) {
-            serde_json::from_slice::<WhatsAppControlFrame>(&request)
-                .ok()
+            response_frame
+                .as_ref()
                 .filter(|frame| matches!(frame.text.as_str(), "=/>menu" | "=/>menú"))
                 .and_then(|_| self.themes.current_menu_mode().ok())
         } else {
             None
         };
         let menu_items = if matches!(&result, ControlIpcOutcome::Applied) {
-            serde_json::from_slice::<WhatsAppControlFrame>(&request)
-                .ok()
+            response_frame
+                .as_ref()
                 .filter(|frame| {
                     matches!(
                         frame.text.split_whitespace().next(),
@@ -430,23 +469,17 @@ impl WhatsAppControlIpc {
         // Only admitted commands whose presentation is built by the provider
         // need the effective style as typed metadata; it grants no authority.
         if matches!(result, ControlIpcOutcome::Applied) {
-            if let Ok(frame) = serde_json::from_slice::<WhatsAppControlFrame>(&request) {
+            if let Some(frame) = response_frame.as_ref() {
+                let mut words = frame.text.split_whitespace();
+                let command = words.next();
                 if matches!(
-                    frame.text.split_whitespace().next(),
-                    Some("=/>menu" | "=/>menú" | "=/>ping" | "=/>start" | "=/>add++")
-                ) || matches!(
-                    frame.text.split_whitespace().next(),
-                    Some("=/>update" | "=/>restart" | "=/>reload" | "=/>codex")
-                ) || frame
-                    .text
-                    .split_whitespace()
-                    .take(2)
-                    .eq(["=/>set", "update"])
-                    || frame
-                        .text
-                        .split_whitespace()
-                        .take(2)
-                        .eq(["=/>set", "alerts"])
+                    command,
+                    Some(
+                        "=/>menu" | "=/>menú" | "=/>ping" | "=/>start" | "=/>add++"
+                            | "=/>update" | "=/>restart" | "=/>reload" | "=/>codex"
+                    )
+                ) || (command == Some("=/>set")
+                    && matches!(words.next(), Some("update" | "alerts")))
                 {
                     let actor = if frame.from_me {
                         &frame.owner_jid
@@ -470,9 +503,9 @@ impl WhatsAppControlIpc {
                 result,
                 ControlIpcOutcome::Applied | ControlIpcOutcome::Denied
             )
-            && serde_json::from_slice::<WhatsAppControlFrame>(&request).is_ok_and(|frame| {
+            && response_frame.as_ref().is_some_and(|frame| {
                 !frame.text.split_whitespace().eq(["=/>ping"])
-                    && self.bridge.console_global_owner(&frame)
+                    && self.bridge.console_global_owner(frame)
             })
         {
             response["global_owner_verified"] = serde_json::Value::Bool(true);
