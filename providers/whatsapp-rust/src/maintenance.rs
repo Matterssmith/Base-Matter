@@ -46,7 +46,6 @@ pub enum UpdateAction {
     None,
     Note(String),
     Reload(String),
-    Restart(String),
 }
 
 fn render_update_blocks(blocks: &[ReportBlock<'_>], plain: bool) -> Result<String> {
@@ -143,10 +142,6 @@ fn update_blocks<'a>(
     match action {
         UpdateAction::Reload(body) => blocks.push(ReportBlock {
             title: "Reload",
-            rows: body.lines().map(ReportRow::line).collect(),
-        }),
-        UpdateAction::Restart(body) => blocks.push(ReportBlock {
-            title: "Restart",
             rows: body.lines().map(ReportRow::line).collect(),
         }),
         UpdateAction::None | UpdateAction::Note(_) => {}
@@ -536,16 +531,6 @@ mod tests {
             current,
             "╭─ 💠 𝗨𝗽𝗱𝗮𝘁𝗲\n│·♪·╠[ Estado: ✅ Actualizado\n│·♪·╠[ Versión: abc\n│·♪·╠[ Cambios pendientes: 0\n│·♪·╚[ Bot: Activo\n╰───────────⟨ 🌀"
         );
-        let restarted = update_message(
-            "Estado: Código actualizado\nCommits aplicados: 1",
-            Some("Pruebas: OK"),
-            &UpdateAction::Restart("Estado: Completado".into()),
-            false,
-        )
-        .unwrap();
-        assert_eq!(restarted.matches("╭─ 💠").count(), 2);
-        assert!(restarted.contains("   ││\n╭─ 💠 𝗥𝗲𝘀𝘁𝗮𝗿𝘁"));
-        assert!(restarted.ends_with("╰───────────⟨ 🌀"));
         let reloaded = update_message(
             "Estado: Código actualizado\nCommits aplicados: 1",
             Some("Integridad: OK"),
