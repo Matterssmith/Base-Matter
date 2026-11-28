@@ -326,10 +326,10 @@ impl WhatsAppControlIpc {
             .or(message)
             .and_then(|body| {
                 let status = ping_frame.is_some_and(|frame| {
-                        matches!(
-                            frame.text.split_whitespace().next(),
-                            Some("=/>status" | "=/>estado")
-                        )
+                    matches!(
+                        frame.text.split_whitespace().next(),
+                        Some("=/>status" | "=/>estado")
+                    )
                 });
                 if status {
                     self.themes
@@ -475,8 +475,15 @@ impl WhatsAppControlIpc {
                 if matches!(
                     command,
                     Some(
-                        "=/>menu" | "=/>menú" | "=/>ping" | "=/>start" | "=/>add++"
-                            | "=/>update" | "=/>restart" | "=/>reload" | "=/>codex"
+                        "=/>menu"
+                            | "=/>menú"
+                            | "=/>ping"
+                            | "=/>start"
+                            | "=/>add++"
+                            | "=/>update"
+                            | "=/>restart"
+                            | "=/>reload"
+                            | "=/>codex"
                     )
                 ) || (command == Some("=/>set")
                     && matches!(words.next(), Some("update" | "alerts")))
