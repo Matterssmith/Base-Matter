@@ -104,6 +104,22 @@ impl WhatsAppControlIpc {
                 };
             }
         }
+        // Ping uses the same authenticated bridge, but its reply is generated
+        // by the provider. Avoid constructing discarded controller replies
+        // or running presentation logic in the controller.
+        let is_ping = ping_frame
+            .is_some_and(|frame| frame.text.split_whitespace().eq(["=/>ping"]));
+        if is_ping {
+            let outcome = match self.bridge.ingest_json(text) {
+                Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive))
+                | Ok(WhatsAppBridgeOutcome::Ignored) => ControlIpcOutcome::Ignored,
+                Ok(WhatsAppBridgeOutcome::Dispatched(_))
+                | Ok(WhatsAppBridgeOutcome::AntiObserved) => ControlIpcOutcome::Applied,
+                Ok(WhatsAppBridgeOutcome::Duplicate) => ControlIpcOutcome::Duplicate,
+                Err(_) => ControlIpcOutcome::Denied,
+            };
+            return (outcome, None);
+        }
         let result = match self.bridge.ingest_json(text) {
             Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Extension {
                 output, ..
@@ -210,13 +226,6 @@ impl WhatsAppControlIpc {
             Err(_) => (ControlIpcOutcome::Denied, None),
         };
         let (outcome, message) = result;
-        // Ping's response is built by the provider using measured durations.
-        // Avoid a redundant message decoration and preference lookup here.
-        if ping_frame
-            .is_some_and(|frame| frame.text.split_whitespace().eq(["=/>ping"]))
-        {
-            return (outcome, None);
-        }
         // We select a template from the chat identifier ONLY after the
         // bridge has accepted and authenticated the signed frame.
         let authenticated_chat = if matches!(&outcome, ControlIpcOutcome::Applied) {
