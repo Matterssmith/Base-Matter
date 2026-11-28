@@ -105,6 +105,8 @@ pub fn render_report_blocks(blocks: &[ReportBlock<'_>]) -> Option<String> {
             "Update" => "update",
             "Restart" => "restart",
             "Set Update" => "update-settings",
+            "Set Alerts" => "alert-settings",
+            "Alerta" => "alert",
             "Reload" => "reload",
             "Codex" => "codex",
             _ => return None,

@@ -2,6 +2,7 @@
 use crate::menu::Category;
 #[path = "set.rs"]
 pub mod main_command;
+pub mod set_alerts;
 pub mod set_anti;
 pub mod set_antilink;
 pub mod set_lang;
@@ -18,6 +19,7 @@ pub const CATEGORY: Category = Category {
     commands: &[
         main_command::COMMAND,
         set_style::COMMAND,
+        set_alerts::COMMAND,
         set_update::COMMAND,
         set_lang::COMMAND,
         set_menu::COMMAND,

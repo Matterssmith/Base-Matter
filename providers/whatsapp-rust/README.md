@@ -1,3 +1,9 @@
+## 2026-11-27 — Alertas por reacción y diagnóstico de Codex
+
+`=/>set alerts` configura el socket; `reaction` predeterminado, `text` u `off`, con tipos `admission`, `denied`, `error`, `inactive`. Los chats inactivos permanecen silenciosos por defecto; se puede habilitar ese tipo expresamente. La reacción nativa apunta al mensaje original, sin texto de respaldo si falla. Las notificaciones de tareas Codex ya solicitadas y resultados normales no son alertas genéricas. La configuración exige Owner del socket u Owner global. Codex conserva slot 1 en Vault y chat privado; se permite el acceso privado de gestión del principal tras la comprobación, sin abrir los privados externos ni eludir el apagado del socket. Se amplía el tiempo de IPC de Codex para admitir la comprobación fresca de Vault y se verifica el trabajador al consultar status. Sin servicio instalado o autorizado no se confirma ejecución. Pruebas completas y despliegue pendientes.
+
+Créditos: Hecho por Lournyx Matterssmith [Lou-Nyx].
+
 ## 2026-11-27 — Admisión de Reload y Codex en el proveedor
 
 La prueba real de `=/>update` descargó f8a1cb2 sin detener el bot. `=/>reload` fue rechazado antes del IPC porque faltaba en el filtro de firma del proveedor. Se agrega la ruta de Reload en grupos y privados y la de Codex exclusivamente en privado, tanto para el socket verificado como para el remitente entrante. La firma no concede permisos: se mantienen la comprobación de Owner global/socket para Reload y slot 1 de Vault para Codex. Pruebas de admisión y rechazo agregadas. Requiere recompilar y reiniciar para activar el proveedor corregido.

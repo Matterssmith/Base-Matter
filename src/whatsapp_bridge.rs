@@ -410,6 +410,44 @@ impl WhatsAppControlBridge {
         } else {
             None
         };
+        // Codex has a narrower authority than ordinary global maintenance.
+        // Private chat only: no prompt or repository report is sent to a group.
+        if frame.text.split_whitespace().next() == Some("=/>codex") {
+            if group_id.is_some() || !valid_user_jid(&frame.chat_jid) {
+                bail!("Codex is private-only");
+            }
+            let principal = if is_owner {
+                self.config.owner_jid.as_str()
+            } else {
+                frame.actor_id.as_str()
+            };
+            self.global_vault
+                .as_ref()
+                .ok_or_else(|| anyhow!("Vault primary authority unavailable"))?
+                .require_primary_owner(principal)?;
+            if !self
+                .replay
+                .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
+            {
+                return Ok(WhatsAppBridgeOutcome::Duplicate);
+            }
+            // Slot 1 has a private management surface without opening
+            // ordinary external private chats. Socket power still applies.
+            if !self.control.chat_command_allowed(
+                &self.config.socket_id,
+                None,
+                "self",
+                &frame.text,
+            )? {
+                return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive));
+            }
+            return Ok(WhatsAppBridgeOutcome::Dispatched(
+                DispatchResult::Extension {
+                    command: "codex".into(),
+                    output: "Codex autorizado para el Owner principal.".into(),
+                },
+            ));
+        }
         // Check the authenticated receiving surface before any command effect,
         // including independent global Vault routes. A denied request is consumed
         // so it cannot be replayed after the chat is enabled.
@@ -434,21 +472,28 @@ impl WhatsAppControlBridge {
             }
             return Ok(WhatsAppBridgeOutcome::Dispatched(DispatchResult::Inactive));
         }
-        // Codex has a narrower authority than ordinary global maintenance.
-        // Private chat only: no prompt or repository report is sent to a group.
-        if frame.text.split_whitespace().next() == Some("=/>codex") {
-            if group_id.is_some() || !valid_user_jid(&frame.chat_jid) {
-                bail!("Codex is private-only");
+        // Socket-local alert settings never grant a role or alter admission.
+        if frame.text.split_whitespace().take(2).eq(["=/>set", "alerts"]) {
+            let words: Vec<_> = frame.text.split_whitespace().collect();
+            if !matches!(
+                words.as_slice(),
+                ["=/>set", "alerts"]
+                    | ["=/>set", "alerts", "reaction" | "text" | "off"]
+                    | [
+                        "=/>set",
+                        "alerts",
+                        "admission" | "denied" | "error" | "inactive",
+                        "reaction" | "text" | "off"
+                    ]
+            ) {
+                bail!("Invalid alert configuration");
             }
-            let principal = if is_owner {
-                self.config.owner_jid.as_str()
-            } else {
-                frame.actor_id.as_str()
-            };
-            self.global_vault
-                .as_ref()
-                .ok_or_else(|| anyhow!("Vault primary authority unavailable"))?
-                .require_primary_owner(principal)?;
+            if !is_owner {
+                self.global_vault
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("Vault authority unavailable"))?
+                    .require_global_owner(&frame.actor_id)?;
+            }
             if !self
                 .replay
                 .claim("whatsapp", &self.config.socket_id, &frame.message_id)?
@@ -457,8 +502,8 @@ impl WhatsAppControlBridge {
             }
             return Ok(WhatsAppBridgeOutcome::Dispatched(
                 DispatchResult::Extension {
-                    command: "codex".into(),
-                    output: "Codex autorizado para el Owner principal.".into(),
+                    command: "set alerts".into(),
+                    output: "Configuración de alertas autorizada.".into(),
                 },
             ));
         }

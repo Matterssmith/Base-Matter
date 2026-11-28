@@ -15,6 +15,8 @@ pub const COMMAND: CommandSpec = CommandSpec {
         "set lang es|en",
         "set menu web|classic|buttons",
         "set update manual|restart|reload",
+        "set alerts reaction|text|off",
+        "set alerts admission|denied|error|inactive reaction|text|off",
     ],
     implemented: true,
 };

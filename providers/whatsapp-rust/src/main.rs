@@ -5,6 +5,7 @@
  * Hecho por Lournyx Matterssmith [Lou-Nyx].
  */
 mod codex_bridge;
+mod command_alerts;
 mod maintenance;
 
 use anyhow::{bail, Result};
@@ -737,8 +738,10 @@ async fn deliver(
         && !frame.chat_jid.ends_with("@g.us")
     {
         Duration::from_secs(83)
-    } else if (frame.text.split_whitespace().next() == Some("=/>vault")
-        || frame.text.starts_with("=/>set role owner --global"))
+    } else if (matches!(
+        frame.text.split_whitespace().next(),
+        Some("=/>vault" | "=/>codex")
+    ) || frame.text.starts_with("=/>set role owner --global"))
         && !frame.chat_jid.ends_with("@g.us")
     {
         // Both owner-linked and external verified-owner private messages
@@ -763,6 +766,26 @@ fn is_private_vault_command(
     frame.from_me
         && frame.chat_jid == verified_owner_jid
         && frame.text.split_whitespace().next() == Some("=/>vault")
+}
+
+async fn command_alert(
+    trace: &CommandTrace,
+    ctx: &whatsapp_rust::bot::MessageContext,
+    session: &std::path::Path,
+    kind: command_alerts::Kind,
+) {
+    match command_alerts::mode(session, kind) {
+        command_alerts::Mode::Off => {}
+        command_alerts::Mode::Reaction => {
+            // No fallback to text: the selected transport is authoritative.
+            let _ = trace.send("REACCIÓN", ctx.react(kind.emoji())).await;
+        }
+        command_alerts::Mode::Text => {
+            if let Ok(body) = maintenance::styled("Alerta", kind.message(), false) {
+                let _ = trace.send("AVISO", ctx.reply(&body)).await;
+            }
+        }
+    }
 }
 
 async fn require_local_controller(address: std::net::SocketAddrV4) -> Result<()> {
@@ -1580,6 +1603,21 @@ async fn main() -> Result<ExitCode> {
                                 println!("Base-Matter: comando aceptado");
                             }
                             // Only the signed, admitted controller ACK authorizes these paths.
+                            if frame.text.split_whitespace().take(2).eq(["=/>set", "alerts"]) {
+                                match command_alerts::configure(&config.session_db, &frame.text)
+                                    .and_then(|body| maintenance::styled("Set Alerts", &body, plain_style))
+                                {
+                                    Ok(body) => {
+                                        let sent = matches!(trace.send("TEXTO", ctx.reply(&body)).await, Ok(Ok(_)));
+                                        trace.finish(if sent { "ENVÍO ACEPTADO" } else { "SIN ENVÍO CONFIRMADO" });
+                                    }
+                                    Err(_) => {
+                                        command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Error).await;
+                                        trace.finish("ERROR CONFIGURACIÓN");
+                                    }
+                                }
+                                return;
+                            }
                             if frame.text.split_whitespace().eq(["=/>reload"]) {
                                 let body = match menu_views.lock() {
                                     Ok(mut views) => {
@@ -1589,6 +1627,11 @@ async fn main() -> Result<ExitCode> {
                                     }
                                     Err(_) => "Estado: Fallido\nMotivo: registro de vistas no disponible.".into(),
                                 };
+                                if body.starts_with("Estado: Fallido") {
+                                    command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Error).await;
+                                    trace.finish("MANTENIMIENTO FALLIDO");
+                                    return;
+                                }
                                 if let Ok(message) = maintenance::styled("Reload", &body, plain_style) {
                                     let sent = matches!(trace.send("RELOAD", ctx.reply(&message)).await, Ok(Ok(_)));
                                     trace.finish(if sent { "ENVÍO ACEPTADO" } else { "SIN ENVÍO CONFIRMADO" });
@@ -1608,6 +1651,12 @@ async fn main() -> Result<ExitCode> {
                                 } else {
                                     "Estado: Bloqueado\nRequiere el runtime alpha existente.".into()
                                 };
+                                if body.starts_with("Estado: Bloqueado") || body.starts_with("Estado: Fallido") || body.starts_with("Estado: Envío no confirmado") {
+                                    trace.stage("CODEX: TRABAJADOR NO DISPONIBLE O TAREA NO CONFIRMADA");
+                                    command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Error).await;
+                                    trace.finish("CODEX FALLÓ");
+                                    return;
+                                }
                                 if let Ok(message) = maintenance::styled("Codex", &body, plain_style) {
                                     let sent = matches!(trace.send("CODEX", ctx.reply(&message)).await, Ok(Ok(_)));
                                     trace.finish(if sent { "ENVÍO ACEPTADO" } else { "SIN ENVÍO CONFIRMADO" });
@@ -1627,6 +1676,11 @@ async fn main() -> Result<ExitCode> {
                                     Ok(body) => (body, "MANTENIMIENTO COMPLETADO"),
                                     Err(_) => ("Estado: Bloqueado\nMotivo: mantenimiento en curso o configuración privada no disponible.".into(), "MANTENIMIENTO BLOQUEADO"),
                                 };
+                                if state == "MANTENIMIENTO BLOQUEADO" {
+                                    command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Error).await;
+                                    trace.finish(state);
+                                    return;
+                                }
                                 if let Ok(body) = maintenance::styled("Set Update", &body, plain_style) {
                                     let sent = matches!(trace.send("MANTENIMIENTO", ctx.reply(&body)).await, Ok(Ok(_)));
                                     trace.finish(if sent { state } else { "SIN ENVÍO CONFIRMADO" });
@@ -1718,6 +1772,16 @@ async fn main() -> Result<ExitCode> {
                                         }
                                     }
                                 };
+                                if matches!(state, "MANTENIMIENTO FALLIDO" | "MANTENIMIENTO BLOQUEADO") {
+                                    if diagnostic_messages {
+                                        for line in body.lines() {
+                                            println!("{}", console_row(line, false));
+                                        }
+                                    }
+                                    command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Error).await;
+                                    trace.finish(state);
+                                    return;
+                                }
                                 let title = if code == 76 { "Update" } else { "Restart" };
                                 let message = if code == 76 {
                                     let verification = (state == "MANTENIMIENTO COMPLETADO").then_some("Integridad: OK");
@@ -2084,6 +2148,7 @@ async fn main() -> Result<ExitCode> {
                         }
                         Ok(ControlAck::Ignored) => {
                             trace.stage("IPC: IGNORADO");
+                            command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Inactive).await;
                             trace.finish("IGNORADO");
                         }
                         Err(_) => {
@@ -2091,24 +2156,19 @@ async fn main() -> Result<ExitCode> {
                             if !diagnostic_messages {
                                 eprintln!("Base-Matter control denied or unreachable");
                             }
-                            // The verified owner receives a generic Vault error,
-                            // without exposing IPC details, keys or private data.
-                            if is_private_vault_command(&frame, &config.owner_jid) {
-                                let _ = trace.send("AVISO", ctx.reply("Vault-Matter: consulta no completada. Revisa el controlador y la credencial del socket; no se modificaron roles.")).await;
-                            } else if frame.from_me
-                                && frame.text.starts_with("=/>set role owner --global")
-                                && !frame.chat_jid.ends_with("@g.us")
-                            {
-                                let _ = trace.send("AVISO", ctx.reply("Vault-Matter: asignación denegada. Verifica la identidad principal y el servicio privado.")).await;
-                            } else if frame.from_me && frame.text.starts_with("=/>test") {
-                                let _ = trace.send("AVISO", ctx.reply("Base-Matter: prueba rechazada por el controlador. Revisa permisos del chat y el registro local.")).await;
+                            if frame.text.split_whitespace().next() == Some("=/>codex") {
+                                trace.stage("CODEX: COMPROBAR OWNER PRINCIPAL Y VAULT ACTUALIZADO");
                             }
+                            command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Denied).await;
                             trace.finish("IPC FALLÓ");
                         }
                     }
                 } else {
                     trace.print_header(false);
                     trace.stage("IPC: NO ADMITIDO");
+                    // Native reaction to the original callback; no command
+                    // execution, disclosure of permissions, or text fallback.
+                    command_alert(&trace, &ctx, &config.session_db, command_alerts::Kind::Admission).await;
                     trace.finish("NO ADMITIDO (firma o política local)");
                 }
             }

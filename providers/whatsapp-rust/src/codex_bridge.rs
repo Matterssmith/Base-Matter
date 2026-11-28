@@ -161,7 +161,11 @@ pub fn command(session: &Path, chat: &str, instruction: &str, plain: bool) -> Re
         )?);
     }
     if instruction == "status" {
-        return Ok("Estado: Sin tareas pendientes".into());
+        let health = request(serde_json::json!({"op":"ping"}))?;
+        if health.state != "idle" {
+            bail!("Codex worker health not confirmed");
+        }
+        return Ok("Estado: Sin tareas pendientes\nTrabajador: Disponible".into());
     }
     if instruction.len() > 1200
         || instruction.is_empty()

@@ -421,6 +421,11 @@ impl WhatsAppControlIpc {
                     .split_whitespace()
                     .take(2)
                     .eq(["=/>set", "update"])
+                    || frame
+                        .text
+                        .split_whitespace()
+                        .take(2)
+                        .eq(["=/>set", "alerts"])
                 {
                     let actor = if frame.from_me {
                         &frame.owner_jid
