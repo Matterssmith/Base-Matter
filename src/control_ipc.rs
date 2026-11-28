@@ -75,10 +75,18 @@ impl WhatsAppControlIpc {
     }
 
     pub fn dispatch(&self, input: &[u8]) -> ControlIpcOutcome {
-        self.dispatch_with_message(input).0
+        if input.is_empty() || input.len() > MAX_FRAME_BYTES {
+            return ControlIpcOutcome::Denied;
+        }
+        let frame = serde_json::from_slice::<WhatsAppControlFrame>(input).ok();
+        self.dispatch_with_message(input, frame.as_ref()).0
     }
 
-    fn dispatch_with_message(&self, input: &[u8]) -> (ControlIpcOutcome, Option<String>) {
+    fn dispatch_with_message(
+        &self,
+        input: &[u8],
+        ping_frame: Option<&WhatsAppControlFrame>,
+    ) -> (ControlIpcOutcome, Option<String>) {
         if input.is_empty() || input.len() > MAX_FRAME_BYTES {
             return (ControlIpcOutcome::Denied, None);
         }
@@ -87,8 +95,7 @@ impl WhatsAppControlIpc {
         };
         // Rank probes are signed by the provider and are diagnostic only.
         // They do not dispatch commands, claim replay IDs or grant authority.
-        let ping_frame = serde_json::from_str::<WhatsAppControlFrame>(text).ok();
-        if let Some(frame) = ping_frame.as_ref() {
+        if let Some(frame) = ping_frame {
             if frame.text == "\u{001f}matter-ping-rank" {
                 return if self.console_rank && self.bridge.is_ping_rank_probe(frame) {
                     (ControlIpcOutcome::Applied, None)
@@ -206,7 +213,6 @@ impl WhatsAppControlIpc {
         // Ping's response is built by the provider using measured durations.
         // Avoid a redundant message decoration and preference lookup here.
         if ping_frame
-            .as_ref()
             .is_some_and(|frame| frame.text.split_whitespace().eq(["=/>ping"]))
         {
             return (outcome, None);
@@ -214,12 +220,12 @@ impl WhatsAppControlIpc {
         // We select a template from the chat identifier ONLY after the
         // bridge has accepted and authenticated the signed frame.
         let authenticated_chat = if matches!(&outcome, ControlIpcOutcome::Applied) {
-            ping_frame.as_ref().map(|frame| frame.chat_jid.clone())
+            ping_frame.map(|frame| frame.chat_jid.clone())
         } else {
             None
         };
         let authenticated_actor = if matches!(&outcome, ControlIpcOutcome::Applied) {
-            ping_frame.as_ref().map(|frame| {
+            ping_frame.map(|frame| {
                 if frame.from_me {
                     frame.owner_jid.clone()
                 } else {
@@ -234,7 +240,6 @@ impl WhatsAppControlIpc {
         // Actor/JID are never derived from a message body or display name.
         let verified_root = if matches!(&outcome, ControlIpcOutcome::Applied) {
             ping_frame
-                .as_ref()
                 .filter(|frame| {
                     matches!(
                         frame.text.as_str(),
@@ -351,6 +356,7 @@ impl WhatsAppControlIpc {
         stream.set_write_timeout(Some(Duration::from_secs(3)))?;
         let deadline = Instant::now() + Duration::from_secs(4);
         let mut request = Vec::new();
+        let mut response_frame = None;
         let (result, message) = loop {
             let remaining = deadline.saturating_duration_since(Instant::now());
             if remaining.is_zero() {
@@ -359,7 +365,10 @@ impl WhatsAppControlIpc {
             stream.set_read_timeout(Some(remaining.min(Duration::from_secs(1))))?;
             let mut chunk = [0_u8; 2048];
             match stream.read(&mut chunk) {
-                Ok(0) => break self.dispatch_with_message(&request),
+                Ok(0) => {
+                    response_frame = serde_json::from_slice::<WhatsAppControlFrame>(&request).ok();
+                    break self.dispatch_with_message(&request, response_frame.as_ref());
+                }
                 Ok(n) => {
                     if request.len() + n > MAX_FRAME_BYTES {
                         break (ControlIpcOutcome::Denied, None);
@@ -370,7 +379,6 @@ impl WhatsAppControlIpc {
                 Err(_) => break (ControlIpcOutcome::Denied, None),
             }
         };
-        let response_frame = serde_json::from_slice::<WhatsAppControlFrame>(&request).ok();
         // Only the authenticated, replay-checked root menu receives
         // typed presentation metadata. Other IPC outcomes remain unchanged.
         let menu_mode = if matches!(&result, ControlIpcOutcome::Applied) {
