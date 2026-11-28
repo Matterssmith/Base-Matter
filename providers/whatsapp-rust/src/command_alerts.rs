@@ -7,7 +7,6 @@ use std::{
     path::{Path, PathBuf},
     sync::Mutex,
 };
-use whatsapp_rust::prelude::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
